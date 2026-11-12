@@ -9,8 +9,15 @@ import datetime as dt
 import json
 import logging
 from contextlib import closing
-from typing import TYPE_CHECKING, Callable, Final, Iterator, Mapping, \
-    NamedTuple, Self
+from typing import (
+  TYPE_CHECKING,
+  Callable,
+  Final,
+  Iterator,
+  Mapping,
+  NamedTuple,
+  Self,
+)
 
 import websocket
 from websocket import create_connection
@@ -33,20 +40,23 @@ class DevToolsCommandResult(NamedTuple):
 
 class DevToolsInBrowserClient:
   """Manages communication with the Chrome DevTools Protocol from within
-     the browser context.
+  the browser context.
   """
 
   def open_frontend(self, browser: Browser, panel_name: str) -> None:
     with closing(create_connection(browser.ws_endpoint)) as ws:
       ws.send(
-          json.dumps({
-              "id": 1,  # short lived connection, id can be anything
-              "method": "Target.openDevTools",
-              "params": {
-                  "targetId": browser.current_window_id(),
-                  "panelId": panel_name,
-              },
-          }))
+        json.dumps(
+          {
+            "id": 1,  # short lived connection, id can be anything
+            "method": "Target.openDevTools",
+            "params": {
+              "targetId": browser.current_window_id(),
+              "panelId": panel_name,
+            },
+          }
+        )
+      )
       result = json.loads(ws.recv())
       if "result" not in result:
         raise RuntimeError(f"Failed to open DevTools. Response: {result}")
@@ -58,11 +68,11 @@ class DevToolsInBrowserClient:
 # must never be routed to a page session. Note that Storage is not part of
 # this list: frame targets implement it as well.
 BROWSER_CDP_PREFIXES: Final[tuple[str, ...]] = (
-    "Browser.",
-    "NativeProfiling.",
-    "SystemInfo.",
-    "Target.",
-    "Tethering.",
+  "Browser.",
+  "NativeProfiling.",
+  "SystemInfo.",
+  "Target.",
+  "Tethering.",
 )
 
 
@@ -70,10 +80,10 @@ class DevToolsRemoteClient:
   """Manages communication with the Chrome DevTools Protocol."""
 
   def __init__(
-      self,
-      platform: Platform,
-      requested_local_port: int = 0,
-      remote_devtools_identifier: str = "chrome_devtools_remote",
+    self,
+    platform: Platform,
+    requested_local_port: int = 0,
+    remote_devtools_identifier: str = "chrome_devtools_remote",
   ) -> None:
     self._platform: Final[Platform] = platform
     self._requested_local_port: Final[int] = requested_local_port
@@ -97,8 +107,9 @@ class DevToolsRemoteClient:
     try:
       if not self._devtools_port:
         self._devtools_port = self._platform.ports.forward_devtools(
-            local_port=self._requested_local_port,
-            remote_identifier=self._remote_devtools_identifier)
+          local_port=self._requested_local_port,
+          remote_identifier=self._remote_devtools_identifier,
+        )
       url = f"ws://localhost:{self._devtools_port}/devtools/browser/"
       last_error: Exception | None = None
       try:
@@ -107,11 +118,15 @@ class DevToolsRemoteClient:
             self._ws = websocket.WebSocket()
             self._ws.connect(url)
             logging.debug(
-                "DevTools connected: ws://localhost:%s/devtools/browser/",
-                self._devtools_port)
+              "DevTools connected: ws://localhost:%s/devtools/browser/",
+              self._devtools_port,
+            )
             return
-          except (websocket.WebSocketException, ConnectionRefusedError,
-                  TimeoutError) as e:
+          except (
+            websocket.WebSocketException,
+            ConnectionRefusedError,
+            TimeoutError,
+          ) as e:
             last_error = e
             if self._ws:
               with contextlib.suppress(Exception):
@@ -121,8 +136,11 @@ class DevToolsRemoteClient:
         if last_error:
           raise last_error from e
         raise
-    except (websocket.WebSocketException, ConnectionRefusedError,
-            TimeoutError) as e:
+    except (
+      websocket.WebSocketException,
+      ConnectionRefusedError,
+      TimeoutError,
+    ) as e:
       logging.error("DevTools connection error: %s", e)
       self._disconnect_internal()
       raise
@@ -145,8 +163,10 @@ class DevToolsRemoteClient:
       except Exception as e:  # noqa: BLE001
         # Best effort to remove forwarding, log if it fails but don't crash
         logging.warning(
-            "Error removing DevTools port forwarding for port %s: %s",
-            self._devtools_port, e)
+          "Error removing DevTools port forwarding for port %s: %s",
+          self._devtools_port,
+          e,
+        )
     self._devtools_port = 0
 
   def disconnect(self) -> None:
@@ -155,7 +175,8 @@ class DevToolsRemoteClient:
     logging.debug("DevTools disconnected")
 
   def _send_raw_command(
-      self, command_payload: Mapping[str, object]) -> DevToolsCommandResult:
+    self, command_payload: Mapping[str, object]
+  ) -> DevToolsCommandResult:
     if not self._ws or not self._ws.connected:
       raise RuntimeError("DevTools is not connected. Cannot send command.")
 
@@ -177,41 +198,49 @@ class DevToolsRemoteClient:
     return result
 
   def _create_target(self, url: str = "about:blank") -> str:
-    _, response = self._send_raw_command({
+    _, response = self._send_raw_command(
+      {
         "id": self._get_next_id(),
         "method": "Target.createTarget",
         "params": {
-            "url": url,
+          "url": url,
         },
-    })
+      }
+    )
     result = self._get_result_dict(response, "Target.createTarget")
     target_id = result.get("targetId")
     assert isinstance(target_id, str) and target_id, (
-        f"Invalid targetId in Target.createTarget: {response}")
+      f"Invalid targetId in Target.createTarget: {response}"
+    )
     return target_id
 
   def _attach_to_target(self, target_id: str) -> str:
-    _, response = self._send_raw_command({
+    _, response = self._send_raw_command(
+      {
         "id": self._get_next_id(),
         "method": "Target.attachToTarget",
         "params": {
-            "targetId": target_id,
-            "flatten": True,
+          "targetId": target_id,
+          "flatten": True,
         },
-    })
+      }
+    )
     result = self._get_result_dict(response, "Target.attachToTarget")
     session_id = result.get("sessionId")
     assert isinstance(session_id, str) and session_id, (
-        f"Invalid sessionId in Target.attachToTarget: {response}")
+      f"Invalid sessionId in Target.attachToTarget: {response}"
+    )
     return session_id
 
   def _get_page_session_id(self) -> str:
     if self._session_id:
       return self._session_id
-    _, response = self._send_raw_command({
+    _, response = self._send_raw_command(
+      {
         "id": self._get_next_id(),
         "method": "Target.getTargets",
-    })
+      }
+    )
     result = self._get_result_dict(response, "Target.getTargets")
     target_infos = result.get("targetInfos")
     assert isinstance(target_infos, list), f"Invalid targetInfos: {result}"
@@ -221,7 +250,8 @@ class DevToolsRemoteClient:
       if info.get("type") == "page":
         target_id = info.get("targetId")
         assert isinstance(target_id, str) and target_id, (
-            f"Invalid targetId: {info}")
+          f"Invalid targetId: {info}"
+        )
         page_target_id = target_id
         break
     if not page_target_id:
@@ -236,7 +266,8 @@ class DevToolsRemoteClient:
     return self._session_id
 
   def send_command(
-      self, command_payload: Mapping[str, object]) -> DevToolsCommandResult:
+    self, command_payload: Mapping[str, object]
+  ) -> DevToolsCommandResult:
     """Sends a command to DevTools and waits for the matching response.
 
     Commands are routed to a page session by default. Commands for
@@ -287,8 +318,11 @@ class DevToolsRemoteClient:
     try:
       self._ws.send(json.dumps(command_payload).encode("utf-8"))
       return True
-    except (websocket.WebSocketException, ConnectionRefusedError,
-            TimeoutError) as e:
+    except (
+      websocket.WebSocketException,
+      ConnectionRefusedError,
+      TimeoutError,
+    ) as e:
       logging.error("DevTools communication error: %s", e)
       return False
     except json.JSONDecodeError as e:
@@ -296,10 +330,10 @@ class DevToolsRemoteClient:
       return False
 
   def poll_for_response(
-      self,
-      condition_fn: Callable[[], bool],
-      process_fn: Callable[[dict], None],
-      timeout: dt.timedelta = dt.timedelta(seconds=1),
+    self,
+    condition_fn: Callable[[], bool],
+    process_fn: Callable[[dict], None],
+    timeout: dt.timedelta = dt.timedelta(seconds=1),
   ) -> bool:
     """Polls for DevTools events and processes them until a condition is met or
        a timeout occurs.

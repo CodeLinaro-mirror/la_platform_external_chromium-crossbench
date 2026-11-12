@@ -21,35 +21,35 @@ if TYPE_CHECKING:
 
 
 class AndroidProfilingContext(PosixProfilingContext):
-
   def _generate_command_line(self) -> ListCmdArgs:
     renderer_pid: int | None = None
     renderer_main_tid: int | None = None
     if self.start_profiling_after_setup():
       renderer_pid, renderer_main_tid = self.cached_renderer_pid_tid
     return generate_simpleperf_command_line(
-        self.probe.target,
-        str(self.run.browser.path),
-        renderer_pid,
-        renderer_main_tid,
-        self.probe.call_graph_mode,
-        self.probe.frequency,
-        self.probe.count,
-        self.probe.cpu,
-        self.probe.events,
-        self.probe.grouped_events,
-        self.probe.add_counters,
-        self.result_path,
+      self.probe.target,
+      str(self.run.browser.path),
+      renderer_pid,
+      renderer_main_tid,
+      self.probe.call_graph_mode,
+      self.probe.frequency,
+      self.probe.count,
+      self.probe.cpu,
+      self.probe.events,
+      self.probe.grouped_events,
+      self.probe.add_counters,
+      self.result_path,
     )
 
   def _start_simpleperf(self) -> None:
     command_line = self._generate_command_line()
     logging.info("Starting simpleperf with command line: %s.", command_line)
     self._profiling_process = self.browser_platform.popen(
-        *command_line,
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT)
+      *command_line,
+      stdin=subprocess.PIPE,
+      stdout=subprocess.PIPE,
+      stderr=subprocess.STDOUT,
+    )
     # Wait a bit for simpleperf to start and (potentially) terminate on error.
     time.sleep(1)
     if self._profiling_process.poll():
@@ -70,32 +70,38 @@ class AndroidProfilingContext(PosixProfilingContext):
 
   def _stop_existing_simpleperf(self) -> None:
     for simpleperf_pid in self._get_simpleperf_pids():
-      logging.warning("Terminating existing simpleperf process: %d.",
-                      simpleperf_pid)
+      logging.warning(
+        "Terminating existing simpleperf process: %d.", simpleperf_pid
+      )
       self.browser_platform.terminate(simpleperf_pid)
 
   def _cpu_mask(self, cpus: Iterable) -> str:
     assert max(cpus) < 32, "Cpu index too high"
     mask = 0
     for cpu in cpus:
-      mask |= (1 << cpu)
+      mask |= 1 << cpu
     return f"{mask:x}"
 
   def _pin_renderer_main_core(self, cpu: int) -> None:
     renderer_main_tid = self.cached_renderer_pid_tid.tid
-    self.browser_platform.sh("taskset", "-p", self._cpu_mask([cpu]),
-                             str(renderer_main_tid))
+    self.browser_platform.sh(
+      "taskset", "-p", self._cpu_mask([cpu]), str(renderer_main_tid)
+    )
 
   def get_default_result_path(self) -> pth.AnyPath:
     return super().get_default_result_path().parent / "simpleperf.perf.data"
 
   def setup(self) -> None:
     assert self.browser.platform.is_android, (
-        f"Expected Android platform, found {type(self.browser.platform)}.")
+      f"Expected Android platform, found {type(self.browser.platform)}."
+    )
     assert self.browser.attributes().is_chromium_based, (
-        f"Expected Chromium-based browser, found {type(self.browser)}.")
-    if (self.browser.platform.is_android and
-        self.browser.attributes().is_chromium_based):
+      f"Expected Chromium-based browser, found {type(self.browser)}."
+    )
+    if (
+      self.browser.platform.is_android
+      and self.browser.attributes().is_chromium_based
+    ):
       browser = self.browser
       assert isinstance(browser, ChromiumBased)
       # Set `--enable-benchmarking-extension` explicitly for
@@ -123,9 +129,10 @@ class AndroidProfilingContext(PosixProfilingContext):
   def stop_process(self) -> None:
     if self._profiling_process:
       self.browser_platform.terminate_gracefully(
-          self._profiling_process,
-          timeout=30,
-          signal=self.browser_platform.signals.SIGINT)
+        self._profiling_process,
+        timeout=30,
+        signal=self.browser_platform.signals.SIGINT,
+      )
       self._profiling_process = None
       self.run.performance_mark("probe-profiling-stop")
 
@@ -141,18 +148,18 @@ class AndroidProfilingContext(PosixProfilingContext):
 
 
 def generate_simpleperf_command_line(
-    target: TargetMode,
-    app_name: str,
-    renderer_pid: int | None,
-    renderer_main_tid: int | None,
-    call_graph_mode: CallGraphMode,
-    frequency: int | str | None,
-    count: int | None,
-    cpus: tuple[int, ...],
-    events: tuple[str, ...],
-    grouped_events: tuple[str, ...],
-    add_counters: tuple[str, ...],
-    output_path: pth.AnyPath,
+  target: TargetMode,
+  app_name: str,
+  renderer_pid: int | None,
+  renderer_main_tid: int | None,
+  call_graph_mode: CallGraphMode,
+  frequency: int | str | None,
+  count: int | None,
+  cpus: tuple[int, ...],
+  events: tuple[str, ...],
+  grouped_events: tuple[str, ...],
+  add_counters: tuple[str, ...],
+  output_path: pth.AnyPath,
 ) -> ListCmdArgs:
   command_line: ListCmdArgs = ["simpleperf", "record"]
   if target == TargetMode.RENDERER_MAIN_ONLY:
@@ -173,7 +180,8 @@ def generate_simpleperf_command_line(
     command_line.extend(["--call-graph", "dwarf", "--post-unwind=yes"])
   else:
     assert call_graph_mode == CallGraphMode.NO_CALL_GRAPH, (
-        f"Invalid call_graph_mode: {call_graph_mode}")
+      f"Invalid call_graph_mode: {call_graph_mode}"
+    )
   if frequency is not None:
     command_line.extend(["-f", str(frequency)])
   if count is not None:

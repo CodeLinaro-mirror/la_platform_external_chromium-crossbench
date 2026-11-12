@@ -11,7 +11,6 @@ from tests import test_helper
 
 
 class HjsonTestCase(unittest.TestCase):
-
   def test_different_keys_success(self):
 
     parsed = cb_hjson.loads_unique_keys("""

@@ -14,8 +14,8 @@ if TYPE_CHECKING:
   from presubmit_support import InputApi, OutputApi
 
 VISITORS: Final[tuple[type[AstCheckVisitor], ...]] = (
-    BannedBuiltinVisitor,
-    ConstantFinalVisitor,
+  BannedBuiltinVisitor,
+  ConstantFinalVisitor,
 )
 
 

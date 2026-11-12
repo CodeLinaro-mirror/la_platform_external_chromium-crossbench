@@ -12,7 +12,6 @@ from tests import test_helper
 
 
 class TimingTestCase(unittest.TestCase):
-
   def test_default_instance(self):
     t = Timing()
     self.assertEqual(t.unit, dt.timedelta(seconds=1))
@@ -23,24 +22,32 @@ class TimingTestCase(unittest.TestCase):
 
   def test_to_json(self):
     t = Timing()
-    self.assertDictEqual(t.to_json(), {
+    self.assertDictEqual(
+      t.to_json(),
+      {
         "coolDownTime": 1.0,
         "runTimeout": 0.0,
         "timeoutUnit": 0.0,
         "unit": 1.0,
-    })
+      },
+    )
     t = Timing(
-        unit=dt.timedelta(seconds=10), timeout_unit=dt.timedelta(seconds=11))
-    self.assertDictEqual(t.to_json(), {
+      unit=dt.timedelta(seconds=10), timeout_unit=dt.timedelta(seconds=11)
+    )
+    self.assertDictEqual(
+      t.to_json(),
+      {
         "coolDownTime": 1.0,
         "runTimeout": 0.0,
         "timeoutUnit": 11.0,
         "unit": 10.0,
-    })
+      },
+    )
 
   def test_default_instance_slowdown(self):
     t = Timing(
-        unit=dt.timedelta(seconds=10), timeout_unit=dt.timedelta(seconds=11))
+      unit=dt.timedelta(seconds=10), timeout_unit=dt.timedelta(seconds=11)
+    )
     self.assertEqual(t.unit, dt.timedelta(seconds=10))
     self.assertEqual(t.timeout_unit, dt.timedelta(seconds=11))
     self.assertEqual(t.timedelta(10), dt.timedelta(seconds=100))
@@ -111,7 +118,8 @@ class TimingTestCase(unittest.TestCase):
     t = Timing(unit=dt.timedelta(seconds=10))
     self.assertEqual(t.timedelta(12).total_seconds(), 120)
     self.assertEqual(
-        t.timedelta(dt.timedelta(minutes=1.5)).total_seconds(), 900)
+      t.timedelta(dt.timedelta(minutes=1.5)).total_seconds(), 900
+    )
     with self.assertRaises(ValueError):
       _ = t.timedelta(-1)
 
@@ -125,16 +133,22 @@ class TimingTestCase(unittest.TestCase):
     t = Timing()
     self.assertEqual(t.timedelta(12, absolute_time=True).total_seconds(), 12)
     self.assertEqual(
-        t.timedelta(dt.timedelta(minutes=1.5),
-                    absolute_time=True).total_seconds(), 90)
+      t.timedelta(
+        dt.timedelta(minutes=1.5), absolute_time=True
+      ).total_seconds(),
+      90,
+    )
     with self.assertRaises(ValueError):
       _ = t.timedelta(-1)
 
     t = Timing(unit=dt.timedelta(seconds=10))
     self.assertEqual(t.timedelta(12, absolute_time=True).total_seconds(), 12)
     self.assertEqual(
-        t.timedelta(dt.timedelta(minutes=1.5),
-                    absolute_time=True).total_seconds(), 90)
+      t.timedelta(
+        dt.timedelta(minutes=1.5), absolute_time=True
+      ).total_seconds(),
+      90,
+    )
     with self.assertRaises(ValueError):
       _ = t.timedelta(-1)
 
@@ -142,11 +156,13 @@ class TimingTestCase(unittest.TestCase):
     t = Timing()
     self.assertEqual(t.timedelta(dt.timedelta.max), dt.timedelta.max)
     self.assertEqual(
-        t.timedelta(dt.timedelta.max, absolute_time=True), dt.timedelta.max)
+      t.timedelta(dt.timedelta.max, absolute_time=True), dt.timedelta.max
+    )
 
   def test_timeout_timing(self):
     t = Timing(
-        unit=dt.timedelta(seconds=2), timeout_unit=dt.timedelta(seconds=10))
+      unit=dt.timedelta(seconds=2), timeout_unit=dt.timedelta(seconds=10)
+    )
     self.assertEqual(t.timedelta(12).total_seconds(), 24)
     self.assertEqual(t.timeout_timedelta(12).total_seconds(), 120)
 
@@ -157,24 +173,29 @@ class TimingTestCase(unittest.TestCase):
 
   def test_timeout_timing_absolute(self):
     t = Timing(
-        unit=dt.timedelta(seconds=1), timeout_unit=dt.timedelta(seconds=10))
+      unit=dt.timedelta(seconds=1), timeout_unit=dt.timedelta(seconds=10)
+    )
     self.assertEqual(t.timedelta(12, absolute_time=True).total_seconds(), 12)
     self.assertEqual(
-        t.timeout_timedelta(12, absolute_time=True).total_seconds(), 12)
+      t.timeout_timedelta(12, absolute_time=True).total_seconds(), 12
+    )
 
   def test_timeout_timing_fallback_absolute(self):
     t = Timing(unit=dt.timedelta(seconds=2))
     self.assertEqual(t.timedelta(12, absolute_time=True).total_seconds(), 12)
     self.assertEqual(
-        t.timeout_timedelta(12, absolute_time=True).total_seconds(), 12)
+      t.timeout_timedelta(12, absolute_time=True).total_seconds(), 12
+    )
 
   def test_timeout_timing_invalid(self):
     with self.assertRaises(ValueError):
       _ = Timing(
-          unit=dt.timedelta(seconds=1), timeout_unit=dt.timedelta(seconds=0.1))
+        unit=dt.timedelta(seconds=1), timeout_unit=dt.timedelta(seconds=0.1)
+      )
     with self.assertRaises(ValueError):
       _ = Timing(
-          unit=dt.timedelta(seconds=1), timeout_unit=dt.timedelta(seconds=-1))
+        unit=dt.timedelta(seconds=1), timeout_unit=dt.timedelta(seconds=-1)
+      )
 
   def test_no_timeout(self):
     self.assertFalse(Timing().has_no_timeout)

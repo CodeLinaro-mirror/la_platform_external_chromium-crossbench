@@ -28,15 +28,18 @@ class ProbeAction(BaseProbeAction):
 
   probe: str = dataclasses.field(default="", kw_only=True)
   kwargs: immutabledict[str, object] = dataclasses.field(
-      default_factory=immutabledict)
+    default_factory=immutabledict
+  )
 
   @classmethod
   @override
-  def create(cls: type[Self],
-             probe: str = "",
-             kwargs: Mapping[str, object] | None = None,
-             timeout: dt.timedelta = ACTION_TIMEOUT,
-             index: int = 0) -> Self:
+  def create(
+    cls: type[Self],
+    probe: str = "",
+    kwargs: Mapping[str, object] | None = None,
+    timeout: dt.timedelta = ACTION_TIMEOUT,
+    index: int = 0,
+  ) -> Self:
     kwargs_immutable: immutabledict[str, object]
     if kwargs is None:
       kwargs_immutable = immutabledict()
@@ -45,7 +48,8 @@ class ProbeAction(BaseProbeAction):
     else:
       kwargs_immutable = immutabledict(kwargs)
     return cls(
-        probe=probe, kwargs=kwargs_immutable, timeout=timeout, index=index)
+      probe=probe, kwargs=kwargs_immutable, timeout=timeout, index=index
+    )
 
   @classmethod
   @override
@@ -53,9 +57,10 @@ class ProbeAction(BaseProbeAction):
   def config_parser(cls: type[Self]) -> ConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
-        "probe",
-        type=ObjectParser.non_empty_str,
-        required=True,
-        choices=PROBE_LOOKUP.keys())
+      "probe",
+      type=ObjectParser.non_empty_str,
+      required=True,
+      choices=PROBE_LOOKUP.keys(),
+    )
     parser.add_argument("kwargs", type=immutabledict, default=immutabledict())
     return parser

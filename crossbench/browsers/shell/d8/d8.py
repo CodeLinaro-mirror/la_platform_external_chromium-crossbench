@@ -31,7 +31,6 @@ if TYPE_CHECKING:
 
 
 class D8(ShellBrowser):
-
   @classmethod
   @override
   def type_name(cls) -> str:
@@ -40,20 +39,25 @@ class D8(ShellBrowser):
   @classmethod
   @override
   def attributes(cls) -> BrowserAttributes:
-    return (super().attributes()
-            | BrowserAttributes.D8
-            | BrowserAttributes.CHROMIUM_BASED)
+    return (
+      super().attributes()
+      | BrowserAttributes.D8
+      | BrowserAttributes.CHROMIUM_BASED
+    )
 
   @override
-  def __init__(self,
-               label: str,
-               path: pth.AnyPath | None = None,
-               settings: Settings | None = None) -> None:
+  def __init__(
+    self,
+    label: str,
+    path: pth.AnyPath | None = None,
+    settings: Settings | None = None,
+  ) -> None:
     super().__init__(label, path, settings)
     if not self.network.is_local_file_server:
       raise RuntimeError(
-          f"{self.type_name()} wrapper only works with --local-file-server "
-          f"but got {self.network} network.")
+        f"{self.type_name()} wrapper only works with --local-file-server "
+        f"but got {self.network} network."
+      )
     self._d8_shell: D8Shell | None = None
     self._url_mapper: D8URLMapper = DummyURLMapper(self)
 
@@ -92,9 +96,9 @@ class D8(ShellBrowser):
 
   @classmethod
   @override
-  def default_flags(cls,
-                    initial_data: FlagsData = None,
-                    milestone: int = 0) -> ChromeFlags:
+  def default_flags(
+    cls, initial_data: FlagsData = None, milestone: int = 0
+  ) -> ChromeFlags:
     del milestone
     return ChromeFlags(initial_data)
 
@@ -105,9 +109,9 @@ class D8(ShellBrowser):
     return self._flags.js_flags
 
   @override
-  def start(self,
-            session: BrowserSessionRunGroup,
-            startup_urls: Sequence[str] = ()) -> None:
+  def start(
+    self, session: BrowserSessionRunGroup, startup_urls: Sequence[str] = ()
+  ) -> None:
     super().start(session, startup_urls=startup_urls)
     assert not startup_urls
     js_flags_copy = self.js_flags.copy()
@@ -116,10 +120,11 @@ class D8(ShellBrowser):
 
     self._url_mapper = D8URLMapper.create(self, session)
     self._d8_shell = D8Shell(
-        self.platform,
-        self.d8_path,
-        flags=list(js_flags_copy),
-        cwd=self.network.path)
+      self.platform,
+      self.d8_path,
+      flags=list(js_flags_copy),
+      cwd=self.network.path,
+    )
 
     self._pid = self._d8_shell.pid
     self._is_running = True
@@ -141,10 +146,10 @@ class D8(ShellBrowser):
 
   @override
   def js(
-      self,
-      script: str,
-      timeout: dt.timedelta | None = None,
-      arguments: Sequence[object] = (),
+    self,
+    script: str,
+    timeout: dt.timedelta | None = None,
+    arguments: Sequence[object] = (),
   ) -> object:
     logging.debug("JS: %s", script)
     args_str: str = json.dumps(arguments)
@@ -170,16 +175,17 @@ class D8(ShellBrowser):
       unquoted = json_result.strip()[1:-1]
       json_decoded = json.loads(unquoted)
       assert len(json_decoded) == 2, (
-          f"Expectedtuple[Any, Any], got {type(json_decoded)}: {json_decoded}")
+        f"Expectedtuple[Any, Any], got {type(json_decoded)}: {json_decoded}"
+      )
       result, is_success = json_decoded
     if not is_success:
       raise RuntimeError(f"D8 JS Exception: {result}")
     return result
 
   @override
-  def show_url(self,
-               url: str,
-               target: WindowTarget = WindowTarget.SELF) -> None:
+  def show_url(
+    self, url: str, target: WindowTarget = WindowTarget.SELF
+  ) -> None:
     if target != WindowTarget.SELF:
       raise NotImplementedError(f"D8 show_url does not support target {target}")
     if url.startswith("data:text/html;"):

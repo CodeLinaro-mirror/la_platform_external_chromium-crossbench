@@ -14,7 +14,6 @@ from tests.crossbench.base import CrossbenchFakeFsTestCase
 
 
 class FormatMetricTestCase(unittest.TestCase):
-
   def test_no_stdev(self):
     self.assertEqual(Metric.format(100), "100")
     self.assertEqual(Metric.format(0), "0")
@@ -38,15 +37,17 @@ class FormatMetricTestCase(unittest.TestCase):
     self.assertEqual(Metric.format(value, percent * 1.2345), "100.1 ± 1.2%")
     self.assertEqual(Metric.format(value, percent * 0.12345), "100.12 ± 0.12%")
     self.assertEqual(
-        Metric.format(value, percent * 0.012345), "100.123 ± 0.012%")
+      Metric.format(value, percent * 0.012345), "100.123 ± 0.012%"
+    )
     self.assertEqual(
-        Metric.format(value, percent * 0.0012345), "100.1235 ± 0.0012%")
+      Metric.format(value, percent * 0.0012345), "100.1235 ± 0.0012%"
+    )
     self.assertEqual(
-        Metric.format(value, percent * 0.00012345), "100.12346 ± 0.00012%")
+      Metric.format(value, percent * 0.00012345), "100.12346 ± 0.00012%"
+    )
 
 
 class MetricTestCase(unittest.TestCase):
-
   def test_empty(self):
     values = Metric()
     self.assertTrue(values.is_numeric)
@@ -136,7 +137,6 @@ class MetricTestCase(unittest.TestCase):
 
 
 class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
-
   def test_empty(self):
     merger = MetricsMerger()
     self.assertDictEqual(merger.to_json(), {})
@@ -161,13 +161,13 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
 
   def test_add_hierarchical(self):
     input_data = {
+      "a": {
         "a": {
-            "a": {
-                "a": 1,
-                "b": 2,
-            },
+          "a": 1,
+          "b": 2,
         },
-        "b": 2,
+      },
+      "b": 2,
     }
     merger = MetricsMerger()
     merger.add(input_data)
@@ -180,16 +180,16 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
   def test_repeated_numeric(self):
     merger = MetricsMerger()
     input_data = {
-        "a": {
-            "aa": 1,
-            "ab": 2,
+      "a": {
+        "aa": 1,
+        "ab": 2,
+      },
+      "b": 3,
+      "c": {
+        "cc": {
+          "ccc": 4,
         },
-        "b": 3,
-        "c": {
-            "cc": {
-                "ccc": 4,
-            },
-        },
+      },
     }
     merger.add(input_data)
     merger.add(input_data)
@@ -200,8 +200,12 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
     self.assertSequenceEqual(data["b"].values, [3, 3])
     self.assertSequenceEqual(data["c/cc/ccc"].values, [4, 4])
     json_data = merger.to_json()
-    for key, expected in (("a/aa", [1, 1]), ("a/ab", [2, 2]), ("b", [3, 3]),
-                          ("c/cc/ccc", [4, 4])):
+    for key, expected in (
+      ("a/aa", [1, 1]),
+      ("a/ab", [2, 2]),
+      ("b", [3, 3]),
+      ("c/cc/ccc", [4, 4]),
+    ):
       entry = json_data[key]
       self.assertIsInstance(entry, dict)
       values = entry["values"]
@@ -231,20 +235,23 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
     self.assertSequenceEqual(data["a/ab/cccA"].values, ["cccA", "cccA"])
     self.assertSequenceEqual(data["a/ab/cccB"].values, ["cccB", "cccB"])
     json_data = merger.to_json()
-    self.assertDictEqual(json_data, {
+    self.assertDictEqual(
+      json_data,
+      {
         "a/aa": "a.aa",
         "a/ab/cccA": "cccA",
         "a/ab/cccB": "cccB",
-    })
+      },
+    )
 
   BASIC_NESTED_DATA = {
+    "a": {
       "a": {
-          "a": {
-              "a": 1,
-              "b": 2,
-          },
+        "a": 1,
+        "b": 2,
       },
-      "b": 3,
+    },
+    "b": 3,
   }
 
   def test_custom_key_fn(self):
@@ -268,8 +275,9 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
     with path_b.open("w", encoding="utf-8") as f:
       json.dump(merger.to_json(), f)
 
-    merger = MetricsMerger.merge_json_list([path_a, path_b],
-                                           merge_duplicate_paths=True)
+    merger = MetricsMerger.merge_json_list(
+      [path_a, path_b], merge_duplicate_paths=True
+    )
     data = merger.data
     self.assertSequenceEqual(list(data.keys()), ["a/a/a", "a/a/b", "b"])
     self.assertSequenceEqual(data["a/a/a"].values, [1, 1])
@@ -277,8 +285,9 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
     self.assertSequenceEqual(data["b"].values, [3, 3])
 
     # All duplicate entries are ignored
-    merger = MetricsMerger.merge_json_list([path_a, path_b],
-                                           merge_duplicate_paths=False)
+    merger = MetricsMerger.merge_json_list(
+      [path_a, path_b], merge_duplicate_paths=False
+    )
     self.assertSequenceEqual(list(merger.data.keys()), [])
 
   def test_merge_serialized_different_data(self):
@@ -291,15 +300,17 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
     with path_b.open("w", encoding="utf-8") as f:
       json.dump(merger_b.to_json(), f)
 
-    merger = MetricsMerger.merge_json_list([path_a, path_b],
-                                           merge_duplicate_paths=True)
+    merger = MetricsMerger.merge_json_list(
+      [path_a, path_b], merge_duplicate_paths=True
+    )
     data = merger.data
     self.assertSequenceEqual(list(data.keys()), ["a/a", "a/b"])
     self.assertSequenceEqual(data["a/a"].values, [1])
     self.assertSequenceEqual(data["a/b"].values, [2])
 
-    merger = MetricsMerger.merge_json_list([path_a, path_b],
-                                           merge_duplicate_paths=False)
+    merger = MetricsMerger.merge_json_list(
+      [path_a, path_b], merge_duplicate_paths=False
+    )
     data = merger.data
     self.assertSequenceEqual(list(data.keys()), ["a/a", "a/b"])
 
@@ -307,63 +318,75 @@ class MetricsMergerTestCase(CrossbenchFakeFsTestCase):
     merger = MetricsMerger()
     merger.add(self.BASIC_NESTED_DATA)
     csv = CSVFormatter(
-        merger, lambda metric: round(metric.geomean, 10),
-        include_parts=False).table
-    self.assertSequenceEqual(csv, [
+      merger, lambda metric: round(metric.geomean, 10), include_parts=False
+    ).table
+    self.assertSequenceEqual(
+      csv,
+      [
         ("a/a/a", 1.0),
         ("a/a/b", 2.0),
         ("b", 3.0),
-    ])
+      ],
+    )
 
   def test_to_csv_path(self) -> None:
     merger = MetricsMerger()
     merger.add(self.BASIC_NESTED_DATA)
     csv = CSVFormatter(
-        merger, lambda metric: round(metric.geomean, 10),
-        include_parts=True).table
-    self.assertSequenceEqual(csv, [
+      merger, lambda metric: round(metric.geomean, 10), include_parts=True
+    ).table
+    self.assertSequenceEqual(
+      csv,
+      [
         ("a/a/a", "a", "a", "a", 1.0),
         ("a/a/b", "a", "a", "b", 2.0),
         ("b", "b", "", "", 3.0),
-    ])
+      ],
+    )
 
   def test_to_csv_header(self) -> None:
     merger = MetricsMerger()
     merger.add({"a/b/c": 1, "d": 2})
     headers = [
-        ("a", "custom", "header", "line"),
-        (1, 2, 3, 4, 5),
+      ("a", "custom", "header", "line"),
+      (1, 2, 3, 4, 5),
     ]
     csv = CSVFormatter(
-        merger,
-        lambda metric: metric.geomean,
-        headers=headers,
-        include_parts=True).table
-    self.assertSequenceEqual(csv, [
+      merger, lambda metric: metric.geomean, headers=headers, include_parts=True
+    ).table
+    self.assertSequenceEqual(
+      csv,
+      [
         ("a", "", "", "", "custom", "header", "line"),
         (1, "", "", "", 2, 3, 4, 5),
         ("a/b/c", "a", "b", "c", 1.0),
         ("d", "d", "", "", 2.0),
-    ])
+      ],
+    )
 
 
 class CSVFormatterTestCase(unittest.TestCase):
-
   def test_format(self):
-    metrics = MetricsMerger({
+    metrics = MetricsMerger(
+      {
         "Total/average": 10,
         "Total/score": 20,
         "cdjs/average": 30,
         "cdjs/score": 40,
-    })
-    table = CSVFormatter(metrics,
-                         lambda metric: round(metric.geomean, 10)).table
-    self.assertSequenceEqual(table, [
+      }
+    )
+    table = CSVFormatter(
+      metrics, lambda metric: round(metric.geomean, 10)
+    ).table
+    self.assertSequenceEqual(
+      table,
+      [
         ("Total/average", "Total", "average", 10.0),
         ("Total/score", "Total", "score", 20.0),
         ("cdjs/average", "cdjs", "average", 30.0),
         ("cdjs/score", "cdjs", "score", 40.0),
-    ])
+      ],
+    )
 
 
 if __name__ == "__main__":

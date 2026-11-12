@@ -14,10 +14,14 @@ import pandas as pd
 from crossbench import config
 from crossbench import path as pth
 from crossbench.benchmarks.loading.page.combined import CombinedPage
-from crossbench.benchmarks.loadline.loadline import LoadLineBenchmark, \
-    LoadLineProbe
-from crossbench.benchmarks.loadline.loadline_2 import N_EXPECTED_METRICS, \
-    process_scores
+from crossbench.benchmarks.loadline.loadline import (
+  LoadLineBenchmark,
+  LoadLineProbe,
+)
+from crossbench.benchmarks.loadline.loadline_2 import (
+  N_EXPECTED_METRICS,
+  process_scores,
+)
 from crossbench.probes.js import JSProbe
 from crossbench.probes.probe_context import ProbeContext
 
@@ -48,12 +52,13 @@ class Metric(StrEnum):
 
 
 def split_ts_per_story_and_event(
-    j: dict[str, float]) -> dict[str, dict[Event, float]]:
+  j: dict[str, float],
+) -> dict[str, dict[Event, float]]:
   ts_per_story_and_event: dict[str, dict[Event, float]] = defaultdict(dict)
   for key, value in j.items():
     for event in Event:
       if key.endswith(event):
-        story = key[:-len(event) - 1]
+        story = key[: -len(event) - 1]
         ts_per_story_and_event[story][event] = value
         break
   return ts_per_story_and_event
@@ -75,20 +80,21 @@ class LoadLine2WebApiProbe(LoadLineProbe):
   # `expected_metrics` is overridden in tests.
   @override
   def _compute_score(
-      self,
-      group: BrowsersRunGroup,
-      expected_metrics: int = N_EXPECTED_METRICS,
+    self,
+    group: BrowsersRunGroup,
+    expected_metrics: int = N_EXPECTED_METRICS,
   ) -> pd.DataFrame:
     timings: dict[str, list] = {
-        "cb_browser": [],
-        "metric": [],
-        "cb_run": [],
-        "value": [],
+      "cb_browser": [],
+      "metric": [],
+      "cb_run": [],
+      "value": [],
     }
     browsers = list(group.browsers)
     assert len(browsers) == 1, (
-        "Attempting to use 2 different browsers currently fails when "
-        "restarting WPR, so the score computation assumes a single browser.")
+      "Attempting to use 2 different browsers currently fails when "
+      "restarting WPR, so the score computation assumes a single browser."
+    )
     for run_number, run in enumerate(group.runs):
       js_results = run.results.get_by_name(JSProbe.NAME)
       if not js_results:
@@ -100,7 +106,8 @@ class LoadLine2WebApiProbe(LoadLineProbe):
         j = json.load(file)
 
       ts_per_story_and_event: dict[str, dict[Event, float]] = (
-          split_ts_per_story_and_event(j))
+        split_ts_per_story_and_event(j)
+      )
 
       new_metrics = []
       new_values = []
@@ -111,11 +118,12 @@ class LoadLine2WebApiProbe(LoadLineProbe):
           break
 
         visual_delay = (
-            ts_per_event[Event.VISUAL_END] -
-            ts_per_event[Event.NAVIGATION_START])
+          ts_per_event[Event.VISUAL_END] - ts_per_event[Event.NAVIGATION_START]
+        )
         interactive_delay = (
-            ts_per_event[Event.INTERACTIVE_END] -
-            ts_per_event[Event.NAVIGATION_START])
+          ts_per_event[Event.INTERACTIVE_END]
+          - ts_per_event[Event.NAVIGATION_START]
+        )
         if visual_delay < 0 or interactive_delay < 0:
           broken_metrics = True
           break
@@ -139,7 +147,8 @@ class LoadLine2WebApiProbe(LoadLineProbe):
       timings["value"].extend(new_values)
 
     return process_scores(
-        pd.DataFrame.from_dict(timings), expected_metrics=expected_metrics)
+      pd.DataFrame.from_dict(timings), expected_metrics=expected_metrics
+    )
 
   @override
   def _compute_breakdown(self, group: BrowsersRunGroup) -> pd.DataFrame:
@@ -147,7 +156,6 @@ class LoadLine2WebApiProbe(LoadLineProbe):
 
 
 class LoadLine2WebApiProbeContext(ProbeContext[LoadLine2WebApiProbe]):
-
   def start(self) -> None:
     pass
 
@@ -179,8 +187,9 @@ class LoadLine2WebApiBenchmark(LoadLineBenchmark):
 
   @classmethod
   @override
-  def extra_flags(cls, browser_attributes: BrowserAttributes,
-                  story: BaseStory) -> Flags:
+  def extra_flags(
+    cls, browser_attributes: BrowserAttributes, story: BaseStory
+  ) -> Flags:
     flags: Flags = super().extra_flags(browser_attributes, story)
     if browser_attributes.is_chromium_based:
       # Makes chrome more consistent regarding whether it creates a new
@@ -191,8 +200,9 @@ class LoadLine2WebApiBenchmark(LoadLineBenchmark):
 
 class LoadLine2WebApiPhoneBenchmark(LoadLine2WebApiBenchmark):
   """A version of LoadLine 2 benchmark that uses pure Web API (no Chromium-only
-   features) to collect metrics.
+  features) to collect metrics.
   """
+
   NAME: ClassVar = "loadline2-webapi-phone"
 
   @classmethod
@@ -212,8 +222,8 @@ class LoadLine2WebApiPhoneBenchmark(LoadLine2WebApiBenchmark):
 
 
 class LoadLine2WebApiPhoneDebugBenchmark(LoadLine2WebApiPhoneBenchmark):
-  """LoadLine 2 WebAPI benchmark, with perfetto tracing for debugging.
-  """
+  """LoadLine 2 WebAPI benchmark, with perfetto tracing for debugging."""
+
   NAME: ClassVar = "loadline2-webapi-phone-debug"
   DEFAULT_REPETITIONS: ClassVar = 1
 
@@ -230,8 +240,9 @@ class LoadLine2WebApiPhoneDebugBenchmark(LoadLine2WebApiPhoneBenchmark):
 
 class LoadLine2WebApiTabletBenchmark(LoadLine2WebApiBenchmark):
   """A version of LoadLine 2 benchmark that uses pure Web API (no Chromium-only
-   features) to collect metrics, with tablet workloads.
+  features) to collect metrics, with tablet workloads.
   """
+
   NAME: ClassVar = "loadline2-webapi-tablet"
 
   @classmethod
@@ -251,8 +262,9 @@ class LoadLine2WebApiTabletBenchmark(LoadLine2WebApiBenchmark):
 
   @classmethod
   @override
-  def extra_flags(cls, browser_attributes: BrowserAttributes,
-                  story: BaseStory) -> Flags:
+  def extra_flags(
+    cls, browser_attributes: BrowserAttributes, story: BaseStory
+  ) -> Flags:
     flags: Flags = super().extra_flags(browser_attributes, story)
     if browser_attributes.is_chromium_based:
       flags.set("--request-desktop-sites")
@@ -260,8 +272,8 @@ class LoadLine2WebApiTabletBenchmark(LoadLine2WebApiBenchmark):
 
 
 class LoadLine2WebApiTabletDebugBenchmark(LoadLine2WebApiTabletBenchmark):
-  """LoadLine 2 WebAPI benchmark, with perfetto tracing for debugging.
-  """
+  """LoadLine 2 WebAPI benchmark, with perfetto tracing for debugging."""
+
   NAME: ClassVar = "loadline2-webapi-tablet-debug"
   DEFAULT_REPETITIONS: ClassVar = 1
 

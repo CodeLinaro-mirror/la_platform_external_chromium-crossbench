@@ -16,10 +16,12 @@ if TYPE_CHECKING:
 
 
 def _batch_trace_process_config() -> str:
-  return json.dumps({
+  return json.dumps(
+    {
       "queries": ["loadline/benchmark_score", "loadline/breakdown"],
       "batch": True,
-  })
+    }
+  )
 
 
 class BenchmarkType(enum.StrEnum):
@@ -32,23 +34,23 @@ def _verify_metrics(out_dir, benchmark_type: BenchmarkType, only_total=False):
   match benchmark_type:
     case BenchmarkType.PHONE:
       expected_titles = [
-          "browser",
-          "TOTAL_SCORE",
-          "amazon_product",
-          "cnn_article",
-          "globo_homepage",
-          "google_search_result",
-          "wikipedia_article",
+        "browser",
+        "TOTAL_SCORE",
+        "amazon_product",
+        "cnn_article",
+        "globo_homepage",
+        "google_search_result",
+        "wikipedia_article",
       ]
     case BenchmarkType.TABLET:
       expected_titles = [
-          "browser",
-          "TOTAL_SCORE",
-          "amazon_product",
-          "cnn_article",
-          "google_doc",
-          "google_search_result",
-          "youtube_video",
+        "browser",
+        "TOTAL_SCORE",
+        "amazon_product",
+        "cnn_article",
+        "google_doc",
+        "google_search_result",
+        "youtube_video",
       ]
     case _:
       raise AssertionError(f"Invalid benchmark type {benchmark_type}")
@@ -59,7 +61,8 @@ def _verify_metrics(out_dir, benchmark_type: BenchmarkType, only_total=False):
 
     titles = lines[0].strip().split(",")
     assert titles == expected_titles, (
-        f"Titles mismatch: expected {expected_titles}, got {titles}")
+      f"Titles mismatch: expected {expected_titles}, got {titles}"
+    )
 
     values = lines[1].split(",")
     assert len(values) == len(titles)
@@ -77,16 +80,17 @@ def _verify_breakdown(out_dir):
 
     titles = lines[0].strip().split(",")
     expected_titles = [
-        "browser",
-        "story",
-        "os",
-        "renderer",
-        "compositor",
-        "gpu",
-        "surfaceflinger",
+      "browser",
+      "story",
+      "os",
+      "renderer",
+      "compositor",
+      "gpu",
+      "surfaceflinger",
     ]
     assert titles == expected_titles, (
-        f"Titles mismatch: expected {expected_titles}, got {titles}")
+      f"Titles mismatch: expected {expected_titles}, got {titles}"
+    )
 
     has_values = False
     for line in lines[1:]:
@@ -106,11 +110,13 @@ def test_loadline_tablet(browser_config, test_env: TestEnv) -> None:
   _test_loadline_default(browser_config, BenchmarkType.TABLET, test_env)
 
 
-def _test_loadline_default(browser_config: str, benchmark_type: BenchmarkType,
-                           test_env: TestEnv) -> None:
+def _test_loadline_default(
+  browser_config: str, benchmark_type: BenchmarkType, test_env: TestEnv
+) -> None:
   cli = CrossBenchCLI()
   out_dir = test_env.results_dir / f"default_{benchmark_type}"
-  cli.run([
+  cli.run(
+    [
       benchmark_type,
       f"--browser={browser_config}",
       "--repeat=1",
@@ -118,7 +124,8 @@ def _test_loadline_default(browser_config: str, benchmark_type: BenchmarkType,
       f"--out-dir={out_dir}",
       "--debug",
       *list(test_env.cq_flags),
-  ])
+    ]
+  )
   # With only 1 repetition, there's a chance that one story won't produce a
   # metric. To avoid flaky failures, we only check the total score here.
   _verify_metrics(out_dir, benchmark_type, only_total=True)
@@ -130,7 +137,8 @@ def test_loadline_batch(browser_config, test_env: TestEnv) -> None:
   out_dir = test_env.results_dir
   # We run the benchmark with increased time units to account for
   # the slowness of emulators on test bots.
-  cli.run([
+  cli.run(
+    [
       BenchmarkType.PHONE,
       f"--browser={browser_config}",
       "--repeat=2",
@@ -139,7 +147,8 @@ def test_loadline_batch(browser_config, test_env: TestEnv) -> None:
       "--time-unit=3s",
       f"--probe=trace_processor:{_batch_trace_process_config()}",
       *list(test_env.cq_flags),
-  ])
+    ]
+  )
   _verify_metrics(out_dir, BenchmarkType.PHONE)
   _verify_breakdown(out_dir)
 

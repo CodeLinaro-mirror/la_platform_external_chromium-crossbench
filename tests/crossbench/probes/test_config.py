@@ -17,11 +17,11 @@ class MockProbe(Probe):
   """
   Probe DOC Text
   """
+
   NAME: ClassVar[str] = "mock-probe"
 
 
 class CustomArgType:
-
   def __init__(self, value):
     self.value = value
 
@@ -31,7 +31,6 @@ def custom_arg_type(value):
 
 
 class ProbeConfigTestCase(unittest.TestCase):
-
   def test_help_text(self):
     parser = ProbeConfigParser(MockProbe)
     parser.add_argument("bool", type=bool)
@@ -40,7 +39,8 @@ class ProbeConfigTestCase(unittest.TestCase):
     parser.add_argument("bool_list", type=bool, default=(False,), is_list=True)
     parser.add_argument("any_list", type=None, default=(1,), is_list=True)
     parser.add_argument(
-        "empty_default_list", type=None, default=[], is_list=True)
+      "empty_default_list", type=None, default=[], is_list=True
+    )
     parser.add_argument("custom_type", type=custom_arg_type)
     parser.add_argument("custom_help", type=bool, help="custom help")
     help_text = str(parser)
@@ -75,10 +75,8 @@ class ProbeConfigTestCase(unittest.TestCase):
       parser.add_argument("bool", type=bool, is_list=True, default=(1, 1))
     parser.add_argument("bool", type=bool, is_list=True, default=(True, False))
     parser.add_argument(
-        "custom_list",
-        type=lambda x: x + 1,
-        is_list=True,
-        default=(True, False))
+      "custom_list", type=lambda x: x + 1, is_list=True, default=(True, False)
+    )
 
   def test_bool_missing_property(self):
     parser = ProbeConfigParser(MockProbe)

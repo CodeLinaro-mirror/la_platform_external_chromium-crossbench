@@ -23,7 +23,6 @@ if TYPE_CHECKING:
 
 
 class TestProbeListConfig(BaseConfigTestCase):
-
   def parse_config(self, config_data) -> ProbeListConfig:
     probe_config_file = pth.LocalPath("/probe.config.hjson")
     with probe_config_file.open("w", encoding="utf-8") as f:
@@ -46,15 +45,17 @@ class TestProbeListConfig(BaseConfigTestCase):
 
   def test_single_v8_log(self):
     js_flags = ["--log-maps", "--log-function-events"]
-    config = self.parse_config({
+    config = self.parse_config(
+      {
         "probes": {
-            "v8.log": {
-                "prof": True,
-                "log_all": True,
-                "js_flags": js_flags,
-            },
+          "v8.log": {
+            "prof": True,
+            "log_all": True,
+            "js_flags": js_flags,
+          },
         },
-    })
+      }
+    )
     self.assertTrue(len(config.probes), 1)
     probe = config.probes[0]
     assert isinstance(probe, V8LogProbe)
@@ -65,13 +66,13 @@ class TestProbeListConfig(BaseConfigTestCase):
     file = pth.LocalPath("probe.config.hjson")
     js_flags = ["--log-maps", "--log-function-events"]
     config_data: JsonDict = {
-        "probes": {
-            "v8.log": {
-                "prof": True,
-                "log_all": True,
-                "js_flags": js_flags,
-            },
+      "probes": {
+        "v8.log": {
+          "prof": True,
+          "log_all": True,
+          "js_flags": js_flags,
         },
+      },
     }
     with file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
@@ -90,7 +91,7 @@ class TestProbeListConfig(BaseConfigTestCase):
     args = self.mock_args(probe_config=None, throw=True, wraps=False)
     # without ":" separator:
     args.probe = [
-        ProbeConfig.parse(f"v8.log{hjson.dumps(config_data)}"),
+      ProbeConfig.parse(f"v8.log{hjson.dumps(config_data)}"),
     ]
     config = ProbeListConfig.parse_args(args)
     self.assertTrue(len(config.probes), 1)
@@ -98,7 +99,7 @@ class TestProbeListConfig(BaseConfigTestCase):
     self.assertTrue(isinstance(probe, V8LogProbe))
     # with ":" separator:
     args.probe = [
-        ProbeConfig.parse(f"v8.log:{hjson.dumps(config_data)}"),
+      ProbeConfig.parse(f"v8.log:{hjson.dumps(config_data)}"),
     ]
     config = ProbeListConfig.parse_args(args)
     self.assertTrue(len(config.probes), 1)
@@ -117,7 +118,7 @@ class TestProbeListConfig(BaseConfigTestCase):
       hjson.dump(config_data, f)
     # without ":" separator:
     args.probe = [
-        ProbeConfig.parse(f"v8.log{probe_config_path.absolute()}"),
+      ProbeConfig.parse(f"v8.log{probe_config_path.absolute()}"),
     ]
     config_without_sep = ProbeListConfig.parse_args(args)
     self.assertEqual(len(config_without_sep.probes), 1)
@@ -125,7 +126,7 @@ class TestProbeListConfig(BaseConfigTestCase):
     self.assertIsInstance(probe_without_sep, V8LogProbe)
     # with ":" separator:
     args.probe = [
-        ProbeConfig.parse(f"v8.log:{probe_config_path}"),
+      ProbeConfig.parse(f"v8.log:{probe_config_path}"),
     ]
     config = ProbeListConfig.parse_args(args)
     self.assertEqual(len(config.probes), 1)
@@ -138,14 +139,15 @@ class TestProbeListConfig(BaseConfigTestCase):
     self.fs.create_file(win_mock_d8_file, contents=b"d8")
     win_config_data = {"d8_binary": win_mock_d8_file}
     win_probe_config_path = pth.AnyWindowsPath(
-        "C:/config/v8.probe.config.hjson")
+      "C:/config/v8.probe.config.hjson"
+    )
     probe_config_path = pth.LocalPath(str(win_probe_config_path))
     self.fs.create_file(probe_config_path)
     with probe_config_path.open("w", encoding="utf-8") as f:
       hjson.dump(win_config_data, f)
     # with ":" separator:
     args.probe = [
-        ProbeConfig.parse(f"v8.log:{win_probe_config_path}"),
+      ProbeConfig.parse(f"v8.log:{win_probe_config_path}"),
     ]
     config = ProbeListConfig.parse_args(args)
     self.assertEqual(len(config.probes), 1)
@@ -187,10 +189,11 @@ class TestProbeListConfig(BaseConfigTestCase):
     mock_dir.mkdir(parents=True)
     config_data = {"d8_binary": str(mock_dir)}
     args = self.mock_args(
-        probe=[ProbeConfig.parse(f"v8.log{hjson.dumps(config_data)}")],
-        probe_config=None,
-        throw=True,
-        wraps=False)
+      probe=[ProbeConfig.parse(f"v8.log{hjson.dumps(config_data)}")],
+      probe_config=None,
+      throw=True,
+      wraps=False,
+    )
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       ProbeListConfig.parse_args(args)
     self.assertIn(str(mock_dir), str(cm.exception))
@@ -198,10 +201,11 @@ class TestProbeListConfig(BaseConfigTestCase):
   def test_inline_config_non_existent_file(self):
     config_data = {"d8_binary": "does/not/exist/d8"}
     args = self.mock_args(
-        probe=[ProbeConfig.parse(f"v8.log{hjson.dumps(config_data)}")],
-        probe_config=None,
-        throw=True,
-        wraps=False)
+      probe=[ProbeConfig.parse(f"v8.log{hjson.dumps(config_data)}")],
+      probe_config=None,
+      throw=True,
+      wraps=False,
+    )
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       ProbeListConfig.parse_args(args)
     expected_path = pth.LocalPath("does/not/exist/d8")
@@ -210,16 +214,18 @@ class TestProbeListConfig(BaseConfigTestCase):
   def test_multiple_probes(self):
     powersampler_bin = pth.LocalPath("/powersampler.bin")
     powersampler_bin.touch()
-    config = self.parse_config({
+    config = self.parse_config(
+      {
         "probes": {
-            "v8.log": {
-                "log_all": True,
-            },
-            "powersampler": {
-                "bin_path": str(powersampler_bin),
-            },
+          "v8.log": {
+            "log_all": True,
+          },
+          "powersampler": {
+            "bin_path": str(powersampler_bin),
+          },
         },
-    })
+      }
+    )
     self.assertTrue(len(config.probes), 2)
     log_probe = config.probes[0]
     assert isinstance(log_probe, V8LogProbe)
@@ -261,7 +267,8 @@ class TestProbeListConfig(BaseConfigTestCase):
 
   def test_parse_args_single_probe_config(self):
     args = self.mock_args(
-        probe_config=None, probe=[ProbeConfig.parse("v8.log")])
+      probe_config=None, probe=[ProbeConfig.parse("v8.log")]
+    )
     probe_list = ProbeListConfig.parse_args(args)
     probes = probe_list.probes
     self.assertEqual(len(probes), 1)
@@ -270,11 +277,12 @@ class TestProbeListConfig(BaseConfigTestCase):
 
   def test_parse_args_multiple_probe_config(self):
     args = self.mock_args(
-        probe_config=None,
-        probe=[
-            ProbeConfig.parse("v8.log"),
-            ProbeConfig.parse("v8.rcs"),
-        ])
+      probe_config=None,
+      probe=[
+        ProbeConfig.parse("v8.log"),
+        ProbeConfig.parse("v8.rcs"),
+      ],
+    )
     probe_list = ProbeListConfig.parse_args(args)
     probes = probe_list.probes
     self.assertEqual(len(probes), 2)
@@ -294,7 +302,8 @@ class TestProbeListConfig(BaseConfigTestCase):
       with pth.LocalPath(config_file).open("w", encoding="utf-8") as f:
         hjson.dump({"probes": []}, f)
       args = self.mock_args(
-          probe_config=config_file, probe=[ProbeConfig.parse("v8.log")])
+        probe_config=config_file, probe=[ProbeConfig.parse("v8.log")]
+      )
       probe_list = ProbeListConfig.parse_args(args)
       probes = probe_list.probes
       self.assertEqual(len(probes), 1)
@@ -306,7 +315,8 @@ class TestProbeListConfig(BaseConfigTestCase):
       with pth.LocalPath(config_file).open("w", encoding="utf-8") as f:
         hjson.dump({"probes": ["v8.rcs"]}, f)
       args = self.mock_args(
-          probe_config=config_file, probe=[ProbeConfig.parse("v8.log")])
+        probe_config=config_file, probe=[ProbeConfig.parse("v8.log")]
+      )
       probe_list = ProbeListConfig.parse_args(args)
       probes = probe_list.probes
       self.assertEqual(len(probes), 2)
@@ -319,7 +329,8 @@ class TestProbeListConfig(BaseConfigTestCase):
       with pth.LocalPath(config_file).open("w", encoding="utf-8") as f:
         hjson.dump({"probes": ["v8.rcs"]}, f)
       args = self.mock_args(
-          probe_config=config_file, probe=[ProbeConfig.parse("v8.rcs")])
+        probe_config=config_file, probe=[ProbeConfig.parse("v8.rcs")]
+      )
       probe_list = ProbeListConfig.parse_args(args)
       probes = probe_list.probes
       self.assertEqual(len(probes), 1)
@@ -328,8 +339,8 @@ class TestProbeListConfig(BaseConfigTestCase):
 
   def test_merge_conflict_raw(self):
     probe_list_a = ProbeListConfig.from_probes(
-        [ProbeConfig.parse("v8.log"),
-         ProbeConfig.parse("v8.rcs")])
+      [ProbeConfig.parse("v8.log"), ProbeConfig.parse("v8.rcs")]
+    )
     probe_list_b = ProbeListConfig.from_probes([ProbeConfig.parse("v8.rcs")])
     with self.assertRaisesRegex(ValueError, "Duplicate"):
       probe_list_a.merge(probe_list_b)

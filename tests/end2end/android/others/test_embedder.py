@@ -15,14 +15,16 @@ if TYPE_CHECKING:
 
 
 def _browser_config(device_id, adb_path) -> str:
-  return json.dumps({
+  return json.dumps(
+    {
       "browser": "com.google.android.googlequicksearchbox",
       "driver": {
-          "type": "adb",
-          "device_id": device_id,
-          "adb_bin": adb_path,
+        "type": "adb",
+        "device_id": device_id,
+        "adb_bin": adb_path,
       },
-  })
+    }
+  )
 
 
 def _embedder_config() -> str:
@@ -33,18 +35,26 @@ def test_embedder(device_id, adb_path, test_env: TestEnv, adb_root) -> None:
   del adb_root
   browser_config = _browser_config(device_id, adb_path)
   CrossBenchCLI().run(
-      ("embedder", f"--browser={browser_config}", "--splashscreen=skip",
-       f"--cuj-config={test_env.root_dir}/config/team/woa/"
-       "embedder_cuj_config.hjson", "--embedder-process-name=googleapp",
-       f"--probe=embedder:{_embedder_config()}",
-       f"--out-dir={test_env.results_dir}") + test_env.cq_flags)
+    (
+      "embedder",
+      f"--browser={browser_config}",
+      "--splashscreen=skip",
+      f"--cuj-config={test_env.root_dir}/config/team/woa/"
+      "embedder_cuj_config.hjson",
+      "--embedder-process-name=googleapp",
+      f"--probe=embedder:{_embedder_config()}",
+      f"--out-dir={test_env.results_dir}",
+    )
+    + test_env.cq_flags
+  )
 
   with (test_env.results_dir / "embedder.csv").open() as csv:
     lines = csv.readlines()
     error_message = f"csv content: {lines}"
     assert "WSRT" in lines[-1], error_message
-    assert NumberParser.positive_zero_float(
-        lines[-1].split("\t")[-1]) > 0, error_message
+    assert NumberParser.positive_zero_float(lines[-1].split("\t")[-1]) > 0, (
+      error_message
+    )
 
 
 if __name__ == "__main__":

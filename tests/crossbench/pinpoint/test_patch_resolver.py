@@ -11,21 +11,21 @@ from crossbench.pinpoint import patch_resolver
 from tests import test_helper
 from tests.crossbench.pinpoint.http_requests_mixin import MockHttpRequestsMixin
 
-_TEST_PATCH: Final[
-    str] = "https://chromium-review.googlesource.com/c/chromium/src/+/12345"
+_TEST_PATCH: Final[str] = (
+  "https://chromium-review.googlesource.com/c/chromium/src/+/12345"
+)
 
 _TEST_PATCH_WITH_PATCHSET: Final[str] = _TEST_PATCH + "/6"
 
 
 class PatchResolverTest(MockHttpRequestsMixin):
-
   def setUp(self):
     super().setUp()
 
     def mock_get_side_effect(url, **kwargs):
       self.assertTrue(
-          url.startswith(
-              "https://chromium-review.googlesource.com/changes/12345"))
+        url.startswith("https://chromium-review.googlesource.com/changes/12345")
+      )
 
       mock_response = mock.Mock()
       mock_response.text = ")]}'\n{\"project\": \"chromium/src\"}"
@@ -41,8 +41,9 @@ class PatchResolverTest(MockHttpRequestsMixin):
           patch = protocol + path + c + "12345"
           self.assertEqual(patch_resolver.resolve_patch(patch), _TEST_PATCH)
           self.assertEqual(
-              patch_resolver.resolve_patch(patch + "/6"),
-              _TEST_PATCH_WITH_PATCHSET)
+            patch_resolver.resolve_patch(patch + "/6"),
+            _TEST_PATCH_WITH_PATCHSET,
+          )
 
   def test_resolve_patch_invalid(self):
     with self.assertRaises(ValueError):

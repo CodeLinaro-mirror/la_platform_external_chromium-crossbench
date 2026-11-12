@@ -16,7 +16,6 @@ from tests.crossbench.runner.helper import MockRun
 
 
 class RepoStatusProbeTestCase(CrossbenchFakeFsTestCase):
-
   def test_probe_name(self) -> None:
     probe = RepoStatusProbe()
     self.assertEqual(probe.name, "cb.repo_status")
@@ -43,7 +42,7 @@ class RepoStatusProbeTestCase(CrossbenchFakeFsTestCase):
       return mock.MagicMock()
 
     runner.platform.crossbench_details.return_value = {
-        "canonical_parent_hash": "abcdef123",
+      "canonical_parent_hash": "abcdef123",
     }
     runner.platform.sh.side_effect = mock_sh
 

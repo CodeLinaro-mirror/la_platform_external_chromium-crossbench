@@ -56,11 +56,11 @@ class SplashScreen:
 
 _BLANK_PAGE_HTML: Final = "<html></html>"
 _BLANK_PAGE_DATA_URL: Final = (
-    f"data:text/html;charset=utf-8,{url_helper.quote(_BLANK_PAGE_HTML)}")
+  f"data:text/html;charset=utf-8,{url_helper.quote(_BLANK_PAGE_HTML)}"
+)
 
 
 class BaseURLSplashScreen(SplashScreen, metaclass=abc.ABCMeta):
-
   def __init__(self, timeout: float = 2) -> None:
     super().__init__()
     self._timeout: Final[float] = timeout
@@ -76,7 +76,6 @@ class BaseURLSplashScreen(SplashScreen, metaclass=abc.ABCMeta):
 
 
 class DetailedSplashScreen(BaseURLSplashScreen):
-
   @override
   def get_url(self, info: SplashScreenData) -> str:
     browser: Browser = info.browser
@@ -88,12 +87,11 @@ class DetailedSplashScreen(BaseURLSplashScreen):
       title = f"Warmup: {title}"
       run_type = "Warmup Run"
       bg_color = "#444"
-    page = "".join((
-        "<html><head>"
-        f"<title>{run_type} Details</title>",
+    page = "".join(
+      (
+        f"<html><head><title>{run_type} Details</title>",
         "<style>",
-        "html{"
-        "font-family:sans-serif;",
+        "html{font-family:sans-serif;",
         f"background-color:{bg_color};",
         "color:#fff",
         "}",
@@ -106,14 +104,16 @@ class DetailedSplashScreen(BaseURLSplashScreen):
         self._render_browser_details(info),
         self._render_run_details(info),
         "</body></html>",
-    ))
+      )
+    )
     data_url = f"data:text/html;charset=utf-8,{url_helper.quote(page)}"
     return data_url
 
   # TODO: use JsonMapping once mypy is replaced by pyrefly
   # https://peps.python.org/pep-0728
-  def _render_properties(self, title: str, properties: Mapping[str,
-                                                               object]) -> str:
+  def _render_properties(
+    self, title: str, properties: Mapping[str, object]
+  ) -> str:
     section = f"<h2>{html.escape(title)}</h2><dl>"
     for property_name, value in properties.items():
       section += f"<dt>{html.escape(property_name)}</dt>"
@@ -131,7 +131,6 @@ class DetailedSplashScreen(BaseURLSplashScreen):
 
 
 class MinimalSplashScreen(DetailedSplashScreen):
-
   @override
   def _render_browser_details(self, info: SplashScreenData) -> str:
     properties: JsonDict = {"User Agent": info.browser.user_agent()}
@@ -139,7 +138,6 @@ class MinimalSplashScreen(DetailedSplashScreen):
 
 
 class URLSplashScreen(BaseURLSplashScreen):
-
   def __init__(self, url: str, timeout: float = 2) -> None:
     super().__init__(timeout)
     self._url: Final[str] = url

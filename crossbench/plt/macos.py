@@ -22,8 +22,10 @@ from typing import TYPE_CHECKING, Final, Iterator, cast, override
 from crossbench import path as pth
 from crossbench.helper.size import Size
 from crossbench.parse import NumberParser
-from crossbench.plt.display_info import DisplayRefreshRateResult, \
-    DisplayResolution
+from crossbench.plt.display_info import (
+  DisplayRefreshRateResult,
+  DisplayResolution,
+)
 from crossbench.plt.posix import PosixPlatform, PosixVersion
 from crossbench.plt.signals import MacOSSignals
 
@@ -36,7 +38,8 @@ if TYPE_CHECKING:
   from crossbench.types import JsonDict
 
 DISPLAY_NDRV_RE: Final[re.Pattern] = re.compile(
-    "(?P<resX>[0-9]+) x (?P<resY>[0-9]+) @ (?P<freq>[0-9.]+)Hz")
+  "(?P<resX>[0-9]+) x (?P<resY>[0-9]+) @ (?P<freq>[0-9.]+)Hz"
+)
 
 
 def parse_display_ndrvs(spdisplays_ndrvs: dict) -> Iterator[DisplayInfo]:
@@ -70,13 +73,11 @@ def parse_display_ndrvs(spdisplays_ndrvs: dict) -> Iterator[DisplayInfo]:
     freq_str = spdisplay_ndrv.get("_spdisplays_resolution", "")
     if match := DISPLAY_NDRV_RE.search(freq_str):
       yield {
-          "resolution":
-              DisplayResolution(
-                  NumberParser.positive_int(match.group("resX")),
-                  NumberParser.positive_int(match.group("resY")),
-              ),
-          "refresh_rate":
-              NumberParser.positive_float(match.group("freq")),
+        "resolution": DisplayResolution(
+          NumberParser.positive_int(match.group("resX")),
+          NumberParser.positive_int(match.group("resY")),
+        ),
+        "refresh_rate": NumberParser.positive_float(match.group("freq")),
       }
 
 
@@ -86,10 +87,10 @@ class MacOsVersion(PosixVersion):
 
 class MacOSPlatform(PosixPlatform):
   SEARCH_PATHS: tuple[pth.AnyPath, ...] = (
-      pth.AnyPosixPath("."),
-      pth.AnyPosixPath("/Applications"),
-      # TODO: support remote platforms
-      pth.LocalPath.home() / "Applications",
+    pth.AnyPosixPath("."),
+    pth.AnyPosixPath("/Applications"),
+    # TODO: support remote platforms
+    pth.LocalPath.home() / "Applications",
   )
 
   LSAPPINFO_IN_FRONT_LINE_RE: Final = r".*\(in front\)\s*"
@@ -125,11 +126,13 @@ class MacOSPlatform(PosixPlatform):
     return time.clock_gettime_ns(time.CLOCK_MONOTONIC)
 
   @override
-  def _mktemp_sh(self,
-                 is_dir: bool,
-                 suffix: str | None = None,
-                 prefix: str | None = None,
-                 dir: pth.AnyPathLike | None = None) -> pth.AnyPath:
+  def _mktemp_sh(
+    self,
+    is_dir: bool,
+    suffix: str | None = None,
+    prefix: str | None = None,
+    dir: pth.AnyPathLike | None = None,
+  ) -> pth.AnyPath:
     temp_path = super()._mktemp_sh(is_dir, suffix=None, prefix=prefix, dir=dir)
     if not suffix:
       return temp_path
@@ -209,18 +212,18 @@ class MacOSPlatform(PosixPlatform):
 
   def _macos_system_details(self) -> MacOsSystemDetails:
     return {
-        "system_profiler":
-            self.sh_stdout("system_profiler", "SPHardwareDataType"),
-        "sysctl_machdep_cpu":
-            self.sh_stdout("sysctl", "machdep.cpu"),
-        "sysctl_hw":
-            self.sh_stdout("sysctl", "hw"),
+      "system_profiler": self.sh_stdout(
+        "system_profiler", "SPHardwareDataType"
+      ),
+      "sysctl_machdep_cpu": self.sh_stdout("sysctl", "machdep.cpu"),
+      "sysctl_hw": self.sh_stdout("sysctl", "hw"),
     }
 
   @functools.lru_cache(maxsize=1)
   def display_details(self) -> tuple[DisplayInfo, ...]:
-    display_info_raw = self.sh_stdout("system_profiler", "-json",
-                                      "SPDisplaysDataType").strip()
+    display_info_raw = self.sh_stdout(
+      "system_profiler", "-json", "SPDisplaysDataType"
+    ).strip()
     display_info = json.loads(display_info_raw)
     if spdisplays_data := display_info.get("SPDisplaysDataType"):
       if spdisplays_ndrvs := spdisplays_data[0].get("spdisplays_ndrvs"):
@@ -252,7 +255,7 @@ class MacOSPlatform(PosixPlatform):
       raise ValueError(f"Binary does not exist: {bin_path}")
     self.assert_is_local()
     binaries = [
-        path for path in self.iterdir(bin_path.parent) if self.is_file(path)
+      path for path in self.iterdir(bin_path.parent) if self.is_file(path)
     ]
     if len(binaries) == 1:
       return binaries[0]
@@ -264,8 +267,11 @@ class MacOSPlatform(PosixPlatform):
     with self.local_path(plist_path).open("rb") as f:
       plist = plistlib.load(f)
     bin_path = (
-        app_path / "Contents" / "MacOS" /
-        plist.get("CFBundleExecutable", app_path.stem))
+      app_path
+      / "Contents"
+      / "MacOS"
+      / plist.get("CFBundleExecutable", app_path.stem)
+    )
     if self.is_file(bin_path):
       return bin_path
     if not binaries:
@@ -294,18 +300,21 @@ class MacOSPlatform(PosixPlatform):
 
   @override
   def _search_binary_in_search_path(
-      self, app_or_bin: pth.AnyPath) -> pth.AnyPath | None:
+    self, app_or_bin: pth.AnyPath
+  ) -> pth.AnyPath | None:
     is_app = app_or_bin.suffix == ".app"
     for search_path in self.SEARCH_PATHS:
       # Recreate Path object for easier pyfakefs testing
       result_path = self.path(search_path) / app_or_bin
       if app_path := self._validate_search_binary_candidate(
-          is_app, result_path):
+        is_app, result_path
+      ):
         return app_path
     return None
 
   def _validate_search_binary_candidate(
-      self, is_app: bool, result_path: pth.AnyPath) -> pth.AnyPath | None:
+    self, is_app: bool, result_path: pth.AnyPath
+  ) -> pth.AnyPath | None:
     if not is_app:
       if self.is_file(result_path):
         return result_path
@@ -339,8 +348,10 @@ class MacOSPlatform(PosixPlatform):
     for candidate in (app_or_bin_path, *app_or_bin_path.parents):
       if candidate.suffix == ".app":
         return candidate
-    raise ValueError("Expected app name with '.app' suffix in the path, "
-                     f"but got: '{app_or_bin_path}'")
+    raise ValueError(
+      "Expected app name with '.app' suffix in the path, "
+      f"but got: '{app_or_bin_path}'"
+    )
 
   @override
   def app_version(self, app_or_bin: pth.AnyPathLike) -> str:
@@ -388,8 +399,9 @@ class MacOSPlatform(PosixPlatform):
     foreground_process_info = self.sh_stdout("lsappinfo", "front").strip()
     if not foreground_process_info:
       return None
-    foreground_info = self.sh_stdout("lsappinfo", "info", "-only", "pid",
-                                     foreground_process_info).strip()
+    foreground_info = self.sh_stdout(
+      "lsappinfo", "info", "-only", "pid", foreground_process_info
+    ).strip()
     foreground_info_split = foreground_info.split("=")
 
     pid = None
@@ -428,8 +440,9 @@ class MacOSPlatform(PosixPlatform):
     return self.check_crowdstrike(disable)
 
   def check_autobrightness(self) -> bool:
-    output = self.sh_stdout("system_profiler", "SPDisplaysDataType",
-                            "-json").strip()
+    output = self.sh_stdout(
+      "system_profiler", "SPDisplaysDataType", "-json"
+    ).strip()
     data = json.loads(output)
     if spdisplays_data := data.get("SPDisplaysDataType"):
       for display_data in spdisplays_data:
@@ -438,15 +451,19 @@ class MacOSPlatform(PosixPlatform):
             if auto_brightness := display.get("spdisplays_ambient_brightness"):
               return auto_brightness == "spdisplays_yes"
       return False
-    raise ValueError("Could not get 'SPDisplaysDataType' from system profiler. "
-                     f"Output={output}")
+    raise ValueError(
+      "Could not get 'SPDisplaysDataType' from system profiler. "
+      f"Output={output}"
+    )
 
   def check_crowdstrike(self, disable: bool = False) -> bool:
     falconctl = self.path(
-        "/Applications/Falcon.app/Contents/Resources/falconctl")
+      "/Applications/Falcon.app/Contents/Resources/falconctl"
+    )
     if not self.exists(falconctl):
-      logging.debug("You're fine, falconctl or %s are not installed.",
-                    falconctl)
+      logging.debug(
+        "You're fine, falconctl or %s are not installed.", falconctl
+      )
       return True
     if not disable:
       for process in self.processes(attrs=["exe"]):
@@ -458,37 +475,42 @@ class MacOSPlatform(PosixPlatform):
       logging.warning("Checking falcon sensor status:")
       status = self.sh_stdout("sudo", falconctl, "stats", "agent_info")
     except SubprocessError as e:
-      logging.debug("Could not probe falconctl, assuming it's not running: %s",
-                    e)
+      logging.debug(
+        "Could not probe falconctl, assuming it's not running: %s", e
+      )
       return True
     if "operational: true" not in status:
       # Early return if not running, no need to disable the sensor.
       return True
     # Try disabling the process
-    logging.warning("Disabling crowdstrike monitoring "
-                    "(this can have negative security impact):")
+    logging.warning(
+      "Disabling crowdstrike monitoring "
+      "(this can have negative security impact):"
+    )
     self.sh("sudo", falconctl, "unload")
     return True
 
   def _get_main_display(self) -> tuple[int, ctypes.CDLL]:
     assert self.is_local, "Operation not supported on remote platforms"
     core_graphics = ctypes.CDLL(
-        "/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics")
+      "/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics"
+    )
     main_display = int(core_graphics.CGMainDisplayID())
     return main_display, core_graphics
 
   def _get_display_service(self) -> tuple[ctypes.CDLL, int]:
     main_display, _ = self._get_main_display()
     display_services = ctypes.CDLL(
-        "/System/Library/PrivateFrameworks/DisplayServices.framework"
-        "/DisplayServices")
+      "/System/Library/PrivateFrameworks/DisplayServices.framework"
+      "/DisplayServices"
+    )
     display_services.DisplayServicesSetBrightness.argtypes = [
-        ctypes.c_int,
-        ctypes.c_float,
+      ctypes.c_int,
+      ctypes.c_float,
     ]
     display_services.DisplayServicesGetBrightness.argtypes = [
-        ctypes.c_int,
-        ctypes.POINTER(ctypes.c_float),
+      ctypes.c_int,
+      ctypes.POINTER(ctypes.c_float),
     ]
     return display_services, main_display
 
@@ -509,8 +531,9 @@ class MacOSPlatform(PosixPlatform):
       AssertionError: An error occurred when we tried to set the brightness
     """
     display_services, main_display = self._get_display_service()
-    ret = display_services.DisplayServicesSetBrightness(main_display,
-                                                        brightness_level / 100)
+    ret = display_services.DisplayServicesSetBrightness(
+      main_display, brightness_level / 100
+    )
     assert ret == 0
 
   def get_main_display_brightness(self) -> int:
@@ -532,7 +555,8 @@ class MacOSPlatform(PosixPlatform):
     display_services, main_display = self._get_display_service()
     display_brightness = ctypes.c_float()
     ret = display_services.DisplayServicesGetBrightness(
-        main_display, ctypes.byref(display_brightness))
+      main_display, ctypes.byref(display_brightness)
+    )
     assert ret == 0, f"ret={ret}, display_brightness={display_brightness}"
     return round(display_brightness.value * 100)
 
@@ -544,8 +568,10 @@ class MacOSPlatform(PosixPlatform):
     core_graphics.CGDisplayCopyDisplayMode.argtypes = (ctypes.c_uint32,)
     core_graphics.CGDisplayCopyDisplayMode.restype = ctypes.c_void_p
     # https://developer.apple.com/documentation/coregraphics/1455537-cgdisplaycopyalldisplaymodes?language=objc
-    core_graphics.CGDisplayCopyAllDisplayModes.argtypes = (ctypes.c_uint32,
-                                                           ctypes.c_void_p)
+    core_graphics.CGDisplayCopyAllDisplayModes.argtypes = (
+      ctypes.c_uint32,
+      ctypes.c_void_p,
+    )
     core_graphics.CGDisplayCopyAllDisplayModes.restype = ctypes.c_void_p
     # https://developer.apple.com/documentation/coregraphics/1454442-cgdisplaymodegetwidth?language=objc
     core_graphics.CGDisplayModeGetWidth.argtypes = (ctypes.c_void_p,)
@@ -557,8 +583,10 @@ class MacOSPlatform(PosixPlatform):
     core_graphics.CGDisplayModeGetRefreshRate.argtypes = (ctypes.c_void_p,)
     core_graphics.CGDisplayModeGetRefreshRate.restype = ctypes.c_double
     # https://developer.apple.com/documentation/coregraphics/1454760-cgdisplaysetdisplaymode?language=objc
-    core_graphics.CGDisplaySetDisplayMode.argtypes = (ctypes.c_uint32,
-                                                      ctypes.c_void_p)
+    core_graphics.CGDisplaySetDisplayMode.argtypes = (
+      ctypes.c_uint32,
+      ctypes.c_void_p,
+    )
     core_graphics.CGDisplaySetDisplayMode.restype = ctypes.c_int32
 
   def _core_foundation_types(self, core_foundation) -> None:  # noqa: ANN001
@@ -566,25 +594,27 @@ class MacOSPlatform(PosixPlatform):
     core_foundation.CFArrayGetCount.argtypes = (ctypes.c_void_p,)
     core_foundation.CFArrayGetCount.restype = ctypes.c_long
     # https://developer.apple.com/documentation/corefoundation/1388767-cfarraygetvalueatindex?language=objc
-    core_foundation.CFArrayGetValueAtIndex.argtypes = (ctypes.c_void_p,
-                                                       ctypes.c_long)
+    core_foundation.CFArrayGetValueAtIndex.argtypes = (
+      ctypes.c_void_p,
+      ctypes.c_long,
+    )
     core_foundation.CFArrayGetValueAtIndex.restype = ctypes.c_void_p
     # https://developer.apple.com/documentation/corefoundation/cfdictionarycreate(_:_:_:_:_:_:)?language=objc
     core_foundation.CFDictionaryCreate.argtypes = (
-        ctypes.c_void_p,  # allocator
-        ctypes.c_void_p,  # **keys
-        ctypes.c_void_p,  # **values
-        ctypes.c_long,  # numValues
-        ctypes.c_void_p,  # *keyCallBacks
-        ctypes.c_void_p,  # *valueCallBacks
+      ctypes.c_void_p,  # allocator
+      ctypes.c_void_p,  # **keys
+      ctypes.c_void_p,  # **values
+      ctypes.c_long,  # numValues
+      ctypes.c_void_p,  # *keyCallBacks
+      ctypes.c_void_p,  # *valueCallBacks
     )
     core_foundation.CFDictionaryCreate.restype = ctypes.c_void_p
     # https://developer.apple.com/documentation/corefoundation/1521153-cfrelease/
     core_foundation.CFRelease.argtypes = (ctypes.c_void_p,)
 
-  def set_display_refresh_rate(self,
-                               refresh_rate: int,
-                               retry: int = 3) -> DisplayRefreshRateResult:
+  def set_display_refresh_rate(
+    self, refresh_rate: int, retry: int = 3
+  ) -> DisplayRefreshRateResult:
     """Sets the refresh rate if the main display supports it.
 
     This function uses CoreGraphics and CoreFoundtation libraries:
@@ -612,27 +642,39 @@ class MacOSPlatform(PosixPlatform):
     main_refresh_rate = core_graphics.CGDisplayModeGetRefreshRate(display_mode)
     if main_refresh_rate == refresh_rate:
       return DisplayRefreshRateResult(
-          True, f"The display refresh rate is already {refresh_rate}Hz")
+        True, f"The display refresh rate is already {refresh_rate}Hz"
+      )
     main_width = round(core_graphics.CGDisplayModeGetWidth(display_mode))
     main_height = round(core_graphics.CGDisplayModeGetHeight(display_mode))
-    log_msg = (f"\nMain display: ID={main_display}, "
-               f"width={main_width}, height={main_height}, "
-               f"main_refresh_rate={refresh_rate}, "
-               f"refresh_rate={refresh_rate}")
+    log_msg = (
+      f"\nMain display: ID={main_display}, "
+      f"width={main_width}, height={main_height}, "
+      f"main_refresh_rate={refresh_rate}, "
+      f"refresh_rate={refresh_rate}"
+    )
 
     core_foundation = self._get_core_foundation()
-    set_mode, find_log = self._find_display_mode(core_graphics, core_foundation,
-                                                 main_display, main_width,
-                                                 main_height, refresh_rate)
+    set_mode, find_log = self._find_display_mode(
+      core_graphics,
+      core_foundation,
+      main_display,
+      main_width,
+      main_height,
+      refresh_rate,
+    )
     log_msg += find_log
 
     if set_mode is not None:
-      result = self._apply_display_mode(core_graphics, main_display, set_mode,
-                                        refresh_rate, retry)
+      result = self._apply_display_mode(
+        core_graphics, main_display, set_mode, refresh_rate, retry
+      )
       if result.success:
         return DisplayRefreshRateResult(
-            True, ("The refresh rate was successfully set!\n"
-                   f"{log_msg}{result.message}"))
+          True,
+          (
+            f"The refresh rate was successfully set!\n{log_msg}{result.message}"
+          ),
+        )
       log_msg += result.message
     else:
       log_msg += "\nFailed to find a match for display size and refresh rate!"
@@ -645,24 +687,27 @@ class MacOSPlatform(PosixPlatform):
     return core_foundation
 
   def _find_display_mode(
-      self,
-      core_graphics: ctypes.CDLL,
-      core_foundation: ctypes.CDLL,
-      main_display: int,
-      main_width: int,
-      main_height: int,
-      refresh_rate: int,
+    self,
+    core_graphics: ctypes.CDLL,
+    core_foundation: ctypes.CDLL,
+    main_display: int,
+    main_width: int,
+    main_height: int,
+    refresh_rate: int,
   ) -> tuple[ctypes.c_void_p | None, str]:
     # Finding all available display modes.
     keys = (ctypes.c_void_p * 1)()
     keys[0] = ctypes.c_void_p.in_dll(
-        core_graphics, "kCGDisplayShowDuplicateLowResolutionModes")
+      core_graphics, "kCGDisplayShowDuplicateLowResolutionModes"
+    )
     values = (ctypes.c_void_p * 1)()
     values[0] = ctypes.c_void_p.in_dll(core_foundation, "kCFBooleanTrue")
-    options = core_foundation.CFDictionaryCreate(None, keys, values, 1, None,
-                                                 None)
+    options = core_foundation.CFDictionaryCreate(
+      None, keys, values, 1, None, None
+    )
     display_modes = core_graphics.CGDisplayCopyAllDisplayModes(
-        main_display, options)
+      main_display, options
+    )
 
     # Finding a display with original size and capable of the refresh rate.
     set_mode = None
@@ -672,22 +717,23 @@ class MacOSPlatform(PosixPlatform):
       width = round(core_graphics.CGDisplayModeGetWidth(display_mode))
       height = round(core_graphics.CGDisplayModeGetHeight(display_mode))
       rate = int(core_graphics.CGDisplayModeGetRefreshRate(display_mode))
-      log_msg += (f"\nDetected: display_mode={display_mode}, "
-                  f"width={width}, height={height}, "
-                  f"refresh_rate={rate}")
-      if (main_width == width and main_height == height and
-          refresh_rate == rate):
+      log_msg += (
+        f"\nDetected: display_mode={display_mode}, "
+        f"width={width}, height={height}, "
+        f"refresh_rate={rate}"
+      )
+      if main_width == width and main_height == height and refresh_rate == rate:
         set_mode = display_mode
         break
     return set_mode, log_msg
 
   def _apply_display_mode(
-      self,
-      core_graphics: ctypes.CDLL,
-      main_display: int,
-      set_mode: ctypes.c_void_p,
-      refresh_rate: int,
-      retry: int,
+    self,
+    core_graphics: ctypes.CDLL,
+    main_display: int,
+    set_mode: ctypes.c_void_p,
+    refresh_rate: int,
+    retry: int,
   ) -> DisplayRefreshRateResult:
     log_msg = ""
     for _ in range(retry):
@@ -706,8 +752,9 @@ class MacOSPlatform(PosixPlatform):
       return
     main_display, core_graphics = self._get_main_display()
     self._core_graphics_types(core_graphics)
-    core_graphics.CGDisplaySetDisplayMode(main_display,
-                                          self._default_display_mode, None)
+    core_graphics.CGDisplaySetDisplayMode(
+      main_display, self._default_display_mode, None
+    )
     self._default_display_mode = None
 
   def screenshot(self, result_path: pth.AnyPath) -> None:
@@ -749,8 +796,9 @@ class MacOSPlatform(PosixPlatform):
   def gpu_vram_used(self) -> dict[str, float]:
     """Queries GPU / Unified memory usage via IOKit IOAccelerator."""
     try:
-      plist_bytes = self.sh_stdout_bytes("ioreg", "-a", "-r", "-d", "1", "-c",
-                                         "IOAccelerator")
+      plist_bytes = self.sh_stdout_bytes(
+        "ioreg", "-a", "-r", "-d", "1", "-c", "IOAccelerator"
+      )
     except SubprocessError as e:
       logging.debug("Failed to query macOS IOAccelerator: %s", e)
       return {}
@@ -775,8 +823,11 @@ class MacOSPlatform(PosixPlatform):
       alloc_vid = perf_stats.get("Alloc video memory", 0)
 
       total_bytes = (in_use_sys or alloc_sys) + (in_use_vid or alloc_vid)
-      if (total_bytes and isinstance(total_bytes, (int, float)) and
-          total_bytes > 0):
+      if (
+        total_bytes
+        and isinstance(total_bytes, (int, float))
+        and total_bytes > 0
+      ):
         results[f"gpu_{i}"] = float(total_bytes) / Size.MiB
 
     return results

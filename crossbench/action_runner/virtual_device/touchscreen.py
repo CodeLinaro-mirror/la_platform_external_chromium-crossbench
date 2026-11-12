@@ -7,10 +7,12 @@ from __future__ import annotations
 import dataclasses
 from typing import ClassVar, Final
 
-from crossbench.action_runner.virtual_device.pointing import \
-    PointingVirtualDeviceConfig
-from crossbench.action_runner.virtual_device.virtual_device_type import \
-    VirtualDeviceType
+from crossbench.action_runner.virtual_device.pointing import (
+  PointingVirtualDeviceConfig,
+)
+from crossbench.action_runner.virtual_device.virtual_device_type import (
+  VirtualDeviceType,
+)
 
 DEFAULT_TOUCH_POLLING_RATE_HZ: Final[int] = 120
 

@@ -20,22 +20,21 @@ class BaseLoginBlock(ActionBlock):
   def validate(self) -> None:
     super().validate()
     assert self.index == 0, (
-        f"Login block has to be the first, but got {self.index}")
+      f"Login block has to be the first, but got {self.index}"
+    )
 
   @property
   @override
   def is_login(self) -> bool:
     return True
 
-  def is_logged_in(self,
-                   run: Run,
-                   secret: UsernamePassword,
-                   strict: bool = False) -> bool:
+  def is_logged_in(
+    self, run: Run, secret: UsernamePassword, strict: bool = False
+  ) -> bool:
     return run.browser.is_logged_in(secret, strict)
 
 
 class PresetLoginBlock(BaseLoginBlock):
-
   @override
   def validate_actions(self) -> None:
     """Skip validation, since PresetLoginBlocks have an unknown number

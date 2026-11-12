@@ -15,8 +15,9 @@ if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.probes.probe import Probe
   from crossbench.probes.results import ProbeResult
-  from crossbench.runner.groups.cache_temperatures import \
-      CacheTemperaturesRunGroup
+  from crossbench.runner.groups.cache_temperatures import (
+    CacheTemperaturesRunGroup,
+  )
   from crossbench.runner.run import Run
   from crossbench.stories.story import Story
   from crossbench.types import JsonDict, JsonMapping
@@ -29,21 +30,24 @@ class RepetitionsRunGroup(RunGroup):
   """
 
   @classmethod
-  def groups(cls,
-             run_groups: Iterable[CacheTemperaturesRunGroup],
-             throw: bool = False) -> tuple[Self, ...]:
+  def groups(
+    cls, run_groups: Iterable[CacheTemperaturesRunGroup], throw: bool = False
+  ) -> tuple[Self, ...]:
     return tuple(
-        collection_helper.group_by_custom(
-            run_groups,
-            key=lambda group: (group.browser, group.story),
-            group=lambda _: cls(throw),
-            sort_key=None).values())
+      collection_helper.group_by_custom(
+        run_groups,
+        key=lambda group: (group.browser, group.story),
+        group=lambda _: cls(throw),
+        sort_key=None,
+      ).values()
+    )
 
   def __init__(self, throw: bool = False) -> None:
     super().__init__(throw)
     self._cache_temperatures_groups: Final[list[CacheTemperaturesRunGroup]] = []
-    self._cache_temperature_repetitions_groups: Final[dict[
-        str, CacheTemperatureRepetitionsRunGroup]] = {}
+    self._cache_temperature_repetitions_groups: Final[
+      dict[str, CacheTemperatureRepetitionsRunGroup]
+    ] = {}
     self._story: Story | None = None
     self._browser: Browser | None = None
 
@@ -83,7 +87,8 @@ class RepetitionsRunGroup(RunGroup):
 
   @property
   def cache_temperature_repetitions_groups(
-      self) -> list[CacheTemperatureRepetitionsRunGroup]:
+    self,
+  ) -> list[CacheTemperatureRepetitionsRunGroup]:
     return list(self._cache_temperature_repetitions_groups.values())
 
   @property
@@ -100,8 +105,11 @@ class RepetitionsRunGroup(RunGroup):
   @property
   @override
   def info_stack(self) -> exception.TInfoStack:
-    return ("Merging results from multiple repetitions",
-            f"browser={self.browser.unique_name}", f"story={self.story}")
+    return (
+      "Merging results from multiple repetitions",
+      f"browser={self.browser.unique_name}",
+      f"story={self.story}",
+    )
 
   @property
   @override
@@ -121,9 +129,9 @@ class CacheTemperatureRepetitionsRunGroup(RunGroup):
   and the same browser and the same cache temperatures.
   """
 
-  def __init__(self,
-               repetitions_group: RepetitionsRunGroup,
-               throw: bool = False) -> None:
+  def __init__(
+    self, repetitions_group: RepetitionsRunGroup, throw: bool = False
+  ) -> None:
     super().__init__(throw)
     self._repetitions_group: Final[RepetitionsRunGroup] = repetitions_group
     self._set_path(repetitions_group.path)

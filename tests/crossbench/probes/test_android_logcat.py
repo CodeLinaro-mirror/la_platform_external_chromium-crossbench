@@ -7,8 +7,10 @@ from __future__ import annotations
 from unittest import mock
 
 from crossbench.plt.android_adb import AndroidAdbPlatform
-from crossbench.probes.android_logcat import AndroidLogcatProbeContext, \
-    LogcatAndroidProbe
+from crossbench.probes.android_logcat import (
+  AndroidLogcatProbeContext,
+  LogcatAndroidProbe,
+)
 from crossbench.probes.probe import ProbeIncompatibleBrowser
 from crossbench.probes.results import LocalProbeResult
 from tests import test_helper
@@ -16,10 +18,10 @@ from tests.crossbench.probes.helper import BaseProbeTestCase
 
 
 class LogcatAndroidProbeTestCase(BaseProbeTestCase):
-
   def test_parse_config(self):
     probe = LogcatAndroidProbe.config_parser().parse(
-        {"filterspec": "ActivityManager:V"})
+      {"filterspec": "ActivityManager:V"}
+    )
     self.assertSequenceEqual(probe.filterspec, ("ActivityManager:V",))
 
   def test_validate_browser_incompatible(self):
@@ -43,11 +45,13 @@ class LogcatAndroidProbeTestCase(BaseProbeTestCase):
 
     context.start()
     platform.sh_stdout.assert_called_with("date", "+%Y-%m-%d %H:%M:%S")
-    platform.sh.assert_called_with("log", "-t", "crossbench",
-                                   "logcat probe start")
+    platform.sh.assert_called_with(
+      "log", "-t", "crossbench", "logcat probe start"
+    )
     context.stop()
-    platform.sh.assert_called_with("log", "-t", "crossbench",
-                                   "logcat probe end")
+    platform.sh.assert_called_with(
+      "log", "-t", "crossbench", "logcat probe end"
+    )
 
     result = context.teardown()
     self.assertIsInstance(result, LocalProbeResult)

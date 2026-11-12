@@ -10,8 +10,10 @@ import unittest.mock as mock
 from typing import override
 
 from crossbench.benchmarks.web_power.base import WebPowerSiteConfig
-from crossbench.benchmarks.web_power.scroll import WebPowerScrollBenchmark, \
-    WebPowerScrollStory
+from crossbench.benchmarks.web_power.scroll import (
+  WebPowerScrollBenchmark,
+  WebPowerScrollStory,
+)
 from crossbench.cli.config.browser import BrowserConfig
 from crossbench.cli.config.driver import DriverConfig
 from crossbench.cli.config.driver_type import BrowserDriverType
@@ -19,16 +21,17 @@ from crossbench.plt.display_info import DisplayResolution
 from crossbench.plt.ios import IOSPlatform
 from tests import test_helper
 from tests.crossbench.base import BaseCrossbenchTestCase
-from tests.crossbench.benchmarks.web_power.test_base import \
-    BaseWebPowerBenchmarkTestCase, MockWebPowerStory
+from tests.crossbench.benchmarks.web_power.test_base import (
+  BaseWebPowerBenchmarkTestCase,
+  MockWebPowerStory,
+)
 
 
 class WebPowerScrollStoryTestCase(BaseCrossbenchTestCase):
-
   def test_instantiate_default(self) -> None:
     story = WebPowerScrollStory(
-        name_suffix="test",
-        site_config=WebPowerSiteConfig(url="https://www.cnn.com"),
+      name_suffix="test",
+      site_config=WebPowerSiteConfig(url="https://www.cnn.com"),
     )
     self.assertEqual(story.url, "https://www.cnn.com")
     self.assertEqual(story.scroll_count, story.DEFAULT_SCROLL_COUNT)
@@ -36,10 +39,10 @@ class WebPowerScrollStoryTestCase(BaseCrossbenchTestCase):
 
   def test_instantiate_custom(self) -> None:
     story = WebPowerScrollStory(
-        name_suffix="test",
-        site_config=WebPowerSiteConfig(url="https://www.cnn.com"),
-        scroll_count=10,
-        input_rate=120,
+      name_suffix="test",
+      site_config=WebPowerSiteConfig(url="https://www.cnn.com"),
+      scroll_count=10,
+      input_rate=120,
     )
     self.assertEqual(story.url, "https://www.cnn.com")
     self.assertEqual(story.scroll_count, 10)
@@ -47,29 +50,30 @@ class WebPowerScrollStoryTestCase(BaseCrossbenchTestCase):
 
   def test_setup_unsupported_platform(self) -> None:
     story = WebPowerScrollStory(
-        name_suffix="test",
-        site_config=WebPowerSiteConfig(url="https://www.cnn.com"),
+      name_suffix="test",
+      site_config=WebPowerSiteConfig(url="https://www.cnn.com"),
     )
     mock_run = mock.MagicMock()
     mock_run.browser_platform.is_android = False
     mock_run.browser_platform.is_ios = False
     with self.assertRaisesRegex(
-        RuntimeError,
-        "only supported on Android and iOS",
+      RuntimeError,
+      "only supported on Android and iOS",
     ):
       story.setup(mock_run)
 
   def test_setup_and_run_ios(self) -> None:
     story = WebPowerScrollStory(
-        name_suffix="test",
-        site_config=WebPowerSiteConfig(url="https://www.cnn.com"),
+      name_suffix="test",
+      site_config=WebPowerSiteConfig(url="https://www.cnn.com"),
     )
     mock_run = mock.MagicMock()
     mock_ios_platform = mock.MagicMock(spec=IOSPlatform)
     mock_ios_platform.is_android = False
     mock_ios_platform.is_ios = True
     mock_ios_platform.display_resolution.return_value = DisplayResolution(
-        400, 800)
+      400, 800
+    )
     mock_run.browser_platform = mock_ios_platform
 
     story.setup(mock_run)
@@ -79,17 +83,17 @@ class WebPowerScrollStoryTestCase(BaseCrossbenchTestCase):
     mock_ios_platform.display_resolution.assert_called_once()
     expected_cycle = [(200, 640, 200, 160)] * 5 + [(200, 160, 200, 640)] * 5
     mock_ios_platform.wda.swipe_sequence.assert_called_once_with(
-        expected_cycle * 5,
-        duration=dt.timedelta(milliseconds=750),
-        settle_duration=dt.timedelta(milliseconds=150),
-        lift_duration=dt.timedelta(milliseconds=100),
+      expected_cycle * 5,
+      duration=dt.timedelta(milliseconds=750),
+      settle_duration=dt.timedelta(milliseconds=150),
+      lift_duration=dt.timedelta(milliseconds=100),
     )
 
   def test_setup_ios_warns_on_custom_input_rate(self) -> None:
     story = WebPowerScrollStory(
-        name_suffix="test",
-        site_config=WebPowerSiteConfig(url="https://www.cnn.com"),
-        input_rate=120,
+      name_suffix="test",
+      site_config=WebPowerSiteConfig(url="https://www.cnn.com"),
+      input_rate=120,
     )
     mock_run = mock.MagicMock()
     mock_run.browser_platform = mock.MagicMock(spec=IOSPlatform)
@@ -99,7 +103,6 @@ class WebPowerScrollStoryTestCase(BaseCrossbenchTestCase):
 
 
 class WebPowerScrollBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
-
   @property
   @override
   def benchmark_cls(self) -> type[WebPowerScrollBenchmark]:
@@ -110,18 +113,20 @@ class WebPowerScrollBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
     kwargs = WebPowerScrollBenchmark.kwargs_from_cli(args)
     story = self.extract_single_story(kwargs, WebPowerScrollStory)
     self.assertEqual(story.url, "https://www.cnn.com")
-    self.assertEqual(story.scroll_count,
-                     WebPowerScrollStory.DEFAULT_SCROLL_COUNT)
+    self.assertEqual(
+      story.scroll_count, WebPowerScrollStory.DEFAULT_SCROLL_COUNT
+    )
     self.assertEqual(story.input_rate, WebPowerScrollStory.DEFAULT_INPUT_RATE)
-    self.assertEqual(story.stabilization_time,
-                     story.site_config.default_stabilization_time)
+    self.assertEqual(
+      story.stabilization_time, story.site_config.default_stabilization_time
+    )
 
   def test_kwargs_from_cli_custom(self) -> None:
     args = self.parse_args(
-        "--site=cnn",
-        "--scrolls=12",
-        "--input-rate=100",
-        "--stabilization-time=15s",
+      "--site=cnn",
+      "--scrolls=12",
+      "--input-rate=100",
+      "--stabilization-time=15s",
     )
     kwargs = WebPowerScrollBenchmark.kwargs_from_cli(args)
     story = self.extract_single_story(kwargs, WebPowerScrollStory)
@@ -132,9 +137,9 @@ class WebPowerScrollBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
 
   def test_kwargs_from_cli_aliases(self) -> None:
     args = self.parse_args(
-        "--site=cnn",
-        "--scroll-count=15",
-        "--rate=90",
+      "--site=cnn",
+      "--scroll-count=15",
+      "--rate=90",
     )
     kwargs = WebPowerScrollBenchmark.kwargs_from_cli(args)
     story = self.extract_single_story(kwargs, WebPowerScrollStory)
@@ -171,9 +176,9 @@ class WebPowerScrollBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
 
   def test_from_cli_args(self) -> None:
     args = self.parse_args(
-        "--site=cnn",
-        "--scroll-count=8",
-        "--rate=60",
+      "--site=cnn",
+      "--scroll-count=8",
+      "--rate=60",
     )
     benchmark = WebPowerScrollBenchmark.from_cli_args(args)
     self.assertEqual(len(benchmark.stories), 1)
@@ -188,8 +193,9 @@ class WebPowerScrollBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
       ios_driver = DriverConfig(BrowserDriverType.IOS, device_id="00001111")
       args.browser = [BrowserConfig("safari", ios_driver)]
       WebPowerScrollBenchmark.kwargs_from_cli(args)
-    self.assertEqual(args.browser[0].driver.driver_type,
-                     BrowserDriverType.IOS_WDA)
+    self.assertEqual(
+      args.browser[0].driver.driver_type, BrowserDriverType.IOS_WDA
+    )
 
   def test_configure_ios_browsers_mixed_wda_raises(self) -> None:
     args = self.parse_args("--site=cnn")
@@ -198,11 +204,12 @@ class WebPowerScrollBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
     args.browser = [BrowserConfig("safari", ios_driver)]
     site_cfg = WebPowerSiteConfig(url="https://www.cnn.com")
     stories = [
-        WebPowerScrollStory("cnn", site_cfg),
-        MockWebPowerStory("cnn", site_cfg),
+      WebPowerScrollStory("cnn", site_cfg),
+      MockWebPowerStory("cnn", site_cfg),
     ]
-    with self.assertRaisesRegex(ValueError,
-                                "Cannot mix WDA and non-WDA stories on iOS."):
+    with self.assertRaisesRegex(
+      ValueError, "Cannot mix WDA and non-WDA stories on iOS."
+    ):
       WebPowerScrollBenchmark._configure_ios_browsers(args, stories)
 
 

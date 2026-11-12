@@ -12,21 +12,31 @@ import unittest
 from typing import TYPE_CHECKING, Any, ClassVar, Mapping, Sequence, override
 from unittest import mock
 
-from crossbench import config
+from crossbench import config, plt
 from crossbench import path as pth
-from crossbench import plt
 from crossbench.action_runner.config import ActionRunnerConfig
 from crossbench.benchmarks.web_power import wpr_helpers
-from crossbench.benchmarks.web_power.base import VERSION_STRING, \
-    WebPowerBenchmarkBase, WebPowerSiteConfig, WebPowerStory, \
-    WebPowerStoryFilter, WebPowerStoryT, _value_or
+from crossbench.benchmarks.web_power.base import (
+  VERSION_STRING,
+  WebPowerBenchmarkBase,
+  WebPowerSiteConfig,
+  WebPowerStory,
+  WebPowerStoryFilter,
+  WebPowerStoryT,
+  _value_or,
+)
 from crossbench.benchmarks.web_power.probe import WebPowerProbe
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.cli.config.network import NetworkConfig, NetworkType
 from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.cli.parser import CBArgumentParser
-from crossbench.device_config import DeviceConfigMap, DeviceConfigValueError, \
-    RequiredDeviceConfig, RequiredDeviceConfigMode, check_device_config
+from crossbench.device_config import (
+  DeviceConfigMap,
+  DeviceConfigValueError,
+  RequiredDeviceConfig,
+  RequiredDeviceConfigMode,
+  check_device_config,
+)
 from crossbench.env.runner_env import ValidationMode
 from crossbench.network.replay.wpr import WprReplayNetwork
 from crossbench.parse import ObjectParser
@@ -36,12 +46,16 @@ from crossbench.probes.cb_perfetto.perfetto import PerfettoProbe, TraceConfig
 from crossbench.probes.junction_temperature import JunctionTemperatureProbe
 from crossbench.probes.probe import Probe, ProbeIncompatibleBrowser
 from crossbench.probes.trace_processor.query_config import QUERIES_DIR
-from crossbench.probes.trace_processor.trace_processor import \
-    TraceProcessorProbe
+from crossbench.probes.trace_processor.trace_processor import (
+  TraceProcessorProbe,
+)
 from crossbench.runner.runner import Runner
 from tests import test_helper
-from tests.crossbench.base import BaseCrossbenchTestCase, \
-    CrossbenchFakeFsTestCase, SysExitTestException
+from tests.crossbench.base import (
+  BaseCrossbenchTestCase,
+  CrossbenchFakeFsTestCase,
+  SysExitTestException,
+)
 from tests.crossbench.benchmarks.helper import BaseBenchmarkTestCase
 
 if TYPE_CHECKING:
@@ -49,23 +63,24 @@ if TYPE_CHECKING:
 
 
 class MockWebPowerStory(WebPowerStory):
-
   @classmethod
   @override
   def story_name_cls(cls) -> str:
     return "mock-story"
 
   def __init__(
-      self,
-      name_suffix: str,
-      site_config: WebPowerSiteConfig,
-      total_duration: dt.timedelta = dt.timedelta(seconds=123),
-      stabilization_time: dt.timedelta | None = dt.timedelta(seconds=0),
+    self,
+    name_suffix: str,
+    site_config: WebPowerSiteConfig,
+    total_duration: dt.timedelta = dt.timedelta(seconds=123),
+    stabilization_time: dt.timedelta | None = dt.timedelta(seconds=0),
   ) -> None:
-    stabilization_time = _value_or(stabilization_time,
-                                   site_config.default_stabilization_time)
-    super().__init__(name_suffix, site_config, total_duration,
-                     stabilization_time)
+    stabilization_time = _value_or(
+      stabilization_time, site_config.default_stabilization_time
+    )
+    super().__init__(
+      name_suffix, site_config, total_duration, stabilization_time
+    )
 
   def run(self, run: Run) -> None:
     pass
@@ -77,7 +92,6 @@ class MockWebPowerStoryFilter(WebPowerStoryFilter[MockWebPowerStory]):
   STORY_CLS = MockWebPowerStory
 
 
-
 class MockWebPowerBenchmark(WebPowerBenchmarkBase):
   """Mock WebPowerBenchmark for testing."""
 
@@ -86,7 +100,6 @@ class MockWebPowerBenchmark(WebPowerBenchmarkBase):
 
 
 class ValueOrTestCase(unittest.TestCase):
-
   def test_value_or_with_value(self) -> None:
     self.assertEqual(_value_or(10, 5), 10)
     self.assertEqual(_value_or(0, 5), 0)
@@ -99,30 +112,35 @@ class ValueOrTestCase(unittest.TestCase):
 
 
 class WebPowerStoryTestCase(unittest.TestCase):
-
   def test_from_site(self) -> None:
     youtube_story = MockWebPowerStory.from_site(
-        "youtube", total_duration=dt.timedelta(seconds=123))
-    self.assertEqual(youtube_story.url,
-                     "https://www.youtube.com/watch?v=XITHbsUUlYI")
+      "youtube", total_duration=dt.timedelta(seconds=123)
+    )
+    self.assertEqual(
+      youtube_story.url, "https://www.youtube.com/watch?v=XITHbsUUlYI"
+    )
     self.assertEqual(youtube_story.name, "web-power-mock-story-youtube")
     self.assertEqual(youtube_story.duration, dt.timedelta(seconds=123))
 
     cnn_story = MockWebPowerStory.from_site(
-        "cnn", total_duration=dt.timedelta(seconds=123))
+      "cnn", total_duration=dt.timedelta(seconds=123)
+    )
     self.assertEqual(cnn_story.url, "https://www.cnn.com")
     self.assertEqual(cnn_story.name, "web-power-mock-story-cnn")
     self.assertEqual(cnn_story.duration, dt.timedelta(seconds=123))
 
   def test_from_invalid_site(self) -> None:
-    with self.assertRaisesRegex(ValueError,
-                                "Unknown web power benchmark site key"):
+    with self.assertRaisesRegex(
+      ValueError, "Unknown web power benchmark site key"
+    ):
       MockWebPowerStory.from_site(
-          "invalid-site", total_duration=dt.timedelta(seconds=123))
+        "invalid-site", total_duration=dt.timedelta(seconds=123)
+      )
 
   def test_from_url(self) -> None:
     story = MockWebPowerStory.from_url(
-        "https://www.google.com", total_duration=dt.timedelta(seconds=123))
+      "https://www.google.com", total_duration=dt.timedelta(seconds=123)
+    )
     self.assertEqual(story.url, "https://www.google.com")
     self.assertEqual(story.name, "web-power-mock-story-custom")
     self.assertEqual(story.duration, dt.timedelta(seconds=123))
@@ -132,13 +150,15 @@ class WebPowerStoryTestCase(unittest.TestCase):
       if site_config.archive:
         parsed = ObjectParser.url(site_config.archive, schemes=("gs",))
         self.assertTrue(
-            parsed.fragment.isdigit(),
-            f"Missing numeric GCS generation fragment for site {site_key}: "
-            f"{site_config.archive}")
+          parsed.fragment.isdigit(),
+          f"Missing numeric GCS generation fragment for site {site_key}: "
+          f"{site_config.archive}",
+        )
         self.assertEqual(
-            ObjectParser.md5_hash(site_config.archive_md5_hash),
-            site_config.archive_md5_hash,
-            f"Invalid archive_md5_hash for site {site_key}")
+          ObjectParser.md5_hash(site_config.archive_md5_hash),
+          site_config.archive_md5_hash,
+          f"Invalid archive_md5_hash for site {site_key}",
+        )
         self.assertEqual(len(site_config.archive_md5_hash), 16)
       else:
         self.assertEqual(site_config.archive_md5_hash, b"")
@@ -148,16 +168,20 @@ class WebPowerStoryTestCase(unittest.TestCase):
     MockWebPowerBenchmark._setup_pre_recorded_site_network(args)
     self.assertIsNotNone(args.network_config)
     self.assertEqual(args.network_config.type, NetworkType.WPR)
-    self.assertEqual(args.network_config.url,
-                     WebPowerStory.SITES["cnn"].archive)
-    self.assertEqual(args.network_config.expected_md5_hash,
-                     WebPowerStory.SITES["cnn"].archive_md5_hash)
+    self.assertEqual(
+      args.network_config.url, WebPowerStory.SITES["cnn"].archive
+    )
+    self.assertEqual(
+      args.network_config.expected_md5_hash,
+      WebPowerStory.SITES["cnn"].archive_md5_hash,
+    )
 
   def test_select_network_live_mode(self) -> None:
     args = argparse.Namespace(
-        site=None,
-        url="https://example.com",
-        network_config=NetworkConfig(type=NetworkType.LIVE))
+      site=None,
+      url="https://example.com",
+      network_config=NetworkConfig(type=NetworkType.LIVE),
+    )
     MockWebPowerBenchmark._select_network(args)
     self.assertEqual(args.network_config.type, NetworkType.LIVE)
     self.assertEqual(args.network_config.expected_md5_hash, b"")
@@ -169,32 +193,38 @@ class WebPowerRequiredDeviceConfigTestCase(CrossbenchFakeFsTestCase):
   # Scale factors that a compliant device reports either as unset or as an
   # explicit "1.0", depending on the OS build.
   SCALE_KEYS: ClassVar[tuple[tuple[str, ...], ...]] = (
-      ("settings", "global", "window_animation_scale"),
-      ("settings", "system", "font_scale"),
-      ("device_config", "accessibility/font_scale"),
+    ("settings", "global", "window_animation_scale"),
+    ("settings", "system", "font_scale"),
+    ("device_config", "accessibility/font_scale"),
   )
 
-  SCREEN_OFF_TIMEOUT: ClassVar[tuple[str, ...]] = ("settings", "system",
-                                                   "screen_off_timeout")
+  SCREEN_OFF_TIMEOUT: ClassVar[tuple[str, ...]] = (
+    "settings",
+    "system",
+    "screen_off_timeout",
+  )
 
   def setUp(self) -> None:
     super().setUp()
     self.config_path = WebPowerBenchmarkBase.required_device_config()
     self.fs.add_real_file(self.config_path)
 
-  def discrepancies_for(self, key_path: Sequence[str],
-                        value: str | None) -> str:
+  def discrepancies_for(
+    self, key_path: Sequence[str], value: str | None
+  ) -> str:
     """Reports discrepancies for a device reporting only key_path=value.
 
     Other requirements are reported as discrepancies too, so callers must
     only assert on the key under test.
     """
-    actual: DeviceConfigMap = {} if value is None else self.nested(
-        key_path, value)
+    actual: DeviceConfigMap = (
+      {} if value is None else self.nested(key_path, value)
+    )
     required = RequiredDeviceConfig.parse(self.config_path)
     try:
-      check_device_config(required.platforms["android"], actual,
-                          RequiredDeviceConfigMode.THROW)
+      check_device_config(
+        required.platforms["android"], actual, RequiredDeviceConfigMode.THROW
+      )
     except DeviceConfigValueError as e:
       return str(e)
     return ""
@@ -217,35 +247,40 @@ class WebPowerRequiredDeviceConfigTestCase(CrossbenchFakeFsTestCase):
     for key_path in self.SCALE_KEYS:
       for value in (None, "1.0"):
         with self.subTest(key=".".join(key_path), value=value):
-          self.assertNotIn(".".join(key_path),
-                           self.discrepancies_for(key_path, value))
+          self.assertNotIn(
+            ".".join(key_path), self.discrepancies_for(key_path, value)
+          )
 
   def test_scale_keys_reject_a_non_default_scale(self) -> None:
     """Verify a rescaled device is still reported for every scale key."""
     for key_path in self.SCALE_KEYS:
       with self.subTest(key=".".join(key_path)):
-        self.assertIn(".".join(key_path),
-                      self.discrepancies_for(key_path, "2.0"))
+        self.assertIn(
+          ".".join(key_path), self.discrepancies_for(key_path, "2.0")
+        )
 
   def test_screen_off_timeout_accepts_longer_timeouts(self) -> None:
     """Verify the bound accepts 30 mins and anything above it."""
     # 30 mins exactly, an hour, and "never".
     for value in ("1800000", "3600000", "2147483647"):
       with self.subTest(value=value):
-        self.assertNotIn(".".join(self.SCREEN_OFF_TIMEOUT),
-                         self.discrepancies_for(self.SCREEN_OFF_TIMEOUT, value))
+        self.assertNotIn(
+          ".".join(self.SCREEN_OFF_TIMEOUT),
+          self.discrepancies_for(self.SCREEN_OFF_TIMEOUT, value),
+        )
 
   def test_screen_off_timeout_rejects_shorter_timeouts(self) -> None:
     """Verify a display that may dim mid-run is reported."""
     # The Android default of 30s, and 10 mins.
     for value in ("30000", "600000"):
       with self.subTest(value=value):
-        self.assertIn(".".join(self.SCREEN_OFF_TIMEOUT),
-                      self.discrepancies_for(self.SCREEN_OFF_TIMEOUT, value))
+        self.assertIn(
+          ".".join(self.SCREEN_OFF_TIMEOUT),
+          self.discrepancies_for(self.SCREEN_OFF_TIMEOUT, value),
+        )
 
 
 class BaseWebPowerBenchmarkTestCase(BaseBenchmarkTestCase):
-
   def parse_args(self, *args: str | Sequence[str]) -> argparse.Namespace:
     parsed_args = super().parse_args(*args)
     parsed_args.browser = ()
@@ -255,9 +290,9 @@ class BaseWebPowerBenchmarkTestCase(BaseBenchmarkTestCase):
     return parsed_args
 
   def extract_single_story(
-      self,
-      kwargs: Mapping[str, object],
-      story_cls: type[WebPowerStoryT],
+    self,
+    kwargs: Mapping[str, object],
+    story_cls: type[WebPowerStoryT],
   ) -> WebPowerStoryT:
     stories = self.extract_stories(kwargs)
     self.assertEqual(len(stories), 1)
@@ -266,7 +301,8 @@ class BaseWebPowerBenchmarkTestCase(BaseBenchmarkTestCase):
     return story
 
   def extract_stories(
-      self, kwargs: Mapping[str, object]) -> tuple[WebPowerStory, ...]:
+    self, kwargs: Mapping[str, object]
+  ) -> tuple[WebPowerStory, ...]:
     raw_stories = kwargs["stories"]
     self.assertIsInstance(raw_stories, Sequence)
     stories: list[WebPowerStory] = []
@@ -277,7 +313,6 @@ class BaseWebPowerBenchmarkTestCase(BaseBenchmarkTestCase):
 
 
 class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
-
   def setUp(self) -> None:
     super().setUp()
     mapping_file = QUERIES_DIR / "web_power" / "mapping.hjson"
@@ -285,14 +320,15 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
     # Required as the missing cpu_time.sql otherwise crashes config parsing
     self.fs.create_file(mapping_file.parent / "cpu_time.sql")
     self.fs.create_file(
-        mapping_file.parent.parent / "test.sql", contents="SELECT 1;")
-    self.fs.create_file(
-        config.config_dir() / "probe/perfetto/trace_config/default.txtpb",
-        contents="duration_ms: 1000",
+      mapping_file.parent.parent / "test.sql", contents="SELECT 1;"
     )
     self.fs.create_file(
-        config.config_dir() / "benchmark/web_power/perfetto_basic.txtpb",
-        contents="duration_ms: 1000",
+      config.config_dir() / "probe/perfetto/trace_config/default.txtpb",
+      contents="duration_ms: 1000",
+    )
+    self.fs.create_file(
+      config.config_dir() / "benchmark/web_power/perfetto_basic.txtpb",
+      contents="duration_ms: 1000",
     )
     self.fs.add_real_file(WebPowerProbe.METRIC_DEFINITIONS_FILE)
     self.bits_path = pth.LocalPath(self.platform.default_tmp_dir) / "bits"
@@ -306,16 +342,18 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
     self.assertEqual(MockWebPowerBenchmark.DEFAULT_REPETITIONS, 5)
 
   def test_default_cool_down(self) -> None:
-    self.assertEqual(MockWebPowerBenchmark.DEFAULT_COOL_DOWN,
-                     dt.timedelta(minutes=2))
+    self.assertEqual(
+      MockWebPowerBenchmark.DEFAULT_COOL_DOWN, dt.timedelta(minutes=2)
+    )
 
   def test_default_action_runner_config_no_virtual_devices(self) -> None:
     args = self.parse_args("--site", "cnn")
     benchmark = MockWebPowerBenchmark.from_cli_args(args)
 
     run = self.mock_run()
-    with mock.patch.object(self.platform,
-                           "setup_virtual_devices") as mock_setup_devices:
+    with mock.patch.object(
+      self.platform, "setup_virtual_devices"
+    ) as mock_setup_devices:
       benchmark.new_action_runner(run)
       mock_setup_devices.assert_called_once_with(())
 
@@ -323,7 +361,8 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
     story = MockWebPowerStory.from_site("cnn")
     custom_config = ActionRunnerConfig()
     benchmark = MockWebPowerBenchmark(
-        stories=[story], action_runner_config=custom_config)
+      stories=[story], action_runner_config=custom_config
+    )
     self.assertEqual(benchmark.action_runner_config, custom_config)
 
   def test_kwargs_from_cli_site(self) -> None:
@@ -357,8 +396,9 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
     # cnn archive URL
     self.assertIsInstance(args.network_config, NetworkConfig)
     self.assertEqual(args.network_config.type, NetworkType.WPR)
-    self.assertEqual(args.network_config.url,
-                     WebPowerStory.SITES["cnn"].archive)
+    self.assertEqual(
+      args.network_config.url, WebPowerStory.SITES["cnn"].archive
+    )
 
   def test_kwargs_from_cli_url_live_default(self) -> None:
     args = self.parse_args("--url", "https://www.google.com")
@@ -372,7 +412,8 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
     args = self.parse_args("--url", "https://www.google.com")
     # Simulate explicit WPR network config
     args.network_config = NetworkConfig(
-        type=NetworkType.WPR, url="gs://some/other.wprgo")
+      type=NetworkType.WPR, url="gs://some/other.wprgo"
+    )
 
     kwargs = MockWebPowerBenchmark.kwargs_from_cli(args)
     story = self.extract_single_story(kwargs, MockWebPowerStory)
@@ -387,11 +428,13 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
     self.fs.create_file(custom_archive)
     args = self.parse_args("--stories=cnn")
     args.network_config = NetworkConfig(
-        type=NetworkType.WPR, path=custom_archive)
+      type=NetworkType.WPR, path=custom_archive
+    )
     kwargs = MockWebPowerBenchmark.kwargs_from_cli(args)
     story = self.extract_single_story(kwargs, MockWebPowerStory)
-    self.assertEqual(story.site_config.archive,
-                     WebPowerStory.SITES["cnn"].archive)
+    self.assertEqual(
+      story.site_config.archive, WebPowerStory.SITES["cnn"].archive
+    )
     self.assertEqual(args.network_config.type, NetworkType.WPR)
     self.assertEqual(args.network_config.path, custom_archive)
     self.assertTrue(args.network_config.no_archive_certificates)
@@ -401,18 +444,21 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
     args = self.parse_args("--stories=cnn")
     kwargs = MockWebPowerBenchmark.kwargs_from_cli(args)
     story = self.extract_single_story(kwargs, MockWebPowerStory)
-    self.assertEqual(story.site_config.archive,
-                     WebPowerStory.SITES["cnn"].archive)
+    self.assertEqual(
+      story.site_config.archive, WebPowerStory.SITES["cnn"].archive
+    )
     self.assertFalse(kwargs["has_custom_network"])
 
   def test_kwargs_from_cli_site_with_explicit_network_fails(self) -> None:
     args = self.parse_args("--site", "cnn")
     # Simulate conflicting explicit network config
     args.network_config = NetworkConfig(
-        type=NetworkType.WPR, url="gs://some/other.wprgo")
+      type=NetworkType.WPR, url="gs://some/other.wprgo"
+    )
 
     with self.assertRaisesRegex(
-        ValueError, "Specifying '--site' is mutually exclusive with explicit"):
+      ValueError, "Specifying '--site' is mutually exclusive with explicit"
+    ):
       MockWebPowerBenchmark.kwargs_from_cli(args)
 
   def test_kwargs_from_cli_benchmark_version(self) -> None:
@@ -443,31 +489,41 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
       self.parse_args("--site=non_existent_site")
 
   def test_kwargs_from_cli_site_and_url_mutually_exclusive(self) -> None:
-    with self.assertRaisesRegex(argparse.ArgumentError,
-                                "not allowed with argument"):
+    with self.assertRaisesRegex(
+      argparse.ArgumentError, "not allowed with argument"
+    ):
       self.parse_args("--site=cnn", "--url=https://example.com")
 
   def test_kwargs_from_cli_bits_invalid(self) -> None:
     bits_path = pth.LocalPath(self.platform.default_tmp_dir) / "bits"
     self.fs.create_file(bits_path)
     with self.assertRaisesRegex(argparse.ArgumentError, "--bits-duration"):
-      self.parse_args("--site=cnn", "--bits-path", str(bits_path),
-                      "--bits-duration=-5s")
+      self.parse_args(
+        "--site=cnn", "--bits-path", str(bits_path), "--bits-duration=-5s"
+      )
     with self.assertRaisesRegex(argparse.ArgumentError, "--bits-duration"):
-      self.parse_args("--site=cnn", "--bits-path", str(bits_path),
-                      "--bits-duration=0s")
+      self.parse_args(
+        "--site=cnn", "--bits-path", str(bits_path), "--bits-duration=0s"
+      )
     with self.assertRaisesRegex(argparse.ArgumentError, "--bits-port"):
-      self.parse_args("--site=cnn", "--bits-path", str(bits_path),
-                      "--bits-port=invalid")
-
+      self.parse_args(
+        "--site=cnn", "--bits-path", str(bits_path), "--bits-port=invalid"
+      )
 
   def test_kwargs_from_cli_bits(self) -> None:
     bits_path = pth.LocalPath(self.platform.default_tmp_dir) / "bits"
     self.fs.create_file(bits_path)
 
-    args = self.parse_args("--site", "cnn", "--bits-path", str(bits_path),
-                           "--bits-out", "custom_bits_run", "--bits-duration",
-                           "5m")
+    args = self.parse_args(
+      "--site",
+      "cnn",
+      "--bits-path",
+      str(bits_path),
+      "--bits-out",
+      "custom_bits_run",
+      "--bits-duration",
+      "5m",
+    )
     kwargs = MockWebPowerBenchmark.kwargs_from_cli(args)
     story = self.extract_single_story(kwargs, MockWebPowerStory)
     self.assertEqual(story.name, "web-power-mock-story-cnn")
@@ -484,9 +540,18 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
     bits_path = pth.LocalPath(self.platform.default_tmp_dir) / "bits"
     self.fs.create_file(bits_path)
 
-    args = self.parse_args("--site", "cnn", "--bits-path", str(bits_path),
-                           "--bits-out", "custom_bits_run", "--bits-device",
-                           "dev_123", "--bits-duration", "5m")
+    args = self.parse_args(
+      "--site",
+      "cnn",
+      "--bits-path",
+      str(bits_path),
+      "--bits-out",
+      "custom_bits_run",
+      "--bits-device",
+      "dev_123",
+      "--bits-duration",
+      "5m",
+    )
     kwargs = MockWebPowerBenchmark.kwargs_from_cli(args)
     bits_probe = kwargs["bits_probe"]
     self.assertIsInstance(bits_probe, BitsProbe)
@@ -496,10 +561,18 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
     bits_path = pth.LocalPath(self.platform.default_tmp_dir) / "bits"
     self.fs.create_file(bits_path)
 
-    args, kwargs = self._parse_and_get_kwargs("--site", "cnn", "--bits-path",
-                                              str(bits_path), "--bits-out",
-                                              "custom_bits_run", "--bits-port",
-                                              "1234", "--bits-duration", "5m")
+    args, kwargs = self._parse_and_get_kwargs(
+      "--site",
+      "cnn",
+      "--bits-path",
+      str(bits_path),
+      "--bits-out",
+      "custom_bits_run",
+      "--bits-port",
+      "1234",
+      "--bits-duration",
+      "5m",
+    )
     bits_probe = kwargs["bits_probe"]
     self.assertIsInstance(bits_probe, BitsProbe)
     self.assertEqual(bits_probe.port, 1234)
@@ -509,15 +582,16 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
     self.fs.create_file(bits_path)
 
     bits_probe = BitsProbe(
-        bits_path=bits_path,
-        bits_out="run_id",
-        duration=dt.timedelta(seconds=120),
+      bits_path=bits_path,
+      bits_out="run_id",
+      duration=dt.timedelta(seconds=120),
     )
     story = MockWebPowerStory.from_site(
-        "cnn", total_duration=dt.timedelta(seconds=123))
+      "cnn", total_duration=dt.timedelta(seconds=123)
+    )
     benchmark = MockWebPowerBenchmark(
-        stories=[story],
-        bits_probe=bits_probe,
+      stories=[story],
+      bits_probe=bits_probe,
     )
     self.assertIs(benchmark.bits_probe, bits_probe)
 
@@ -525,8 +599,8 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
     bits_probe = mock.MagicMock(spec=BitsProbe)
     story = MockWebPowerStory.from_site("cnn")
     benchmark = MockWebPowerBenchmark(
-        stories=[story],
-        bits_probe=bits_probe,
+      stories=[story],
+      bits_probe=bits_probe,
     )
     runner = mock.MagicMock()
     benchmark.teardown(runner)
@@ -560,18 +634,23 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
 
   def test_kwargs_from_cli_allow_build_type_default(self) -> None:
     kwargs = MockWebPowerBenchmark.kwargs_from_cli(
-        self.parse_args("--site", "cnn"))
-    self.assertEqual(kwargs["allowed_build_types"],
-                     frozenset({AndroidBuildType.USER}))
+      self.parse_args("--site", "cnn")
+    )
+    self.assertEqual(
+      kwargs["allowed_build_types"], frozenset({AndroidBuildType.USER})
+    )
 
   def test_kwargs_from_cli_allow_build_type(self) -> None:
     kwargs = MockWebPowerBenchmark.kwargs_from_cli(
-        self.parse_args("--site", "cnn", "--allow-build-type=userdebug,eng"))
+      self.parse_args("--site", "cnn", "--allow-build-type=userdebug,eng")
+    )
     self.assertEqual(
-        kwargs["allowed_build_types"],
-        frozenset({AndroidBuildType.USERDEBUG, AndroidBuildType.ENG}))
+      kwargs["allowed_build_types"],
+      frozenset({AndroidBuildType.USERDEBUG, AndroidBuildType.ENG}),
+    )
     benchmark = MockWebPowerBenchmark.from_cli_args(
-        self.parse_args("--site", "cnn", "--allow-build-type=*"))
+      self.parse_args("--site", "cnn", "--allow-build-type=*")
+    )
     self.assertIsNone(benchmark.allowed_build_types)
 
   def test_kwargs_from_cli_allow_build_type_invalid(self) -> None:
@@ -579,10 +658,11 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
       self.parse_args("--site=cnn", "--allow-build-type=debug")
 
   def _validate_build_types(
-      self,
-      *build_types: str,
-      allowed_build_types: frozenset[AndroidBuildType]
-      | None = (MockWebPowerBenchmark.DEFAULT_ALLOWED_BUILD_TYPES),
+    self,
+    *build_types: str,
+    allowed_build_types: frozenset[AndroidBuildType] | None = (
+      MockWebPowerBenchmark.DEFAULT_ALLOWED_BUILD_TYPES
+    ),
   ) -> mock.MagicMock:
     """Validates one Android device per build type, returning the runner."""
     runner = mock.MagicMock()
@@ -592,8 +672,9 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
       platform.adb.build_type = build_type
       runner.platforms.append(platform)
     benchmark = MockWebPowerBenchmark(
-        stories=[MockWebPowerStory.from_site("cnn")],
-        allowed_build_types=allowed_build_types)
+      stories=[MockWebPowerStory.from_site("cnn")],
+      allowed_build_types=allowed_build_types,
+    )
     benchmark._validate_build_types(runner)
     return runner
 
@@ -620,13 +701,14 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
 
   def test_validate_build_types_userdebug_allowed(self) -> None:
     runner = self._validate_build_types(
-        "userdebug",
-        allowed_build_types=frozenset({AndroidBuildType.USERDEBUG}))
+      "userdebug", allowed_build_types=frozenset({AndroidBuildType.USERDEBUG})
+    )
     runner.env.handle_validation_warning.assert_not_called()
 
   def test_validate_build_types_wildcard(self) -> None:
     runner = self._validate_build_types(
-        "eng", "unknown-future-value", "", allowed_build_types=None)
+      "eng", "unknown-future-value", "", allowed_build_types=None
+    )
     runner.env.handle_validation_warning.assert_not_called()
 
   def test_validate_build_types_unknown_rejected_by_default(self) -> None:
@@ -637,7 +719,8 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
 
   def test_validate_build_types_unknown_rejected_with_all_known(self) -> None:
     runner = self._validate_build_types(
-        "unknown-future-value", allowed_build_types=frozenset(AndroidBuildType))
+      "unknown-future-value", allowed_build_types=frozenset(AndroidBuildType)
+    )
     runner.env.handle_validation_warning.assert_called_once()
 
   def test_validate_build_types_skips_non_android(self) -> None:
@@ -645,27 +728,30 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
     runner = mock.MagicMock()
     runner.platforms = [platform]
     benchmark = MockWebPowerBenchmark(
-        stories=[MockWebPowerStory.from_site("cnn")])
+      stories=[MockWebPowerStory.from_site("cnn")]
+    )
     benchmark._validate_build_types(runner)
     runner.env.handle_validation_warning.assert_not_called()
 
   def _parse_and_get_kwargs(
-      self, *cli_args: str) -> tuple[argparse.Namespace, dict[str, object]]:
+    self, *cli_args: str
+  ) -> tuple[argparse.Namespace, dict[str, object]]:
     parser = MockWebPowerBenchmark.add_cli_arguments(CBArgumentParser())
     parser.add_argument(
-        "--probe-config",
-        type=pth.LocalPath,
-        default=MockWebPowerBenchmark.default_probe_config_path(),
+      "--probe-config",
+      type=pth.LocalPath,
+      default=MockWebPowerBenchmark.default_probe_config_path(),
     )
     # Add necessary arguments that would have been added by parent CLI commands.
     parser.add_argument("--browser", action="append", default=[])
     parser.add_argument("--probe", action="append", default=[])
     parser.add_argument("--no-probe", action="store_true", default=False)
     parser.add_argument(
-        "--network",
-        dest="network_config",
-        type=NetworkConfig.parse,
-        default=NetworkConfig.default())
+      "--network",
+      dest="network_config",
+      type=NetworkConfig.parse,
+      default=NetworkConfig.default(),
+    )
     args = parser.parse_args(["--site", "cnn", *cli_args])
     kwargs = MockWebPowerBenchmark.kwargs_from_cli(args)
     return args, kwargs
@@ -681,8 +767,9 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
     # Verify that explicitly providing --probe-config overrides the default.
     custom_path = pathlib.Path("/path/to/custom.hjson")
     self.fs.create_file(custom_path, contents='{"probes": {"v8.log": {}}}')
-    args, kwargs = self._parse_and_get_kwargs("--probe-config",
-                                              str(custom_path))
+    args, kwargs = self._parse_and_get_kwargs(
+      "--probe-config", str(custom_path)
+    )
     self.assertEqual(args.probe_config, custom_path)
     self.assertNotIn("bits_probe", kwargs)
     probe_names = [p.name for p in ProbeListConfig.parse_args(args).probes]
@@ -701,20 +788,25 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
     self.assertNotIn("perfetto", probe_names)
 
   def _verify_junction_temperature_setup(
-      self, is_supported: bool, already_has_probe: bool) -> mock.MagicMock:
+    self, is_supported: bool, already_has_probe: bool
+  ) -> mock.MagicMock:
     with mock.patch(
-        "crossbench.probes.junction_temperature."
-        "JunctionTemperatureProbe.validate_browser") as mock_validate:
+      "crossbench.probes.junction_temperature."
+      "JunctionTemperatureProbe.validate_browser"
+    ) as mock_validate:
       if not is_supported:
         mock_validate.side_effect = ProbeIncompatibleBrowser(
-            JunctionTemperatureProbe(), mock.MagicMock(), "Not supported")
+          JunctionTemperatureProbe(), mock.MagicMock(), "Not supported"
+        )
       story = MockWebPowerStory.from_site(
-          "cnn", total_duration=dt.timedelta(seconds=123))
+        "cnn", total_duration=dt.timedelta(seconds=123)
+      )
       benchmark = MockWebPowerBenchmark(stories=[story])
 
       runner = mock.MagicMock()
-      self._mock_has_probe(runner, JunctionTemperatureProbe.NAME,
-                           already_has_probe)
+      self._mock_has_probe(
+        runner, JunctionTemperatureProbe.NAME, already_has_probe
+      )
       runner.browsers = [mock.MagicMock()]
 
       benchmark.setup(runner)
@@ -722,30 +814,37 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
 
   def test_setup_junction_temperature_probe_supported(self) -> None:
     runner = self._verify_junction_temperature_setup(
-        is_supported=True, already_has_probe=False)
+      is_supported=True, already_has_probe=False
+    )
     runner.attach_probe.assert_called_once()
     attached_probe = runner.attach_probe.call_args.args[0]
     self.assertIsInstance(attached_probe, JunctionTemperatureProbe)
     self.assertTrue(
-        runner.attach_probe.call_args.kwargs.get("matching_browser_only"))
+      runner.attach_probe.call_args.kwargs.get("matching_browser_only")
+    )
 
   def test_setup_junction_temperature_probe_already_has_probe(self) -> None:
     runner = self._verify_junction_temperature_setup(
-        is_supported=True, already_has_probe=True)
+      is_supported=True, already_has_probe=True
+    )
     runner.attach_probe.assert_not_called()
 
-  def _mock_has_probe(self, runner: mock.MagicMock, probe_name: str,
-                      already_has_probe: bool) -> None:
+  def _mock_has_probe(
+    self, runner: mock.MagicMock, probe_name: str, already_has_probe: bool
+  ) -> None:
     """Isolate the test by explicitly controlling the mock for one probe and
     defaulting the others to True (already attached), preventing unrelated
     probes from being inadvertently attached by the benchmark."""
-    runner.has_probe.side_effect = (lambda name: already_has_probe
-                                    if name == probe_name else True)
+    runner.has_probe.side_effect = lambda name: (
+      already_has_probe if name == probe_name else True
+    )
 
   def _verify_trace_processor_get_extra_probes(
-      self, already_has_probe: bool) -> TraceProcessorProbe | None:
+    self, already_has_probe: bool
+  ) -> TraceProcessorProbe | None:
     story = MockWebPowerStory.from_site(
-        "cnn", total_duration=dt.timedelta(seconds=123))
+      "cnn", total_duration=dt.timedelta(seconds=123)
+    )
     benchmark = MockWebPowerBenchmark(stories=[story])
     probe = WebPowerProbe(benchmark=benchmark)
 
@@ -764,7 +863,8 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
   def test_setup_trace_processor_probe(self) -> None:
     """Verify that the benchmark attaches a TraceProcessorProbe by default."""
     self.assertIsNotNone(
-        self._verify_trace_processor_get_extra_probes(already_has_probe=False))
+      self._verify_trace_processor_get_extra_probes(already_has_probe=False)
+    )
 
   def test_setup_trace_processor_probe_mapping(self) -> None:
     """Verify that the benchmark configures the TraceProcessorProbe with a
@@ -773,12 +873,14 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
     # Overwrite the dummy mapping.hjson from setUp with device-specific queries.
     mapping_file = QUERIES_DIR / "web_power" / "mapping.hjson"
     mapping_file.write_text(
-        '{"Pixel 9\\\\b.*": "query_p9", "Pixel 10\\\\b.*": "query_p10"}')
+      '{"Pixel 9\\\\b.*": "query_p9", "Pixel 10\\\\b.*": "query_p10"}'
+    )
     self.fs.create_file(QUERIES_DIR / "query_p9.sql", contents="SELECT p9;")
     self.fs.create_file(QUERIES_DIR / "query_p10.sql", contents="SELECT p10;")
 
     tp_probe = self._verify_trace_processor_get_extra_probes(
-        already_has_probe=False)
+      already_has_probe=False
+    )
     self.assertIsNotNone(tp_probe)
     query = tp_probe.queries[0]
 
@@ -798,7 +900,8 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
     """Verify that the benchmark skips attaching a TraceProcessorProbe if one
     is already present."""
     tp_probe = self._verify_trace_processor_get_extra_probes(
-        already_has_probe=True)
+      already_has_probe=True
+    )
     self.assertIsNone(tp_probe)
 
   def test_probe_teardown_and_merge_ordering(self) -> None:
@@ -808,11 +911,12 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
 
     if not self.fs.exists(TraceConfig.preset_dir() / "default.txtpb"):
       self.fs.create_file(
-          TraceConfig.preset_dir() / "default.txtpb",
-          contents="duration_ms: 1000")
+        TraceConfig.preset_dir() / "default.txtpb", contents="duration_ms: 1000"
+      )
 
     story = MockWebPowerStory.from_site(
-        "cnn", total_duration=dt.timedelta(seconds=1))
+      "cnn", total_duration=dt.timedelta(seconds=1)
+    )
     benchmark = MockWebPowerBenchmark(stories=[story])
 
     browser = mock.MagicMock()
@@ -822,12 +926,12 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
     browser.attributes.return_value = BrowserAttributes.CHROMIUM_BASED
 
     runner = Runner(
-        out_dir=self.out_dir,
-        browsers=[browser],
-        benchmark=benchmark,
-        probes=[PerfettoProbe()],
-        env_validation_mode=ValidationMode.SKIP,
-        in_memory_result_db=True,
+      out_dir=self.out_dir,
+      browsers=[browser],
+      benchmark=benchmark,
+      probes=[PerfettoProbe()],
+      env_validation_mode=ValidationMode.SKIP,
+      in_memory_result_db=True,
     )
 
     benchmark.setup(runner)
@@ -839,17 +943,20 @@ class WebPowerBenchmarkBaseTestCase(BaseWebPowerBenchmarkTestCase):
     wp_idx = probe_classes.index(WebPowerProbe)
 
     self.assertGreater(
-        perfetto_idx, tp_idx,
-        "PerfettoProbe must be sorted after TraceProcessorProbe "
-        "so that it tears down first")
+      perfetto_idx,
+      tp_idx,
+      "PerfettoProbe must be sorted after TraceProcessorProbe "
+      "so that it tears down first",
+    )
     self.assertGreater(
-        tp_idx, wp_idx,
-        "TraceProcessorProbe must be sorted after WebPowerProbe "
-        "so that it merges first")
+      tp_idx,
+      wp_idx,
+      "TraceProcessorProbe must be sorted after WebPowerProbe "
+      "so that it merges first",
+    )
 
 
 class WebPowerSetupProbesTestCase(WebPowerBenchmarkBaseTestCase):
-
   def setUp(self) -> None:
     super().setUp()
     self.mock_browser = mock.Mock()
@@ -859,35 +966,40 @@ class WebPowerSetupProbesTestCase(WebPowerBenchmarkBaseTestCase):
     self.mock_browser.attributes.return_value = BrowserAttributes.CHROMIUM_BASED
 
   def _setup_runner(
-      self,
-      with_bits: bool = False,
-      is_ios: bool = False,
-      probes: Sequence[Probe] = (),
-      disabled_probes: Sequence[str] = (),
+    self,
+    with_bits: bool = False,
+    is_ios: bool = False,
+    probes: Sequence[Probe] = (),
+    disabled_probes: Sequence[str] = (),
   ) -> Runner:
     self.mock_browser.platform.is_android = with_bits
     self.mock_browser.platform.is_ios = is_ios
     if with_bits and not self.fs.exists(self.bits_path):
       self.fs.create_file(self.bits_path)
     bits_probe = (
-        BitsProbe(bits_path=self.bits_path, bits_out="run_id")
-        if with_bits else None)
+      BitsProbe(bits_path=self.bits_path, bits_out="run_id")
+      if with_bits
+      else None
+    )
     story = MockWebPowerStory.from_site(
-        "cnn", total_duration=dt.timedelta(seconds=1))
+      "cnn", total_duration=dt.timedelta(seconds=1)
+    )
     benchmark = MockWebPowerBenchmark(stories=[story], bits_probe=bits_probe)
 
     runner = Runner(
-        out_dir=self.out_dir,
-        browsers=[self.mock_browser],
-        benchmark=benchmark,
-        probes=list(probes),
-        disabled_probes=list(disabled_probes),
-        env_validation_mode=ValidationMode.SKIP,
-        in_memory_result_db=True,
+      out_dir=self.out_dir,
+      browsers=[self.mock_browser],
+      benchmark=benchmark,
+      probes=list(probes),
+      disabled_probes=list(disabled_probes),
+      env_validation_mode=ValidationMode.SKIP,
+      in_memory_result_db=True,
     )
 
-    with mock.patch("crossbench.probes.junction_temperature."
-                    "JunctionTemperatureProbe.validate_browser"):
+    with mock.patch(
+      "crossbench.probes.junction_temperature."
+      "JunctionTemperatureProbe.validate_browser"
+    ):
       benchmark.setup(runner)
     return runner
 
@@ -944,33 +1056,35 @@ class WebPowerSetupProbesTestCase(WebPowerBenchmarkBaseTestCase):
     ios_browser.platform.is_ios = True
     self.mock_browser.platform.is_ios = False
     story = MockWebPowerStory.from_site(
-        "cnn", total_duration=dt.timedelta(seconds=1))
+      "cnn", total_duration=dt.timedelta(seconds=1)
+    )
     benchmark = MockWebPowerBenchmark(stories=[story])
-    with self.assertRaisesRegex(ValueError,
-                                "Cannot mix iOS and non-iOS browsers"):
+    with self.assertRaisesRegex(
+      ValueError, "Cannot mix iOS and non-iOS browsers"
+    ):
       Runner(
-          out_dir=self.out_dir,
-          browsers=[self.mock_browser, ios_browser],
-          benchmark=benchmark,
-          env_validation_mode=ValidationMode.SKIP,
-          in_memory_result_db=True,
+        out_dir=self.out_dir,
+        browsers=[self.mock_browser, ios_browser],
+        benchmark=benchmark,
+        env_validation_mode=ValidationMode.SKIP,
+        in_memory_result_db=True,
       )
 
 
 class FakeWprReplayNetwork(WprReplayNetwork):
-
-  def __init__(self, archive_path: pth.LocalPath,
-               platform: plt.Platform) -> None:
+  def __init__(
+    self, archive_path: pth.LocalPath, platform: plt.Platform
+  ) -> None:
     super().__init__(
-        archive=archive_path,
-        traffic_shaper=mock.MagicMock(),
-        browser_platform=platform,
-        persist_server=False,
-        inject_deterministic_script=False,
-        no_archive_certificates=True,
-        response_transformations_file=None,
-        cross_platform_mode=False,
-        host=None,
+      archive=archive_path,
+      traffic_shaper=mock.MagicMock(),
+      browser_platform=platform,
+      persist_server=False,
+      inject_deterministic_script=False,
+      no_archive_certificates=True,
+      response_transformations_file=None,
+      cross_platform_mode=False,
+      host=None,
     )
     self._server = None
 
@@ -984,21 +1098,23 @@ class FakeWprReplayNetwork(WprReplayNetwork):
 
 
 class WebPowerBenchmarkSetupSessionTestCase(BaseCrossbenchTestCase):
-
   def setUp(self) -> None:
     super().setUp()
     # Mock WprGoFinder.httparchive() to point to /tmp/httparchive
     wpr_go_finder_patcher = mock.patch(
-        "crossbench.benchmarks.web_power.base.WprGoFinder")
+      "crossbench.benchmarks.web_power.base.WprGoFinder"
+    )
     self.mock_finder = wpr_go_finder_patcher.start()
     self.addCleanup(wpr_go_finder_patcher.stop)
     self.mock_finder.return_value.httparchive.return_value = self.platform.path(
-        "/tmp/httparchive")
+      "/tmp/httparchive"
+    )
     self.fs.create_file(self.platform.path("/tmp/httparchive"))
 
     # Mock prepare_gcs_request and download_gcs_file
-    prepare_gcs_patcher = mock.patch.object(self.platform,
-                                            "prepare_gcs_request")
+    prepare_gcs_patcher = mock.patch.object(
+      self.platform, "prepare_gcs_request"
+    )
     self.mock_prepare = prepare_gcs_patcher.start()
     self.addCleanup(prepare_gcs_patcher.stop)
 
@@ -1009,14 +1125,13 @@ class WebPowerBenchmarkSetupSessionTestCase(BaseCrossbenchTestCase):
     download_gcs_patcher = mock.patch.object(self.platform, "download_gcs_file")
     self.mock_download = download_gcs_patcher.start()
     self.addCleanup(download_gcs_patcher.stop)
-    self.mock_download.side_effect = (
-        lambda url, path: self.fs.create_file(path))
+    self.mock_download.side_effect = lambda url, path: self.fs.create_file(path)
 
   def _create_session(
-      self,
-      site_key: str | None = None,
-      url: str | None = None,
-      has_custom_network: bool = False,
+    self,
+    site_key: str | None = None,
+    url: str | None = None,
+    has_custom_network: bool = False,
   ) -> tuple[MockWebPowerBenchmark, FakeWprReplayNetwork, mock.MagicMock]:
     archive_path = pth.LocalPath("/tmp/archive.wprgo")
     if not self.fs.exists(str(archive_path)):
@@ -1030,13 +1145,16 @@ class WebPowerBenchmarkSetupSessionTestCase(BaseCrossbenchTestCase):
 
     if site_key:
       story = MockWebPowerStory.from_site(
-          site_key, total_duration=dt.timedelta(seconds=10))
+        site_key, total_duration=dt.timedelta(seconds=10)
+      )
     else:
       self.assertIsNotNone(url)
       story = MockWebPowerStory.from_url(
-          url, total_duration=dt.timedelta(seconds=10))
+        url, total_duration=dt.timedelta(seconds=10)
+      )
     benchmark = MockWebPowerBenchmark(
-        stories=[story], has_custom_network=has_custom_network)
+      stories=[story], has_custom_network=has_custom_network
+    )
     run = mock.MagicMock()
     run.story = story
     run.browser = browser
@@ -1056,10 +1174,12 @@ class WebPowerBenchmarkSetupSessionTestCase(BaseCrossbenchTestCase):
     self.fs.create_file(self.platform.path("/tmp/cnn_archive.wprgo"))
 
     with mock.patch.object(
-        self.platform, "sh_stdout", return_value='{"Metadata": {}}'):
+      self.platform, "sh_stdout", return_value='{"Metadata": {}}'
+    ):
       benchmark.setup_session_network(session)
-      expected_archive_path = self.platform.local_cache_dir(
-          "wpr") / "cnn_20260513_mock_hash.wprgo"
+      expected_archive_path = (
+        self.platform.local_cache_dir("wpr") / "cnn_20260513_mock_hash.wprgo"
+      )
       self.assertEqual(network.archive_path, expected_archive_path)
       self.assertIsNone(network._response_transformations_file)
 
@@ -1070,13 +1190,16 @@ class WebPowerBenchmarkSetupSessionTestCase(BaseCrossbenchTestCase):
     self.fs.add_real_file(dismisser_file)
 
     with mock.patch.object(
-        self.platform,
-        "sh_stdout",
-        return_value=('Dismisser target: button,button,"Accept All",'
-                      'https://www.cnn.com')):
+      self.platform,
+      "sh_stdout",
+      return_value=(
+        'Dismisser target: button,button,"Accept All",https://www.cnn.com'
+      ),
+    ):
       benchmark.setup_session_network(session)
-      expected_archive_path = self.platform.local_cache_dir(
-          "wpr") / "cnn_20260513_mock_hash.wprgo"
+      expected_archive_path = (
+        self.platform.local_cache_dir("wpr") / "cnn_20260513_mock_hash.wprgo"
+      )
       self.assertEqual(network.archive_path, expected_archive_path)
       self.assertIsNotNone(network._response_transformations_file)
       rules_file = network._response_transformations_file
@@ -1090,15 +1213,15 @@ class WebPowerBenchmarkSetupSessionTestCase(BaseCrossbenchTestCase):
     self.fs.add_real_file(dismisser_file)
 
     with mock.patch.object(
-        self.platform,
-        "sh_stdout",
-        return_value=('Dismisser target: button,,"Accept All",'
-                      'https://www.cnn.com'),
+      self.platform,
+      "sh_stdout",
+      return_value=(
+        'Dismisser target: button,,"Accept All",https://www.cnn.com'
+      ),
     ):
       benchmark.setup_session_network(session)
       expected_archive_path = (
-          self.platform.local_cache_dir("wpr")
-          / "cnn_20260513_mock_hash.wprgo"
+        self.platform.local_cache_dir("wpr") / "cnn_20260513_mock_hash.wprgo"
       )
       self.assertEqual(network.archive_path, expected_archive_path)
       self.assertIsNotNone(network._response_transformations_file)
@@ -1115,7 +1238,8 @@ class WebPowerBenchmarkSetupSessionTestCase(BaseCrossbenchTestCase):
     self.fs.create_file(cnn_archive)
 
     with mock.patch.object(
-        self.platform, "sh_stdout", return_value='{"Metadata": {}}'):
+      self.platform, "sh_stdout", return_value='{"Metadata": {}}'
+    ):
       benchmark.setup_session_network(session1)
       with network.open(session1):
         self.assertIsNotNone(network._server)
@@ -1135,11 +1259,13 @@ class WebPowerBenchmarkSetupSessionTestCase(BaseCrossbenchTestCase):
     self.fs.create_file(self.platform.path("/tmp/youtube_archive.wprgo"))
 
     with mock.patch.object(
-        self.platform, "sh_stdout", return_value='{"Metadata": {}}'):
+      self.platform, "sh_stdout", return_value='{"Metadata": {}}'
+    ):
       # Setup and run cnn
       benchmark1.setup_session_network(session1)
-      expected_cnn_path = self.platform.local_cache_dir(
-          "wpr") / "cnn_20260513_mock_hash.wprgo"
+      expected_cnn_path = (
+        self.platform.local_cache_dir("wpr") / "cnn_20260513_mock_hash.wprgo"
+      )
       self.assertEqual(network.archive_path, expected_cnn_path)
       with network.open(session1):
         self.assertIsNotNone(network._server)
@@ -1147,8 +1273,10 @@ class WebPowerBenchmarkSetupSessionTestCase(BaseCrossbenchTestCase):
 
       # Setup and run youtube (should update archive path!)
       benchmark2.setup_session_network(session2)
-      expected_youtube_path = self.platform.local_cache_dir(
-          "wpr") / "youtube_2026_05_18_mock_hash.wprgo"
+      expected_youtube_path = (
+        self.platform.local_cache_dir("wpr")
+        / "youtube_2026_05_18_mock_hash.wprgo"
+      )
       self.assertEqual(network.archive_path, expected_youtube_path)
       with network.open(session2):
         self.assertIsNotNone(network._server)
@@ -1159,17 +1287,20 @@ class WebPowerBenchmarkSetupSessionTestCase(BaseCrossbenchTestCase):
     self.fs.create_file(archive_path)
 
     benchmark, network, session = self._create_session(
-        url="https://www.google.com")
+      url="https://www.google.com"
+    )
     network.set_archive_path(archive_path)
 
     dismisser_file = pathlib.Path(wpr_helpers.__file__).parent / "dismisser.js"
     self.fs.add_real_file(dismisser_file)
 
     with mock.patch.object(
-        self.platform,
-        "sh_stdout",
-        return_value=('Dismisser target: button,button,"Accept All",'
-                      'https://www.google.com')):
+      self.platform,
+      "sh_stdout",
+      return_value=(
+        'Dismisser target: button,button,"Accept All",https://www.google.com'
+      ),
+    ):
       benchmark.setup_session_network(session)
       self.assertEqual(network.archive_path, archive_path)
       self.assertIsNotNone(network._response_transformations_file)
@@ -1182,17 +1313,20 @@ class WebPowerBenchmarkSetupSessionTestCase(BaseCrossbenchTestCase):
     self.fs.create_file(archive_path)
 
     benchmark, network, session = self._create_session(
-        site_key="cnn", has_custom_network=True)
+      site_key="cnn", has_custom_network=True
+    )
     network.set_archive_path(archive_path)
 
     dismisser_file = pathlib.Path(wpr_helpers.__file__).parent / "dismisser.js"
     self.fs.add_real_file(dismisser_file)
 
     with mock.patch.object(
-        self.platform,
-        "sh_stdout",
-        return_value=('Dismisser target: button,button,"Accept All",'
-                      'https://www.cnn.com')):
+      self.platform,
+      "sh_stdout",
+      return_value=(
+        'Dismisser target: button,button,"Accept All",https://www.cnn.com'
+      ),
+    ):
       benchmark.setup_session_network(session)
       self.assertEqual(network.archive_path, archive_path)
       rules_file = network._response_transformations_file

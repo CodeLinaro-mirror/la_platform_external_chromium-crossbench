@@ -16,14 +16,13 @@ from tests.crossbench.base import CrossbenchFakeFsTestCase
 
 
 class SettingsTestCase(CrossbenchFakeFsTestCase):
-
   def setUp(self):
     super().setUp()
     self.config_dir = "/config"
     self.fs.create_dir(self.config_dir)
     self.enterContext(
-        mock.patch(
-            "platformdirs.user_config_dir", return_value=self.config_dir))
+      mock.patch("platformdirs.user_config_dir", return_value=self.config_dir)
+    )
     self.enterContext(mock.patch.object(pth, "LocalPath", pathlib.Path))
 
   def tearDown(self):

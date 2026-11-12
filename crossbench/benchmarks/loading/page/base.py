@@ -8,8 +8,7 @@ import abc
 import datetime as dt
 from typing import TYPE_CHECKING, Final, Iterable, override
 
-from crossbench.benchmarks.loading.playback_controller import \
-    PlaybackController
+from crossbench.benchmarks.loading.playback_controller import PlaybackController
 from crossbench.benchmarks.loading.tab_controller import TabController
 from crossbench.stories.story import Story
 
@@ -26,7 +25,6 @@ PAGE_LIST: list[Page] = []
 
 
 class Page(Story, metaclass=abc.ABCMeta):
-
   @classmethod
   @override
   def all_story_names(cls) -> tuple[str, ...]:
@@ -36,14 +34,14 @@ class Page(Story, metaclass=abc.ABCMeta):
     return tuple(page.name for page in PAGE_LIST)
 
   def __init__(
-      self,
-      name: str,
-      duration: dt.timedelta = DEFAULT_DURATION,
-      playback: PlaybackController = PlaybackController.default(),
-      tabs: TabController = TabController.default(),
-      about_blank_duration: dt.timedelta = dt.timedelta(),
-      secrets: Secrets | None = None,
-      tags: Iterable[str] = (),
+    self,
+    name: str,
+    duration: dt.timedelta = DEFAULT_DURATION,
+    playback: PlaybackController = PlaybackController.default(),
+    tabs: TabController = TabController.default(),
+    about_blank_duration: dt.timedelta = dt.timedelta(),
+    secrets: Secrets | None = None,
+    tags: Iterable[str] = (),
   ) -> None:
     self._playback: PlaybackController = playback
     self._tabs: TabController = tabs

@@ -25,14 +25,13 @@ DecoratorTargetT = TypeVar("DecoratorTargetT", bound=DecoratorTargetProtocol)
 
 
 class DecoratorConfigParser(ConfigParser[DecoratorT]):
-
   def __init__(self, probe_cls: type[DecoratorT]) -> None:
     super().__init__(probe_cls)
     self._probe_cls: Final[type[DecoratorT]] = probe_cls
 
 
 class Decorator(abc.ABC, Generic[DecoratorTargetT]):
-  """ Abstract base class for RunDecorator and SessionDecorator that can
+  """Abstract base class for RunDecorator and SessionDecorator that can
   temporarily modify Runs or BrowserSessions.
   """
 
@@ -67,8 +66,8 @@ class Decorator(abc.ABC, Generic[DecoratorTargetT]):
 
   @abc.abstractmethod
   def context(
-      self: DecoratorT,
-      target: DecoratorTargetT,
+    self: DecoratorT,
+    target: DecoratorTargetT,
   ) -> DecoratorContext[DecoratorT, DecoratorTargetT]:
     pass
 
@@ -100,7 +99,8 @@ class DecoratorContext(abc.ABC, Generic[DecoratorT, DecoratorTargetT]):
     self._decorator: Final[DecoratorT] = decorator
     self._target: Final[DecoratorTargetT] = target
     self._state: Final[StateMachine[DecoratorContext._State]] = StateMachine(
-        self._State.READY)
+      self._State.READY
+    )
     self._is_success: bool = False
     self._start_time: dt.datetime | None = None
     self._stop_time: dt.datetime | None = None
@@ -135,7 +135,8 @@ class DecoratorContext(abc.ABC, Generic[DecoratorT, DecoratorTargetT]):
   def set_start_time(self, start_datetime: dt.datetime) -> None:
     # Used to set a uniform start time across all active DecoratorContexts.
     assert self._start_time is None, (
-        f"Unexpected start time: {self._start_time}")
+      f"Unexpected start time: {self._start_time}"
+    )
     self._start_time = start_datetime
 
   def __enter__(self) -> None:
@@ -148,9 +149,12 @@ class DecoratorContext(abc.ABC, Generic[DecoratorT, DecoratorTargetT]):
         self._state.transition(self._State.STARTING, to=self._State.FAILURE)
         raise
 
-  def __exit__(self, exc_type: type[BaseException] | None,
-               exc_value: BaseException | None,
-               traceback: TracebackType | None) -> None:
+  def __exit__(
+    self,
+    exc_type: type[BaseException] | None,
+    exc_value: BaseException | None,
+    traceback: TracebackType | None,
+  ) -> None:
     self._state.expect(self._State.RUNNING, self._State.FAILURE)
     with self._target.exception_capture(f"{self._label} stop"):
       try:

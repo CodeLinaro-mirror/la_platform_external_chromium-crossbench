@@ -11,7 +11,6 @@ from tests.crossbench.base import BaseCrossbenchTestCase
 
 
 class LiveNetworkTestCase(BaseCrossbenchTestCase):
-
   def test_defaults(self):
     network = LiveNetwork(browser_platform=self.platform)
     self.assertTrue(network.traffic_shaper.is_live)

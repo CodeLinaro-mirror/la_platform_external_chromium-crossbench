@@ -8,11 +8,17 @@ import datetime as dt
 import unittest
 from typing import TYPE_CHECKING, override
 
-from crossbench.benchmarks.base import PressBenchmarkStoryFilter, \
-    RangePatternError, RegexFilter, TagsFilter
+from crossbench.benchmarks.base import (
+  PressBenchmarkStoryFilter,
+  RangePatternError,
+  RegexFilter,
+  TagsFilter,
+)
 from crossbench.cli.parser import CBArgumentParser
-from crossbench.stories.press_benchmark import MAX_STORY_NAME_LEN, \
-    PressBenchmarkStory
+from crossbench.stories.press_benchmark import (
+  MAX_STORY_NAME_LEN,
+  PressBenchmarkStory,
+)
 from tests import test_helper
 
 if TYPE_CHECKING:
@@ -24,10 +30,10 @@ class MockStory(PressBenchmarkStory):
   NAME = "MockStory"
   URL = "http://test.com"
   SUBSTORIES = (
-      "Story-1",
-      "Story-2",
-      "Story-3",
-      "Story-4",
+    "Story-1",
+    "Story-2",
+    "Story-3",
+    "Story-4",
   )
 
   @property
@@ -44,7 +50,6 @@ class MockStoryWithLongNames(MockStory):
 
 
 class MockStoryWithTags(MockStory):
-
   @classmethod
   def all_story_names(cls) -> tuple[str, ...]:
     return ("Story-1", "Story-2", "Story-3")
@@ -52,9 +57,9 @@ class MockStoryWithTags(MockStory):
   @classmethod
   def all_tags_lookup(cls) -> StoryTagLookupT:
     return {
-        "Story-1": ["tag1"],
-        "Story-2": ["tag2"],
-        "Story-3": ["tag3"],
+      "Story-1": ["tag1"],
+      "Story-2": ["tag2"],
+      "Story-3": ["tag3"],
     }
 
   @property
@@ -63,10 +68,10 @@ class MockStoryWithTags(MockStory):
 
 
 class PressBenchmarkStoryFilterTestCase(unittest.TestCase):
-
   def story_filter(self, *args, **kwargs):
     return PressBenchmarkStoryFilter(
-        MockStory, *args, args=argparse.Namespace(), **kwargs)
+      MockStory, *args, args=argparse.Namespace(), **kwargs
+    )
 
   def test_empty(self):
     with self.assertRaises(ValueError):
@@ -80,8 +85,9 @@ class PressBenchmarkStoryFilterTestCase(unittest.TestCase):
 
   def test_all_separate(self):
     stories = self.story_filter(["all"], separate=True).stories
-    self.assertSequenceEqual([story.substories[0] for story in stories],
-                             MockStory.SUBSTORIES)
+    self.assertSequenceEqual(
+      [story.substories[0] for story in stories], MockStory.SUBSTORIES
+    )
     for story in stories:
       self.assertTrue(len(story.substories), 1)
 
@@ -103,8 +109,10 @@ class PressBenchmarkStoryFilterTestCase(unittest.TestCase):
 
   def test_long_name_is_shortened(self):
     stories = PressBenchmarkStoryFilter(
-        MockStoryWithLongNames, ["Story-1.*", "Story-2.*"],
-        args=argparse.Namespace()).stories
+      MockStoryWithLongNames,
+      ["Story-1.*", "Story-2.*"],
+      args=argparse.Namespace(),
+    ).stories
     self.assertEqual(len(stories), 1)
     story = stories[0]
     self.assertEqual(len(story.substories), 2)
@@ -112,12 +120,16 @@ class PressBenchmarkStoryFilterTestCase(unittest.TestCase):
     self.assertTrue(story.name.startswith("Story-1-"))
     # The name is stable and distinguishes different selections.
     other_story = PressBenchmarkStoryFilter(
-        MockStoryWithLongNames, ["Story-1.*", "Story-2.*"],
-        args=argparse.Namespace()).stories[0]
+      MockStoryWithLongNames,
+      ["Story-1.*", "Story-2.*"],
+      args=argparse.Namespace(),
+    ).stories[0]
     self.assertEqual(story.name, other_story.name)
     third_story = PressBenchmarkStoryFilter(
-        MockStoryWithLongNames, ["Story-1.*", "Story-3.*"],
-        args=argparse.Namespace()).stories[0]
+      MockStoryWithLongNames,
+      ["Story-1.*", "Story-3.*"],
+      args=argparse.Namespace(),
+    ).stories[0]
     self.assertNotEqual(story.name, third_story.name)
 
   def test_match_regexp_all_wrong_case(self):
@@ -129,14 +141,16 @@ class PressBenchmarkStoryFilterTestCase(unittest.TestCase):
   def test_story_tags_include(self):
     args = argparse.Namespace(stories="all", story_tags="tag1")
     filter = PressBenchmarkStoryFilter(
-        MockStoryWithTags, [], args=args, tags=["tag1"], separate=True)
+      MockStoryWithTags, [], args=args, tags=["tag1"], separate=True
+    )
     self.assertEqual(len(filter.stories), 1)
     self.assertIn("Story-1", filter.stories[0].name)
 
   def test_story_tags_exclude(self):
     args = argparse.Namespace(stories="all", story_tags="-tag1")
     filter = PressBenchmarkStoryFilter(
-        MockStoryWithTags, [], args=args, tags=["-tag1"], separate=True)
+      MockStoryWithTags, [], args=args, tags=["-tag1"], separate=True
+    )
     self.assertEqual(len(filter.stories), 2)
     names = [s.name for s in filter.stories]
     self.assertTrue(any("Story-2" in name for name in names))
@@ -144,17 +158,14 @@ class PressBenchmarkStoryFilterTestCase(unittest.TestCase):
 
   def test_story_tags_in_stories_list(self) -> None:
     args = argparse.Namespace(
-        stories="#tag1",
-        story_tags=None,
-        separate=True,
-        custom_benchmark_url=None)
+      stories="#tag1", story_tags=None, separate=True, custom_benchmark_url=None
+    )
     filter = PressBenchmarkStoryFilter.from_cli_args(MockStoryWithTags, args)
     self.assertEqual(len(filter.stories), 1)
     self.assertIn("Story-1", filter.stories[0].name)
 
 
 class RegexFilterTestCase(unittest.TestCase):
-
   def test_all(self):
     regex_filter = RegexFilter(["story1", "story2"], ["story1"])
     selected = regex_filter.process_all(["all"])
@@ -192,14 +203,16 @@ class RegexFilterTestCase(unittest.TestCase):
     self.assertSequenceEqual(selected, ["story1", "story2"])
 
   def test_range(self):
-    regex_filter = RegexFilter(["A", "B", "C", "D", "E"],
-                               ["A", "B", "C", "D", "E"])
+    regex_filter = RegexFilter(
+      ["A", "B", "C", "D", "E"], ["A", "B", "C", "D", "E"]
+    )
     selected = regex_filter.process_all(["B...D"])
     self.assertSequenceEqual(selected, ["B", "C", "D"])
 
   def test_range_regex(self):
-    regex_filter = RegexFilter(["A1", "A2", "B1", "B2", "C1", "C2"],
-                               ["A1", "A2", "B1", "B2", "C1", "C2"])
+    regex_filter = RegexFilter(
+      ["A1", "A2", "B1", "B2", "C1", "C2"], ["A1", "A2", "B1", "B2", "C1", "C2"]
+    )
     selected = regex_filter.process_all(["A.*...B.*"])
     # Start: A1 (first match of A.*)
     # End: B2 (last match of B.*)
@@ -207,30 +220,34 @@ class RegexFilterTestCase(unittest.TestCase):
     self.assertSequenceEqual(selected, ["A1", "A2", "B1", "B2"])
 
   def test_range_regex_start_only(self):
-    regex_filter = RegexFilter(["A1", "A2", "B1", "B2", "C1", "C2"],
-                               ["A1", "A2", "B1", "B2", "C1", "C2"])
+    regex_filter = RegexFilter(
+      ["A1", "A2", "B1", "B2", "C1", "C2"], ["A1", "A2", "B1", "B2", "C1", "C2"]
+    )
     selected = regex_filter.process_all(["B.*..."])
     # Start: B1 (first match of B.*)
     # End: C2 (last element)
     self.assertSequenceEqual(selected, ["B1", "B2", "C1", "C2"])
 
   def test_range_regex_end_only(self):
-    regex_filter = RegexFilter(["A1", "A2", "B1", "B2", "C1", "C2"],
-                               ["A1", "A2", "B1", "B2", "C1", "C2"])
+    regex_filter = RegexFilter(
+      ["A1", "A2", "B1", "B2", "C1", "C2"], ["A1", "A2", "B1", "B2", "C1", "C2"]
+    )
     selected = regex_filter.process_all(["...B.*"])
     # Start: A1 (first element)
     # End: B2 (last match of B.*)
     self.assertSequenceEqual(selected, ["A1", "A2", "B1", "B2"])
 
   def test_range_start_only(self):
-    regex_filter = RegexFilter(["A", "B", "C", "D", "E"],
-                               ["A", "B", "C", "D", "E"])
+    regex_filter = RegexFilter(
+      ["A", "B", "C", "D", "E"], ["A", "B", "C", "D", "E"]
+    )
     selected = regex_filter.process_all(["C..."])
     self.assertSequenceEqual(selected, ["C", "D", "E"])
 
   def test_range_end_only(self):
-    regex_filter = RegexFilter(["A", "B", "C", "D", "E"],
-                               ["A", "B", "C", "D", "E"])
+    regex_filter = RegexFilter(
+      ["A", "B", "C", "D", "E"], ["A", "B", "C", "D", "E"]
+    )
     selected = regex_filter.process_all(["...C"])
     self.assertSequenceEqual(selected, ["A", "B", "C"])
 
@@ -251,14 +268,14 @@ class RegexFilterTestCase(unittest.TestCase):
       regex_filter.process_all(["A...-B"])
 
   def test_range_with_other_patterns(self):
-    regex_filter = RegexFilter(["A", "B", "C", "D", "E"],
-                               ["A", "B", "C", "D", "E"])
+    regex_filter = RegexFilter(
+      ["A", "B", "C", "D", "E"], ["A", "B", "C", "D", "E"]
+    )
     selected = regex_filter.process_all(["B...C", "E"])
     self.assertSequenceEqual(selected, ["B", "C", "E"])
 
 
 class TagsFilterTestCase(unittest.TestCase):
-
   def test_empty_tags(self):
     story_tags = {"story1": ["tag1"], "story2": ["tag2"]}
     tags_filter = TagsFilter(story_tags, ["story1"])
@@ -290,9 +307,9 @@ class TagsFilterTestCase(unittest.TestCase):
 
   def test_include_tag(self):
     story_tags = {
-        "story1": ["tag1"],
-        "story2": ["tag2"],
-        "story3": ["tag1", "tag3"],
+      "story1": ["tag1"],
+      "story2": ["tag2"],
+      "story3": ["tag1", "tag3"],
     }
     tags_filter = TagsFilter(story_tags, ["story1"])
     selected = tags_filter.process_all(["tag1"])
@@ -300,9 +317,9 @@ class TagsFilterTestCase(unittest.TestCase):
 
   def test_exclude_tag(self):
     story_tags = {
-        "story1": ["tag1"],
-        "story2": ["tag2"],
-        "story3": ["tag1", "tag3"],
+      "story1": ["tag1"],
+      "story2": ["tag2"],
+      "story3": ["tag1", "tag3"],
     }
     tags_filter = TagsFilter(story_tags, ["story1"])
     selected = tags_filter.process_all(["-tag1"])
@@ -310,9 +327,9 @@ class TagsFilterTestCase(unittest.TestCase):
 
   def test_include_and_exclude_tag(self):
     story_tags = {
-        "story1": ["tag1"],
-        "story2": ["tag2"],
-        "story3": ["tag1", "tag3"],
+      "story1": ["tag1"],
+      "story2": ["tag2"],
+      "story3": ["tag1", "tag3"],
     }
     tags_filter = TagsFilter(story_tags, ["story1"])
     selected = tags_filter.process_all(["tag1", "-tag3"])
@@ -321,8 +338,9 @@ class TagsFilterTestCase(unittest.TestCase):
   def test_include_and_exclude_same_tag(self):
     story_tags = {"story1": ["tag1"], "story2": ["tag2"]}
     tags_filter = TagsFilter(story_tags, ["story1"])
-    with self.assertRaisesRegex(ValueError,
-                                "Tags cannot be both included and excluded"):
+    with self.assertRaisesRegex(
+      ValueError, "Tags cannot be both included and excluded"
+    ):
       tags_filter.process_all(["tag1", "-tag1"])
 
   def test_no_stories_left(self):
@@ -333,7 +351,6 @@ class TagsFilterTestCase(unittest.TestCase):
 
 
 class StoryFilterTestCase(unittest.TestCase):
-
   def test_story_grouping_defaults(self):
     parser = CBArgumentParser()
     PressBenchmarkStoryFilter.add_cli_arguments(parser)

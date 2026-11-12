@@ -18,12 +18,16 @@ from crossbench.helper.version import VersionParseError
 from crossbench.plt.win import WinPlatform, WinVersion
 from tests import test_helper
 from tests.crossbench.mock_helper import WinMockPlatform
-from tests.crossbench.plt.helper import BaseLocalMockPlatformTestMixin, \
-    BaseMockPlatformTestCase, PlatformClipboardTestCase
+from tests.crossbench.plt.helper import (
+  BaseLocalMockPlatformTestMixin,
+  BaseMockPlatformTestCase,
+  PlatformClipboardTestCase,
+)
 
 
-class WinMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
-                              BaseMockPlatformTestCase):
+class WinMockPlatformTestCase(
+  BaseLocalMockPlatformTestMixin, BaseMockPlatformTestCase
+):
   __test__ = True
   platform: WinMockPlatform
 
@@ -66,16 +70,19 @@ class WinMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
 
   def test_path_conversion(self):
     self.assertIsInstance(
-        self.platform.path("foo/bar"), pathlib.PureWindowsPath)
+      self.platform.path("foo/bar"), pathlib.PureWindowsPath
+    )
     self.assertIsInstance(
-        self.platform.path(pathlib.PurePath("foo/bar")),
-        pathlib.PureWindowsPath)
+      self.platform.path(pathlib.PurePath("foo/bar")), pathlib.PureWindowsPath
+    )
     self.assertIsInstance(
-        self.platform.path(pathlib.PureWindowsPath("foo/bar")),
-        pathlib.PureWindowsPath)
+      self.platform.path(pathlib.PureWindowsPath("foo/bar")),
+      pathlib.PureWindowsPath,
+    )
     self.assertIsInstance(
-        self.platform.path(pathlib.PurePosixPath("foo/bar")),
-        pathlib.PureWindowsPath)
+      self.platform.path(pathlib.PurePosixPath("foo/bar")),
+      pathlib.PureWindowsPath,
+    )
 
   def test_expanduser(self) -> None:
     home = self.path("C:/Users/testuser")
@@ -87,39 +94,44 @@ class WinMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
       self.assertEqual(self.platform.expanduser("~\\"), home)
       self.assertEqual(self.platform.expanduser("~\\foo"), home / "foo")
       self.assertEqual(
-          self.platform.expanduser("~\\foo\\bar"), home / "foo/bar")
+        self.platform.expanduser("~\\foo\\bar"), home / "foo/bar"
+      )
       self.assertEqual(
-          self.platform.expanduser(pathlib.PureWindowsPath("~\\foo")),
-          home / "foo")
+        self.platform.expanduser(pathlib.PureWindowsPath("~\\foo")),
+        home / "foo",
+      )
       self.assertEqual(
-          self.platform.expanduser(pth.AnyWindowsPath("~\\foo")), home / "foo")
+        self.platform.expanduser(pth.AnyWindowsPath("~\\foo")), home / "foo"
+      )
       self.assertEqual(
-          self.platform.expanduser(pathlib.PurePosixPath("~/foo")),
-          home / "foo")
+        self.platform.expanduser(pathlib.PurePosixPath("~/foo")), home / "foo"
+      )
       self.assertEqual(
-          self.platform.expanduser(pth.AnyPosixPath("~/foo")), home / "foo")
+        self.platform.expanduser(pth.AnyPosixPath("~/foo")), home / "foo"
+      )
 
   def test_expanduser_no_home(self) -> None:
     for path_str in (
-        "",
-        ".",
-        "foo",
-        "foo/bar",
-        "foo\\bar",
-        "foo/~bar",
-        "foo\\~bar",
-        "~~",
-        "~~/foo",
-        "~~\\foo",
-        "~otheruser",
-        "~otheruser\\foo",
-        "C:/Users/foo",
-        "C:\\Users\\foo",
-        "C:\\foo\\~bar",
+      "",
+      ".",
+      "foo",
+      "foo/bar",
+      "foo\\bar",
+      "foo/~bar",
+      "foo\\~bar",
+      "~~",
+      "~~/foo",
+      "~~\\foo",
+      "~otheruser",
+      "~otheruser\\foo",
+      "C:/Users/foo",
+      "C:\\Users\\foo",
+      "C:\\foo\\~bar",
     ):
       with self.subTest(path=path_str):
         self.assertEqual(
-            self.platform.expanduser(path_str), self.path(path_str))
+          self.platform.expanduser(path_str), self.path(path_str)
+        )
 
   def test_which(self):
     bin_path = self.path("foo/bar/default/crossbench_mock_binary.exe")
@@ -174,10 +186,11 @@ class WinMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
 
     """)
     self.expect_sh(
-        "powershell",
-        "-c",
-        "Get-CIMInstance -query 'select * from Win32_Processor' | ft Caption",
-        result=cpu_caption)
+      "powershell",
+      "-c",
+      "Get-CIMInstance -query 'select * from Win32_Processor' | ft Caption",
+      result=cpu_caption,
+    )
     self.platform.use_mock_machine = False
     with mock.patch("platform.machine", return_value="AMD64"):
       self.assertTrue(self.platform.is_x64)
@@ -192,10 +205,11 @@ class WinMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
 
     """)
     self.expect_sh(
-        "powershell",
-        "-c",
-        "Get-CIMInstance -query 'select * from Win32_Processor' | ft Caption",
-        result=cpu_caption)
+      "powershell",
+      "-c",
+      "Get-CIMInstance -query 'select * from Win32_Processor' | ft Caption",
+      result=cpu_caption,
+    )
     self.platform.use_mock_machine = False
     self.assertTrue(self.platform.is_arm64)
     self.assertFalse(self.platform.is_x64)
@@ -215,15 +229,19 @@ class WinMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
         TotalMilliseconds : 1217994978.9862
     """)
     self.expect_sh(
-        "powershell",
-        "-c", ("(New-TimeSpan -Start "
-               "(Get-CimInstance Win32_OperatingSystem).LastBootUpTime)"),
-        result=time_span)
+      "powershell",
+      "-c",
+      (
+        "(New-TimeSpan -Start "
+        "(Get-CimInstance Win32_OperatingSystem).LastBootUpTime)"
+      ),
+      result=time_span,
+    )
     uptime = self.platform.uptime()
     self.assertEqual(
-        uptime,
-        dt.timedelta(
-            days=14, hours=2, minutes=19, seconds=54, milliseconds=978))
+      uptime,
+      dt.timedelta(days=14, hours=2, minutes=19, seconds=54, milliseconds=978),
+    )
 
   def test_platform_version_cls(self):
     ver_output = "\nMicrosoft Windows [Version 10.0.22631.3593]\n"
@@ -235,13 +253,14 @@ class WinMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
 
   def test_gpu_vram_used_nvidia(self):
     nvidia_smi = self.path(
-        "C:/Program Files/NVIDIA Corporation/NVSMI/nvidia-smi.exe")
+      "C:/Program Files/NVIDIA Corporation/NVSMI/nvidia-smi.exe"
+    )
     self.fs.create_file(nvidia_smi)
     self.expect_sh(
-        nvidia_smi,
-        "--query-gpu=memory.used",
-        "--format=csv,noheader,nounits",
-        result="1024\n2048\n",
+      nvidia_smi,
+      "--query-gpu=memory.used",
+      "--format=csv,noheader,nounits",
+      result="1024\n2048\n",
     )
     vram = self.platform.gpu_vram_used()
     self.assertEqual(vram, {"gpu_0": 1024.0, "gpu_1": 2048.0})
@@ -251,12 +270,12 @@ class WinMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
     self.fs.create_file(wmic)
     with self.platform.override_binary("wmic.exe", wmic):
       self.expect_sh(
-          wmic,
-          "path",
-          "Win32_PerfFormattedData_GPUPerformanceCounters_GPUAdapterMemory",
-          "get",
-          "DedicatedUsage,SharedUsage",
-          result="DedicatedUsage  SharedUsage\n1073741824      536870912\n",
+        wmic,
+        "path",
+        "Win32_PerfFormattedData_GPUPerformanceCounters_GPUAdapterMemory",
+        "get",
+        "DedicatedUsage,SharedUsage",
+        result="DedicatedUsage  SharedUsage\n1073741824      536870912\n",
       )
       vram = self.platform.gpu_vram_used()
     self.assertEqual(vram, {"gpu_wmic": 1536.0})
@@ -266,12 +285,12 @@ class WinMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
     self.fs.create_file(wmic)
     with self.platform.override_binary("wmic.exe", wmic):
       self.expect_sh(
-          wmic,
-          "path",
-          "Win32_PerfFormattedData_GPUPerformanceCounters_GPUAdapterMemory",
-          "get",
-          "DedicatedUsage,SharedUsage",
-          result="DedicatedUsage  SharedUsage\n0               0\n",
+        wmic,
+        "path",
+        "Win32_PerfFormattedData_GPUPerformanceCounters_GPUAdapterMemory",
+        "get",
+        "DedicatedUsage,SharedUsage",
+        result="DedicatedUsage  SharedUsage\n0               0\n",
       )
       vram = self.platform.gpu_vram_used()
     self.assertEqual(vram, {})
@@ -290,7 +309,8 @@ class WinPlatformClipboardTestCase(PlatformClipboardTestCase):
 
   @override
   def clipboard_tool_configs(
-      self) -> list[tuple[str, pth.LocalPath, list[str]]]:
+    self,
+  ) -> list[tuple[str, pth.LocalPath, list[str]]]:
     return [("clip", pth.LocalPath("C:/Windows/System32/clip.exe"), [])]
 
 

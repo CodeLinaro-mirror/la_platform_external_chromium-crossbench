@@ -34,6 +34,7 @@ class AgentAction(BaseDurationAction):
   configured Gemini model, and runs the returned Crossbench sub-actions until
   completion, `max_steps`, or `duration` is reached.
   """
+
   TYPE: ClassVar[ActionType] = ActionType.AGENT
 
   prompt: str = ""
@@ -45,7 +46,8 @@ class AgentAction(BaseDurationAction):
   max_history_screenshots: int = DEFAULT_MAX_HISTORY_SCREENSHOTS
   # Overrides BaseDurationAction.duration:
   duration: dt.timedelta = dataclasses.field(
-      default=DEFAULT_AGENT_DURATION, kw_only=True)
+    default=DEFAULT_AGENT_DURATION, kw_only=True
+  )
 
   @classmethod
   @override
@@ -58,49 +60,57 @@ class AgentAction(BaseDurationAction):
   def config_parser(cls: type[Self]) -> ConfigParser[Self]:
     parser = super().config_parser()
     parser.add_default_argument(
-        "prompt",
-        aliases=("instructions", "goal"),
-        type=ObjectParser.non_empty_str,
-        required=True,
-        help="Natural-language task instructions for the agent.")
+      "prompt",
+      aliases=("instructions", "goal"),
+      type=ObjectParser.non_empty_str,
+      required=True,
+      help="Natural-language task instructions for the agent.",
+    )
     parser.add_argument(
-        "model",
-        type=ObjectParser.non_empty_str,
-        default=DEFAULT_AGENT_MODEL,
-        help="Gemini model identifier used to drive agent turns.")
+      "model",
+      type=ObjectParser.non_empty_str,
+      default=DEFAULT_AGENT_MODEL,
+      help="Gemini model identifier used to drive agent turns.",
+    )
     parser.add_argument(
-        "temperature",
-        aliases=("temp",),
-        type=NumberParser.float_range(0.0, 2.0, name="temperature"),
-        default=DEFAULT_AGENT_TEMPERATURE,
-        help="Sampling temperature in [0.0, 2.0] for model responses.")
+      "temperature",
+      aliases=("temp",),
+      type=NumberParser.float_range(0.0, 2.0, name="temperature"),
+      default=DEFAULT_AGENT_TEMPERATURE,
+      help="Sampling temperature in [0.0, 2.0] for model responses.",
+    )
     parser.add_argument(
-        "max_steps",
-        aliases=("steps",),
-        type=NumberParser.positive_int,
-        default=DEFAULT_AGENT_MAX_STEPS,
-        help="Maximum number of agent turns to execute.")
+      "max_steps",
+      aliases=("steps",),
+      type=NumberParser.positive_int,
+      default=DEFAULT_AGENT_MAX_STEPS,
+      help="Maximum number of agent turns to execute.",
+    )
     parser.add_argument(
-        "duration",
-        type=DurationParser.positive_duration,
-        default=DEFAULT_AGENT_DURATION,
-        help="Maximum wall-clock duration for the agent session.")
+      "duration",
+      type=DurationParser.positive_duration,
+      default=DEFAULT_AGENT_DURATION,
+      help="Maximum wall-clock duration for the agent session.",
+    )
     parser.add_argument(
-        "settle_delay",
-        type=DurationParser.positive_or_zero_duration,
-        default=DEFAULT_SETTLE_DELAY,
-        help="Wait duration inserted after each non-terminal turn.")
+      "settle_delay",
+      type=DurationParser.positive_or_zero_duration,
+      default=DEFAULT_SETTLE_DELAY,
+      help="Wait duration inserted after each non-terminal turn.",
+    )
     parser.add_argument(
-        "stop_on_done",
-        type=ObjectParser.bool,
-        default=True,
-        help="Whether to exit the loop early when the agent sets done=true.")
+      "stop_on_done",
+      type=ObjectParser.bool,
+      default=True,
+      help="Whether to exit the loop early when the agent sets done=true.",
+    )
     parser.add_argument(
-        "max_history_screenshots",
-        aliases=("max_screenshots",),
-        type=NumberParser.positive_zero_int,
-        default=DEFAULT_MAX_HISTORY_SCREENSHOTS,
-        help="Number of recent turn screenshots retained in chat history.")
+      "max_history_screenshots",
+      aliases=("max_screenshots",),
+      type=NumberParser.positive_zero_int,
+      default=DEFAULT_MAX_HISTORY_SCREENSHOTS,
+      help="Number of recent turn screenshots retained in chat history.",
+    )
     return parser
 
   @override
@@ -116,10 +126,12 @@ class AgentAction(BaseDurationAction):
       raise ValueError(f"{self}.model is missing")
     NumberParser.float_range(0.0, 2.0, name="temperature")(self.temperature)
     NumberParser.positive_int(self.max_steps, f"{self}.max_steps")
-    DurationParser.positive_or_zero_duration(self.settle_delay,
-                                             f"{self}.settle_delay")
-    NumberParser.positive_zero_int(self.max_history_screenshots,
-                                   f"{self}.max_history_screenshots")
+    DurationParser.positive_or_zero_duration(
+      self.settle_delay, f"{self}.settle_delay"
+    )
+    NumberParser.positive_zero_int(
+      self.max_history_screenshots, f"{self}.max_history_screenshots"
+    )
 
   @override
   def to_json(self) -> JsonDict:

@@ -9,31 +9,37 @@ import logging
 from typing import TYPE_CHECKING, ClassVar, Final, override
 
 from crossbench import path as pth
-from crossbench.browsers.chromium.devtools import \
-    DevToolsRemoteClient as DevToolsClient
+from crossbench.browsers.chromium.devtools import (
+  DevToolsRemoteClient as DevToolsClient,
+)
 from crossbench.browsers.chromium.webdriver import ChromiumWebDriverAndroid
 from crossbench.parse import PathParser
 from crossbench.probes.chromium_probe import ChromiumProbe
 from crossbench.probes.probe import ProbeConfigParser, ProbeContext
 from crossbench.probes.probe_error import ProbeMissingDataError
-from crossbench.probes.results import EmptyProbeResult, LocalProbeResult, \
-    ProbeResult
+from crossbench.probes.results import (
+  EmptyProbeResult,
+  LocalProbeResult,
+  ProbeResult,
+)
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.env.runner_env import RunnerEnv
   from crossbench.runner.run import Run
 
-DEFAULT_REMOTE_PGO_ROOT_PATH: pth.AnyPath = (
-    pth.AnyPosixPath("/data_mirror/data_ce/null/0/"))
+DEFAULT_REMOTE_PGO_ROOT_PATH: pth.AnyPath = pth.AnyPosixPath(
+  "/data_mirror/data_ce/null/0/"
+)
 
 
 class ChromiumPgoProbe(ChromiumProbe):
   """
-    Chromium-only Probe to dump PGO profiles from the target device and
-    downloads them.
-    The resulting data is used to optimize Chromium.
-    """
+  Chromium-only Probe to dump PGO profiles from the target device and
+  downloads them.
+  The resulting data is used to optimize Chromium.
+  """
+
   NAME: ClassVar = "chromium_pgo"
 
   _REMOTE_PGO_CACHE_SUFFIX: Final[str] = "cache/pgo_profiles"
@@ -43,17 +49,19 @@ class ChromiumPgoProbe(ChromiumProbe):
   def config_parser(cls) -> ProbeConfigParser:
     parser = super().config_parser()
     parser.add_argument(
-        "remote_pgo_root_path",
-        type=PathParser.any_path,
-        default=DEFAULT_REMOTE_PGO_ROOT_PATH,
-        help=("Root path for the PGO profile directories on the target device."
-              "The browser package name will be appended to this path."),
+      "remote_pgo_root_path",
+      type=PathParser.any_path,
+      default=DEFAULT_REMOTE_PGO_ROOT_PATH,
+      help=(
+        "Root path for the PGO profile directories on the target device."
+        "The browser package name will be appended to this path."
+      ),
     )
     return parser
 
   def __init__(
-      self,
-      remote_pgo_root_path: pth.AnyPath = DEFAULT_REMOTE_PGO_ROOT_PATH,
+    self,
+    remote_pgo_root_path: pth.AnyPath = DEFAULT_REMOTE_PGO_ROOT_PATH,
   ) -> None:
     super().__init__()
     self._remote_pgo_root_path: Final[pth.AnyPath] = remote_pgo_root_path
@@ -96,6 +104,7 @@ class ChromiumPgoProbeContext(ProbeContext[ChromiumPgoProbe]):
 
 class ChromiumPgoProbeContextAndroid(ChromiumPgoProbeContext):
   """Android-specific context for Chromium PGO probes."""
+
   PGO_CMD_ID: Final[int] = 0
 
   def __init__(self, probe: ChromiumPgoProbe, run: Run):
@@ -108,22 +117,26 @@ class ChromiumPgoProbeContextAndroid(ChromiumPgoProbeContext):
   def remote_pgo_dir(self) -> pth.AnyPath:
     android_browser = self.run.browser
     assert isinstance(android_browser, ChromiumWebDriverAndroid)
-    return (self.probe.remote_pgo_root_path / android_browser.android_package /
-            self.probe.remote_pgo_cache_suffix)
+    return (
+      self.probe.remote_pgo_root_path
+      / android_browser.android_package
+      / self.probe.remote_pgo_cache_suffix
+    )
 
   def _get_devtools_client(self) -> DevToolsClient:
     if not self._devtools_client:
       self._devtools_client = DevToolsClient(
-          platform=self.browser_platform,
-          requested_local_port=0,
-          remote_devtools_identifier="chrome_devtools_remote")
+        platform=self.browser_platform,
+        requested_local_port=0,
+        remote_devtools_identifier="chrome_devtools_remote",
+      )
     return self._devtools_client
 
   def _trigger_pgo_dump(self) -> bool:
     """Triggers a PGO profile dump via DevTools."""
     request = {
-        "method": "NativeProfiling.dumpProfilingDataOfAllProcesses",
-        "id": self.PGO_CMD_ID,
+      "method": "NativeProfiling.dumpProfilingDataOfAllProcesses",
+      "id": self.PGO_CMD_ID,
     }
     logging.debug("Triggering PGO dump.")
     with self._get_devtools_client().open() as devtools_client:
@@ -165,8 +178,9 @@ class ChromiumPgoProbeContextAndroid(ChromiumPgoProbeContext):
   def _is_pgo_dump_completed(self) -> bool:
     current_timestamps = self._get_pgo_timestamps()
     return any(
-        current_timestamps.get(f) != self._initial_pgo_timestamps.get(f)
-        for f in current_timestamps)
+      current_timestamps.get(f) != self._initial_pgo_timestamps.get(f)
+      for f in current_timestamps
+    )
 
   def _wait_for_pgo_dump(self, timeout: float) -> None:
     """Waits for PGO profile files to be modified."""
@@ -175,7 +189,8 @@ class ChromiumPgoProbeContextAndroid(ChromiumPgoProbeContext):
         logging.info("PGO dump completed.")
         return
     raise ProbeMissingDataError(
-        f"PGO dump did not complete within {timeout} seconds.")
+      f"PGO dump did not complete within {timeout} seconds."
+    )
 
   @override
   def teardown(self) -> ProbeResult:
@@ -186,8 +201,9 @@ class ChromiumPgoProbeContextAndroid(ChromiumPgoProbeContext):
 
     remote_pgo_files = self._list_pgo_profiles()
     if not remote_pgo_files:
-      logging.info("PGO: No PGO profile files found in %s.",
-                   self.remote_pgo_dir)
+      logging.info(
+        "PGO: No PGO profile files found in %s.", self.remote_pgo_dir
+      )
       return EmptyProbeResult()
 
     for remote_file_path in remote_pgo_files:

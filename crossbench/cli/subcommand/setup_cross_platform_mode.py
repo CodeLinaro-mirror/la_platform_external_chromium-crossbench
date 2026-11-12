@@ -55,24 +55,28 @@ SETUP_TIMEOUT = datetime.timedelta(seconds=20)
 
 
 class SetupCrossPlatformModeSubcommand(CrossbenchSubcommand):
-
   @override
-  def register_subcommand(self,
-                          subparsers: Subparsers) -> argparse.ArgumentParser:
+  def register_subcommand(
+    self, subparsers: Subparsers
+  ) -> argparse.ArgumentParser:
     self._parser = subparsers.add_parser(
-        "setup_cross_platform_mode",
-        help=("Sets up Ethernet connection to your device in a way "
-              "required by the loadline2-webapi benchmark."))
+      "setup_cross_platform_mode",
+      help=(
+        "Sets up Ethernet connection to your device in a way "
+        "required by the loadline2-webapi benchmark."
+      ),
+    )
     self._parser.set_defaults(crossbench_subcommand=self)
     return self.parser
 
   @override
   def add_cli_arguments(self, parser: CBArgumentParser) -> CBArgumentParser:
     parser.add_argument(
-        "--interface",
-        type=ObjectParser.non_empty_str,
-        required=True,
-        help="Network interface to use.")
+      "--interface",
+      type=ObjectParser.non_empty_str,
+      required=True,
+      help="Network interface to use.",
+    )
     self.cli.add_debugging_arguments(parser)
 
     return parser
@@ -84,7 +88,6 @@ class SetupCrossPlatformModeSubcommand(CrossbenchSubcommand):
 
 
 class SetupNetwork:
-
   def __init__(self, interface: str) -> None:
     self._interface: Final[str] = interface
     self._dnsmasq_process: subprocess.Popen | None = None
@@ -100,11 +103,12 @@ class SetupNetwork:
 
   def _sh(self, *args: CmdArg) -> subprocess.CompletedProcess:
     return PLATFORM.sh(
-        *args,
-        check=False,
-        stdin=subprocess.DEVNULL,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE)
+      *args,
+      check=False,
+      stdin=subprocess.DEVNULL,
+      stdout=subprocess.PIPE,
+      stderr=subprocess.PIPE,
+    )
 
   def _fail(self, msg: str, *args) -> None:
     logging.error(msg, *args)
@@ -126,8 +130,10 @@ class SetupNetwork:
     devices = adb_devices + ios_devices
     if len(devices) > 1:
       self._fail(
-          "LoadLine 2 WebAPI only supports running on 1 device at a "
-          "time. The following devices are connected:\n%s", "\n".join(devices))
+        "LoadLine 2 WebAPI only supports running on 1 device at a "
+        "time. The following devices are connected:\n%s",
+        "\n".join(devices),
+      )
     elif len(devices) == 0:
       self._fail("No devices found")
     if adb_devices:
@@ -145,8 +151,11 @@ class SetupNetwork:
     lsof = result.stdout.decode("utf-8")
     listeners = [line for line in lsof.splitlines() if "(LISTEN)" in line]
     if len(listeners) > 0:
-      self._fail("Port %s is used by the following processes:\n%s", port,
-                 "\n".join(listeners))
+      self._fail(
+        "Port %s is used by the following processes:\n%s",
+        port,
+        "\n".join(listeners),
+      )
 
   def _configure_networking(self) -> None:
     atexit.register(self._disconnect)
@@ -156,27 +165,27 @@ class SetupNetwork:
     assert self._interface, "Missing network interface"
 
     PLATFORM.sh(
-        "sudo",
-        "ifconfig",
-        self._interface,
-        "192.168.1.1",
-        "netmask",
-        "255.255.255.0",
+      "sudo",
+      "ifconfig",
+      self._interface,
+      "192.168.1.1",
+      "netmask",
+      "255.255.255.0",
     )
     self._dnsmasq_process = PLATFORM.popen(
-        "sudo",
-        dnsmasq_bin,
-        "--no-daemon",
-        "--no-resolv",
-        "--interface",
-        self._interface,
-        "--address",
-        "/#/192.168.1.1",
-        "--dhcp-range",
-        f"{DEVICE_IP},{DEVICE_IP}",
-        stdin=subprocess.DEVNULL,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+      "sudo",
+      dnsmasq_bin,
+      "--no-daemon",
+      "--no-resolv",
+      "--interface",
+      self._interface,
+      "--address",
+      "/#/192.168.1.1",
+      "--dhcp-range",
+      f"{DEVICE_IP},{DEVICE_IP}",
+      stdin=subprocess.DEVNULL,
+      stdout=subprocess.PIPE,
+      stderr=subprocess.PIPE,
     )
 
     for _ in wait.wait_with_backoff(SETUP_TIMEOUT):
@@ -198,10 +207,12 @@ class SetupNetwork:
       elif len(devices) > 1:
         self._fail("More than one iOS device connected to network")
       else:
-        print("iOS device found. You can use the following cmdline flag to "
-              "specify the device in crossbench:\n\n"
-              "    --browser='{browser:\"safari\",driver:{type:\"ios\","
-              f"device_id:\"{devices[0]}\"}}'")
+        print(
+          "iOS device found. You can use the following cmdline flag to "
+          "specify the device in crossbench:\n\n"
+          "    --browser='{browser:\"safari\",driver:{type:\"ios\","
+          f"device_id:\"{devices[0]}\"}}'"
+        )
 
   def _disconnect(self) -> None:
     atexit.unregister(self._disconnect)

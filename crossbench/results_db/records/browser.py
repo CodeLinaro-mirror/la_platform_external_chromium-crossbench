@@ -28,18 +28,19 @@ class BrowserRecord(BaseRecord):
       js_flags = str(browser.js_flags)
 
     return cls(
-        label=browser.label,
-        name=browser.type_name(),
-        path=str(browser.path),
-        version=str(browser.version),
-        channel=browser.version.channel_name,
-        flags=str(browser.flags),
-        js_flags=str(js_flags),
-        driver="N/A",
-        driver_version="N/A",
-        driver_path=str(browser.driver_path_raw),
-        platform=session.query(PlatformRecord).filter(
-            PlatformRecord.name == browser.platform.name).first(),
+      label=browser.label,
+      name=browser.type_name(),
+      path=str(browser.path),
+      version=str(browser.version),
+      channel=browser.version.channel_name,
+      flags=str(browser.flags),
+      js_flags=str(js_flags),
+      driver="N/A",
+      driver_version="N/A",
+      driver_path=str(browser.driver_path_raw),
+      platform=session.query(PlatformRecord)
+      .filter(PlatformRecord.name == browser.platform.name)
+      .first(),
     )
 
   label: Mapped[str] = orm.mapped_column(orm_types.String(), primary_key=True)
@@ -57,7 +58,8 @@ class BrowserRecord(BaseRecord):
   driver_path: Mapped[str] = orm.mapped_column(orm_types.String())
 
   platform_label: Mapped[int] = orm.mapped_column(
-      orm_schema.ForeignKey("platform.label"))
+    orm_schema.ForeignKey("platform.label")
+  )
   platform: Mapped[PlatformRecord] = orm.relationship()
 
   # TODO: more settings

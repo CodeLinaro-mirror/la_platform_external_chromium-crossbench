@@ -13,8 +13,11 @@ from crossbench.benchmarks.loading.loading_benchmark import LoadingBenchmark
 from crossbench.benchmarks.loading.page.combined import CombinedPage
 from crossbench.env.runner_env import EnvConfig, ValidationMode
 from crossbench.runner.runner import CacheTemperature, Runner
-from tests.crossbench.base import BaseCrossbenchTestCase, \
-    CrossbenchFakeFsTestCase, CrossbenchPlatformMockMixin
+from tests.crossbench.base import (
+  BaseCrossbenchTestCase,
+  CrossbenchFakeFsTestCase,
+  CrossbenchPlatformMockMixin,
+)
 from tests.crossbench.mock_helper import MockPlatform
 from tests.crossbench.runner.helper import CrossbenchMagicMockMixin
 
@@ -24,11 +27,11 @@ if TYPE_CHECKING:
 
 
 class BaseProbeTestCase(
-    CrossbenchPlatformMockMixin,
-    CrossbenchMagicMockMixin,
-    CrossbenchFakeFsTestCase,
-    metaclass=abc.ABCMeta):
-
+  CrossbenchPlatformMockMixin,
+  CrossbenchMagicMockMixin,
+  CrossbenchFakeFsTestCase,
+  metaclass=abc.ABCMeta,
+):
   @override
   def setUp(self) -> None:
     self.platform = self.setup_platform()
@@ -45,16 +48,18 @@ class BaseProbeTestCase(
 
 
 class GenericProbeTestCase(BaseCrossbenchTestCase):
-
-  def create_runner(self,
-                    stories: Sequence[Page],
-                    js_side_effects: list[Any] | Callable[[Page], list[Any]],
-                    separate: bool = False,
-                    repetitions: int = 3,
-                    warmup_repetitions: int = 0,
-                    cache_temperatures: Iterable[CacheTemperature] = (
-                        CacheTemperature.DEFAULT,),
-                    throw: bool = True) -> Runner:
+  def create_runner(
+    self,
+    stories: Sequence[Page],
+    js_side_effects: list[Any] | Callable[[Page], list[Any]],
+    separate: bool = False,
+    repetitions: int = 3,
+    warmup_repetitions: int = 0,
+    cache_temperatures: Iterable[CacheTemperature] = (
+      CacheTemperature.DEFAULT,
+    ),
+    throw: bool = True,
+  ) -> Runner:
     self.assertTrue(stories)
     if not separate and len(stories) > 1:
       stories = [CombinedPage(stories)]
@@ -79,21 +84,23 @@ class GenericProbeTestCase(BaseCrossbenchTestCase):
     benchmark = LoadingBenchmark(stories)
     self.assertTrue(len(benchmark.describe()) > 0)
     runner = Runner(
-        self.out_dir,
-        self.browsers,
-        benchmark,
-        env_config=EnvConfig(),
-        env_validation_mode=ValidationMode.SKIP,
-        platform=self.platform,
-        repetitions=repetitions,
-        warmup_repetitions=warmup_repetitions,
-        cache_temperatures=cache_temperatures,
-        throw=throw,
-        in_memory_result_db=True)
+      self.out_dir,
+      self.browsers,
+      benchmark,
+      env_config=EnvConfig(),
+      env_validation_mode=ValidationMode.SKIP,
+      platform=self.platform,
+      repetitions=repetitions,
+      warmup_repetitions=warmup_repetitions,
+      cache_temperatures=cache_temperatures,
+      throw=throw,
+      in_memory_result_db=True,
+    )
     return runner
 
-  def get_non_empty_json_results(self, runner: Runner,
-                                 probe: Probe) -> tuple[Any, Any, Any, Any]:
+  def get_non_empty_json_results(
+    self, runner: Runner, probe: Probe
+  ) -> tuple[Any, Any, Any, Any]:
     story_json_file = runner.runs[0].results[probe].json
     with story_json_file.open() as f:
       story_json_data = json.load(f)
@@ -113,21 +120,27 @@ class GenericProbeTestCase(BaseCrossbenchTestCase):
     with browsers_json_file.open() as f:
       browsers_json_data = json.load(f)
     self.assertIsNotNone(browsers_json_data)
-    return (story_json_data, repetitions_json_data, stories_json_data,
-            browsers_json_data)
+    return (
+      story_json_data,
+      repetitions_json_data,
+      stories_json_data,
+      browsers_json_data,
+    )
 
   def get_non_empty_results_str(
-      self,
-      runner: Runner,
-      probe: Probe,
-      suffix: str,
-      has_browsers_data: bool = True) -> tuple[str, str, str, str]:
+    self,
+    runner: Runner,
+    probe: Probe,
+    suffix: str,
+    has_browsers_data: bool = True,
+  ) -> tuple[str, str, str, str]:
     story_file = runner.runs[0].results[probe].get_all(suffix)[0]
     story_data = story_file.read_text()
     self.assertTrue(story_data)
 
-    repetitions_file = runner.repetitions_groups[0].results[probe].get_all(
-        suffix)[0]
+    repetitions_file = (
+      runner.repetitions_groups[0].results[probe].get_all(suffix)[0]
+    )
     repetitions_data = repetitions_file.read_text()
     self.assertTrue(repetitions_data)
 

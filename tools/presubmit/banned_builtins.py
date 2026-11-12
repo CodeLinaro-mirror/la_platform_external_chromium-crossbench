@@ -7,24 +7,26 @@ from __future__ import annotations
 import ast
 from typing import TYPE_CHECKING, Final
 
-from tools.presubmit.common import AstCheckVisitor, AstViolation, \
-    PresubmitCheck
+from tools.presubmit.common import AstCheckVisitor, AstViolation, PresubmitCheck
 
 if TYPE_CHECKING:
   from collections.abc import Sequence
 
 BANNED_BUILTIN_FUNCTIONS: Final[frozenset[str]] = frozenset(
-    {"getattr", "setattr", "hasattr"})
+  {"getattr", "setattr", "hasattr"}
+)
 
 
 class BannedBuiltinVisitor(AstCheckVisitor):
-
   def _banned_func_name(self, func: ast.expr) -> str | None:
     name: str | None = None
     if isinstance(func, ast.Name):
       name = func.id
-    elif (isinstance(func, ast.Attribute) and
-          isinstance(func.value, ast.Name) and func.value.id == "builtins"):
+    elif (
+      isinstance(func, ast.Attribute)
+      and isinstance(func.value, ast.Name)
+      and func.value.id == "builtins"
+    ):
       name = func.attr
     return name if name in BANNED_BUILTIN_FUNCTIONS else None
 
@@ -35,10 +37,10 @@ class BannedBuiltinVisitor(AstCheckVisitor):
 
   @classmethod
   def _create_violation_error(
-      cls,
-      presubmit: PresubmitCheck,
-      violations: Sequence[AstViolation],
-      missing_bypasses: Sequence[str],
+    cls,
+    presubmit: PresubmitCheck,
+    violations: Sequence[AstViolation],
+    missing_bypasses: Sequence[str],
   ) -> object:
     help_tags: str = "\n".join(f"  {key}=<REASON>" for key in missing_bypasses)
     long_text: str = f"""\
@@ -55,15 +57,16 @@ check:
 {help_tags}
 """
     return presubmit.output_api.PresubmitError(
-        "Found banned built-in function calls in modified files:",
-        items=[v.format_error() for v in violations],
-        long_text=long_text)
+      "Found banned built-in function calls in modified files:",
+      items=[v.format_error() for v in violations],
+      long_text=long_text,
+    )
 
   @classmethod
   def report(
-      cls,
-      presubmit: PresubmitCheck,
-      violations: Sequence[AstViolation],
+    cls,
+    presubmit: PresubmitCheck,
+    violations: Sequence[AstViolation],
   ) -> list[object]:
     if not violations:
       return []
@@ -82,12 +85,13 @@ check:
     if not missing_bypasses:
       bypass_details: str = ", ".join(f"{k}={r}" for k, r in valid_bypasses)
       return [
-          presubmit.output_api.PresubmitNotifyResult(
-              f"Bypassing banned built-in check "
-              f"({', '.join(detected_functions)}) "
-              f"via commit message tag(s): {bypass_details}"),
+        presubmit.output_api.PresubmitNotifyResult(
+          f"Bypassing banned built-in check "
+          f"({', '.join(detected_functions)}) "
+          f"via commit message tag(s): {bypass_details}"
+        ),
       ]
 
     return [
-        cls._create_violation_error(presubmit, violations, missing_bypasses),
+      cls._create_violation_error(presubmit, violations, missing_bypasses),
     ]

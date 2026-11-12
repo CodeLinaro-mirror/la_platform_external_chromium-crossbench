@@ -13,8 +13,10 @@ import google.auth.exceptions
 from crossbench.cli.ui import ui
 from crossbench.exception import MultiException
 from crossbench.pinpoint import auth
-from crossbench.pinpoint.exceptions import AuthenticationError, \
-    GCloudNotInstalledError
+from crossbench.pinpoint.exceptions import (
+  AuthenticationError,
+  GCloudNotInstalledError,
+)
 from crossbench.plt.bin import Binaries, Binary
 from tests import test_helper
 from tests.crossbench.base import BaseCrossbenchTestCase
@@ -24,15 +26,16 @@ if TYPE_CHECKING:
 
 
 class AuthTestCase(BaseCrossbenchTestCase):
-
   @override
   def setUp(self) -> None:
     super().setUp()
     auth.get_auth_session.cache_clear()
     self.google_auth_default = self.enterContext(
-        mock.patch.object(google.auth, "default"))
+      mock.patch.object(google.auth, "default")
+    )
     self.google_auth_default.side_effect = (
-        google.auth.exceptions.DefaultCredentialsError())
+      google.auth.exceptions.DefaultCredentialsError()
+    )
     self.ui_prompt = self.enterContext(mock.patch.object(ui, "prompt"))
 
   def _install_binary(self, binary: Binary) -> pth.AnyPath:
@@ -65,7 +68,8 @@ class AuthTestCase(BaseCrossbenchTestCase):
     self.assertEqual(session.credentials, mock_credentials)
 
   def test_get_auth_session_luci_auth_empty_token_fallback_to_gcloud(
-      self) -> None:
+    self,
+  ) -> None:
     luci_auth_bin = self._install_binary(Binaries.LUCI_AUTH)
     self._install_binary(Binaries.GCLOUD)
     self.platform.expect_sh(luci_auth_bin, "token", result="  \n")
@@ -103,12 +107,13 @@ class AuthTestCase(BaseCrossbenchTestCase):
 
     gcloud_bin = self._install_binary(Binaries.GCLOUD)
     self.platform.expect_sh(
-        gcloud_bin, "auth", "application-default", "login", result="logged in")
+      gcloud_bin, "auth", "application-default", "login", result="logged in"
+    )
 
     # Second call needs to succeed otherwise we loop
     self.google_auth_default.side_effect = [
-        google.auth.exceptions.DefaultCredentialsError(),
-        (mock.Mock(), "project_id"),
+      google.auth.exceptions.DefaultCredentialsError(),
+      (mock.Mock(), "project_id"),
     ]
 
     auth.get_auth_session()
@@ -126,8 +131,9 @@ class AuthTestCase(BaseCrossbenchTestCase):
   def test_get_auth_session_refresh_error(self) -> None:
     self.ui_prompt.return_value = "n"
     self._install_binary(Binaries.GCLOUD)
-    self.google_auth_default.side_effect = (
-        google.auth.exceptions.RefreshError("token expired"))
+    self.google_auth_default.side_effect = google.auth.exceptions.RefreshError(
+      "token expired"
+    )
 
     with self.assertRaises(MultiException) as cm:
       auth.get_auth_session()

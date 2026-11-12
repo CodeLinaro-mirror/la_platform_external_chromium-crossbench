@@ -20,20 +20,22 @@ def test_specific_device_id(device_id, adb_path) -> None:
 
 
 def test_cdp_driver(device_id, adb_path, test_env) -> None:
-  browser_config = hjson.dumps({
+  browser_config = hjson.dumps(
+    {
       "browser": "chrome-stable",
       "driver": {
-          "type": "cdp",
-          "device_id": device_id,
-          "adb_bin": adb_path,
+        "type": "cdp",
+        "device_id": device_id,
+        "adb_bin": adb_path,
       },
-  })
+    }
+  )
   args = [
-      "loading",
-      f"--browser={browser_config}",
-      "--urls=blank",
-      f"--out-dir={test_env.results_dir}",
-      *list(test_env.cq_flags),
+    "loading",
+    f"--browser={browser_config}",
+    "--urls=blank",
+    f"--out-dir={test_env.results_dir}",
+    *list(test_env.cq_flags),
   ]
 
   cli = CrossBenchCLI()

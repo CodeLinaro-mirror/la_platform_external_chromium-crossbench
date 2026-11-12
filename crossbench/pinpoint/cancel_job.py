@@ -17,8 +17,8 @@ from crossbench.pinpoint.helper import annotate
 def cancel_job(job_id: str, reason: str) -> None:
   """Cancels a Pinpoint job."""
   payload = {
-      "job_id": job_id,
-      "reason": reason,
+    "job_id": job_id,
+    "reason": reason,
   }
   with annotate("Cancelling Pinpoint job"):
     response = http_requests.post(PINPOINT_CANCEL_JOB_API_URL, data=payload)

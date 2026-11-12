@@ -9,13 +9,22 @@ import json
 import logging
 import os
 from enum import StrEnum, unique
-from typing import TYPE_CHECKING, ClassVar, Final, Hashable, Iterable, Self, \
-    override
+from typing import (
+  TYPE_CHECKING,
+  ClassVar,
+  Final,
+  Hashable,
+  Iterable,
+  Self,
+  override,
+)
 
 import pandas as pd
 from google.protobuf.json_format import MessageToJson
-from perfetto.batch_trace_processor.api import BatchTraceProcessor, \
-    BatchTraceProcessorConfig
+from perfetto.batch_trace_processor.api import (
+  BatchTraceProcessor,
+  BatchTraceProcessorConfig,
+)
 from perfetto.trace_processor.api import TraceProcessor, TraceProcessorConfig
 from perfetto.trace_uri_resolver.path import PathUriResolver
 from perfetto.trace_uri_resolver.registry import ResolverRegistry
@@ -25,23 +34,33 @@ from crossbench import plt
 from crossbench.exception import ExceptionAnnotator
 from crossbench.helper import fs_helper
 from crossbench.helper.cwd import change_cwd
-from crossbench.helper.path_finder import LlvmSymbolizerFinder, \
-    TraceconvFinder, TraceProcessorFinder
+from crossbench.helper.path_finder import (
+  LlvmSymbolizerFinder,
+  TraceconvFinder,
+  TraceProcessorFinder,
+)
 from crossbench.parse import ObjectParser, PathParser
 from crossbench.probes.metric import MetricsMerger
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbePriority
 from crossbench.probes.results import LocalProbeResult, ProbeResult
-from crossbench.probes.trace_processor.constants import MODULES_DIR, \
-    PROBE_NAME, QUERIES_DIR
-from crossbench.probes.trace_processor.context.base import \
-    TraceProcessorProbeContext
-from crossbench.probes.trace_processor.context.symbolizing import \
-    TraceProcessorSymbolizingProbeContext
+from crossbench.probes.trace_processor.constants import (
+  MODULES_DIR,
+  PROBE_NAME,
+  QUERIES_DIR,
+)
+from crossbench.probes.trace_processor.context.base import (
+  TraceProcessorProbeContext,
+)
+from crossbench.probes.trace_processor.context.symbolizing import (
+  TraceProcessorSymbolizingProbeContext,
+)
 from crossbench.probes.trace_processor.helper import CBTraceProcessorConfig
-from crossbench.probes.trace_processor.query_config import \
-    TraceProcessorQueryConfig
-from crossbench.probes.trace_processor.uri_resolver import \
-    CrossbenchTraceUriResolver
+from crossbench.probes.trace_processor.query_config import (
+  TraceProcessorQueryConfig,
+)
+from crossbench.probes.trace_processor.uri_resolver import (
+  CrossbenchTraceUriResolver,
+)
 
 if TYPE_CHECKING:
   from crossbench.env.runner_env import RunnerEnv
@@ -69,117 +88,143 @@ class TraceProcessorProbe(Probe):
   def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
-        "batch",
-        type=ObjectParser.bool,
-        default=False,
-        help="Run queries in batch mode when all the test runs are done. This "
-        "can considerably reduce the run time at the expense of higher "
-        "memory usage (all traces will be loaded into memory at the same "
-        "time)")
+      "batch",
+      type=ObjectParser.bool,
+      default=False,
+      help="Run queries in batch mode when all the test runs are done. This "
+      "can considerably reduce the run time at the expense of higher "
+      "memory usage (all traces will be loaded into memory at the same "
+      "time)",
+    )
     parser.add_argument(
-        "metrics",
-        type=str,
-        is_list=True,
-        default=(),
-        help="Name of metric to be run (can be any metric from Perfetto)")
+      "metrics",
+      type=str,
+      is_list=True,
+      default=(),
+      help="Name of metric to be run (can be any metric from Perfetto)",
+    )
     parser.add_argument(
-        "metric_definitions",
-        type=ObjectParser.str_or_file_contents,
-        is_list=True,
-        default=(),
-        help=("Textproto for perfetto metrics v2 definition files. "
-              "Can be inline textproto or a path to a .textproto file."))
+      "metric_definitions",
+      type=ObjectParser.str_or_file_contents,
+      is_list=True,
+      default=(),
+      help=(
+        "Textproto for perfetto metrics v2 definition files. "
+        "Can be inline textproto or a path to a .textproto file."
+      ),
+    )
     parser.add_argument(
-        "summary_metrics",
-        type=str,
-        is_list=True,
-        default=(),
-        help=("Additional metrics to only include in the trace summary. "
-              "Includes all of <metrics>. These can be v2 metrics if the "
-              "corresponding metric definition is supplied."))
+      "summary_metrics",
+      type=str,
+      is_list=True,
+      default=(),
+      help=(
+        "Additional metrics to only include in the trace summary. "
+        "Includes all of <metrics>. These can be v2 metrics if the "
+        "corresponding metric definition is supplied."
+      ),
+    )
     parser.add_argument(
-        "queries",
-        type=TraceProcessorQueryConfig,
-        is_list=True,
-        default=(),
-        help="Name of query to be run (under probes/trace_processor/queries) "
-        "or { name: str, sql: str } containing the name and SQL query to run")
+      "queries",
+      type=TraceProcessorQueryConfig,
+      is_list=True,
+      default=(),
+      help="Name of query to be run (under probes/trace_processor/queries) "
+      "or { name: str, sql: str } containing the name and SQL query to run",
+    )
     parser.add_argument(
-        "symbolize_profile",
-        type=ObjectParser.bool,
-        default=True,
-        help="Auto symbolize data from system profiles for "
-        "locally compiled browsers.")
+      "symbolize_profile",
+      type=ObjectParser.bool,
+      default=True,
+      help="Auto symbolize data from system profiles for "
+      "locally compiled browsers.",
+    )
     parser.add_argument(
-        "module_paths",
-        type=PathParser.path,
-        is_list=True,
-        default=(),
-        help="Additional paths to include as trace processor modules.")
+      "module_paths",
+      type=PathParser.path,
+      is_list=True,
+      default=(),
+      help="Additional paths to include as trace processor modules.",
+    )
     parser.add_argument(
-        "trace_processor_bin",
-        aliases=("trace_processor",),
-        type=plt.PLATFORM.parse_local_binary_path,
-        help="Path to the trace_processor binary")
+      "trace_processor_bin",
+      aliases=("trace_processor",),
+      type=plt.PLATFORM.parse_local_binary_path,
+      help="Path to the trace_processor binary",
+    )
     parser.add_argument(
-        "traceconv_bin",
-        aliases=("traceconv",),
-        type=plt.PLATFORM.parse_local_binary_path,
-        help="Path to the perfetto traceconv binary")
+      "traceconv_bin",
+      aliases=("traceconv",),
+      type=plt.PLATFORM.parse_local_binary_path,
+      help="Path to the perfetto traceconv binary",
+    )
     parser.add_argument(
-        "perfetto_binary_path",
-        type=PathParser.existing_path,
-        help=("See https://perfetto.dev/docs/data-sources/native-heap-profiler"
-              "#symbolize-your-profile. The docs state this should be a "
-              "directory, but in practice file paths also work."))
+      "perfetto_binary_path",
+      type=PathParser.existing_path,
+      help=(
+        "See https://perfetto.dev/docs/data-sources/native-heap-profiler"
+        "#symbolize-your-profile. The docs state this should be a "
+        "directory, but in practice file paths also work."
+      ),
+    )
     parser.add_argument(
-        "llvm_symbolizer_bin",
-        aliases=("llvm_symbolizer",),
-        type=plt.PLATFORM.parse_local_binary_path,
-        help="Path to the llvm-symbolizer binary")
+      "llvm_symbolizer_bin",
+      aliases=("llvm_symbolizer",),
+      type=plt.PLATFORM.parse_local_binary_path,
+      help="Path to the llvm-symbolizer binary",
+    )
     parser.add_argument(
-        "dev_features",
-        aliases=("dev",),
-        type=ObjectParser.bool,
-        default=True,
-        help=("Enables trace_processor dev features via the --dev flags. "
-              "Enabled by default."))
+      "dev_features",
+      aliases=("dev",),
+      type=ObjectParser.bool,
+      default=True,
+      help=(
+        "Enables trace_processor dev features via the --dev flags. "
+        "Enabled by default."
+      ),
+    )
     parser.add_argument(
-        "output_to_stdout",
-        aliases=("stdout",),
-        type=TraceProcessorOutputFormat,
-        is_list=True,
-        default=(),
-        help=("Print query and metric results to stdout. Options: 'json' "
-              "(prints contents of generated .json files), 'csv' (prints "
-              "contents of .csv files)."))
+      "output_to_stdout",
+      aliases=("stdout",),
+      type=TraceProcessorOutputFormat,
+      is_list=True,
+      default=(),
+      help=(
+        "Print query and metric results to stdout. Options: 'json' "
+        "(prints contents of generated .json files), 'csv' (prints "
+        "contents of .csv files)."
+      ),
+    )
     parser.add_argument(
-        "output_to_clipboard",
-        aliases=("pbcopy", "clipboard"),
-        type=TraceProcessorOutputFormat,
-        is_list=True,
-        default=(),
-        help=("Copy query and metric results to clipboard. Options: 'json' "
-              "(copies contents of generated .json files), 'csv' (copies "
-              "contents of .csv files)."))
+      "output_to_clipboard",
+      aliases=("pbcopy", "clipboard"),
+      type=TraceProcessorOutputFormat,
+      is_list=True,
+      default=(),
+      help=(
+        "Copy query and metric results to clipboard. Options: 'json' "
+        "(copies contents of generated .json files), 'csv' (copies "
+        "contents of .csv files)."
+      ),
+    )
     return parser
 
   def __init__(
-      self,
-      batch: bool = False,
-      metric_definitions: Iterable[str] = (),
-      summary_metrics: Iterable[str] = (),
-      metrics: Iterable[str] = (),
-      queries: Iterable[TraceProcessorQueryConfig] = (),
-      symbolize_profile: bool = True,
-      module_paths: Iterable[pth.LocalPath] = (),
-      trace_processor_bin: pth.LocalPath | None = None,
-      traceconv_bin: pth.LocalPath | None = None,
-      perfetto_binary_path: pth.LocalPath | None = None,
-      llvm_symbolizer_bin: pth.LocalPath | None = None,
-      dev_features: bool = True,
-      output_to_stdout: Iterable[TraceProcessorOutputFormat] = (),
-      output_to_clipboard: Iterable[TraceProcessorOutputFormat] = (),
+    self,
+    batch: bool = False,
+    metric_definitions: Iterable[str] = (),
+    summary_metrics: Iterable[str] = (),
+    metrics: Iterable[str] = (),
+    queries: Iterable[TraceProcessorQueryConfig] = (),
+    symbolize_profile: bool = True,
+    module_paths: Iterable[pth.LocalPath] = (),
+    trace_processor_bin: pth.LocalPath | None = None,
+    traceconv_bin: pth.LocalPath | None = None,
+    perfetto_binary_path: pth.LocalPath | None = None,
+    llvm_symbolizer_bin: pth.LocalPath | None = None,
+    dev_features: bool = True,
+    output_to_stdout: Iterable[TraceProcessorOutputFormat] = (),
+    output_to_clipboard: Iterable[TraceProcessorOutputFormat] = (),
   ) -> None:
     super().__init__()
     self._platform: Final[plt.Platform] = plt.PLATFORM
@@ -187,38 +232,45 @@ class TraceProcessorProbe(Probe):
     self._dev_features: Final[bool] = dev_features
     self._metrics: Final[tuple[str, ...]] = tuple(metrics)
     self._metric_definitions: Final[tuple[str, ...]] = tuple(metric_definitions)
-    self._summary_metrics: Final[tuple[
-        str, ...]] = tuple(metrics) + tuple(summary_metrics)
-    ObjectParser.unique_sequence([query.name for query in queries],
-                                 name="query names")
+    self._summary_metrics: Final[tuple[str, ...]] = tuple(metrics) + tuple(
+      summary_metrics
+    )
+    ObjectParser.unique_sequence(
+      [query.name for query in queries], name="query names"
+    )
     self._queries: Final[tuple[TraceProcessorQueryConfig, ...]] = tuple(queries)
     self._symbolize_profile: Final[bool] = symbolize_profile
-    self._module_paths: Final[tuple[pth.LocalPath,
-                                    ...]] = (MODULES_DIR, *tuple(module_paths))
-    self._trace_processor_bin: Final[
-        pth.LocalPath
-        | None] = TraceProcessorFinder.local_binary(trace_processor_bin)
-    self._traceconv_bin: Final[pth.LocalPath
-                               | None] = TraceconvFinder.local_binary(
-                                   traceconv_bin)
-    self._perfetto_binary_path: Final[pth.LocalPath
-                                      | None] = perfetto_binary_path
-    self._llvm_symbolizer_bin: Final[
-        pth.LocalPath
-        | None] = LlvmSymbolizerFinder.local_binary(llvm_symbolizer_bin)
+    self._module_paths: Final[tuple[pth.LocalPath, ...]] = (
+      MODULES_DIR,
+      *tuple(module_paths),
+    )
+    self._trace_processor_bin: Final[pth.LocalPath | None] = (
+      TraceProcessorFinder.local_binary(trace_processor_bin)
+    )
+    self._traceconv_bin: Final[pth.LocalPath | None] = (
+      TraceconvFinder.local_binary(traceconv_bin)
+    )
+    self._perfetto_binary_path: Final[pth.LocalPath | None] = (
+      perfetto_binary_path
+    )
+    self._llvm_symbolizer_bin: Final[pth.LocalPath | None] = (
+      LlvmSymbolizerFinder.local_binary(llvm_symbolizer_bin)
+    )
     self._output_to_stdout: Final[tuple[TraceProcessorOutputFormat, ...]] = (
-        tuple(TraceProcessorOutputFormat(f) for f in output_to_stdout))
+      tuple(TraceProcessorOutputFormat(f) for f in output_to_stdout)
+    )
     if output_to_clipboard and not self._platform.has_clipboard:
       raise RuntimeError("Clipboard tool unavailable on current platform.")
     self._output_to_clipboard: Final[tuple[TraceProcessorOutputFormat, ...]] = (
-        tuple(TraceProcessorOutputFormat(f) for f in output_to_clipboard))
+      tuple(TraceProcessorOutputFormat(f) for f in output_to_clipboard)
+    )
 
   @property
   @override
   def key(self) -> tuple[tuple[str, Hashable], ...]:
     return super().key + (
-        ("metrics", self._metrics),
-        ("queries", self._queries),
+      ("metrics", self._metrics),
+      ("queries", self._queries),
     )
 
   @property
@@ -255,8 +307,12 @@ class TraceProcessorProbe(Probe):
 
   @property
   def has_work(self) -> bool:
-    return len(self._queries) != 0 or len(self._metrics) != 0 or len(
-        self._summary_metrics) != 0 or len(self._metric_definitions) != 0
+    return (
+      len(self._queries) != 0
+      or len(self._metrics) != 0
+      or len(self._summary_metrics) != 0
+      or len(self._metric_definitions) != 0
+    )
 
   @property
   def needs_tp_run(self) -> bool:
@@ -290,13 +346,14 @@ class TraceProcessorProbe(Probe):
   def tp_config(self) -> TraceProcessorConfig:
     is_debug_logging = logging.getLogger().isEnabledFor(logging.DEBUG)
     return CBTraceProcessorConfig(
-        bin_path=self.trace_processor_bin,
-        module_paths=self.module_paths,
-        verbose=is_debug_logging,
-        enable_dev_features=self._dev_features,
-        resolver_registry=ResolverRegistry(
-            resolvers=[CrossbenchTraceUriResolver, PathUriResolver]),
-        load_timeout=10,
+      bin_path=self.trace_processor_bin,
+      module_paths=self.module_paths,
+      verbose=is_debug_logging,
+      enable_dev_features=self._dev_features,
+      resolver_registry=ResolverRegistry(
+        resolvers=[CrossbenchTraceUriResolver, PathUriResolver]
+      ),
+      load_timeout=10,
     )
 
   @override
@@ -311,11 +368,13 @@ class TraceProcessorProbe(Probe):
     super().validate_env(env)
     platforms = {browser.platform for browser in self._browsers}
     with ExceptionAnnotator().annotate(
-        "Validating metrics and queries") as exceptions:
+      "Validating metrics and queries"
+    ) as exceptions:
       self._validate_metrics_and_queries(exceptions, platforms)
 
-  def _validate_metrics_and_queries(self, exceptions: ExceptionAnnotator,
-                                    platforms: Iterable[plt.Platform]) -> None:
+  def _validate_metrics_and_queries(
+    self, exceptions: ExceptionAnnotator, platforms: Iterable[plt.Platform]
+  ) -> None:
     """
     Runs all metrics and queries on an empty trace. This will ensure that they
     are correctly defined in trace processor.
@@ -335,7 +394,8 @@ class TraceProcessorProbe(Probe):
         with exceptions.capture("summary metrics:"):
           metric_ids = list(self.summary_metrics) or None
           tp.trace_summary(
-              specs=list(self.metric_definitions), metric_ids=metric_ids)
+            specs=list(self.metric_definitions), metric_ids=metric_ids
+          )
 
   def _add_cb_columns(self, df: pd.DataFrame, run: Run) -> pd.DataFrame:
     df["cb_browser"] = run.browser.unique_name
@@ -345,7 +405,8 @@ class TraceProcessorProbe(Probe):
     return df
 
   def _aggregate_results_by_query(
-      self, runs: Iterable[Run]) -> dict[str, pd.DataFrame]:
+    self, runs: Iterable[Run]
+  ) -> dict[str, pd.DataFrame]:
     res: dict[str, pd.DataFrame] = {}
     for run in runs:
       for file in run.results[self].csv_list:
@@ -359,16 +420,17 @@ class TraceProcessorProbe(Probe):
     return res
 
   def _merge_json(self, runs: Iterable[Run]) -> dict[str, JsonDict]:
-    merged_metrics: dict[str,
-                         MetricsMerger] = collections.defaultdict(MetricsMerger)
+    merged_metrics: dict[str, MetricsMerger] = collections.defaultdict(
+      MetricsMerger
+    )
     for run in runs:
       for file_path in run.results[self].json_list:
         with file_path.open() as json_file:
           merged_metrics[file_path.stem].add(json.load(json_file))
 
     return {
-        metric_name: merged.to_json()
-        for metric_name, merged in merged_metrics.items()
+      metric_name: merged.to_json()
+      for metric_name, merged in merged_metrics.items()
     }
 
   @override
@@ -398,23 +460,27 @@ class TraceProcessorProbe(Probe):
     group_dir.mkdir()
     btp_config = BatchTraceProcessorConfig(tp_config=self.tp_config)
 
-    with change_cwd(group_dir), BatchTraceProcessor(
+    with (
+      change_cwd(group_dir),
+      BatchTraceProcessor(
         traces=CrossbenchTraceUriResolver(group.runs),
         config=btp_config,
-    ) as btp, ExceptionAnnotator().annotate() as exceptions:
+      ) as btp,
+      ExceptionAnnotator().annotate() as exceptions,
+    ):
       csv_files, json_files = self._run_btp_queries(btp, group_dir, exceptions)
       json_files += self._run_btp_metrics(btp, group_dir, exceptions)
     return LocalProbeResult(csv=csv_files, json=json_files)
 
   def _run_btp_queries(
-      self,
-      btp: BatchTraceProcessor,
-      group_dir: pth.LocalPath,
-      exceptions: ExceptionAnnotator,
+    self,
+    btp: BatchTraceProcessor,
+    group_dir: pth.LocalPath,
+    exceptions: ExceptionAnnotator,
   ) -> tuple[list[pth.LocalPath], list[pth.LocalPath]]:
 
     def run_query(
-        query: TraceProcessorQueryConfig,
+      query: TraceProcessorQueryConfig,
     ) -> tuple[pth.LocalPath, pth.LocalPath]:
       csv_file = group_dir / f"{query.name}.csv"
       json_file = group_dir / f"{query.name}.json"
@@ -423,8 +489,9 @@ class TraceProcessorProbe(Probe):
       # Remove metadata columns to allow for passing the data for JSON result
       # through the MetricsMerger.
       df.drop(
-          columns=["cb_browser", "cb_story", "cb_temperature", "cb_run"],
-          inplace=True)
+        columns=["cb_browser", "cb_story", "cb_temperature", "cb_run"],
+        inplace=True,
+      )
       records = df.to_dict(orient="records")
       merged = MetricsMerger()
       merged.add(records)
@@ -442,8 +509,12 @@ class TraceProcessorProbe(Probe):
           json_files.append(json_file)
     return csv_files, json_files
 
-  def _run_btp_metrics(self, btp: BatchTraceProcessor, group_dir: pth.LocalPath,
-                       exceptions: ExceptionAnnotator) -> list[pth.LocalPath]:
+  def _run_btp_metrics(
+    self,
+    btp: BatchTraceProcessor,
+    group_dir: pth.LocalPath,
+    exceptions: ExceptionAnnotator,
+  ) -> list[pth.LocalPath]:
 
     def run_metric(metric: str) -> pth.LocalPath:
       json_file = group_dir / f"{pth.safe_filename(metric)}.json"
@@ -467,20 +538,23 @@ class TraceProcessorProbe(Probe):
     for run in group.runs:
       results = run.results[self]
       for result_file in [*results.get_all("pprof"), *results.perfetto_list]:
-        logging.critical("  - %s : %s", result_file,
-                         fs_helper.get_file_size(result_file))
+        logging.critical(
+          "  - %s : %s", result_file, fs_helper.get_file_size(result_file)
+        )
     if group_results := group.results.get(self):
-      if text := self._get_combined_output(group_results,
-                                           self.output_to_stdout):
+      if text := self._get_combined_output(
+        group_results, self.output_to_stdout
+      ):
         print(text)
-      if text := self._get_combined_output(group_results,
-                                           self.output_to_clipboard):
+      if text := self._get_combined_output(
+        group_results, self.output_to_clipboard
+      ):
         self._platform.set_clipboard(text)
 
   def _get_combined_output(
-      self,
-      results: ProbeResult | None,
-      output_formats: Iterable[TraceProcessorOutputFormat],
+    self,
+    results: ProbeResult | None,
+    output_formats: Iterable[TraceProcessorOutputFormat],
   ) -> str:
     outputs: list[str] = []
     for output_format in output_formats:
@@ -488,8 +562,9 @@ class TraceProcessorProbe(Probe):
         outputs.append(text)
     return "\n".join(outputs)
 
-  def _get_formatted_output(self, results: ProbeResult | None,
-                            output_format: TraceProcessorOutputFormat) -> str:
+  def _get_formatted_output(
+    self, results: ProbeResult | None, output_format: TraceProcessorOutputFormat
+  ) -> str:
     if not results:
       return ""
 
@@ -506,8 +581,8 @@ class TraceProcessorProbe(Probe):
 
 
 __all__ = [
-    "TraceProcessorProbe",
-    "TraceProcessorOutputFormat",
-    "QUERIES_DIR",
-    "MODULES_DIR",
+  "TraceProcessorProbe",
+  "TraceProcessorOutputFormat",
+  "QUERIES_DIR",
+  "MODULES_DIR",
 ]

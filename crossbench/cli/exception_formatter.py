@@ -46,8 +46,9 @@ def _get_term_color_support() -> int:
   return curses.tigetnum("colors")
 
 
-def _determine_formatter(style: str = "default",
-                         colors: int | None = None) -> Formatter:
+def _determine_formatter(
+  style: str = "default", colors: int | None = None
+) -> Formatter:
   colors = colors or _get_term_color_support()
   logging.debug("Detected support for %s colors", colors)
   if colors == 256:
@@ -64,8 +65,11 @@ def _determine_formatter(style: str = "default",
     return get_formatter_by_name(fmt_alias)
 
 
-def _get_causes(ex_type: type[BaseException], ex_value: BaseException,
-                tb: TracebackType | None) -> list[traceback.TracebackException]:
+def _get_causes(
+  ex_type: type[BaseException],
+  ex_value: BaseException,
+  tb: TracebackType | None,
+) -> list[traceback.TracebackException]:
   tb_exception = traceback.TracebackException(ex_type, ex_value, tb)
   causes: list[traceback.TracebackException] = []
   current = tb_exception
@@ -73,7 +77,7 @@ def _get_causes(ex_type: type[BaseException], ex_value: BaseException,
     causes.append(current)
     if current.__cause__ is not None:
       current = current.__cause__
-    elif (current.__context__ is not None and not current.__suppress_context__):
+    elif current.__context__ is not None and not current.__suppress_context__:
       current = current.__context__
     else:
       break
@@ -99,10 +103,14 @@ def _get_formatting_tb_printer() -> Callable[[str], None]:
   return formatting_tb_printer
 
 
-def excepthook(ex_type: type[BaseException], ex_value: BaseException,
-               tb: TracebackType | None) -> None:
+def excepthook(
+  ex_type: type[BaseException],
+  ex_value: BaseException,
+  tb: TracebackType | None,
+) -> None:
   causes: list[traceback.TracebackException] = _get_causes(
-      ex_type, ex_value, tb)
+    ex_type, ex_value, tb
+  )
   tb_printer = _get_tb_printer()
 
   print("-" * 80)
@@ -126,7 +134,8 @@ def excepthook(ex_type: type[BaseException], ex_value: BaseException,
 
 
 def _print_outermost_exception(
-    last_exception: traceback.TracebackException) -> str:
+  last_exception: traceback.TracebackException,
+) -> str:
   buffer = io.StringIO()
   if stack := last_exception.stack:
     innermost_frame: traceback.FrameSummary = stack[-1]

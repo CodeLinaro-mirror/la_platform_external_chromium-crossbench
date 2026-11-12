@@ -33,7 +33,8 @@ class ScrollAction(InputSourceAction):
   scroll_mode: ScrollMode = ScrollMode.LINEAR
   # Overrides BaseDurationAction.duration:
   duration: dt.timedelta = dataclasses.field(
-      default=DEFAULT_DURATION, kw_only=True)
+    default=DEFAULT_DURATION, kw_only=True
+  )
 
   @classmethod
   @override
@@ -42,17 +43,20 @@ class ScrollAction(InputSourceAction):
     parser = super().config_parser()
     parser.add_argument("distance", type=NumberParser.any_float, default=500)
     parser.add_argument(
-        "duration",
-        type=DurationParser.positive_duration,
-        default=cls.DEFAULT_DURATION)
+      "duration",
+      type=DurationParser.positive_duration,
+      default=cls.DEFAULT_DURATION,
+    )
     parser.add_argument("selector", type=ObjectParser.non_empty_str)
     parser.add_argument("required", type=ObjectParser.bool, default=False)
     parser.add_argument(
-        "settle_duration",
-        type=DurationParser.positive_or_zero_duration,
-        default=dt.timedelta())
+      "settle_duration",
+      type=DurationParser.positive_or_zero_duration,
+      default=dt.timedelta(),
+    )
     parser.add_argument(
-        "scroll_mode", type=ScrollMode.parse, default=ScrollMode.LINEAR)
+      "scroll_mode", type=ScrollMode.parse, default=ScrollMode.LINEAR
+    )
     return parser
 
   @override
@@ -67,16 +71,20 @@ class ScrollAction(InputSourceAction):
 
     if self.required and not self.selector:
       raise ValueError(
-          "'required' can only be used when a selector is specified")
+        "'required' can only be used when a selector is specified"
+      )
 
     if self.settle_duration < dt.timedelta():
-      raise ValueError(f"{self}.settle_duration should be non-negative, "
-                       f"but got {self.settle_duration}")
+      raise ValueError(
+        f"{self}.settle_duration should be non-negative, "
+        f"but got {self.settle_duration}"
+      )
 
     if self.input_source is InputSource.JS:
       if self.settle_duration:
         raise ValueError(
-            "settle_duration cannot be used with JS scroll source.")
+          "settle_duration cannot be used with JS scroll source."
+        )
       if self.scroll_mode is not ScrollMode.LINEAR:
         raise ValueError("scroll_mode cannot be used with JS scroll source.")
 

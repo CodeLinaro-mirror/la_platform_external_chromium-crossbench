@@ -19,11 +19,11 @@ class ImprovementDirection(enum.IntEnum):
 
 
 _UNIT_PRESETS = (
-    # (NAME, UNIT, DIRECTION, HELP)
-    ("ms", "ms", ImprovementDirection.DOWN, "Duration in milliseconds."),
-    ("ms+", "ms", ImprovementDirection.UP, "Duration in milliseconds."),
-    ("score", None, ImprovementDirection.UP, "Unitless score."),
-    ("KiB", "KiB", ImprovementDirection.DOWN, "Size in kilobytes."),
+  # (NAME, UNIT, DIRECTION, HELP)
+  ("ms", "ms", ImprovementDirection.DOWN, "Duration in milliseconds."),
+  ("ms+", "ms", ImprovementDirection.UP, "Duration in milliseconds."),
+  ("score", None, ImprovementDirection.UP, "Unitless score."),
+  ("KiB", "KiB", ImprovementDirection.DOWN, "Size in kilobytes."),
 )
 
 
@@ -33,9 +33,11 @@ class UnitRecord(BaseRecord):
   name: Mapped[str] = orm.mapped_column(orm_types.String(), primary_key=True)
   unit: Mapped[str] = orm.mapped_column(orm_types.String(), nullable=True)
   improvement_direction: Mapped[ImprovementDirection] = orm.mapped_column(
-      orm_types.Enum(ImprovementDirection))
+    orm_types.Enum(ImprovementDirection)
+  )
   help: Mapped[str | None] = orm.mapped_column(
-      orm_types.String(), nullable=True)
+    orm_types.String(), nullable=True
+  )
 
   @classmethod
   def create_defaults(cls, session: orm.Session) -> None:
@@ -49,7 +51,7 @@ class UnitRecord(BaseRecord):
       help_str = help_str.strip()
 
       session.add(
-          cls(name=name,
-              unit=unit,
-              improvement_direction=direction,
-              help=help_str))
+        cls(
+          name=name, unit=unit, improvement_direction=direction, help=help_str
+        )
+      )

@@ -28,74 +28,75 @@ if TYPE_CHECKING:
 
 
 class Column:
-
   def __init__(self, name: str, description: str) -> None:
     self.name: Final[str] = name
     self.description: Final[str] = description
 
 
 EXTRA_COLUMNS: Final[list[Column]] = [
-    Column(
-        name="user",
-        description="The email address of the user created the job.",
-    ),
-    Column(
-        name="name",
-        description="The name of the job.",
-    ),
-    Column(
-        name="base_commit",
-        description="The Git commit hash of the base revision.",
-    ),
-    Column(
-        name="exp_commit",
-        description="The Git commit hash of the experiment revision.",
-    ),
-    Column(
-        name="base_patch",
-        description="The Gerrit patch URL applied to the base variant.",
-    ),
-    Column(
-        name="exp_patch",
-        description="The Gerrit patch URL applied to the experiment.",
-    ),
-    Column(
-        name="story",
-        description="The tested story within the benchmark.",
-    ),
-    Column(
-        name="attempts",
-        description="The number of times the job ran the test.",
-    ),
-    Column(
-        name="bug",
-        description="The buganier ID associated with the job.",
-    ),
-    Column(
-        name="differences",
-        description="The number of regressions found for bisection jobs.",
-    ),
+  Column(
+    name="user",
+    description="The email address of the user created the job.",
+  ),
+  Column(
+    name="name",
+    description="The name of the job.",
+  ),
+  Column(
+    name="base_commit",
+    description="The Git commit hash of the base revision.",
+  ),
+  Column(
+    name="exp_commit",
+    description="The Git commit hash of the experiment revision.",
+  ),
+  Column(
+    name="base_patch",
+    description="The Gerrit patch URL applied to the base variant.",
+  ),
+  Column(
+    name="exp_patch",
+    description="The Gerrit patch URL applied to the experiment.",
+  ),
+  Column(
+    name="story",
+    description="The tested story within the benchmark.",
+  ),
+  Column(
+    name="attempts",
+    description="The number of times the job ran the test.",
+  ),
+  Column(
+    name="bug",
+    description="The buganier ID associated with the job.",
+  ),
+  Column(
+    name="differences",
+    description="The number of regressions found for bisection jobs.",
+  ),
 ]
 
 EXTRA_COLUMNS_DICT: Final[immutabledict[str, Column]] = immutabledict(
-    {c.name: c for c in EXTRA_COLUMNS})
+  {c.name: c for c in EXTRA_COLUMNS}
+)
 
 
 def list_jobs(
-    user: UserEnum | str,
-    number: int,
-    truncate: int | None,
-    output_format: OutputFormat,
-    extra_columns: list[str] | None = None,
-    url_source: UrlSource = UrlSource.LESZEK_PERF,
+  user: UserEnum | str,
+  number: int,
+  truncate: int | None,
+  output_format: OutputFormat,
+  extra_columns: list[str] | None = None,
+  url_source: UrlSource = UrlSource.LESZEK_PERF,
 ) -> None:
   extra_columns = extra_columns or []
   emails_to_query = _fetch_user_emails(user)
 
   jobs = []
   with annotate("Fetching jobs"), ThreadPoolExecutor() as executor:
-    results = executor.map(lambda email: _fetch_jobs(number, email),
-                           emails_to_query)
+    results = executor.map(
+      lambda email: _fetch_jobs(number, email), emails_to_query
+    )
     jobs = list(itertools.chain.from_iterable(results))
 
   jobs.sort(key=lambda job: str(job.get("created", "")), reverse=True)
@@ -104,8 +105,14 @@ def list_jobs(
     print("No jobs found.")
     return
 
-  _display_jobs(jobs[:number], output_format, user == UserEnum.ALL, truncate,
-                OrderedSet(extra_columns), url_source)
+  _display_jobs(
+    jobs[:number],
+    output_format,
+    user == UserEnum.ALL,
+    truncate,
+    OrderedSet(extra_columns),
+    url_source,
+  )
 
 
 def _fetch_user_emails(user: UserEnum | str) -> set[str | None]:
@@ -151,36 +158,36 @@ def _fetch_jobs(number: int, email: str | None = None) -> list[JsonDict]:
 
 
 def _prepare_job_list_data(
-    jobs: Sequence[JsonDict],
-    all_users: bool,
-    extra_columns: OrderedSet[str],
-    url_source: UrlSource = UrlSource.LESZEK_PERF,
+  jobs: Sequence[JsonDict],
+  all_users: bool,
+  extra_columns: OrderedSet[str],
+  url_source: UrlSource = UrlSource.LESZEK_PERF,
 ) -> tuple[list[str], TableData, list[PinpointJobInfo]]:
   if all_users and "user" not in extra_columns:
     extra_columns = OrderedSet(["user", *extra_columns])
   headers = [
-      "Benchmark",
-      "Config",
-      "Type",
-      *[c.replace("_", " ").title() for c in extra_columns],
-      "Start Time",
-      "Job URL",
-      "Status",
+    "Benchmark",
+    "Config",
+    "Type",
+    *[c.replace("_", " ").title() for c in extra_columns],
+    "Start Time",
+    "Job URL",
+    "Status",
   ]
   job_infos: list[PinpointJobInfo] = [
-      PinpointJobInfo.from_json(job) for job in jobs
+    PinpointJobInfo.from_json(job) for job in jobs
   ]
   table_data: TableData = [
-      _prepare_job_row(job_info, extra_columns, url_source)
-      for job_info in job_infos
+    _prepare_job_row(job_info, extra_columns, url_source)
+    for job_info in job_infos
   ]
   return headers, table_data, job_infos
 
 
 def _prepare_job_row(
-    job_info: PinpointJobInfo,
-    extra_columns: OrderedSet[str],
-    url_source: UrlSource,
+  job_info: PinpointJobInfo,
+  extra_columns: OrderedSet[str],
+  url_source: UrlSource,
 ) -> list[str]:
   job_dict = job_info.to_dict()
   extra_values: list[str] = []
@@ -190,23 +197,23 @@ def _prepare_job_row(
     else:
       extra_values.append("")
   return [
-      job_info.benchmark or "",
-      job_info.bot or "",
-      job_info.comparison_mode or "",
-      *extra_values,
-      job_info.formatted_created,
-      url_source.format_short_job_url(job_info.job_id),
-      job_info.status or "",
+    job_info.benchmark or "",
+    job_info.bot or "",
+    job_info.comparison_mode or "",
+    *extra_values,
+    job_info.formatted_created,
+    url_source.format_short_job_url(job_info.job_id),
+    job_info.status or "",
   ]
 
 
 def _display_jobs(
-    jobs: Sequence[JsonDict],
-    output_format: OutputFormat,
-    all_users: bool,
-    truncate: int | None,
-    extra_columns: OrderedSet[str],
-    url_source: UrlSource = UrlSource.LESZEK_PERF,
+  jobs: Sequence[JsonDict],
+  output_format: OutputFormat,
+  all_users: bool,
+  truncate: int | None,
+  extra_columns: OrderedSet[str],
+  url_source: UrlSource = UrlSource.LESZEK_PERF,
 ) -> None:
   match output_format:
     case OutputFormat.JSON:
@@ -214,22 +221,27 @@ def _display_jobs(
     case OutputFormat.YAML:
       print(yaml.dump(jobs))
     case OutputFormat.CSV | OutputFormat.TSV:
-      headers, rows, _ = _prepare_job_list_data(jobs, all_users, extra_columns,
-                                                url_source)
+      headers, rows, _ = _prepare_job_list_data(
+        jobs, all_users, extra_columns, url_source
+      )
       write_delimited(
-          sys.stdout, headers, rows, delimiter=output_format.delimiter)
+        sys.stdout, headers, rows, delimiter=output_format.delimiter
+      )
     case OutputFormat.TABLE:
-      headers, rows, job_infos = _prepare_job_list_data(jobs, all_users,
-                                                        extra_columns,
-                                                        url_source)
+      headers, rows, job_infos = _prepare_job_list_data(
+        jobs, all_users, extra_columns, url_source
+      )
       _display_jobs_as_table(headers, rows, job_infos, truncate)
 
 
-def _display_jobs_as_table(headers: list[str], rows: TableData,
-                           job_infos: Sequence[PinpointJobInfo],
-                           max_length: int | None) -> None:
+def _display_jobs_as_table(
+  headers: list[str],
+  rows: TableData,
+  job_infos: Sequence[PinpointJobInfo],
+  max_length: int | None,
+) -> None:
   table_data: TableData = [
-      [truncate(cell, max_length) for cell in row] for row in rows
+    [truncate(cell, max_length) for cell in row] for row in rows
   ]
   url_index = headers.index("Job URL")
   type_index = headers.index("Type")
@@ -258,5 +270,5 @@ def truncate(text: str, max_length: int | None = None) -> str:
   if max_length and len(text) > max_length:
     if max_length <= 3:
       return text[:max_length]
-    return text[:max_length - 3] + "..."
+    return text[: max_length - 3] + "..."
   return text

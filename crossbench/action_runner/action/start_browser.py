@@ -32,12 +32,13 @@ class StartBrowserAction(Action):
   def config_parser(cls: type[Self]) -> ConfigParser[Self]:
     parser = super().config_parser()
     parser.add_default_argument(
-        "startup_urls",
-        type=ObjectParser.fuzzy_url_str,
-        default=(),
-        is_list=True,
-        help="URLs to open immediately on browser launch "
-        "(currently desktop Chromium only).")
+      "startup_urls",
+      type=ObjectParser.fuzzy_url_str,
+      default=(),
+      is_list=True,
+      help="URLs to open immediately on browser launch "
+      "(currently desktop Chromium only).",
+    )
     return parser
 
   @override

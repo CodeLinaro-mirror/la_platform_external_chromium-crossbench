@@ -32,9 +32,11 @@ class CoordinatesConfig(ConfigObject):
   @override
   @functools.lru_cache(maxsize=1)
   def config_parser(
-      cls: type[CoordinatesConfig]) -> ConfigParser[CoordinatesConfig]:
+    cls: type[CoordinatesConfig],
+  ) -> ConfigParser[CoordinatesConfig]:
     parser = ConfigParser(
-        cls, unused_properties_mode=UnusedPropertiesMode.ERROR)
+      cls, unused_properties_mode=UnusedPropertiesMode.ERROR
+    )
     parser.add_argument("x", type=NumberParser.positive_zero_int, required=True)
     parser.add_argument("y", type=NumberParser.positive_zero_int, required=True)
     return parser
@@ -56,19 +58,23 @@ class SelectorConfig(ConfigObject):
   def parse_str(cls, value: str) -> Self:
     selector = ObjectParser.non_empty_str(value, "selector")
     return cls(
-        selector=selector, required=True, scroll_into_view=False, wait=False)
+      selector=selector, required=True, scroll_into_view=False, wait=False
+    )
 
   @classmethod
   @override
   @functools.lru_cache(maxsize=1)
   def config_parser(cls: type[SelectorConfig]) -> ConfigParser[SelectorConfig]:
     parser = ConfigParser(
-        cls, unused_properties_mode=UnusedPropertiesMode.ERROR)
+      cls, unused_properties_mode=UnusedPropertiesMode.ERROR
+    )
     parser.add_argument(
-        "selector", type=ObjectParser.non_empty_str, required=True)
+      "selector", type=ObjectParser.non_empty_str, required=True
+    )
     parser.add_argument("required", type=ObjectParser.bool, default=True)
     parser.add_argument(
-        "scroll_into_view", type=ObjectParser.bool, default=False)
+      "scroll_into_view", type=ObjectParser.bool, default=False
+    )
     parser.add_argument("wait", type=ObjectParser.bool, default=False)
     return parser
 
@@ -101,32 +107,38 @@ class UiSelectorConfig(ConfigObject):
   @override
   def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(
-        cls, unused_properties_mode=UnusedPropertiesMode.ERROR)
+      cls, unused_properties_mode=UnusedPropertiesMode.ERROR
+    )
     parser.add_argument(
-        "pkg",
-        type=ObjectParser.non_empty_str,
-        required=False,
-        help="Package name of the UI element to match.")
+      "pkg",
+      type=ObjectParser.non_empty_str,
+      required=False,
+      help="Package name of the UI element to match.",
+    )
     parser.add_argument(
-        "res",
-        type=ObjectParser.non_empty_str,
-        required=False,
-        help="Resource name of the UI element to match.")
+      "res",
+      type=ObjectParser.non_empty_str,
+      required=False,
+      help="Resource name of the UI element to match.",
+    )
     parser.add_argument(
-        "clazz",
-        type=ObjectParser.non_empty_str,
-        required=False,
-        help="Class name of the UI element to match.")
+      "clazz",
+      type=ObjectParser.non_empty_str,
+      required=False,
+      help="Class name of the UI element to match.",
+    )
     parser.add_argument(
-        "text",
-        type=ObjectParser.non_empty_str,
-        required=False,
-        help="Text of the UI element to match.")
+      "text",
+      type=ObjectParser.non_empty_str,
+      required=False,
+      help="Text of the UI element to match.",
+    )
     parser.add_argument(
-        "required",
-        type=ObjectParser.bool,
-        default=True,
-        help="Whether the UI element is required to exist.")
+      "required",
+      type=ObjectParser.bool,
+      default=True,
+      help="Whether the UI element is required to exist.",
+    )
     return parser
 
   def to_json(self) -> JsonDict:
@@ -165,60 +177,73 @@ class PositionConfig(ConfigObject):
       return cls(coordinates=coordinates_parser.parse(config))
 
     ui_selector_parser = UiSelectorConfig.config_parser()
-    if (ui_selector_parser.has_all_required_args(config) and
-        ui_selector_parser.has_any_args(config)):
+    if ui_selector_parser.has_all_required_args(
+      config
+    ) and ui_selector_parser.has_any_args(config):
       return cls(ui_selector=ui_selector_parser.parse(config))
 
     raise argparse.ArgumentTypeError(
-        f"{config} is not a valid coordinate or selector")
+      f"{config} is not a valid coordinate or selector"
+    )
 
   @classmethod
   def from_coordinates(cls, x: int, y: int) -> Self:
     return cls(coordinates=CoordinatesConfig(x, y))
 
   @classmethod
-  def from_selector(cls,
-                    selector: str,
-                    required: bool = True,
-                    scroll_into_view: bool = False,
-                    wait: bool = False) -> Self:
+  def from_selector(
+    cls,
+    selector: str,
+    required: bool = True,
+    scroll_into_view: bool = False,
+    wait: bool = False,
+  ) -> Self:
     return cls(
-        selector=SelectorConfig(
-            selector=selector,
-            required=required,
-            scroll_into_view=scroll_into_view,
-            wait=wait))
+      selector=SelectorConfig(
+        selector=selector,
+        required=required,
+        scroll_into_view=scroll_into_view,
+        wait=wait,
+      )
+    )
 
   @classmethod
-  def from_ui_selector(cls,
-                       pkg: str | None = None,
-                       res: str | None = None,
-                       clazz: str | None = None,
-                       text: str | None = None,
-                       required: bool = True) -> Self:
+  def from_ui_selector(
+    cls,
+    pkg: str | None = None,
+    res: str | None = None,
+    clazz: str | None = None,
+    text: str | None = None,
+    required: bool = True,
+  ) -> Self:
     return cls(
-        ui_selector=UiSelectorConfig(
-            pkg=pkg, res=res, clazz=clazz, text=text, required=required))
+      ui_selector=UiSelectorConfig(
+        pkg=pkg, res=res, clazz=clazz, text=text, required=required
+      )
+    )
 
   @override
   def validate(self) -> None:
     super().validate()
-    if (bool(self.coordinates) + bool(self.selector) +
-        bool(self.ui_selector)) != 1:
+    if (
+      bool(self.coordinates) + bool(self.selector) + bool(self.ui_selector)
+    ) != 1:
       raise ValueError(
-          "Position config must have exactly one coordinates or selector")
+        "Position config must have exactly one coordinates or selector"
+      )
 
   def to_json(self) -> JsonDict:
     if coordinates := self.coordinates:
       return {"x": coordinates.x, "y": coordinates.y}
     if selector := self.selector:
       return {
-          "required": selector.required,
-          "scroll_into_view": selector.scroll_into_view,
-          "selector": selector.selector,
-          "wait": selector.wait,
+        "required": selector.required,
+        "scroll_into_view": selector.scroll_into_view,
+        "selector": selector.selector,
+        "wait": selector.wait,
       }
     if ui_selector := self.ui_selector:
       return ui_selector.to_json()
     raise ValueError(
-        "Position config must have exactly one coordinates or selector")
+      "Position config must have exactly one coordinates or selector"
+    )

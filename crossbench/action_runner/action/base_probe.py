@@ -23,7 +23,8 @@ if TYPE_CHECKING:
 @dataclasses.dataclass(frozen=True, eq=False)
 class BaseProbeAction(Action, metaclass=abc.ABCMeta):
   kwargs: immutabledict[str, object] = dataclasses.field(
-      default_factory=immutabledict)
+    default_factory=immutabledict
+  )
 
   @property
   @abc.abstractmethod
@@ -42,8 +43,10 @@ class BaseProbeAction(Action, metaclass=abc.ABCMeta):
     if self.probe not in PROBE_LOOKUP:
       raise ValueError(f"Unknown probe: {self.probe}")
     if not isinstance(self.kwargs, immutabledict):
-      raise ValueError(f"{self}.kwargs must be an immutabledict, "
-                       f"but got {type(self.kwargs).__name__}")
+      raise ValueError(
+        f"{self}.kwargs must be an immutabledict, "
+        f"but got {type(self.kwargs).__name__}"
+      )
 
   @override
   def run_with(self, action_runner: ActionRunner) -> None:

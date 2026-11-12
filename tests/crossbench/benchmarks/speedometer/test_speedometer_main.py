@@ -6,16 +6,19 @@ from __future__ import annotations
 
 from typing import override
 
-from crossbench.benchmarks.speedometer.speedometer_main import \
-    SpeedometerMainBenchmark, SpeedometerMainProbe, \
-    SpeedometerMainProbeContext, SpeedometerMainStory
+from crossbench.benchmarks.speedometer.speedometer_main import (
+  SpeedometerMainBenchmark,
+  SpeedometerMainProbe,
+  SpeedometerMainProbeContext,
+  SpeedometerMainStory,
+)
 from tests import test_helper
-from tests.crossbench.benchmarks.speedometer.helper import \
-    Speedometer3BaseTestCase
+from tests.crossbench.benchmarks.speedometer.helper import (
+  Speedometer3BaseTestCase,
+)
 
 
 class SpeedometeMainTestCase(Speedometer3BaseTestCase):
-
   @property
   @override
   def benchmark_cls(self):

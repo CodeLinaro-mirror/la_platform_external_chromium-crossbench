@@ -18,13 +18,14 @@ if TYPE_CHECKING:
 
 
 class VersionSubcommand(CrossbenchSubcommand):
-
   @override
-  def register_subcommand(self,
-                          subparsers: Subparsers) -> argparse.ArgumentParser:
+  def register_subcommand(
+    self, subparsers: Subparsers
+  ) -> argparse.ArgumentParser:
     self._parser = subparsers.add_parser(
-        "version",
-        help="Show program's version number and exit, same as --version")
+      "version",
+      help="Show program's version number and exit, same as --version",
+    )
     self._parser.set_defaults(crossbench_subcommand=self)
     return self.parser
 

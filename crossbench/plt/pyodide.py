@@ -28,9 +28,7 @@ def is_pyodide_env() -> bool:
 
 
 class JsBuffer(Protocol):
-
-  def to_bytes(self) -> bytes:
-    ...
+  def to_bytes(self) -> bytes: ...
 
 
 class WebAdb(Protocol):
@@ -48,24 +46,19 @@ class WebAdb(Protocol):
   def acknowledgeInterrupt(self) -> None:  # noqa: N802
     ...
 
-  def root(self) -> None:
-    ...
+  def root(self) -> None: ...
 
-  def unroot(self) -> None:
-    ...
+  def unroot(self) -> None: ...
 
-  def push(self, src: str, dest: str) -> None:
-    ...
+  def push(self, src: str, dest: str) -> None: ...
 
-  def pull(self, src: str, dest: str) -> None:
-    ...
+  def pull(self, src: str, dest: str) -> None: ...
 
   def shell(
-      self,
-      cmd: str,
-      input: str | None = None,  # pylint: disable=redefined-builtin
-  ) -> str | bytes | JsBuffer:
-    ...
+    self,
+    cmd: str,
+    input: str | None = None,  # pylint: disable=redefined-builtin
+  ) -> str | bytes | JsBuffer: ...
 
   def startDevTools(self) -> str:  # noqa: N802
     ...
@@ -83,11 +76,10 @@ class WebAdb(Protocol):
     ...
 
   def writeProcessStdin(  # noqa: N802
-      self,
-      proc_id: int,
-      data: str,
-  ) -> None:
-    ...
+    self,
+    proc_id: int,
+    data: str,
+  ) -> None: ...
 
   def closeProcessStdin(self, proc_id: int) -> None:  # noqa: N802
     ...
@@ -103,11 +95,11 @@ class PyodideGcsBlob(gcloud_blob.Blob):
   """GCS Blob wrapper for Pyodide WebAssembly environment."""
 
   def __init__(
-      self,
-      gcs_url: str,
-      md5_hash: str = "",
-      size: int = 0,
-      webadb: WebAdb | None = None,
+    self,
+    gcs_url: str,
+    md5_hash: str = "",
+    size: int = 0,
+    webadb: WebAdb | None = None,
   ) -> None:
     self._gcs_url: Final[str] = gcs_url
     self._md5_hash: str = md5_hash
@@ -140,8 +132,9 @@ class PyodideGcsBlob(gcloud_blob.Blob):
     self._size = int(meta.get("size", 0))
 
   @override
-  def download_to_filename(self, filename: str, *args: object,
-                           **kwargs: object) -> None:
+  def download_to_filename(
+    self, filename: str, *args: object, **kwargs: object
+  ) -> None:
     del args, kwargs
     if self._webadb is None:
       raise RuntimeError("webadb is unavailable in Pyodide.")
@@ -177,13 +170,14 @@ class PyodidePlatform(plt_linux.LinuxPlatform):
 
   @override
   def lookup_binary_override(
-      self, binary_name: pth.AnyPathLike) -> pth.AnyPath | None:
+    self, binary_name: pth.AnyPathLike
+  ) -> pth.AnyPath | None:
     if str(binary_name) == "wpr":
       for candidate in (
-          self.local_cache_dir("webpagereplay") / "android" / "arm64" / "wpr",
-          self.local_cache_dir("webpagereplay") / "wpr",
-          self.local_path("/third_party/webpagereplay/wpr"),
-          self.local_path("/cache/webpagereplay/android/arm64/wpr"),
+        self.local_cache_dir("webpagereplay") / "android" / "arm64" / "wpr",
+        self.local_cache_dir("webpagereplay") / "wpr",
+        self.local_path("/third_party/webpagereplay/wpr"),
+        self.local_path("/cache/webpagereplay/android/arm64/wpr"),
       ):
         if self.is_file(candidate):
           return candidate
@@ -192,8 +186,10 @@ class PyodidePlatform(plt_linux.LinuxPlatform):
   @override
   def sleep(self, seconds: float | dt.timedelta) -> None:
     total_secs = (
-        seconds.total_seconds()
-        if isinstance(seconds, dt.timedelta) else float(seconds))
+      seconds.total_seconds()
+      if isinstance(seconds, dt.timedelta)
+      else float(seconds)
+    )
     if total_secs <= 0:
       return
     start = time.time()

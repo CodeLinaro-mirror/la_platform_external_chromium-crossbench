@@ -10,20 +10,21 @@ from unittest import mock
 import hjson
 
 from crossbench import plt
-from crossbench.cli.config.driver import AmbiguousDriverIdentifier, \
-    DriverConfig
+from crossbench.cli.config.driver import AmbiguousDriverIdentifier, DriverConfig
 from crossbench.cli.config.driver_type import BrowserDriverType
 from crossbench.exception import ArgumentTypeMultiException
 from crossbench.plt.android_adb import AndroidAdbPlatform
 from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
 from tests import test_helper
-from tests.crossbench.cli.config.base import ADB_DEVICES_OUTPUT, \
-    IOS_DEVICES_SINGLE_OUTPUT, BaseConfigTestCase
+from tests.crossbench.cli.config.base import (
+  ADB_DEVICES_OUTPUT,
+  IOS_DEVICES_SINGLE_OUTPUT,
+  BaseConfigTestCase,
+)
 from tests.crossbench.mock_helper import ShResult
 
 
 class DriverConfigTestCase(BaseConfigTestCase):
-
   def test_default(self):
     default = DriverConfig.default()
     self.assertEqual(default.driver_type, BrowserDriverType.WEB_DRIVER)
@@ -84,11 +85,11 @@ class DriverConfigTestCase(BaseConfigTestCase):
   def test_parse_dict_device_id_conflict(self):
     self.platform.sh_results = []
     config_dict = {
-        "type": "adb",
-        "device_id": "1234",
-        "settings": {
-            "device_id": "ABCD",
-        },
+      "type": "adb",
+      "device_id": "1234",
+      "settings": {
+        "device_id": "ABCD",
+      },
     }
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       DriverConfig.parse(config_dict)
@@ -97,20 +98,24 @@ class DriverConfigTestCase(BaseConfigTestCase):
 
   def test_parse_dict_chromeos_ssh(self):
     config_dict = {
-        "type": "chromeos-ssh",
-        "settings": {
-            "host": "chromeos6-row17-rack14-host7",
-            "port": "9515",
-            "ssh_port": "22",
-            "ssh_user": "root",
-        },
+      "type": "chromeos-ssh",
+      "settings": {
+        "host": "chromeos6-row17-rack14-host7",
+        "port": "9515",
+        "ssh_port": "22",
+        "ssh_user": "root",
+      },
     }
     ssh_user = config_dict["settings"]["ssh_user"]
     ssh_host = config_dict["settings"]["host"]
-    self.platform.expect_sh("ssh", *ChromeOsSshPlatform.SSH_OPTIONS, "-p",
-                            config_dict["settings"]["ssh_port"],
-                            f"{ssh_user}@{ssh_host}",
-                            f"'[' -e {ChromeOsSshPlatform.AUTOLOGIN_PATH} ']'")
+    self.platform.expect_sh(
+      "ssh",
+      *ChromeOsSshPlatform.SSH_OPTIONS,
+      "-p",
+      config_dict["settings"]["ssh_port"],
+      f"{ssh_user}@{ssh_host}",
+      f"'[' -e {ChromeOsSshPlatform.AUTOLOGIN_PATH} ']'",
+    )
     config = DriverConfig.parse(config_dict)
     assert isinstance(config, DriverConfig)
     self.assertEqual(config.driver_type, BrowserDriverType.CHROMEOS_SSH)
@@ -126,10 +131,10 @@ class DriverConfigTestCase(BaseConfigTestCase):
   def test_parse_inline_json_adb(self):
     self.platform.sh_results = [ADB_DEVICES_OUTPUT]
     config_dict: dict[str, object] = {
-        "type": "adb",
-        "settings": {
-            "device_id": "0a388e93",
-        },
+      "type": "adb",
+      "settings": {
+        "device_id": "0a388e93",
+      },
     }
     config_1 = DriverConfig.parse(hjson.dumps(config_dict))
     self.assertIsInstance(config_1, DriverConfig)
@@ -176,9 +181,9 @@ class DriverConfigTestCase(BaseConfigTestCase):
     adb_bin = self.out_dir / "adb"
     self.platform.sh_results = [ADB_DEVICES_OUTPUT]
     config_dict = {
-        "type": "adb",
-        "device_id": "0a388e93",
-        "adb_bin": str(adb_bin),
+      "type": "adb",
+      "device_id": "0a388e93",
+      "adb_bin": str(adb_bin),
     }
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       _ = DriverConfig.parse(hjson.dumps(config_dict))
@@ -235,8 +240,9 @@ class DriverConfigTestCase(BaseConfigTestCase):
     self.platform.sh_results = [ADB_DEVICES_OUTPUT]
 
     with mock.patch(
-        "crossbench.cli.config.driver.ios_devices",
-        return_value=IOS_DEVICES_SINGLE_OUTPUT):
+      "crossbench.cli.config.driver.ios_devices",
+      return_value=IOS_DEVICES_SINGLE_OUTPUT,
+    ):
       config = DriverConfig.parse("00001111-11AA22BB33DD")
     assert isinstance(config, DriverConfig)
     self.assertEqual(len(self.platform.sh_cmds), 1)
@@ -249,10 +255,10 @@ class DriverConfigTestCase(BaseConfigTestCase):
     bundletool = self.out_dir / "bundletool"
     self.platform.sh_results = [ADB_DEVICES_OUTPUT]
     config_dict = {
-        "type": "adb",
-        "device_id": "0a388e93",
-        "adb_bin": str(adb_bin),
-        "bundletool": str(bundletool),
+      "type": "adb",
+      "device_id": "0a388e93",
+      "adb_bin": str(adb_bin),
+      "bundletool": str(bundletool),
     }
     self.fs.create_file(adb_bin, st_size=100)
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
@@ -281,11 +287,13 @@ class DriverConfigTestCase(BaseConfigTestCase):
     self.assertEqual(len(self.platform.sh_cmds), 0)
 
     sh_results = [
-        ShResult(""),
-        ShResult("List of devices attached\n"),
-        ShResult(f"connected to {serial}\n"),
-        ShResult("List of devices attached\n"
-                 f"{serial} device product:brya model:mica device:mica\n"),
+      ShResult(""),
+      ShResult("List of devices attached\n"),
+      ShResult(f"connected to {serial}\n"),
+      ShResult(
+        "List of devices attached\n"
+        f"{serial} device product:brya model:mica device:mica\n"
+      ),
     ]
     if self.platform.is_macos:
       sh_results.insert(0, ShResult(returncode=1))
@@ -296,17 +304,19 @@ class DriverConfigTestCase(BaseConfigTestCase):
 
   def test_parse_adb_bypass_oobe(self) -> None:
     sh_results = [
-        ADB_DEVICES_OUTPUT,
-        ShResult(""),
-        ADB_DEVICES_OUTPUT,
+      ADB_DEVICES_OUTPUT,
+      ShResult(""),
+      ADB_DEVICES_OUTPUT,
     ]
     if self.platform.is_macos:
       sh_results.insert(1, ShResult(returncode=1))
     self.platform.sh_results = list(sh_results)
-    default_config = DriverConfig.parse_dict({
+    default_config = DriverConfig.parse_dict(
+      {
         "type": "adb",
         "device_id": "0a388e93",
-    })
+      }
+    )
     self.assertIsNone(default_config.settings)
     default_platform = default_config.get_adb_platform()
     self.assertIsInstance(default_platform, AndroidAdbPlatform)
@@ -314,13 +324,15 @@ class DriverConfigTestCase(BaseConfigTestCase):
     self.assertTrue(default_platform.bypass_oobe)
 
     self.platform.sh_results = list(sh_results)
-    disabled_config = DriverConfig.parse_dict({
+    disabled_config = DriverConfig.parse_dict(
+      {
         "type": "adb",
         "device_id": "0a388e93",
         "settings": {
-            "bypass_oobe": False,
+          "bypass_oobe": False,
         },
-    })
+      }
+    )
     assert disabled_config.settings is not None
     self.assertFalse(disabled_config.settings["bypass_oobe"])
     disabled_platform = disabled_config.get_adb_platform()
@@ -329,13 +341,15 @@ class DriverConfigTestCase(BaseConfigTestCase):
     self.assertFalse(disabled_platform.bypass_oobe)
 
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      DriverConfig.parse_dict({
+      DriverConfig.parse_dict(
+        {
           "type": "adb",
           "device_id": "0a388e93",
           "settings": {
-              "bypass_oobe": "invalid",
+            "bypass_oobe": "invalid",
           },
-      })
+        }
+      )
     self.assertIn("bypass_oobe", str(cm.exception))
 
 

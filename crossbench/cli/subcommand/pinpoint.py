@@ -21,16 +21,25 @@ from crossbench import plt
 from crossbench.cli.parser import CBArgumentParser
 from crossbench.cli.subcommand.base import CrossbenchSubcommand
 from crossbench.cli.ui import ui
-from crossbench.parse import DurationParser, NumberParser, ObjectParser, \
-    PathParser
+from crossbench.parse import (
+  DurationParser,
+  NumberParser,
+  ObjectParser,
+  PathParser,
+)
 from crossbench.pinpoint.api import PINPOINT_JOB_URL_TEMPLATE
 from crossbench.pinpoint.benchmarks import pinpoint_benchmark_name
 from crossbench.pinpoint.cancel_job import cancel_jobs
-from crossbench.pinpoint.config import PinpointBisectJobConfig, \
-    PinpointTryJobConfig
+from crossbench.pinpoint.config import (
+  PinpointBisectJobConfig,
+  PinpointTryJobConfig,
+)
 from crossbench.pinpoint.job_config import print_job_config
-from crossbench.pinpoint.job_info import MIN_POLL_INTERVAL, PinpointJobInfo, \
-    UrlSource
+from crossbench.pinpoint.job_info import (
+  MIN_POLL_INTERVAL,
+  PinpointJobInfo,
+  UrlSource,
+)
 from crossbench.pinpoint.job_parser import parse_job_id, parse_job_ids
 from crossbench.pinpoint.job_results import download_results
 from crossbench.pinpoint.list_benchmarks import fetch_benchmarks
@@ -44,11 +53,13 @@ from crossbench.pinpoint.user import UserEnum, list_user
 from crossbench.pinpoint.user_metrics import collect_metrics, init_metrics
 
 _BUG_REPORT_URL: Final[str] = (
-    "https://issues.chromium.org/issues/new?component=1456889")
+  "https://issues.chromium.org/issues/new?component=1456889"
+)
 _BUG_EPILOG: Final[str] = f"File bugs at {_BUG_REPORT_URL}"
 _JOB_ID_HELP: Final[str] = (
-    "The IDs of the jobs. Can be full URLs, parts of URLs with job IDs, "
-    "or just the IDs. Accepts multiple values and comma-separated lists.")
+  "The IDs of the jobs. Can be full URLs, parts of URLs with job IDs, "
+  "or just the IDs. Accepts multiple values and comma-separated lists."
+)
 
 if TYPE_CHECKING:
   from crossbench.cli.cli import BenchmarkClass, CrossBenchCLI
@@ -72,7 +83,6 @@ def collect_metrics_context(action: str) -> Iterator[None]:
 
 
 class PinpointBaseSubcommand(abc.ABC):
-
   def __init__(self, parent: PinpointSubcommand) -> None:
     self._parent: Final[PinpointSubcommand] = parent
     self._parser = self.add_cli_arguments()
@@ -84,12 +94,15 @@ class PinpointBaseSubcommand(abc.ABC):
 
   def add_url_source_argument(self, parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
-        "--url-source",
-        type=UrlSource,
-        choices=UrlSource.all(),
-        default=UrlSource.LESZEK_PERF,
-        help=("The URL source for shortened Pinpoint job links. "
-              f"(default: {UrlSource.LESZEK_PERF})"))
+      "--url-source",
+      type=UrlSource,
+      choices=UrlSource.all(),
+      default=UrlSource.LESZEK_PERF,
+      help=(
+        "The URL source for shortened Pinpoint job links. "
+        f"(default: {UrlSource.LESZEK_PERF})"
+      ),
+    )
 
   @abc.abstractmethod
   def add_cli_arguments(self) -> argparse.ArgumentParser:
@@ -111,71 +124,83 @@ class PinpointListSubcommand(PinpointBaseSubcommand):
   @override
   def add_cli_arguments(self) -> argparse.ArgumentParser:
     list_parser = self._parent.subparsers.add_parser(
-        "list",
-        aliases=("ls",),
-        help="Displays recent Pinpoint jobs.",
-        formatter_class=argparse.RawTextHelpFormatter)
+      "list",
+      aliases=("ls",),
+      help="Displays recent Pinpoint jobs.",
+      formatter_class=argparse.RawTextHelpFormatter,
+    )
     list_parser.add_argument(
-        "--user",
-        "-u",
-        type=list_user,
-        default=UserEnum.ME,
-        help=("Filter jobs by user. 'me' (default) shows jobs for your "
-              "@google.com and @chromium.org accounts, derived from your "
-              "authenticated username. 'all' shows jobs from all users. "
-              "An email address can also be specified. Note: 'me' might not "
-              "work correctly if your usernames differ across domains."))
+      "--user",
+      "-u",
+      type=list_user,
+      default=UserEnum.ME,
+      help=(
+        "Filter jobs by user. 'me' (default) shows jobs for your "
+        "@google.com and @chromium.org accounts, derived from your "
+        "authenticated username. 'all' shows jobs from all users. "
+        "An email address can also be specified. Note: 'me' might not "
+        "work correctly if your usernames differ across domains."
+      ),
+    )
     list_parser.add_argument(
-        "--number",
-        "-n",
-        type=NumberParser.positive_int,
-        default=20,
-        help="The maximum number of jobs to fetch and display. (default: 20)")
+      "--number",
+      "-n",
+      type=NumberParser.positive_int,
+      default=20,
+      help="The maximum number of jobs to fetch and display. (default: 20)",
+    )
     list_parser.add_argument(
-        "--format",
-        "-f",
-        type=OutputFormat,
-        choices=OutputFormat.all(),
-        default=OutputFormat.TABLE,
-        help="The output format for the list of jobs. (default: table)")
+      "--format",
+      "-f",
+      type=OutputFormat,
+      choices=OutputFormat.all(),
+      default=OutputFormat.TABLE,
+      help="The output format for the list of jobs. (default: table)",
+    )
     list_parser.add_argument(
-        "--truncate",
-        "-t",
-        type=NumberParser.positive_int,
-        default=None,
-        help=("Truncate cell content to the specified maximum length. "
-              "Only applies to the 'table' format."))
+      "--truncate",
+      "-t",
+      type=NumberParser.positive_int,
+      default=None,
+      help=(
+        "Truncate cell content to the specified maximum length. "
+        "Only applies to the 'table' format."
+      ),
+    )
     extra_columns_help = (
-        "Additional columns to display in the list of jobs. Can be specified "
-        "multiple times. Example:\n"
-        "./cb.py pp ls -c=story -c=bug\n"
-        "Supported columns:\n" +
-        "\n".join(f"  {c.name}: {c.description}" for c in EXTRA_COLUMNS))
+      "Additional columns to display in the list of jobs. Can be specified "
+      "multiple times. Example:\n"
+      "./cb.py pp ls -c=story -c=bug\n"
+      "Supported columns:\n"
+      + "\n".join(f"  {c.name}: {c.description}" for c in EXTRA_COLUMNS)
+    )
     list_parser.add_argument(
-        "--extra-columns",
-        "-c",
-        nargs="*",
-        action="extend",
-        choices=[c.name for c in EXTRA_COLUMNS],
-        help=extra_columns_help)
+      "--extra-columns",
+      "-c",
+      nargs="*",
+      action="extend",
+      choices=[c.name for c in EXTRA_COLUMNS],
+      help=extra_columns_help,
+    )
     list_parser.add_argument(
-        "--details",
-        dest="extra_columns",
-        action="store_const",
-        const=[column.name for column in EXTRA_COLUMNS],
-        help="Shortcut to include all extra columns in the output")
+      "--details",
+      dest="extra_columns",
+      action="store_const",
+      const=[column.name for column in EXTRA_COLUMNS],
+      help="Shortcut to include all extra columns in the output",
+    )
     self.add_url_source_argument(list_parser)
     return list_parser
 
   @override
   def subcommand_run(self, args: argparse.Namespace) -> None:
     list_jobs(
-        user=args.user,
-        number=args.number,
-        truncate=args.truncate,
-        output_format=args.format,
-        extra_columns=args.extra_columns,
-        url_source=args.url_source,
+      user=args.user,
+      number=args.number,
+      truncate=args.truncate,
+      output_format=args.format,
+      extra_columns=args.extra_columns,
+      url_source=args.url_source,
     )
 
 
@@ -187,16 +212,18 @@ class PinpointJobSubcommand(PinpointBaseSubcommand):
     parser = self.create_parser()
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument(
-        "job_pos",
-        nargs="?",
-        type=parse_job_id,
-        help="The ID of the job as a positional argument. Can be a full URL, a "
-        "part of a URL with a job ID, or just the ID.")
+      "job_pos",
+      nargs="?",
+      type=parse_job_id,
+      help="The ID of the job as a positional argument. Can be a full URL, a "
+      "part of a URL with a job ID, or just the ID.",
+    )
     group.add_argument(
-        "--job",
-        type=parse_job_id,
-        help="The ID of the job. Can be a full URL, a part of a URL with a job "
-        "ID, or just the ID.")
+      "--job",
+      type=parse_job_id,
+      help="The ID of the job. Can be a full URL, a part of a URL with a job "
+      "ID, or just the ID.",
+    )
     return parser
 
   @override
@@ -218,19 +245,22 @@ class PinpointConfigSubcommand(PinpointJobSubcommand):
   @override
   def create_parser(self) -> argparse.ArgumentParser:
     config_parser = self._parent.subparsers.add_parser(
-        "config",
-        aliases=("cfg",),
-        help="Get the configuration of a specific Pinpoint job.")
+      "config",
+      aliases=("cfg",),
+      help="Get the configuration of a specific Pinpoint job.",
+    )
     config_parser.add_argument(
-        "--raw",
-        action="store_true",
-        help="Display the job configuration as raw JSON response from the "
-        "server.")
+      "--raw",
+      action="store_true",
+      help="Display the job configuration as raw JSON response from the "
+      "server.",
+    )
     config_parser.add_argument(
-        "--full",
-        action="store_true",
-        help="Display the full job configuration including all attempts. "
-        "Works only if the `--raw` flag is set.")
+      "--full",
+      action="store_true",
+      help="Display the full job configuration including all attempts. "
+      "Works only if the `--raw` flag is set.",
+    )
     return config_parser
 
   @override
@@ -244,16 +274,18 @@ class PinpointStatusSubcommand(PinpointJobSubcommand):
   @override
   def create_parser(self) -> argparse.ArgumentParser:
     status_parser = self._parent.subparsers.add_parser(
-        "status",
-        aliases=("st",),
-        help="Displays the status of a specific Pinpoint job.")
+      "status",
+      aliases=("st",),
+      help="Displays the status of a specific Pinpoint job.",
+    )
     status_parser.add_argument(
-        "--format",
-        "-f",
-        type=OutputFormat,
-        choices=OutputFormat.all(),
-        default=OutputFormat.TABLE,
-        help="The output format for the job status. (default: table)")
+      "--format",
+      "-f",
+      type=OutputFormat,
+      choices=OutputFormat.all(),
+      default=OutputFormat.TABLE,
+      help="The output format for the job status. (default: table)",
+    )
     return status_parser
 
   @override
@@ -263,9 +295,9 @@ class PinpointStatusSubcommand(PinpointJobSubcommand):
 
   @classmethod
   def format_job_status(
-      cls,
-      job_info: PinpointJobInfo,
-      output_format: OutputFormat = OutputFormat.TABLE,
+    cls,
+    job_info: PinpointJobInfo,
+    output_format: OutputFormat = OutputFormat.TABLE,
   ) -> str:
     match output_format:
       case OutputFormat.JSON:
@@ -275,9 +307,9 @@ class PinpointStatusSubcommand(PinpointJobSubcommand):
       case OutputFormat.CSV | OutputFormat.TSV:
         entries = job_info.to_status_entries(link=False)
         return format_delimited(
-            ["Property", "Value"],
-            entries,
-            delimiter=output_format.delimiter,
+          ["Property", "Value"],
+          entries,
+          delimiter=output_format.delimiter,
         )
       case OutputFormat.TABLE:
         entries = job_info.to_status_entries(link=True)
@@ -296,23 +328,29 @@ class PinpointWaitSubcommand(PinpointJobSubcommand):
   @override
   def create_parser(self) -> argparse.ArgumentParser:
     wait_parser = self._parent.subparsers.add_parser(
-        "wait", aliases=("watch",), help="Waits for a Pinpoint job to finish.")
+      "wait", aliases=("watch",), help="Waits for a Pinpoint job to finish."
+    )
     wait_parser.add_argument(
-        "--timeout",
-        type=DurationParser.positive_duration,
-        default=dt.timedelta.max,
-        help="Maximum duration to wait for the job (e.g. '30m', '2h').")
+      "--timeout",
+      type=DurationParser.positive_duration,
+      default=dt.timedelta.max,
+      help="Maximum duration to wait for the job (e.g. '30m', '2h').",
+    )
     wait_parser.add_argument(
-        "--poll-interval",
-        type=DurationParser.duration_range(min=MIN_POLL_INTERVAL),
-        default=dt.timedelta(seconds=30),
-        help="Polling interval for checking job status (default: 30s).")
+      "--poll-interval",
+      type=DurationParser.duration_range(min=MIN_POLL_INTERVAL),
+      default=dt.timedelta(seconds=30),
+      help="Polling interval for checking job status (default: 30s).",
+    )
     wait_parser.add_argument(
-        "--fail",
-        action="store_true",
-        default=False,
-        help=("Exit with a non-zero exit code if the job did not complete "
-              "successfully."))
+      "--fail",
+      action="store_true",
+      default=False,
+      help=(
+        "Exit with a non-zero exit code if the job did not complete "
+        "successfully."
+      ),
+    )
     return wait_parser
 
   @override
@@ -321,12 +359,11 @@ class PinpointWaitSubcommand(PinpointJobSubcommand):
       with ui.spinner(title=f"Waiting for job {job_id}...") as spinner:
         self._spinner = spinner
         try:
-          job_info = PinpointJobInfo.from_id(
-              job_id, full=True).wait(
-                  timeout=args.timeout,
-                  poll_interval=args.poll_interval,
-                  progress=self.on_progress,
-              )
+          job_info = PinpointJobInfo.from_id(job_id, full=True).wait(
+            timeout=args.timeout,
+            poll_interval=args.poll_interval,
+            progress=self.on_progress,
+          )
         finally:
           self._spinner = None
     except KeyboardInterrupt:
@@ -334,21 +371,25 @@ class PinpointWaitSubcommand(PinpointJobSubcommand):
       raise
     print(PinpointStatusSubcommand.format_job_status(job_info))
     if not job_info.is_success:
-      logging.error("Pinpoint job %s did not succeed: %s", job_id,
-                    job_info.status_display)
+      logging.error(
+        "Pinpoint job %s did not succeed: %s", job_id, job_info.status_display
+      )
       if args.fail:
         sys.exit(1)
 
-  def on_progress(self,
-                  info: PinpointJobInfo,
-                  elapsed: dt.timedelta,
-                  spinner: Spinner | None = None) -> None:
+  def on_progress(
+    self,
+    info: PinpointJobInfo,
+    elapsed: dt.timedelta,
+    spinner: Spinner | None = None,
+  ) -> None:
     target_spinner = spinner or self._spinner
     if not target_spinner:
       return
     progress_str = f" [{info.progress}]" if info.progress else ""
-    target_spinner.write(f" ({info.status_display}{progress_str}, "
-                         f"{ui.format_duration(elapsed)})")
+    target_spinner.write(
+      f" ({info.status_display}{progress_str}, {ui.format_duration(elapsed)})"
+    )
 
 
 class PinpointShowSubcommand(PinpointJobSubcommand):
@@ -357,9 +398,10 @@ class PinpointShowSubcommand(PinpointJobSubcommand):
   @override
   def create_parser(self) -> argparse.ArgumentParser:
     return self._parent.subparsers.add_parser(
-        "show",
-        aliases=("open",),
-        help="Opens the Pinpoint job in the default web browser.")
+      "show",
+      aliases=("open",),
+      help="Opens the Pinpoint job in the default web browser.",
+    )
 
   @override
   def job_subcommand_run(self, job_id: str, args: argparse.Namespace) -> None:
@@ -368,7 +410,8 @@ class PinpointShowSubcommand(PinpointJobSubcommand):
     platform = plt.PLATFORM.host_platform
     if platform.is_headless:
       logging.warning(
-          "Cannot open browser in headless environment. Job URL: %s", url)
+        "Cannot open browser in headless environment. Job URL: %s", url
+      )
       return
     logging.info("Opening %s", url)
     if not platform.open_url(url):
@@ -378,168 +421,198 @@ class PinpointShowSubcommand(PinpointJobSubcommand):
 class PinpointBaseStartSubcommand(PinpointBaseSubcommand):
   """Base class for subcommands that start a new Pinpoint job."""
 
-  def create_parser(self,
-                    command: str,
-                    aliases: tuple[str, ...] = (),
-                    help_text: str | None = None) -> argparse.ArgumentParser:
+  def create_parser(
+    self,
+    command: str,
+    aliases: tuple[str, ...] = (),
+    help_text: str | None = None,
+  ) -> argparse.ArgumentParser:
     start_parser = self._parent.subparsers.add_parser(
-        command,
-        aliases=aliases,
-        help=help_text,
-        description="Starts a new Pinpoint A/B job. "
-        "This command allows you to specify two configurations (base and "
-        "experiment) to compare performance between them.",
-        formatter_class=argparse.RawTextHelpFormatter)
+      command,
+      aliases=aliases,
+      help=help_text,
+      description="Starts a new Pinpoint A/B job. "
+      "This command allows you to specify two configurations (base and "
+      "experiment) to compare performance between them.",
+      formatter_class=argparse.RawTextHelpFormatter,
+    )
     start_parser.add_argument(
-        "--config",
-        help="A/B job configuration in the JSON/HJSON format. "
-        "Accepts a path to a configuration file, or configuration string. "
-        "If the same argument is specified in the config and then provided "
-        "as a command line argument, the latter overrides the former. "
-        "Get more information by running `describe PinpointTryJobConfig`")
+      "--config",
+      help="A/B job configuration in the JSON/HJSON format. "
+      "Accepts a path to a configuration file, or configuration string. "
+      "If the same argument is specified in the config and then provided "
+      "as a command line argument, the latter overrides the former. "
+      "Get more information by running `describe PinpointTryJobConfig`",
+    )
     self.add_benchmark_flag(start_parser)
     start_parser.add_argument(
-        "--bot", help="The bot configuration to run on (e.g., 'linux-perf').")
+      "--bot", help="The bot configuration to run on (e.g., 'linux-perf')."
+    )
     start_parser.add_argument("--story", help="The story to run.")
     start_parser.add_argument(
-        "--story-tags", dest="story_tags", help="Story tags to filter stories.")
+      "--story-tags", dest="story_tags", help="Story tags to filter stories."
+    )
     start_parser.add_argument(
-        "--repeat",
-        type=NumberParser.positive_int,
-        help="How many times to repeat the experiment.")
+      "--repeat",
+      type=NumberParser.positive_int,
+      help="How many times to repeat the experiment.",
+    )
     start_parser.add_argument(
-        "--bug",
-        "--bug-id",
-        type=NumberParser.positive_int,
-        help="The bug ID to associate with the job.")
+      "--bug",
+      "--bug-id",
+      type=NumberParser.positive_int,
+      help="The bug ID to associate with the job.",
+    )
     start_parser.add_argument(
-        "--commit",
-        help="Git commit hash for both base and experiment builds. "
-        "Accepts a commit hash, 'HEAD' (latest commit), or 'recent' "
-        "(the most recent build). Defaults to 'recent'. "
-        "Can be overridden by --base-commit or --exp-commit.")
+      "--commit",
+      help="Git commit hash for both base and experiment builds. "
+      "Accepts a commit hash, 'HEAD' (latest commit), or 'recent' "
+      "(the most recent build). Defaults to 'recent'. "
+      "Can be overridden by --base-commit or --exp-commit.",
+    )
     start_parser.add_argument(
-        "--base-commit",
-        help="Git commit hash for the base build. Accepts a commit hash, "
-        "'HEAD' (latest commit), or 'recent' (the most recent build). "
-        "Overrides '--commit' for the base build.")
+      "--base-commit",
+      help="Git commit hash for the base build. Accepts a commit hash, "
+      "'HEAD' (latest commit), or 'recent' (the most recent build). "
+      "Overrides '--commit' for the base build.",
+    )
     start_parser.add_argument(
-        "--exp-commit",
-        help="Git commit hash for the experiment build. Accepts a commit hash, "
-        "'HEAD' (latest commit), or 'recent' (the most recent build)."
-        "Overrides '--commit' for the experiment build.")
+      "--exp-commit",
+      help="Git commit hash for the experiment build. Accepts a commit hash, "
+      "'HEAD' (latest commit), or 'recent' (the most recent build)."
+      "Overrides '--commit' for the experiment build.",
+    )
     start_parser.add_argument(
-        "--base-patch",
-        "--base-patch-url",
-        help="Gerrit patch to apply to the base commit. Supported formats: "
-        "'12345' (optional patchset: '12345/6'), 'c/12345', "
-        "'crrev/c/12345', 'crrev/12345', 'crrev.com/c/12345', "
-        "'crrev.com/12345', or a full URL. "
-        "Note: All patches must be for chromium-review; "
-        "chrome-internal-review is not supported.")
+      "--base-patch",
+      "--base-patch-url",
+      help="Gerrit patch to apply to the base commit. Supported formats: "
+      "'12345' (optional patchset: '12345/6'), 'c/12345', "
+      "'crrev/c/12345', 'crrev/12345', 'crrev.com/c/12345', "
+      "'crrev.com/12345', or a full URL. "
+      "Note: All patches must be for chromium-review; "
+      "chrome-internal-review is not supported.",
+    )
     start_parser.add_argument(
-        "--exp-patch",
-        "--patch",
-        "--exp-patch-url",
-        "--patch-url",
-        help="Gerrit patch to apply to the experiment commit. Supported "
-        "formats: '12345' (optional patchset: '12345/6'), 'c/12345', "
-        "'crrev/c/12345', 'crrev/12345', 'crrev.com/c/12345', "
-        "'crrev.com/12345', or a full URL. "
-        "Note: All patches must be for chromium-review; "
-        "chrome-internal-review is not supported.")
+      "--exp-patch",
+      "--patch",
+      "--exp-patch-url",
+      "--patch-url",
+      help="Gerrit patch to apply to the experiment commit. Supported "
+      "formats: '12345' (optional patchset: '12345/6'), 'c/12345', "
+      "'crrev/c/12345', 'crrev/12345', 'crrev.com/c/12345', "
+      "'crrev.com/12345', or a full URL. "
+      "Note: All patches must be for chromium-review; "
+      "chrome-internal-review is not supported.",
+    )
 
     # Extra browser args.
     start_parser.add_argument(
-        "--flags",
-        "--browser-flags",
-        help="Chrome flags to pass to both base and experiment commits. "
-        "Can be overridden by --base-flags or --exp-flags.\n"
-        "Example: --flags=--no-sandbox")
-    start_parser.add_argument(
-        "--base-flags",
-        "--base-browser-flags",
-        help="Chrome flags to pass for the base commit.\n"
-        "Example: --base-flags=--no-sandbox")
-    start_parser.add_argument(
-        "--exp-flags",
-        "--exp-browser-flags",
-        help="Chrome flags to pass for the experiment commit.\n"
-        "Example: --exp-flags=--no-sandbox")
-    start_parser.add_argument(
-        "--js-flags",
-        help="JavaScript flags to pass to V8 for both base and experiment "
-        "commits. Can be overridden by --base-js-flags or --exp-js-flags.\n"
-        "Example: --js-flags=--turbolev-future")
-    start_parser.add_argument(
-        "--base-js-flags",
-        help="JavaScript flags to pass to V8 for the base commit.\n"
-        "Example: --base-js-flags=--turbolev-future")
-    start_parser.add_argument(
-        "--exp-js-flags",
-        help="JavaScript flags to pass to V8 for the experiment commit.\n"
-        "Example: --exp-js-flags=--turbolev-future")
-    start_parser.add_argument(
-        "--enable-features",
-        help="Chrome features to enable for both base and experiment commits. "
-        "Can be overridden by --base-enable-features or --exp-enable-features."
-        "\nExample: --enable-features=Feature1,Feature2")
-    start_parser.add_argument(
-        "--base-enable-features",
-        help="Comma-separated list of Chrome features to enable for the base "
-        "commit.\nExample: --base-enable-features=Feature1,Feature2")
-    start_parser.add_argument(
-        "--exp-enable-features",
-        help="Comma-separated list of Chrome features to enable for the "
-        "experiment commit.\nExample: --exp-enable-features=FeatureA,FeatureB")
-    start_parser.add_argument(
-        "--disable-features",
-        help="Chrome features to disable for both base and experiment "
-        "commits. Can be overridden by --base-disable-features or "
-        "--exp-disable-features.\n"
-        "Example: --disable-features=Feature1,Feature2",
+      "--flags",
+      "--browser-flags",
+      help="Chrome flags to pass to both base and experiment commits. "
+      "Can be overridden by --base-flags or --exp-flags.\n"
+      "Example: --flags=--no-sandbox",
     )
     start_parser.add_argument(
-        "--base-disable-features",
-        help="Comma-separated list of Chrome features to disable for the base "
-        "commit.\nExample: --base-disable-features=Feature1,Feature2")
+      "--base-flags",
+      "--base-browser-flags",
+      help="Chrome flags to pass for the base commit.\n"
+      "Example: --base-flags=--no-sandbox",
+    )
     start_parser.add_argument(
-        "--exp-disable-features",
-        help="Comma-separated list of Chrome features to disable for the "
-        "experiment commit.\nExample: --exp-disable-features=FeatureA,FeatureB")
+      "--exp-flags",
+      "--exp-browser-flags",
+      help="Chrome flags to pass for the experiment commit.\n"
+      "Example: --exp-flags=--no-sandbox",
+    )
     start_parser.add_argument(
-        "--enable-blink-features",
-        "--blink-features",
-        help="Blink features to enable for both base and experiment commits. "
-        "Can be overridden by --base-blink-features or --exp-blink-features.\n"
-        "Example: --enable-blink-features=Feature1,Feature2")
+      "--js-flags",
+      help="JavaScript flags to pass to V8 for both base and experiment "
+      "commits. Can be overridden by --base-js-flags or --exp-js-flags.\n"
+      "Example: --js-flags=--turbolev-future",
+    )
     start_parser.add_argument(
-        "--base-blink-features",
-        "--base-enable-blink-features",
-        dest="base_enable_blink_features",
-        help="Comma-separated list of Blink features to enable for the base "
-        "commit.\nExample: --base-blink-features=Feature1,Feature2")
+      "--base-js-flags",
+      help="JavaScript flags to pass to V8 for the base commit.\n"
+      "Example: --base-js-flags=--turbolev-future",
+    )
     start_parser.add_argument(
-        "--exp-blink-features",
-        "--exp-enable-blink-features",
-        dest="exp_enable_blink_features",
-        help="Comma-separated list of Blink features to enable for the "
-        "experiment commit.\nExample: --exp-blink-features=FeatureA,FeatureB")
+      "--exp-js-flags",
+      help="JavaScript flags to pass to V8 for the experiment commit.\n"
+      "Example: --exp-js-flags=--turbolev-future",
+    )
     start_parser.add_argument(
-        "--disable-blink-features",
-        help="Blink features to disable for both base and experiment commits. "
-        "Can be overridden by --base-disable-blink-features or "
-        "--exp-disable-blink-features.\n"
-        "Example: --disable-blink-features=Feature1,Feature2")
+      "--enable-features",
+      help="Chrome features to enable for both base and experiment commits. "
+      "Can be overridden by --base-enable-features or --exp-enable-features."
+      "\nExample: --enable-features=Feature1,Feature2",
+    )
     start_parser.add_argument(
-        "--base-disable-blink-features",
-        help="Comma-separated list of Blink features to disable for the base "
-        "commit.\nExample: --base-disable-blink-features=Feature1,Feature2")
+      "--base-enable-features",
+      help="Comma-separated list of Chrome features to enable for the base "
+      "commit.\nExample: --base-enable-features=Feature1,Feature2",
+    )
     start_parser.add_argument(
-        "--exp-disable-blink-features",
-        help="Comma-separated list of Blink features to disable for the "
-        "experiment commit.\n"
-        "Example: --exp-disable-blink-features=FeatureA,FeatureB")
+      "--exp-enable-features",
+      help="Comma-separated list of Chrome features to enable for the "
+      "experiment commit.\nExample: --exp-enable-features=FeatureA,FeatureB",
+    )
+    start_parser.add_argument(
+      "--disable-features",
+      help="Chrome features to disable for both base and experiment "
+      "commits. Can be overridden by --base-disable-features or "
+      "--exp-disable-features.\n"
+      "Example: --disable-features=Feature1,Feature2",
+    )
+    start_parser.add_argument(
+      "--base-disable-features",
+      help="Comma-separated list of Chrome features to disable for the base "
+      "commit.\nExample: --base-disable-features=Feature1,Feature2",
+    )
+    start_parser.add_argument(
+      "--exp-disable-features",
+      help="Comma-separated list of Chrome features to disable for the "
+      "experiment commit.\nExample: --exp-disable-features=FeatureA,FeatureB",
+    )
+    start_parser.add_argument(
+      "--enable-blink-features",
+      "--blink-features",
+      help="Blink features to enable for both base and experiment commits. "
+      "Can be overridden by --base-blink-features or --exp-blink-features.\n"
+      "Example: --enable-blink-features=Feature1,Feature2",
+    )
+    start_parser.add_argument(
+      "--base-blink-features",
+      "--base-enable-blink-features",
+      dest="base_enable_blink_features",
+      help="Comma-separated list of Blink features to enable for the base "
+      "commit.\nExample: --base-blink-features=Feature1,Feature2",
+    )
+    start_parser.add_argument(
+      "--exp-blink-features",
+      "--exp-enable-blink-features",
+      dest="exp_enable_blink_features",
+      help="Comma-separated list of Blink features to enable for the "
+      "experiment commit.\nExample: --exp-blink-features=FeatureA,FeatureB",
+    )
+    start_parser.add_argument(
+      "--disable-blink-features",
+      help="Blink features to disable for both base and experiment commits. "
+      "Can be overridden by --base-disable-blink-features or "
+      "--exp-disable-blink-features.\n"
+      "Example: --disable-blink-features=Feature1,Feature2",
+    )
+    start_parser.add_argument(
+      "--base-disable-blink-features",
+      help="Comma-separated list of Blink features to disable for the base "
+      "commit.\nExample: --base-disable-blink-features=Feature1,Feature2",
+    )
+    start_parser.add_argument(
+      "--exp-disable-blink-features",
+      help="Comma-separated list of Blink features to disable for the "
+      "experiment commit.\n"
+      "Example: --exp-disable-blink-features=FeatureA,FeatureB",
+    )
     self.add_url_source_argument(start_parser)
 
     return start_parser
@@ -547,34 +620,33 @@ class PinpointBaseStartSubcommand(PinpointBaseSubcommand):
   @override
   def subcommand_run(self, args: argparse.Namespace) -> None:
     config = PinpointTryJobConfig.parse_and_override(
-        config=args.config,
-        benchmark=self.get_benchmark(args),
-        bot=args.bot,
-        story=args.story,
-        story_tags=args.story_tags,
-        repeat=args.repeat,
-        bug=args.bug,
-        base_commit=args.base_commit or args.commit,
-        exp_commit=args.exp_commit or args.commit,
-        base_patch=args.base_patch,
-        exp_patch=args.exp_patch,
-        base_flags=args.base_flags or args.flags,
-        exp_flags=args.exp_flags or args.flags,
-        base_js_flags=args.base_js_flags or args.js_flags,
-        exp_js_flags=args.exp_js_flags or args.js_flags,
-        base_enable_features=args.base_enable_features or args.enable_features,
-        exp_enable_features=args.exp_enable_features or args.enable_features,
-        base_disable_features=args.base_disable_features or
-        args.disable_features,
-        exp_disable_features=args.exp_disable_features or args.disable_features,
-        base_enable_blink_features=args.base_enable_blink_features or
-        args.enable_blink_features,
-        exp_enable_blink_features=args.exp_enable_blink_features or
-        args.enable_blink_features,
-        base_disable_blink_features=args.base_disable_blink_features or
-        args.disable_blink_features,
-        exp_disable_blink_features=args.exp_disable_blink_features or
-        args.disable_blink_features,
+      config=args.config,
+      benchmark=self.get_benchmark(args),
+      bot=args.bot,
+      story=args.story,
+      story_tags=args.story_tags,
+      repeat=args.repeat,
+      bug=args.bug,
+      base_commit=args.base_commit or args.commit,
+      exp_commit=args.exp_commit or args.commit,
+      base_patch=args.base_patch,
+      exp_patch=args.exp_patch,
+      base_flags=args.base_flags or args.flags,
+      exp_flags=args.exp_flags or args.flags,
+      base_js_flags=args.base_js_flags or args.js_flags,
+      exp_js_flags=args.exp_js_flags or args.js_flags,
+      base_enable_features=args.base_enable_features or args.enable_features,
+      exp_enable_features=args.exp_enable_features or args.enable_features,
+      base_disable_features=args.base_disable_features or args.disable_features,
+      exp_disable_features=args.exp_disable_features or args.disable_features,
+      base_enable_blink_features=args.base_enable_blink_features
+      or args.enable_blink_features,
+      exp_enable_blink_features=args.exp_enable_blink_features
+      or args.enable_blink_features,
+      base_disable_blink_features=args.base_disable_blink_features
+      or args.disable_blink_features,
+      exp_disable_blink_features=args.exp_disable_blink_features
+      or args.disable_blink_features,
     )
     start_job(config, url_source=args.url_source)
 
@@ -592,7 +664,8 @@ class PinpointStartSubcommand(PinpointBaseStartSubcommand):
   @override
   def add_cli_arguments(self) -> argparse.ArgumentParser:
     start_parser = self.create_parser(
-        "start", help_text="Starts a new Pinpoint A/B job.")
+      "start", help_text="Starts a new Pinpoint A/B job."
+    )
     start_parser.epilog = """Example:
   pinpoint start \\
     --config=config.json \\
@@ -631,71 +704,84 @@ class PinpointBisectSubcommand(PinpointBaseSubcommand):
   @override
   def add_cli_arguments(self) -> argparse.ArgumentParser:
     parser = self._parent.subparsers.add_parser(
-        "bisect",
-        help="Starts a new Pinpoint bisect job.",
-        description="Starts a new Pinpoint bisect job. "
-        "This command allows you to specify a start and end commit "
-        "to bisect a performance regression.",
-        formatter_class=argparse.RawTextHelpFormatter)
+      "bisect",
+      help="Starts a new Pinpoint bisect job.",
+      description="Starts a new Pinpoint bisect job. "
+      "This command allows you to specify a start and end commit "
+      "to bisect a performance regression.",
+      formatter_class=argparse.RawTextHelpFormatter,
+    )
     parser.add_argument(
-        "--config",
-        help="Bisect job configuration in the JSON/HJSON format. "
-        "Accepts a path to a configuration file, or configuration string. "
-        "If the same argument is specified in the config and then provided "
-        "as a command line argument, the latter overrides the former. "
-        "Get more information by running `describe PinpointBisectJobConfig`")
+      "--config",
+      help="Bisect job configuration in the JSON/HJSON format. "
+      "Accepts a path to a configuration file, or configuration string. "
+      "If the same argument is specified in the config and then provided "
+      "as a command line argument, the latter overrides the former. "
+      "Get more information by running `describe PinpointBisectJobConfig`",
+    )
     parser.add_argument("--benchmark", help="The benchmark to run.")
     parser.add_argument(
-        "--bot", help="The bot configuration to run on (e.g., 'linux-perf').")
+      "--bot", help="The bot configuration to run on (e.g., 'linux-perf')."
+    )
     parser.add_argument("--chart", help="The chart (measurement) to bisect.")
     parser.add_argument("--story", help="The story to run.")
     parser.add_argument(
-        "--story-tags", dest="story_tags", help="Story tags to filter stories.")
+      "--story-tags", dest="story_tags", help="Story tags to filter stories."
+    )
     parser.add_argument(
-        "--repeat",
-        type=NumberParser.positive_int,
-        help="How many times to repeat the experiment.")
+      "--repeat",
+      type=NumberParser.positive_int,
+      help="How many times to repeat the experiment.",
+    )
     parser.add_argument(
-        "--bug",
-        "--bug-id",
-        type=NumberParser.positive_int,
-        help="The bug ID to associate with the job.")
+      "--bug",
+      "--bug-id",
+      type=NumberParser.positive_int,
+      help="The bug ID to associate with the job.",
+    )
     parser.add_argument(
-        "--start-commit",
-        help="Git commit hash for the start build. Accepts a commit hash, "
-        "'HEAD' (latest commit), or 'recent' (the most recent build).")
+      "--start-commit",
+      help="Git commit hash for the start build. Accepts a commit hash, "
+      "'HEAD' (latest commit), or 'recent' (the most recent build).",
+    )
     parser.add_argument(
-        "--end-commit",
-        help="Git commit hash for the end build. Accepts a commit hash, "
-        "'HEAD' (latest commit), or 'recent' (the most recent build).")
+      "--end-commit",
+      help="Git commit hash for the end build. Accepts a commit hash, "
+      "'HEAD' (latest commit), or 'recent' (the most recent build).",
+    )
 
     # Extra browser args.
     parser.add_argument(
-        "--flags",
-        "--browser-flags",
-        help="Chrome flags to pass.\n"
-        "Example: --flags=--no-sandbox")
+      "--flags",
+      "--browser-flags",
+      help="Chrome flags to pass.\nExample: --flags=--no-sandbox",
+    )
     parser.add_argument(
-        "--js-flags",
-        help="JavaScript flags to pass to V8.\n"
-        "Example: --js-flags=--turbolev-future")
+      "--js-flags",
+      help="JavaScript flags to pass to V8.\n"
+      "Example: --js-flags=--turbolev-future",
+    )
     parser.add_argument(
-        "--enable-features",
-        help="Chrome features to enable.\n"
-        "Example: --enable-features=Feature1,Feature2")
+      "--enable-features",
+      help="Chrome features to enable.\n"
+      "Example: --enable-features=Feature1,Feature2",
+    )
     parser.add_argument(
-        "--disable-features",
-        help="Chrome features to disable.\n"
-        "Example: --disable-features=Feature1,Feature2")
+      "--disable-features",
+      help="Chrome features to disable.\n"
+      "Example: --disable-features=Feature1,Feature2",
+    )
     parser.add_argument(
-        "--enable-blink-features",
-        "--blink-features",
-        help="Blink features to enable.\n"
-        "Example: --enable-blink-features=Feature1,Feature2")
+      "--enable-blink-features",
+      "--blink-features",
+      help="Blink features to enable.\n"
+      "Example: --enable-blink-features=Feature1,Feature2",
+    )
     parser.add_argument(
-        "--disable-blink-features",
-        help="Blink features to disable.\n"
-        "Example: --disable-blink-features=Feature1,Feature2")
+      "--disable-blink-features",
+      help="Blink features to disable.\n"
+      "Example: --disable-blink-features=Feature1,Feature2",
+    )
     self.add_url_source_argument(parser)
 
     parser.epilog = """Example:
@@ -720,22 +806,22 @@ class PinpointBisectSubcommand(PinpointBaseSubcommand):
   @override
   def subcommand_run(self, args: argparse.Namespace) -> None:
     config = PinpointBisectJobConfig.parse_and_override(
-        config=args.config,
-        benchmark=args.benchmark,
-        bot=args.bot,
-        chart=args.chart,
-        story=args.story,
-        story_tags=args.story_tags,
-        repeat=args.repeat,
-        bug=args.bug,
-        start_commit=args.start_commit,
-        end_commit=args.end_commit,
-        flags=args.flags,
-        js_flags=args.js_flags,
-        enable_features=args.enable_features,
-        disable_features=args.disable_features,
-        enable_blink_features=args.enable_blink_features,
-        disable_blink_features=args.disable_blink_features,
+      config=args.config,
+      benchmark=args.benchmark,
+      bot=args.bot,
+      chart=args.chart,
+      story=args.story,
+      story_tags=args.story_tags,
+      repeat=args.repeat,
+      bug=args.bug,
+      start_commit=args.start_commit,
+      end_commit=args.end_commit,
+      flags=args.flags,
+      js_flags=args.js_flags,
+      enable_features=args.enable_features,
+      disable_features=args.disable_features,
+      enable_blink_features=args.enable_blink_features,
+      disable_blink_features=args.disable_blink_features,
     )
     bisect_job(config, url_source=args.url_source)
 
@@ -743,8 +829,9 @@ class PinpointBisectSubcommand(PinpointBaseSubcommand):
 class PinpointBenchmarkSubcommand(PinpointBaseStartSubcommand):
   """Starts a new Pinpoint A/B job for a given benchmark."""
 
-  def __init__(self, parent: PinpointSubcommand,
-               benchmark_cls: BenchmarkClass) -> None:
+  def __init__(
+    self, parent: PinpointSubcommand, benchmark_cls: BenchmarkClass
+  ) -> None:
     self._benchmark_cls: Final[BenchmarkClass] = benchmark_cls
     super().__init__(parent)
 
@@ -753,11 +840,13 @@ class PinpointBenchmarkSubcommand(PinpointBaseStartSubcommand):
     benchmark_name = pinpoint_benchmark_name(self._benchmark_cls.NAME)
     assert benchmark_name, "Must be a valid pinpoint benchmark name"
     start_parser = self.create_parser(
-        command=self._benchmark_cls.NAME,
-        aliases=self._benchmark_cls.aliases(),
-        help_text=f'Starts a new "{benchmark_name}" Pinpoint A/B job.')
+      command=self._benchmark_cls.NAME,
+      aliases=self._benchmark_cls.aliases(),
+      help_text=f'Starts a new "{benchmark_name}" Pinpoint A/B job.',
+    )
     start_parser.epilog = (
-        f"Example:\npinpoint {self._benchmark_cls.NAME} --bot win-11-perf\n\n")
+      f"Example:\npinpoint {self._benchmark_cls.NAME} --bot win-11-perf\n\n"
+    )
     return start_parser
 
   @override
@@ -771,16 +860,20 @@ class PinpointCancelSubcommand(PinpointBaseSubcommand):
   @override
   def add_cli_arguments(self) -> argparse.ArgumentParser:
     cancel_parser = self._parent.subparsers.add_parser(
-        "cancel", help="Cancel Pinpoint jobs.")
+      "cancel", help="Cancel Pinpoint jobs."
+    )
     cancel_parser.add_argument(
-        "job_pos", nargs="*", default=None, help=_JOB_ID_HELP)
+      "job_pos", nargs="*", default=None, help=_JOB_ID_HELP
+    )
     cancel_parser.add_argument(
-        "--job", nargs="+", action="extend", default=None, help=_JOB_ID_HELP)
+      "--job", nargs="+", action="extend", default=None, help=_JOB_ID_HELP
+    )
     cancel_parser.add_argument(
-        "--reason",
-        required=False,
-        default="Cancelled via Pinpoint CLI.",
-        help="Reason for cancellation.")
+      "--reason",
+      required=False,
+      default="Cancelled via Pinpoint CLI.",
+      help="Reason for cancellation.",
+    )
     return cancel_parser
 
   def _get_job_ids(self, args: argparse.Namespace) -> list[str]:
@@ -809,11 +902,14 @@ class PinpointBaseFilteredListSubcommand(PinpointBaseSubcommand):
   def add_cli_arguments(self) -> argparse.ArgumentParser:
     parser = self.create_parser()
     parser.add_argument(
-        "--filter",
-        type=ObjectParser.any_str,
-        default=None,
-        help=("Filter results by a case-insensitive substring match. "
-              "Only items containing the filter string will be shown."))
+      "--filter",
+      type=ObjectParser.any_str,
+      default=None,
+      help=(
+        "Filter results by a case-insensitive substring match. "
+        "Only items containing the filter string will be shown."
+      ),
+    )
     return parser
 
   @override
@@ -838,7 +934,8 @@ class PinpointBotsSubcommand(PinpointBaseFilteredListSubcommand):
   @override
   def create_parser(self) -> argparse.ArgumentParser:
     bots_parser = self._parent.subparsers.add_parser(
-        "bots", help="Displays all available Pinpoint bots.")
+      "bots", help="Displays all available Pinpoint bots."
+    )
     return bots_parser
 
   @override
@@ -852,7 +949,8 @@ class PinpointBenchmarksSubcommand(PinpointBaseFilteredListSubcommand):
   @override
   def create_parser(self) -> argparse.ArgumentParser:
     benchmarks_parser = self._parent.subparsers.add_parser(
-        "benchmarks", help="Displays all available Pinpoint benchmarks.")
+      "benchmarks", help="Displays all available Pinpoint benchmarks."
+    )
     return benchmarks_parser
 
   @override
@@ -866,10 +964,11 @@ class PinpointStoriesSubcommand(PinpointBaseFilteredListSubcommand):
   @override
   def create_parser(self) -> argparse.ArgumentParser:
     stories_parser = self._parent.subparsers.add_parser(
-        "stories",
-        help="Displays all available stories for a Pinpoint benchmark.")
+      "stories", help="Displays all available stories for a Pinpoint benchmark."
+    )
     stories_parser.add_argument(
-        "benchmark", help="The benchmark for which to list stories.")
+      "benchmark", help="The benchmark for which to list stories."
+    )
     return stories_parser
 
   @override
@@ -883,15 +982,18 @@ class PinpointBuildsSubcommand(PinpointBaseSubcommand):
   @override
   def add_cli_arguments(self) -> argparse.ArgumentParser:
     builds_parser = self._parent.subparsers.add_parser(
-        "builds", help="Displays recent successful builds for a given bot.")
+      "builds", help="Displays recent successful builds for a given bot."
+    )
     builds_parser.add_argument(
-        "bot", help="The bot configuration name (e.g., 'linux-r350-perf').")
+      "bot", help="The bot configuration name (e.g., 'linux-r350-perf')."
+    )
     builds_parser.add_argument(
-        "--limit",
-        "-l",
-        type=NumberParser.positive_int,
-        default=10,
-        help="Limits the number of recent builds to display. (default: 10)")
+      "--limit",
+      "-l",
+      type=NumberParser.positive_int,
+      default=10,
+      help="Limits the number of recent builds to display. (default: 10)",
+    )
     return builds_parser
 
   @override
@@ -905,36 +1007,42 @@ class PinpointResultsSubcommand(PinpointJobSubcommand):
   @override
   def create_parser(self) -> argparse.ArgumentParser:
     results_parser = self._parent.subparsers.add_parser(
-        "results",
-        aliases=("download", "fetch"),
-        help="Downloads results of the given Pinpoint job.")
+      "results",
+      aliases=("download", "fetch"),
+      help="Downloads results of the given Pinpoint job.",
+    )
     results_parser.add_argument(
-        "--output-directory",
-        "--out-dir",
-        "-o",
-        type=PathParser.path,
-        help=("Results will be stored in this directory. "
-              "Defaults to the crossbench results directory by default."))
+      "--output-directory",
+      "--out-dir",
+      "-o",
+      type=PathParser.path,
+      help=(
+        "Results will be stored in this directory. "
+        "Defaults to the crossbench results directory by default."
+      ),
+    )
     results_parser.add_argument(
-        "--force",
-        "-f",
-        action="store_true",
-        help=("Force download even if the output directory already exists."))
+      "--force",
+      "-f",
+      action="store_true",
+      help=("Force download even if the output directory already exists."),
+    )
     return results_parser
 
   @override
   def job_subcommand_run(self, job_id: str, args: argparse.Namespace) -> None:
     download_results(
-        job_id=job_id, out_dir=args.output_directory, force=args.force)
+      job_id=job_id, out_dir=args.output_directory, force=args.force
+    )
 
 
 class PinpointHelpFormatter(argparse.HelpFormatter):
   """Hacks HelpFormatter for displaying a pretty Pinpoint help message."""
 
   @override
-  def _format_action(self,
-                     action: argparse.Action,
-                     custom_format: bool = True) -> str:
+  def _format_action(
+    self, action: argparse.Action, custom_format: bool = True
+  ) -> str:
     if not custom_format or not hasattr(action, "_get_subactions"):
       return super()._format_action(action)
 
@@ -950,11 +1058,13 @@ class PinpointHelpFormatter(argparse.HelpFormatter):
       else:
         pinpoint_parts.append(text)
 
-    return "\n".join([
+    return "\n".join(
+      [
         "".join(pinpoint_parts),
         "\nBenchmarks:",
         "".join(benchmark_parts),
-    ])
+      ]
+    )
 
 
 class PinpointSubcommand(CrossbenchSubcommand):
@@ -964,21 +1074,24 @@ class PinpointSubcommand(CrossbenchSubcommand):
     super().__init__(cli)
 
   @override
-  def register_subcommand(self,
-                          subparsers: Subparsers) -> argparse.ArgumentParser:
+  def register_subcommand(
+    self, subparsers: Subparsers
+  ) -> argparse.ArgumentParser:
     self._parser = subparsers.add_parser(
-        "pinpoint",
-        aliases=("pp",),
-        help="Interact with the Pinpoint service.",
-        epilog=_BUG_EPILOG,
-        formatter_class=PinpointHelpFormatter)
+      "pinpoint",
+      aliases=("pp",),
+      help="Interact with the Pinpoint service.",
+      epilog=_BUG_EPILOG,
+      formatter_class=PinpointHelpFormatter,
+    )
     self._parser.set_defaults(crossbench_subcommand=self)
 
     self._subparsers = self.parser.add_subparsers(
-        parser_class=CBArgumentParser,
-        dest="action",
-        required=True,
-        help="Pinpoint actions")
+      parser_class=CBArgumentParser,
+      dest="action",
+      required=True,
+      help="Pinpoint actions",
+    )
     self._list_subcommand = PinpointListSubcommand(self)
     self._config_subcommand = PinpointConfigSubcommand(self)
     self._status_subcommand = PinpointStatusSubcommand(self)
@@ -996,7 +1109,8 @@ class PinpointSubcommand(CrossbenchSubcommand):
     for benchmark_cls in self.cli.BENCHMARKS:
       if pinpoint_benchmark_name(benchmark_cls.NAME):
         self._benchmark_subcommands.append(
-            PinpointBenchmarkSubcommand(self, benchmark_cls))
+          PinpointBenchmarkSubcommand(self, benchmark_cls)
+        )
     return self.parser
 
   @property

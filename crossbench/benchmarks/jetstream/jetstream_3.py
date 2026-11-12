@@ -8,9 +8,13 @@ import abc
 import argparse
 from typing import TYPE_CHECKING, ClassVar, Mapping, Self, Sequence, override
 
-from crossbench.benchmarks.jetstream.jetstream_2 import JetStream2Benchmark, \
-    JetStream2BenchmarkStoryFilter, JetStream2Probe, JetStream2ProbeContext, \
-    JetStream2Story
+from crossbench.benchmarks.jetstream.jetstream_2 import (
+  JetStream2Benchmark,
+  JetStream2BenchmarkStoryFilter,
+  JetStream2Probe,
+  JetStream2ProbeContext,
+  JetStream2Story,
+)
 from crossbench.helper import url_helper
 
 if TYPE_CHECKING:
@@ -54,23 +58,30 @@ class JetStream3Story(JetStream2Story, metaclass=abc.ABCMeta):
   @override
   def default_story_names(cls) -> tuple[str, ...]:
     return tuple(
-        name for name, tags in cls.STORY_DATA.items() if "default" in tags)
+      name for name, tags in cls.STORY_DATA.items() if "default" in tags
+    )
 
   @classmethod
   @override
-  def from_names(cls,
-                 substories: Sequence[str],
-                 separate: bool = False,
-                 url: str | None = None,
-                 **kwargs) -> tuple[Self, ...]:
+  def from_names(
+    cls,
+    substories: Sequence[str],
+    separate: bool = False,
+    url: str | None = None,
+    **kwargs,
+  ) -> tuple[Self, ...]:
     if not substories:
       raise ValueError("No substories provided")
     if separate:
       return tuple(
-          cls(url=url,
-              substories=[substory],
-              tags=cls.STORY_DATA.get(substory, ()),
-              **kwargs) for substory in substories)
+        cls(
+          url=url,
+          substories=[substory],
+          tags=cls.STORY_DATA.get(substory, ()),
+          **kwargs,
+        )
+        for substory in substories
+      )
     tags: set[str] = set()
     for substory in substories:
       tags.update(cls.STORY_DATA.get(substory, ()))
@@ -110,16 +121,20 @@ class JetStream3BenchmarkStoryFilter(JetStream2BenchmarkStoryFilter):
   @classmethod
   @override
   def add_cli_arguments(
-      cls, parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+    cls, parser: argparse.ArgumentParser
+  ) -> argparse.ArgumentParser:
     parser = super().add_cli_arguments(parser)
     parser.add_argument(
-        "--no-prefetch",
-        dest="prefetch_resources",
-        default=True,
-        action="store_false",
-        help=("Disable resources prefetching for better source positions. "
-              "This might skew results as we do network request on the hot"
-              "path"))
+      "--no-prefetch",
+      dest="prefetch_resources",
+      default=True,
+      action="store_false",
+      help=(
+        "Disable resources prefetching for better source positions. "
+        "This might skew results as we do network request on the hot"
+        "path"
+      ),
+    )
     return parser
 
   @classmethod

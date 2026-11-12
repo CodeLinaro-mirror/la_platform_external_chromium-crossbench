@@ -14,8 +14,9 @@ from crossbench.action_runner.action.close_app import CloseAppAction
 from crossbench.action_runner.action.close_tab import CloseTabAction
 from crossbench.action_runner.action.dump_html import DumpHtmlAction
 from crossbench.action_runner.action.get import GetAction
-from crossbench.action_runner.action.inject_new_document_script import \
-    InjectNewDocumentScriptAction
+from crossbench.action_runner.action.inject_new_document_script import (
+  InjectNewDocumentScriptAction,
+)
 from crossbench.action_runner.action.js import JsAction
 from crossbench.action_runner.action.launch_app import LaunchAppAction
 from crossbench.action_runner.action.meet_create import MeetCreateAction
@@ -34,51 +35,56 @@ from crossbench.action_runner.action.switch_frame import SwitchFrameAction
 from crossbench.action_runner.action.switch_tab import SwitchTabAction
 from crossbench.action_runner.action.text_input import TextInputAction
 from crossbench.action_runner.action.wait import WaitAction
-from crossbench.action_runner.action.wait_for_condition import \
-    WaitForConditionAction
-from crossbench.action_runner.action.wait_for_download import \
-    WaitForDownloadAction
-from crossbench.action_runner.action.wait_for_element import \
-    WaitForElementAction
-from crossbench.action_runner.action.wait_for_ready_state import \
-    WaitForReadyStateAction
-from crossbench.action_runner.action.wait_for_url_matches import \
-    WaitForUrlMatchesAction
+from crossbench.action_runner.action.wait_for_condition import (
+  WaitForConditionAction,
+)
+from crossbench.action_runner.action.wait_for_download import (
+  WaitForDownloadAction,
+)
+from crossbench.action_runner.action.wait_for_element import (
+  WaitForElementAction,
+)
+from crossbench.action_runner.action.wait_for_ready_state import (
+  WaitForReadyStateAction,
+)
+from crossbench.action_runner.action.wait_for_url_matches import (
+  WaitForUrlMatchesAction,
+)
 
 ACTIONS_TUPLE: tuple[type[Action], ...] = (
-    AgentAction,
-    ClearCacheAction,
-    ClickAction,
-    CloseAllAppsAction,
-    CloseAppAction,
-    CloseTabAction,
-    CloseAllTabsAction,
-    DumpHtmlAction,
-    GetAction,
-    InjectNewDocumentScriptAction,
-    JsAction,
-    LaunchAppAction,
-    MeetCreateAction,
-    MeetScriptAction,
-    MeminfoAction,
-    MouseMoveAction,
-    ProbeAction,
-    RawInputAction,
-    OpenDevToolsAction,
-    ScreenshotAction,
-    ScrollAction,
-    StartBrowserAction,
-    StopBrowserAction,
-    SwipeAction,
-    SwitchTabAction,
-    SwitchFrameAction,
-    TextInputAction,
-    WaitAction,
-    WaitForConditionAction,
-    WaitForDownloadAction,
-    WaitForElementAction,
-    WaitForReadyStateAction,
-    WaitForUrlMatchesAction,
+  AgentAction,
+  ClearCacheAction,
+  ClickAction,
+  CloseAllAppsAction,
+  CloseAppAction,
+  CloseTabAction,
+  CloseAllTabsAction,
+  DumpHtmlAction,
+  GetAction,
+  InjectNewDocumentScriptAction,
+  JsAction,
+  LaunchAppAction,
+  MeetCreateAction,
+  MeetScriptAction,
+  MeminfoAction,
+  MouseMoveAction,
+  ProbeAction,
+  RawInputAction,
+  OpenDevToolsAction,
+  ScreenshotAction,
+  ScrollAction,
+  StartBrowserAction,
+  StopBrowserAction,
+  SwipeAction,
+  SwitchTabAction,
+  SwitchFrameAction,
+  TextInputAction,
+  WaitAction,
+  WaitForConditionAction,
+  WaitForDownloadAction,
+  WaitForElementAction,
+  WaitForReadyStateAction,
+  WaitForUrlMatchesAction,
 )
 for action_cls in ACTIONS_TUPLE:
   ACTIONS[action_cls.TYPE] = action_cls

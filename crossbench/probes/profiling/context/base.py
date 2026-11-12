@@ -15,8 +15,9 @@ from crossbench.plt.posix import PosixPlatform
 from crossbench.probes.cb_perfetto import traceconv
 from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.profiling.enum import TargetMode
-from crossbench.probes.trace_processor.context.symbolizing import \
-    ChromiumSymbolPathFinder
+from crossbench.probes.trace_processor.context.symbolizing import (
+  ChromiumSymbolPathFinder,
+)
 from crossbench.probes.v8.log import V8LogProbe
 
 if TYPE_CHECKING:
@@ -34,13 +35,13 @@ class RendererPidTid(NamedTuple):
 
 
 class ProfilingContext(ProbeContext, metaclass=abc.ABCMeta):
-
   def __init__(self, probe: ProfilingProbe, run: Run) -> None:
     super().__init__(probe, run)
     self._profiling_process: subprocess.Popen | None = None
     self._story_ready: bool = False
     self._target: Final[TargetMode] = self.probe.resolve_target_mode(
-        run.browser)
+      run.browser
+    )
     assert self._target is not TargetMode.AUTO, "unexpected target mode"
 
   @property
@@ -73,9 +74,11 @@ class ProfilingContext(ProbeContext, metaclass=abc.ABCMeta):
     current_renderer_pid = self._get_renderer_pid_tid().pid
     if current_renderer_pid != original_render_pid:
       logging.error(
-          "Renderer PID changed from %d to %d during the run. "
-          "This can happen when navigating URLs during profiling.",
-          original_render_pid, current_renderer_pid)
+        "Renderer PID changed from %d to %d during the run. "
+        "This can happen when navigating URLs during profiling.",
+        original_render_pid,
+        current_renderer_pid,
+      )
 
   @cached_property
   def cached_renderer_pid_tid(self) -> RendererPidTid:
@@ -84,24 +87,25 @@ class ProfilingContext(ProbeContext, metaclass=abc.ABCMeta):
 
   def _get_renderer_pid_tid(self) -> RendererPidTid:
     assert self._story_ready, (
-        "Fetching renderer PID/TID before the story is loaded could lead to "
-        "the wrong PID/TID being used. This should never happen TM!")
+      "Fetching renderer PID/TID before the story is loaded could lead to "
+      "the wrong PID/TID being used. This should never happen TM!"
+    )
     renderer_pid = self.browser.get_renderer_pid()
     renderer_main_tid = self.browser.get_renderer_main_tid()
     if renderer_pid is None or renderer_main_tid is None:
       error_message = (
-          "Unable to get Renderer PID/TID from browser. "
-          "Is the browser binary a sufficiently new version? "
-          "For RENDERER_MAIN_ONLY/RENDERER_PROCESS_ONLY profiling, at least "
-          "https://chromium-review.googlesource.com/c/chromium/src/+/5374765 "
-          "is required.")
+        "Unable to get Renderer PID/TID from browser. "
+        "Is the browser binary a sufficiently new version? "
+        "For RENDERER_MAIN_ONLY/RENDERER_PROCESS_ONLY profiling, at least "
+        "https://chromium-review.googlesource.com/c/chromium/src/+/5374765 "
+        "is required."
+      )
       logging.error(error_message)
       raise ValueError(error_message)
     return RendererPidTid(renderer_pid, renderer_main_tid)
 
 
 class PosixProfilingContext(ProfilingContext):
-
   def __init__(self, probe: ProfilingProbe, run: Run) -> None:
     super().__init__(probe, run)
     self._run_traceconv: Final[bool] = self.probe.run_traceconv(run.browser)
@@ -131,9 +135,11 @@ class PosixProfilingContext(ProfilingContext):
     if not self._run_traceconv:
       return
     self._traceconv_bin = Binaries.TRACE_PROCESSOR_SHELL.search(
-        self.traceconv_platform)
+      self.traceconv_platform
+    )
     assert self._traceconv_bin is not None, (
-        f"Probe {self.probe.name}: traceconv binary missing")
+      f"Probe {self.probe.name}: traceconv binary missing"
+    )
 
   def _get_traceconv_symbol_dirs(self) -> tuple[pth.AnyPath, ...]:
     if symbols_path := ChromiumSymbolPathFinder(self.browser).path:
@@ -142,21 +148,28 @@ class PosixProfilingContext(ProfilingContext):
 
   def _get_traceconv_env(self) -> dict[str, str]:
     """Builds execution environment with symbolizer mode and paths."""
-    return traceconv.symbolizer_env(self.traceconv_platform,
-                                    self._get_traceconv_symbol_dirs())
+    return traceconv.symbolizer_env(
+      self.traceconv_platform, self._get_traceconv_symbol_dirs()
+    )
 
   def _export_to_traceconv(
-      self, run: Run, perf_files: Sequence[pth.AnyPath]) -> list[pth.AnyPath]:
+    self, run: Run, perf_files: Sequence[pth.AnyPath]
+  ) -> list[pth.AnyPath]:
     """Exports perf data files to symbolized .pprof files via traceconv."""
     assert self._traceconv_bin is not None, "traceconv binary not initialized"
-    with run.actions(
+    with (
+      run.actions(
         f"Probe {self.probe.name}: "
         f"exporting {len(perf_files)} profiles with traceconv",
-        verbose=True), ui.spinner():
+        verbose=True,
+      ),
+      ui.spinner(),
+    ):
       pprof_files: list[pth.AnyPath] = []
       env = self._get_traceconv_env()
       for perf_file in perf_files:
         if pprof_file := traceconv.convert_profile(
-            self.traceconv_platform, self._traceconv_bin, perf_file, env=env):
+          self.traceconv_platform, self._traceconv_bin, perf_file, env=env
+        ):
           pprof_files.append(pprof_file)
       return pprof_files

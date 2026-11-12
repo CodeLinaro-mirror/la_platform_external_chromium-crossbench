@@ -6,8 +6,15 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, ClassVar, Final, Generic, Self, TypeVar, \
-    override
+from typing import (
+  TYPE_CHECKING,
+  ClassVar,
+  Final,
+  Generic,
+  Self,
+  TypeVar,
+  override,
+)
 
 from crossbench.action_runner.action.enums import ReadyState, WindowTarget
 from crossbench.browsers.attributes import BrowserAttributes
@@ -26,6 +33,7 @@ class ChromeMetricsInternalsProbe(JsonResultProbe):
   Probe that collects  structured metrics from
   chrome://metrics-internals/structured.
   """
+
   NAME: ClassVar = "chrome_metrics_internals"
 
   @classmethod
@@ -33,27 +41,34 @@ class ChromeMetricsInternalsProbe(JsonResultProbe):
   def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
-        "project_name",
-        aliases=("timestrip",),
-        type=str,
-        help="Project filter for structured metrics.")
+      "project_name",
+      aliases=("timestrip",),
+      type=str,
+      help="Project filter for structured metrics.",
+    )
     parser.add_argument(
-        "event_name", type=str, help="Event filter for structured metrics.")
+      "event_name", type=str, help="Event filter for structured metrics."
+    )
     parser.add_argument(
-        "event_index",
-        type=NumberParser.any_int,
-        default=-1,
-        help=("Index of the event to collect. Default is -1, "
-              "which collects the last event."))
+      "event_index",
+      type=NumberParser.any_int,
+      default=-1,
+      help=(
+        "Index of the event to collect. Default is -1, "
+        "which collects the last event."
+      ),
+    )
     parser.add_argument(
-        "metric_key",
-        type=str,
-        required=True,
-        help=("Field name of the metric to collect."))
+      "metric_key",
+      type=str,
+      required=True,
+      help=("Field name of the metric to collect."),
+    )
     return parser
 
-  def __init__(self, project_name: str, event_name: str, event_index: int,
-               metric_key: str) -> None:
+  def __init__(
+    self, project_name: str, event_name: str, event_index: int, metric_key: str
+  ) -> None:
     super().__init__()
     self._project_name: Final[str] = project_name
     self._event_name: Final[str] = event_name
@@ -85,14 +100,14 @@ class ChromeMetricsInternalsProbe(JsonResultProbe):
 
 
 ChromeMetricsInternalsProbeT = TypeVar(
-    "ChromeMetricsInternalsProbeT", bound="ChromeMetricsInternalsProbe")
+  "ChromeMetricsInternalsProbeT", bound="ChromeMetricsInternalsProbe"
+)
 
 
 class ChromeMetricsInternalsProbeContext(
-    JsonResultProbeContext[ChromeMetricsInternalsProbeT],
-    Generic[ChromeMetricsInternalsProbeT],
+  JsonResultProbeContext[ChromeMetricsInternalsProbeT],
+  Generic[ChromeMetricsInternalsProbeT],
 ):
-
   # JS code that overrides the chrome.send response handler and requests
   # structured metrics.
   STRUCTURED_METRICS_SEND: Final[str] = """
@@ -107,27 +122,33 @@ chrome.send(
 """
 
   # JS code that checks if there is a structured metrics response.
-  STRUCTURED_METRICS_WAIT: Final[
-      str] = "return !!window.crossbench_structured_metrics"
+  STRUCTURED_METRICS_WAIT: Final[str] = (
+    "return !!window.crossbench_structured_metrics"
+  )
 
   # JS code that returns the structured metrics response.
-  STRUCTURED_METRICS_DATA: Final[
-      str] = "return window.crossbench_structured_metrics"
+  STRUCTURED_METRICS_DATA: Final[str] = (
+    "return window.crossbench_structured_metrics"
+  )
 
   def __init__(self, probe: ChromeMetricsInternalsProbeT, run: Run) -> None:
     super().__init__(probe, run)
     self._metric_value: int | None = None
 
   def _read_metric_key(self, label: str) -> int | None:
-    url = ("chrome://metrics-internals/structured?"
-           f"project={self.probe.project_name}&event={self.probe.event_name}")
+    url = (
+      "chrome://metrics-internals/structured?"
+      f"project={self.probe.project_name}&event={self.probe.event_name}"
+    )
     with self.run.actions(
-        f"Probe({self.probe.name}) dump structured metrics {label}") as actions:
+      f"Probe({self.probe.name}) dump structured metrics {label}"
+    ) as actions:
       actions.show_url(
-          url,
-          ready_state=ReadyState.COMPLETE,
-          target=WindowTarget.NEW_TAB,
-          timeout=dt.timedelta(seconds=10))
+        url,
+        ready_state=ReadyState.COMPLETE,
+        target=WindowTarget.NEW_TAB,
+        timeout=dt.timedelta(seconds=10),
+      )
       actions.js(self.STRUCTURED_METRICS_SEND)
       actions.wait_js_condition(self.STRUCTURED_METRICS_WAIT, 0.1, timeout=10.0)
       data = actions.js(self.STRUCTURED_METRICS_DATA)
@@ -137,8 +158,11 @@ chrome.send(
       metrics = data[self.probe.event_index]["metrics"]
       metrics_dict = {m["key"]: m["value"] for m in metrics}
       if self.probe.metric_key not in metrics_dict:
-        logging.error("Metric key %s not found in structured metrics for %s",
-                      self.probe.metric_key, label)
+        logging.error(
+          "Metric key %s not found in structured metrics for %s",
+          self.probe.metric_key,
+          label,
+        )
         logging.error("Available metrics: %s", list(metrics_dict.keys()))
         return None
       self.run.browser.close_tab(relative_tab_index=-1)

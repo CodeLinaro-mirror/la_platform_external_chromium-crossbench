@@ -24,59 +24,59 @@ if TYPE_CHECKING:
   from typing import Literal
 
   _OutcomeType = (
-      result_sink.PytestReportOutcome | Literal["passed", "failed", "skipped"])
+    result_sink.PytestReportOutcome | Literal["passed", "failed", "skipped"]
+  )
   _WhenType = (
-      result_sink.PytestReportWhen | Literal["setup", "call", "teardown"])
+    result_sink.PytestReportWhen | Literal["setup", "call", "teardown"]
+  )
 
 DEFAULT_SUBTEST_LOCATION: Final[tuple[str, int | None, str]] = (
-    "tests/test_foo.py",
-    10,
-    "test_sub",
+  "tests/test_foo.py",
+  10,
+  "test_sub",
 )
 
 
 class DummySubtestReport(pytest.SubtestReport):
-
   def __init__(
-      self,
-      nodeid: str,
-      outcome: _OutcomeType,
-      longrepr: Any = None,
-      location: tuple[str, int | None, str] = DEFAULT_SUBTEST_LOCATION,
+    self,
+    nodeid: str,
+    outcome: _OutcomeType,
+    longrepr: Any = None,
+    location: tuple[str, int | None, str] = DEFAULT_SUBTEST_LOCATION,
   ) -> None:
     super().__init__(
-        nodeid=nodeid,
-        location=location,
-        keywords={},
-        outcome=cast(Any, outcome),
-        longrepr=longrepr,
-        when=cast(Any, result_sink.PytestReportWhen.CALL),
+      nodeid=nodeid,
+      location=location,
+      keywords={},
+      outcome=cast(Any, outcome),
+      longrepr=longrepr,
+      when=cast(Any, result_sink.PytestReportWhen.CALL),
     )
 
 
 class ResultSinkPluginTestCase(unittest.TestCase):
-
   def _decode_artifact(
-      self,
-      artifacts: Mapping[str, Mapping[str, str]],
-      artifact_id: str,
+    self,
+    artifacts: Mapping[str, Mapping[str, str]],
+    artifact_id: str,
   ) -> str:
     return base64.b64decode(artifacts[artifact_id]["contents"]).decode("utf-8")
 
   def _make_sink_plugin(
-      self,
-      url: str = "http://127.0.0.1:12345/report",
-      token: str = "secret-token",
+    self,
+    url: str = "http://127.0.0.1:12345/report",
+    token: str = "secret-token",
   ) -> result_sink.ResultSinkPlugin:
     return result_sink.ResultSinkPlugin(
-        sink_url=url,
-        auth_header={"Authorization": f"ResultSink {token}"},
+      sink_url=url,
+      auth_header={"Authorization": f"ResultSink {token}"},
     )
 
   def _mock_session_post(
-      self,
-      plugin: result_sink.ResultSinkPlugin,
-      status_code: int = 200,
+    self,
+    plugin: result_sink.ResultSinkPlugin,
+    status_code: int = 200,
   ) -> mock.MagicMock:
     assert plugin._session is not None
     mock_post = mock.MagicMock()
@@ -85,25 +85,25 @@ class ResultSinkPluginTestCase(unittest.TestCase):
     return mock_post
 
   def _make_report(
-      self,
-      nodeid: str,
-      outcome: _OutcomeType = result_sink.PytestReportOutcome.PASSED,
-      when: _WhenType = result_sink.PytestReportWhen.CALL,
-      line: int = 1,
-      longrepr: Any = None,
-      duration: float = 0.1,
-      sections: Sequence[tuple[str, str]] = (),
+    self,
+    nodeid: str,
+    outcome: _OutcomeType = result_sink.PytestReportOutcome.PASSED,
+    when: _WhenType = result_sink.PytestReportWhen.CALL,
+    line: int = 1,
+    longrepr: Any = None,
+    duration: float = 0.1,
+    sections: Sequence[tuple[str, str]] = (),
   ) -> pytest.TestReport:
     fspath = nodeid.partition(result_sink.NODE_ID_SEPARATOR)[0]
     return pytest.TestReport(
-        nodeid=nodeid,
-        location=(fspath, line, "test_fn"),
-        keywords={},
-        outcome=cast(Any, outcome),
-        longrepr=longrepr,
-        when=cast(Any, when),
-        duration=duration,
-        sections=list(sections),
+      nodeid=nodeid,
+      location=(fspath, line, "test_fn"),
+      keywords={},
+      outcome=cast(Any, outcome),
+      longrepr=longrepr,
+      when=cast(Any, when),
+      duration=duration,
+      sections=list(sections),
     )
 
   @contextlib.contextmanager
@@ -120,9 +120,9 @@ class ResultSinkPluginTestCase(unittest.TestCase):
   @contextlib.contextmanager
   def _mock_luci_context(self, ctx: Mapping[str, Any]) -> Iterator[None]:
     with tempfile.NamedTemporaryFile(
-        mode="w",
-        suffix=".json",
-        encoding="utf-8",
+      mode="w",
+      suffix=".json",
+      encoding="utf-8",
     ) as f:
       json.dump(ctx, f)
       f.flush()
@@ -138,15 +138,19 @@ class ResultSinkPluginTestCase(unittest.TestCase):
   def test_create_session(self) -> None:
     self.assertIsNone(result_sink.ResultSinkPlugin._create_session(None, None))
     self.assertIsNone(
-        result_sink.ResultSinkPlugin._create_session("http://127.0.0.1:1234",
-                                                     None))
+      result_sink.ResultSinkPlugin._create_session(
+        "http://127.0.0.1:1234", None
+      )
+    )
     self.assertIsNone(
-        result_sink.ResultSinkPlugin._create_session(
-            None, {"Authorization": "token"}))
+      result_sink.ResultSinkPlugin._create_session(
+        None, {"Authorization": "token"}
+      )
+    )
 
     session = result_sink.ResultSinkPlugin._create_session(
-        "http://127.0.0.1:1234",
-        {"Authorization": "ResultSink token"},
+      "http://127.0.0.1:1234",
+      {"Authorization": "ResultSink token"},
     )
     self.assertIsNotNone(session)
     assert session is not None
@@ -164,29 +168,33 @@ class ResultSinkPluginTestCase(unittest.TestCase):
     self.assertIsNone(invalid_ctx.section("result_sink"))
     self.assertIsNone(invalid_ctx.result_sink)
 
-    incomplete_ctx = result_sink.LuciContext({
+    incomplete_ctx = result_sink.LuciContext(
+      {
         "result_sink": {
-            "address": "127.0.0.1:1234",
+          "address": "127.0.0.1:1234",
         },
-    })
+      }
+    )
     self.assertEqual(
-        incomplete_ctx.section("result_sink"),
-        {"address": "127.0.0.1:1234"},
+      incomplete_ctx.section("result_sink"),
+      {"address": "127.0.0.1:1234"},
     )
     self.assertIsNone(incomplete_ctx.result_sink)
 
-    valid_ctx = result_sink.LuciContext({
+    valid_ctx = result_sink.LuciContext(
+      {
         "result_sink": {
-            "address": "127.0.0.1:1234",
-            "auth_token": "token123",
+          "address": "127.0.0.1:1234",
+          "auth_token": "token123",
         },
-    })
+      }
+    )
     self.assertEqual(
-        valid_ctx.section("result_sink"),
-        {
-            "address": "127.0.0.1:1234",
-            "auth_token": "token123",
-        },
+      valid_ctx.section("result_sink"),
+      {
+        "address": "127.0.0.1:1234",
+        "auth_token": "token123",
+      },
     )
     sink_ctx = valid_ctx.result_sink
     self.assertIsNotNone(sink_ctx)
@@ -205,10 +213,10 @@ class ResultSinkPluginTestCase(unittest.TestCase):
 
   def test_from_env_result_sink(self) -> None:
     ctx = {
-        "result_sink": {
-            "address": "127.0.0.1:12345",
-            "auth_token": "secret-sink-token",
-        },
+      "result_sink": {
+        "address": "127.0.0.1:12345",
+        "auth_token": "secret-sink-token",
+      },
     }
     with self._mock_luci_context(ctx):
       self.assertTrue(result_sink.ResultSinkPlugin.is_result_sink_enabled())
@@ -217,20 +225,25 @@ class ResultSinkPluginTestCase(unittest.TestCase):
       assert isinstance(plugin, result_sink.ResultSinkPlugin)
       self.assertTrue(plugin.enabled)
       self.assertEqual(
-          plugin._endpoint_url,
-          ("http://127.0.0.1:12345/prpc/luci.resultsink.v1.Sink/"
-           "ReportTestResults"),
+        plugin._endpoint_url,
+        (
+          "http://127.0.0.1:12345/prpc/luci.resultsink.v1.Sink/"
+          "ReportTestResults"
+        ),
       )
 
   def test_luci_context_parameter(self) -> None:
-    luci_ctx = result_sink.LuciContext({
+    luci_ctx = result_sink.LuciContext(
+      {
         "result_sink": {
-            "address": "127.0.0.1:12345",
-            "auth_token": "secret-sink-token",
+          "address": "127.0.0.1:12345",
+          "auth_token": "secret-sink-token",
         },
-    })
+      }
+    )
     self.assertTrue(
-        result_sink.ResultSinkPlugin.is_result_sink_enabled(luci_ctx))
+      result_sink.ResultSinkPlugin.is_result_sink_enabled(luci_ctx)
+    )
     with mock.patch.dict(os.environ, {}, clear=False):
       os.environ.pop("PYTEST_XDIST_WORKER", None)
       plugin = result_sink.ResultSinkPlugin.from_env(luci_ctx)
@@ -240,147 +253,162 @@ class ResultSinkPluginTestCase(unittest.TestCase):
 
       empty_ctx = result_sink.LuciContext({})
       self.assertFalse(
-          result_sink.ResultSinkPlugin.is_result_sink_enabled(empty_ctx))
+        result_sink.ResultSinkPlugin.is_result_sink_enabled(empty_ctx)
+      )
       self.assertIsNone(result_sink.ResultSinkPlugin.from_env(empty_ctx))
 
   def test_xdist_worker_disabled(self) -> None:
-    luci_ctx = result_sink.LuciContext({
+    luci_ctx = result_sink.LuciContext(
+      {
         "result_sink": {
-            "address": "127.0.0.1:12345",
-            "auth_token": "secret-sink-token",
+          "address": "127.0.0.1:12345",
+          "auth_token": "secret-sink-token",
         },
-    })
+      }
+    )
     with mock.patch.dict(
-        os.environ, {"PYTEST_XDIST_WORKER": "gw0"}, clear=False):
+      os.environ, {"PYTEST_XDIST_WORKER": "gw0"}, clear=False
+    ):
       self.assertIsNone(result_sink.ResultSinkPlugin.from_env(luci_ctx))
 
   def test_build_test_result_pass_and_fail(self) -> None:
     plugin = self._make_sink_plugin(
-        url=("http://127.0.0.1:9999/prpc/luci.resultsink.v1.Sink/"
-             "ReportTestResults"))
+      url=(
+        "http://127.0.0.1:9999/prpc/luci.resultsink.v1.Sink/ReportTestResults"
+      )
+    )
     pass_report = self._make_report(
-        "tests/crossbench/test_result_sink.py::test_ok",
-        line=41,
-        duration=0.125,
+      "tests/crossbench/test_result_sink.py::test_ok",
+      line=41,
+      duration=0.125,
     )
     pass_tr = plugin.build_test_result(pass_report)
     self.assertEqual(pass_tr["status"], result_sink.ResultStatus.PASS)
     self.assertTrue(pass_tr["expected"])
     self.assertEqual(
-        pass_tr["testMetadata"]["location"]["fileName"],
-        "//tests/crossbench/test_result_sink.py",
+      pass_tr["testMetadata"]["location"]["fileName"],
+      "//tests/crossbench/test_result_sink.py",
     )
     self.assertEqual(pass_tr["testMetadata"]["location"]["line"], 42)
     self.assertIn("View all test results in build", pass_tr["summaryHtml"])
 
     fail_report = self._make_report(
-        "tests/crossbench/test_result_sink.py::test_fail",
-        line=99,
-        outcome=result_sink.PytestReportOutcome.FAILED,
-        longrepr=(
-            "tests/crossbench/test_result_sink.py",
-            100,
-            "AssertionError: expected <foo> & <bar>",
-        ),
-        duration=0.5,
-        sections=[
-            ("Captured stdout call", "hello <stdout>"),
-            ("Captured stderr call", "hello <stderr>"),
-            ("Captured log call", "hello <log>"),
-            ("Python traceback", "Traceback (most recent call last):\n  ..."),
-        ],
+      "tests/crossbench/test_result_sink.py::test_fail",
+      line=99,
+      outcome=result_sink.PytestReportOutcome.FAILED,
+      longrepr=(
+        "tests/crossbench/test_result_sink.py",
+        100,
+        "AssertionError: expected <foo> & <bar>",
+      ),
+      duration=0.5,
+      sections=[
+        ("Captured stdout call", "hello <stdout>"),
+        ("Captured stderr call", "hello <stderr>"),
+        ("Captured log call", "hello <log>"),
+        ("Python traceback", "Traceback (most recent call last):\n  ..."),
+      ],
     )
     fail_tr = plugin.build_test_result(fail_report)
     self.assertEqual(fail_tr["status"], result_sink.ResultStatus.FAIL)
     self.assertFalse(fail_tr["expected"])
     self.assertIn(
-        "AssertionError: expected <foo> & <bar>",
-        fail_tr["failureReason"]["primaryErrorMessage"],
+      "AssertionError: expected <foo> & <bar>",
+      fail_tr["failureReason"]["primaryErrorMessage"],
     )
 
     long_fail_report = self._make_report(
-        "tests/crossbench/test_result_sink.py::test_long_fail",
-        outcome=result_sink.PytestReportOutcome.FAILED,
-        longrepr="E " + ("x" * 2000),
+      "tests/crossbench/test_result_sink.py::test_long_fail",
+      outcome=result_sink.PytestReportOutcome.FAILED,
+      longrepr="E " + ("x" * 2000),
     )
     long_fail_tr = plugin.build_test_result(long_fail_report)
     self.assertLessEqual(
-        len(long_fail_tr["failureReason"]["primaryErrorMessage"].encode(
-            "utf-8")),
-        result_sink.MAX_FAILURE_REASON_BYTES,
+      len(long_fail_tr["failureReason"]["primaryErrorMessage"].encode("utf-8")),
+      result_sink.MAX_FAILURE_REASON_BYTES,
     )
     self.assertTrue(
-        long_fail_tr["failureReason"]["primaryErrorMessage"].endswith(
-            result_sink.TRUNCATED_SUFFIX))
-    for artifact_id in (result_sink.ArtifactId.TRACEBACK,
-                        result_sink.ArtifactId.STDOUT,
-                        result_sink.ArtifactId.STDERR,
-                        result_sink.ArtifactId.LOG):
+      long_fail_tr["failureReason"]["primaryErrorMessage"].endswith(
+        result_sink.TRUNCATED_SUFFIX
+      )
+    )
+    for artifact_id in (
+      result_sink.ArtifactId.TRACEBACK,
+      result_sink.ArtifactId.STDOUT,
+      result_sink.ArtifactId.STDERR,
+      result_sink.ArtifactId.LOG,
+    ):
       self.assertIn(
-          f'<text-artifact artifact-id="{artifact_id}">',
-          fail_tr["summaryHtml"],
+        f'<text-artifact artifact-id="{artifact_id}">',
+        fail_tr["summaryHtml"],
       )
     artifacts = fail_tr["artifacts"]
-    decoded_tb = self._decode_artifact(artifacts,
-                                       result_sink.ArtifactId.TRACEBACK)
+    decoded_tb = self._decode_artifact(
+      artifacts, result_sink.ArtifactId.TRACEBACK
+    )
     self.assertIn("AssertionError: expected <foo> & <bar>", decoded_tb)
     self.assertIn("Full Python Stack Trace", decoded_tb)
     self.assertEqual(
-        self._decode_artifact(artifacts, result_sink.ArtifactId.STDOUT),
-        "hello <stdout>")
+      self._decode_artifact(artifacts, result_sink.ArtifactId.STDOUT),
+      "hello <stdout>",
+    )
     self.assertEqual(
-        self._decode_artifact(artifacts, result_sink.ArtifactId.STDERR),
-        "hello <stderr>")
+      self._decode_artifact(artifacts, result_sink.ArtifactId.STDERR),
+      "hello <stderr>",
+    )
     self.assertEqual(
-        self._decode_artifact(artifacts, result_sink.ArtifactId.LOG),
-        "hello <log>")
+      self._decode_artifact(artifacts, result_sink.ArtifactId.LOG),
+      "hello <log>",
+    )
 
   def test_extract_primary_error(self) -> None:
     # 1. Tuple longrepr
     report_tuple = self._make_report(
-        "tests/foo.py::test_tuple",
-        outcome=result_sink.PytestReportOutcome.FAILED,
-        longrepr=("tests/foo.py", 12, "Tuple error message"),
+      "tests/foo.py::test_tuple",
+      outcome=result_sink.PytestReportOutcome.FAILED,
+      longrepr=("tests/foo.py", 12, "Tuple error message"),
     )
     self.assertEqual(
-        result_sink.ResultSinkPlugin.extract_primary_error(report_tuple),
-        "Tuple error message",
+      result_sink.ResultSinkPlugin.extract_primary_error(report_tuple),
+      "Tuple error message",
     )
 
     # 2. Lines starting with 'E '
     report_e = self._make_report(
-        "tests/foo.py::test_e",
-        outcome=result_sink.PytestReportOutcome.FAILED,
-        longrepr=("def test_foo():\n"
-                  ">       assert 1 == 2\n"
-                  "E       AssertionError: assert 1 == 2\n"
-                  "E       Extra line\n"),
+      "tests/foo.py::test_e",
+      outcome=result_sink.PytestReportOutcome.FAILED,
+      longrepr=(
+        "def test_foo():\n"
+        ">       assert 1 == 2\n"
+        "E       AssertionError: assert 1 == 2\n"
+        "E       Extra line\n"
+      ),
     )
     self.assertEqual(
-        result_sink.ResultSinkPlugin.extract_primary_error(report_e),
-        "AssertionError: assert 1 == 2\nExtra line",
+      result_sink.ResultSinkPlugin.extract_primary_error(report_e),
+      "AssertionError: assert 1 == 2\nExtra line",
     )
 
     # 3. Raw text fallback when no lines start with 'E '
     report_raw = self._make_report(
-        "tests/foo.py::test_raw",
-        outcome=result_sink.PytestReportOutcome.FAILED,
-        longrepr="Custom error header\nSecond error line\n",
+      "tests/foo.py::test_raw",
+      outcome=result_sink.PytestReportOutcome.FAILED,
+      longrepr="Custom error header\nSecond error line\n",
     )
     self.assertEqual(
-        result_sink.ResultSinkPlugin.extract_primary_error(report_raw),
-        "Custom error header\nSecond error line",
+      result_sink.ResultSinkPlugin.extract_primary_error(report_raw),
+      "Custom error header\nSecond error line",
     )
 
     # 4. Empty text fallback
     report_empty = self._make_report(
-        "tests/foo.py::test_empty",
-        outcome=result_sink.PytestReportOutcome.FAILED,
-        longrepr="",
+      "tests/foo.py::test_empty",
+      outcome=result_sink.PytestReportOutcome.FAILED,
+      longrepr="",
     )
     self.assertEqual(
-        result_sink.ResultSinkPlugin.extract_primary_error(report_empty),
-        "Test failed",
+      result_sink.ResultSinkPlugin.extract_primary_error(report_empty),
+      "Test failed",
     )
 
   def test_truncate_summary(self) -> None:
@@ -390,29 +418,36 @@ class ResultSinkPluginTestCase(unittest.TestCase):
     long_text = "a" * 2000
     truncated = result_sink.ResultSinkPlugin.truncate_summary(long_text)
     self.assertLessEqual(
-        len(truncated.encode("utf-8")), result_sink.MAX_FAILURE_REASON_BYTES)
+      len(truncated.encode("utf-8")), result_sink.MAX_FAILURE_REASON_BYTES
+    )
     self.assertTrue(truncated.endswith("\n...\n[Truncated]"))
 
     # Multi-byte UTF-8 fallback cropping.
     unicode_text = "🔥" * 1500
     truncated_unicode = result_sink.ResultSinkPlugin.truncate_summary(
-        unicode_text)
+      unicode_text
+    )
     self.assertLessEqual(
-        len(truncated_unicode.encode("utf-8")),
-        result_sink.MAX_FAILURE_REASON_BYTES)
+      len(truncated_unicode.encode("utf-8")),
+      result_sink.MAX_FAILURE_REASON_BYTES,
+    )
 
   def test_flush_pending_results(self) -> None:
     plugin = self._make_sink_plugin()
     mock_post = self._mock_session_post(plugin)
 
-    plugin._pending_results.append({
+    plugin._pending_results.append(
+      {
         "testId": "test_1",
         "status": result_sink.ResultStatus.PASS,
-    })
-    plugin._pending_results.append({
+      }
+    )
+    plugin._pending_results.append(
+      {
         "testId": "test_2",
         "status": result_sink.ResultStatus.FAIL,
-    })
+      }
+    )
     plugin._flush_pending_results()
 
     self.assertEqual(len(plugin._pending_results), 0)
@@ -426,12 +461,15 @@ class ResultSinkPluginTestCase(unittest.TestCase):
     plugin = self._make_sink_plugin()
     assert plugin._session is not None
     plugin._session.post = mock.MagicMock(
-        side_effect=requests.RequestException("boom"))
+      side_effect=requests.RequestException("boom")
+    )
 
-    plugin._pending_results.append({
+    plugin._pending_results.append(
+      {
         "testId": "test_1",
         "status": result_sink.ResultStatus.PASS,
-    })
+      }
+    )
     with mock.patch.object(sys.stderr, "write") as mock_stderr:
       plugin._flush_pending_results()
 
@@ -442,9 +480,9 @@ class ResultSinkPluginTestCase(unittest.TestCase):
   def test_result_sink_traceback_plugin(self) -> None:
     plugin = result_sink.ResultSinkTracebackPlugin()
     report = self._make_report(
-        "tests/test_sample.py::test_err",
-        outcome=result_sink.PytestReportOutcome.FAILED,
-        longrepr="Error occurred",
+      "tests/test_sample.py::test_err",
+      outcome=result_sink.PytestReportOutcome.FAILED,
+      longrepr="Error occurred",
     )
     try:
       raise ValueError("deliberate sample exception")
@@ -457,8 +495,8 @@ class ResultSinkPluginTestCase(unittest.TestCase):
     mock_call.excinfo.tb = exc_info[2]
 
     generator = plugin.pytest_runtest_makereport(
-        mock.MagicMock(),  # type: ignore[arg-type]
-        mock_call,
+      mock.MagicMock(),  # type: ignore[arg-type]
+      mock_call,
     )
     next(generator)
     mock_outcome = mock.MagicMock()
@@ -467,8 +505,10 @@ class ResultSinkPluginTestCase(unittest.TestCase):
       generator.send(mock_outcome)
 
     tb_sections = [
-        content for _, content in report.get_sections(
-            result_sink.ResultSinkTracebackPlugin.SECTION_NAME)
+      content
+      for _, content in report.get_sections(
+        result_sink.ResultSinkTracebackPlugin.SECTION_NAME
+      )
     ]
     self.assertEqual(len(tb_sections), 1)
     self.assertIn("ValueError: deliberate sample exception", tb_sections[0])
@@ -476,84 +516,90 @@ class ResultSinkPluginTestCase(unittest.TestCase):
   def test_subtest_report_filtering(self) -> None:
     plugin = self._make_sink_plugin()
     subtest_pass = DummySubtestReport(
-        nodeid="tests/test_foo.py::test_sub[case_pass]",
-        outcome=result_sink.PytestReportOutcome.PASSED,
+      nodeid="tests/test_foo.py::test_sub[case_pass]",
+      outcome=result_sink.PytestReportOutcome.PASSED,
     )
     plugin.pytest_runtest_logreport(subtest_pass)
     self.assertEqual(len(plugin._pending_results), 0)
 
     subtest_fail = DummySubtestReport(
-        nodeid="tests/test_foo.py::test_sub[case1]",
-        outcome=result_sink.PytestReportOutcome.FAILED,
-        longrepr="Subtest failed",
+      nodeid="tests/test_foo.py::test_sub[case1]",
+      outcome=result_sink.PytestReportOutcome.FAILED,
+      longrepr="Subtest failed",
     )
     plugin.pytest_runtest_logreport(subtest_fail)
     self.assertEqual(len(plugin._pending_results), 1)
-    self.assertEqual(plugin._pending_results[0]["status"],
-                     result_sink.ResultStatus.FAIL)
     self.assertEqual(
-        plugin._pending_results[0]["testId"],
-        "tests/test_foo.py::test_sub[case1]",
+      plugin._pending_results[0]["status"], result_sink.ResultStatus.FAIL
+    )
+    self.assertEqual(
+      plugin._pending_results[0]["testId"],
+      "tests/test_foo.py::test_sub[case1]",
     )
 
   def test_teardown_failure_handling(self) -> None:
     plugin = self._make_sink_plugin()
 
     def _feed_test_cycle(
-        nodeid: str,
-        call_outcome: _OutcomeType = result_sink.PytestReportOutcome.PASSED,
-        call_error: Any = None,
-        teardown_outcome: _OutcomeType = (
-            result_sink.PytestReportOutcome.PASSED),
-        teardown_error: Any = None,
+      nodeid: str,
+      call_outcome: _OutcomeType = result_sink.PytestReportOutcome.PASSED,
+      call_error: Any = None,
+      teardown_outcome: _OutcomeType = (result_sink.PytestReportOutcome.PASSED),
+      teardown_error: Any = None,
     ) -> None:
       plugin.pytest_runtest_logreport(
-          self._make_report(nodeid, when=result_sink.PytestReportWhen.SETUP))
+        self._make_report(nodeid, when=result_sink.PytestReportWhen.SETUP)
+      )
       plugin.pytest_runtest_logreport(
-          self._make_report(
-              nodeid,
-              when=result_sink.PytestReportWhen.CALL,
-              outcome=call_outcome,
-              longrepr=call_error,
-          ))
+        self._make_report(
+          nodeid,
+          when=result_sink.PytestReportWhen.CALL,
+          outcome=call_outcome,
+          longrepr=call_error,
+        )
+      )
       plugin.pytest_runtest_logreport(
-          self._make_report(
-              nodeid,
-              when=result_sink.PytestReportWhen.TEARDOWN,
-              outcome=teardown_outcome,
-              longrepr=teardown_error,
-          ))
+        self._make_report(
+          nodeid,
+          when=result_sink.PytestReportWhen.TEARDOWN,
+          outcome=teardown_outcome,
+          longrepr=teardown_error,
+        )
+      )
 
     # Case 1: Setup, call, and teardown all pass -> enqueued as PASS.
     _feed_test_cycle("tests/test_foo.py::test_ok")
     self.assertEqual(len(plugin._pending_results), 1)
-    self.assertEqual(plugin._pending_results[0]["status"],
-                     result_sink.ResultStatus.PASS)
+    self.assertEqual(
+      plugin._pending_results[0]["status"], result_sink.ResultStatus.PASS
+    )
 
     # Case 2: Call passes, but teardown fails -> marked FAIL.
     _feed_test_cycle(
-        "tests/test_foo.py::test_td_fail",
-        teardown_outcome=result_sink.PytestReportOutcome.FAILED,
-        teardown_error=("tests/test_foo.py", 5, "Teardown error"),
+      "tests/test_foo.py::test_td_fail",
+      teardown_outcome=result_sink.PytestReportOutcome.FAILED,
+      teardown_error=("tests/test_foo.py", 5, "Teardown error"),
     )
     self.assertEqual(len(plugin._pending_results), 2)
-    self.assertEqual(plugin._pending_results[1]["status"],
-                     result_sink.ResultStatus.FAIL)
+    self.assertEqual(
+      plugin._pending_results[1]["status"], result_sink.ResultStatus.FAIL
+    )
 
     # Case 3: Call fails and teardown fails -> marked FAIL with call error.
     _feed_test_cycle(
-        "tests/test_foo.py::test_both_fail",
-        call_outcome=result_sink.PytestReportOutcome.FAILED,
-        call_error=("tests/test_foo.py", 5, "Call error"),
-        teardown_outcome=result_sink.PytestReportOutcome.FAILED,
-        teardown_error=("tests/test_foo.py", 5, "Teardown error"),
+      "tests/test_foo.py::test_both_fail",
+      call_outcome=result_sink.PytestReportOutcome.FAILED,
+      call_error=("tests/test_foo.py", 5, "Call error"),
+      teardown_outcome=result_sink.PytestReportOutcome.FAILED,
+      teardown_error=("tests/test_foo.py", 5, "Teardown error"),
     )
     self.assertEqual(len(plugin._pending_results), 3)
-    self.assertEqual(plugin._pending_results[2]["status"],
-                     result_sink.ResultStatus.FAIL)
+    self.assertEqual(
+      plugin._pending_results[2]["status"], result_sink.ResultStatus.FAIL
+    )
     self.assertIn(
-        "Call error",
-        plugin._pending_results[2]["failureReason"]["primaryErrorMessage"],
+      "Call error",
+      plugin._pending_results[2]["failureReason"]["primaryErrorMessage"],
     )
 
   def test_sessionfinish_flushes_leftover_reports(self) -> None:
@@ -562,8 +608,10 @@ class ResultSinkPluginTestCase(unittest.TestCase):
 
     nodeid_interrupted = "tests/test_foo.py::test_interrupted"
     plugin.pytest_runtest_logreport(
-        self._make_report(
-            nodeid_interrupted, when=result_sink.PytestReportWhen.CALL))
+      self._make_report(
+        nodeid_interrupted, when=result_sink.PytestReportWhen.CALL
+      )
+    )
     self.assertEqual(len(plugin._pending_results), 0)
     self.assertIn(nodeid_interrupted, plugin._test_reports)
 
@@ -575,76 +623,79 @@ class ResultSinkPluginTestCase(unittest.TestCase):
   def test_build_retry_args(self) -> None:
     base_args = ["-vv", "-n", "1"]
     self.assertEqual(
-        test_helper.build_retry_args(base_args),
-        ["-vv", "-n", "1", "--last-failed", "--last-failed-no-failures=none"],
+      test_helper.build_retry_args(base_args),
+      ["-vv", "-n", "1", "--last-failed", "--last-failed-no-failures=none"],
     )
     existing_retry_args = [
-        "-vv",
-        "-n",
-        "1",
-        "--last-failed",
-        "--last-failed-no-failures=none",
+      "-vv",
+      "-n",
+      "1",
+      "--last-failed",
+      "--last-failed-no-failures=none",
     ]
     self.assertEqual(
-        test_helper.build_retry_args(existing_retry_args),
-        existing_retry_args,
+      test_helper.build_retry_args(existing_retry_args),
+      existing_retry_args,
     )
 
   def test_build_retry_args_cov(self) -> None:
     cov_args = ["-vv", "--cov=crossbench", "--cov-report=lcov:out.info"]
     self.assertEqual(
-        test_helper.build_retry_args(cov_args),
-        [
-            "-vv",
-            "--cov=crossbench",
-            "--cov-report=lcov:out.info",
-            "--last-failed",
-            "--last-failed-no-failures=none",
-            "--cov-append",
-        ],
+      test_helper.build_retry_args(cov_args),
+      [
+        "-vv",
+        "--cov=crossbench",
+        "--cov-report=lcov:out.info",
+        "--last-failed",
+        "--last-failed-no-failures=none",
+        "--cov-append",
+      ],
     )
     bare_cov_args = ["-vv", "--cov", "crossbench"]
     self.assertEqual(
-        test_helper.build_retry_args(bare_cov_args),
-        [
-            "-vv",
-            "--cov",
-            "crossbench",
-            "--last-failed",
-            "--last-failed-no-failures=none",
-            "--cov-append",
-        ],
-    )
-    existing_cov_retry_args = [
-        "--cov=crossbench",
-        "--cov-append",
+      test_helper.build_retry_args(bare_cov_args),
+      [
+        "-vv",
+        "--cov",
+        "crossbench",
         "--last-failed",
         "--last-failed-no-failures=none",
+        "--cov-append",
+      ],
+    )
+    existing_cov_retry_args = [
+      "--cov=crossbench",
+      "--cov-append",
+      "--last-failed",
+      "--last-failed-no-failures=none",
     ]
     self.assertEqual(
-        test_helper.build_retry_args(existing_cov_retry_args),
-        existing_cov_retry_args,
+      test_helper.build_retry_args(existing_cov_retry_args),
+      existing_cov_retry_args,
     )
 
   def test_run_pytest_retries(self) -> None:
     with self.assertRaises(AssertionError):
       test_helper.run_pytest("tests/end2end", check=False, retries=-1)
 
-    with mock.patch.object(sys, "argv", ["runner.py"]), mock.patch.object(
+    with (
+      mock.patch.object(sys, "argv", ["runner.py"]),
+      mock.patch.object(
         pytest,
         "main",
         side_effect=[
-            pytest.ExitCode.TESTS_FAILED,
-            pytest.ExitCode.TESTS_FAILED,
-            pytest.ExitCode.OK,
+          pytest.ExitCode.TESTS_FAILED,
+          pytest.ExitCode.TESTS_FAILED,
+          pytest.ExitCode.OK,
         ],
-    ) as mock_main:
+      ) as mock_main,
+    ):
       code = test_helper.run_pytest(
-          "tests/end2end",
-          "--cov=crossbench",
-          use_default_flags=False,
-          check=False,
-          retries=2,
+        "tests/end2end",
+        "--cov=crossbench",
+        use_default_flags=False,
+        check=False,
+        retries=2,
       )
       self.assertEqual(code, pytest.ExitCode.OK)
       self.assertEqual(mock_main.call_count, 3)

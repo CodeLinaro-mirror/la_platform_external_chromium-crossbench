@@ -14,8 +14,11 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Sequence, override
 from unittest import mock
 
-from crossbench.benchmarks.speedometer.speedometer_3 import \
-    MeasurementMethod, Speedometer3Benchmark, Speedometer3Story
+from crossbench.benchmarks.speedometer.speedometer_3 import (
+  MeasurementMethod,
+  Speedometer3Benchmark,
+  Speedometer3Story,
+)
 from crossbench.browsers.viewport import Viewport
 from crossbench.env.runner_env import EnvConfig, ValidationMode
 from crossbench.runner.runner import Runner
@@ -23,17 +26,20 @@ from tests.crossbench.benchmarks import helper
 
 if TYPE_CHECKING:
   from crossbench.action_runner.config import ActionRunnerConfig
-  from crossbench.benchmarks.speedometer.speedometer import \
-      SpeedometerBenchmark, SpeedometerProbe, SpeedometerProbeContext, \
-      SpeedometerStory
+  from crossbench.benchmarks.speedometer.speedometer import (
+    SpeedometerBenchmark,
+    SpeedometerProbe,
+    SpeedometerProbeContext,
+    SpeedometerStory,
+  )
   from crossbench.stories.story import Story
   from crossbench.types import Json, JsonDict
   from tests.crossbench.mock_browser import MockBrowser
 
 
 class SpeedometerBaseTestCase(
-    helper.PressBaseBenchmarkTestCase, metaclass=abc.ABCMeta):
-
+  helper.PressBaseBenchmarkTestCase, metaclass=abc.ABCMeta
+):
   @property
   @abc.abstractmethod
   @override
@@ -124,10 +130,9 @@ class SpeedometerBaseTestCase(
     args.separate = True
     stories_all = self.benchmark_cls.stories_from_cli_args(args)
     self.assertSequenceEqual(
-        [story.name for story in stories],
-        [story.name for story in stories_all],
+      [story.name for story in stories],
+      [story.name for story in stories_all],
     )
-
 
   def test_story_filtering(self):
     with self.assertRaises(ValueError):
@@ -148,30 +153,34 @@ class SpeedometerBaseTestCase(
     stories = self.story_cls.all(separate=True)
     stories_b = self.story_filter([".*"], separate=True).stories
     self.assertSequenceEqual(
-        [story.name for story in stories],
-        [story.name for story in stories_b],
+      [story.name for story in stories],
+      [story.name for story in stories_b],
     )
 
-  def _test_run(self,
-                story_names: Sequence[str] | None = None,
-                separate: bool = False,
-                iterations: int = 2,
-                repetitions: int = 3,
-                warmup_repetitions: int = 0,
-                custom_url: str | None = None,
-                throw: bool = True) -> Runner:
+  def _test_run(
+    self,
+    story_names: Sequence[str] | None = None,
+    separate: bool = False,
+    iterations: int = 2,
+    repetitions: int = 3,
+    warmup_repetitions: int = 0,
+    custom_url: str | None = None,
+    throw: bool = True,
+  ) -> Runner:
     if story_names is None:
       default_story_name = self.story_cls.SUBSTORIES[0]
       self.assertTrue(default_story_name)
       story_names = [default_story_name]
     stories = self.story_cls.from_names(
-        story_names, separate=separate, url=custom_url, iterations=iterations)
+      story_names, separate=separate, url=custom_url, iterations=iterations
+    )
 
     # The order should match Runner.get_runs
     for _ in range(warmup_repetitions + repetitions):
       for story in stories:
         speedometer_probe_results = self._generate_test_probe_results(
-            iterations, story)
+          iterations, story
+        )
 
         for browser in self.browsers:
           self._setup_run_js_expect(browser, speedometer_probe_results)
@@ -179,26 +188,29 @@ class SpeedometerBaseTestCase(
       browser.expected_js = copy.deepcopy(browser.expected_js)
 
     benchmark: SpeedometerBenchmark = self.benchmark_cls(
-        stories, custom_url=custom_url)
+      stories, custom_url=custom_url
+    )
     self.assertTrue(len(benchmark.describe()) > 0)
     runner = Runner(
-        self.out_dir,
-        self.browsers,
-        benchmark,
-        env_config=EnvConfig(),
-        env_validation_mode=ValidationMode.SKIP,
-        platform=self.platform,
-        repetitions=repetitions,
-        warmup_repetitions=warmup_repetitions,
-        throw=throw,
-        in_memory_result_db=True)
+      self.out_dir,
+      self.browsers,
+      benchmark,
+      env_config=EnvConfig(),
+      env_validation_mode=ValidationMode.SKIP,
+      platform=self.platform,
+      repetitions=repetitions,
+      warmup_repetitions=warmup_repetitions,
+      throw=throw,
+      in_memory_result_db=True,
+    )
     with mock.patch.object(self.benchmark_cls, "validate_url") as cm:
       runner.run()
     cm.assert_called_once()
     return runner
 
-  def _setup_run_js_expect(self, browser: MockBrowser,
-                           speedometer_probe_results: Json) -> None:
+  def _setup_run_js_expect(
+    self, browser: MockBrowser, speedometer_probe_results: Json
+  ) -> None:
     # Page is ready
     browser.expect_js(result=True)
     # _setup_substories
@@ -216,9 +228,8 @@ class SpeedometerBaseTestCase(
     pass
 
   def _verify_results(
-      self,
-      runner: Runner,
-      expected_num_urls: int | None = None) -> list[dict[str, str]]:
+    self, runner: Runner, expected_num_urls: int | None = None
+  ) -> list[dict[str, str]]:
     for browser in self.browsers:
       urls = self.filter_splashscreen_urls(browser.url_list)
       if expected_num_urls is not None:
@@ -249,16 +260,18 @@ class SpeedometerBaseTestCase(
       reader = csv.DictReader(f, delimiter="\t")
       rows = list(reader)
     self.assertSequenceEqual(
-        list(rows[0].keys()), ["label", "", "dev", "stable"])
+      list(rows[0].keys()), ["label", "", "dev", "stable"]
+    )
     self.assertDictEqual(
-        rows[1],
-        {
-            "label": "version",
-            "dev": "102.22.33.44",
-            "stable": "100.22.33.44",
-            # Padding element after "label":
-            "": "",
-        })
+      rows[1],
+      {
+        "label": "version",
+        "dev": "102.22.33.44",
+        "stable": "100.22.33.44",
+        # Padding element after "label":
+        "": "",
+      },
+    )
     return rows
 
   def test_run_throw(self):
@@ -326,36 +339,38 @@ class SpeedometerBaseTestCase(
 
 
 class Speedometer1BaseTestCase(SpeedometerBaseTestCase, metaclass=abc.ABCMeta):
-
   EXAMPLE_STORY_DATA: JsonDict = {
-      "tests": {
-          "Adding100Items": {
-              "tests": {
-                  "Sync": 74.6000000089407,
-                  "Async": 6.299999997019768,
-              },
-              "total": 80.90000000596046,
-          },
+    "tests": {
+      "Adding100Items": {
+        "tests": {
+          "Sync": 74.6000000089407,
+          "Async": 6.299999997019768,
+        },
+        "total": 80.90000000596046,
       },
-      "total": 121.40000000596046,
+    },
+    "total": 121.40000000596046,
   }
 
   @override
   def _generate_test_probe_results(self, iterations: int, story: Story) -> Json:
-    return [{
+    return [
+      {
         "tests": {
-            substory_name: copy.deepcopy(self.EXAMPLE_STORY_DATA)
-            for substory_name in story.substories
+          substory_name: copy.deepcopy(self.EXAMPLE_STORY_DATA)
+          for substory_name in story.substories
         },
         "total": 1000,
-    }
-            for _ in range(iterations)]
+      }
+      for _ in range(iterations)
+    ]
 
   def test_probe_results(self):
     story_names = ("VanillaJS-TodoMVC", "React-TodoMVC")
     self.browsers = [self.browsers[0]]
     runner = self._test_run(
-        story_names=story_names, separate=False, repetitions=2)
+      story_names=story_names, separate=False, repetitions=2
+    )
     run_1, run_2 = runner.runs
     probe_file = f"{self.probe_cls.NAME}.json"
     with (run_1.out_dir / probe_file).open() as f:
@@ -370,26 +385,28 @@ class Speedometer1BaseTestCase(SpeedometerBaseTestCase, metaclass=abc.ABCMeta):
 
   @override
   def test_run_combined(self):
-    self._run_combined(["VanillaJS-TodoMVC", "React-TodoMVC"],
-                       label_suffix="/total")
+    self._run_combined(
+      ["VanillaJS-TodoMVC", "React-TodoMVC"], label_suffix="/total"
+    )
 
   @override
   def test_run_separate(self):
-    self._run_separate(["VanillaJS-TodoMVC", "React-TodoMVC"],
-                       label_suffix="/total")
+    self._run_separate(
+      ["VanillaJS-TodoMVC", "React-TodoMVC"], label_suffix="/total"
+    )
 
   def test_flags_not_supported(self):
     parser = self.create_parser()
     for flag in (
-        "--sync-wait=10ms",
-        "--sync-warmup=10ms",
-        "--raf",
-        "--timer",
-        "--story-viewport=800x600",
-        "--shuffle-seed=1234",
-        "--detailed-metrics",
-        "--details",
-        "--measure-prepare",
+      "--sync-wait=10ms",
+      "--sync-warmup=10ms",
+      "--raf",
+      "--timer",
+      "--story-viewport=800x600",
+      "--shuffle-seed=1234",
+      "--detailed-metrics",
+      "--details",
+      "--measure-prepare",
     ):
       with self.subTest(flag=flag):
         with self.assertRaises((argparse.ArgumentError, SystemExit)):
@@ -397,53 +414,55 @@ class Speedometer1BaseTestCase(SpeedometerBaseTestCase, metaclass=abc.ABCMeta):
 
 
 class Speedometer2BaseTestCase(SpeedometerBaseTestCase, metaclass=abc.ABCMeta):
-
   EXAMPLE_STORY_DATA: JsonDict = {
-      "tests": {
-          "Adding100Items": {
-              "tests": {
-                  "Sync": 74.6000000089407,
-                  "Async": 6.299999997019768,
-              },
-              "total": 80.90000000596046,
-          },
-          "CompletingAllItems": {
-              "tests": {
-                  "Sync": 22.600000008940697,
-                  "Async": 5.899999991059303,
-              },
-              "total": 28.5,
-          },
-          "DeletingItems": {
-              "tests": {
-                  "Sync": 11.800000011920929,
-                  "Async": 0.19999998807907104,
-              },
-              "total": 12,
-          },
+    "tests": {
+      "Adding100Items": {
+        "tests": {
+          "Sync": 74.6000000089407,
+          "Async": 6.299999997019768,
+        },
+        "total": 80.90000000596046,
       },
-      "total": 121.40000000596046,
+      "CompletingAllItems": {
+        "tests": {
+          "Sync": 22.600000008940697,
+          "Async": 5.899999991059303,
+        },
+        "total": 28.5,
+      },
+      "DeletingItems": {
+        "tests": {
+          "Sync": 11.800000011920929,
+          "Async": 0.19999998807907104,
+        },
+        "total": 12,
+      },
+    },
+    "total": 121.40000000596046,
   }
 
   @override
   def _generate_test_probe_results(self, iterations: int, story: Story) -> Json:
-    return [{
+    return [
+      {
         "tests": {
-            substory_name: copy.deepcopy(self.EXAMPLE_STORY_DATA)
-            for substory_name in story.substories
+          substory_name: copy.deepcopy(self.EXAMPLE_STORY_DATA)
+          for substory_name in story.substories
         },
         "total": 1000,
         "mean": 2000,
         "geomean": 3000,
         "score": 10,
-    }
-            for _ in range(iterations)]
+      }
+      for _ in range(iterations)
+    ]
 
   def test_probe_results(self):
     story_names = ("VanillaJS-TodoMVC", "React-TodoMVC")
     self.browsers = [self.browsers[0]]
     runner = self._test_run(
-        story_names=story_names, separate=False, repetitions=2)
+      story_names=story_names, separate=False, repetitions=2
+    )
     run_1, run_2 = runner.runs
     probe_file = f"{self.probe_cls.NAME}.json"
     with (run_1.out_dir / probe_file).open() as f:
@@ -459,30 +478,33 @@ class Speedometer2BaseTestCase(SpeedometerBaseTestCase, metaclass=abc.ABCMeta):
     with (runner.story_groups[0].path / probe_file).open() as f:
       stories_data = json.load(f)
     self.assertSequenceEqual(
-        tuple(stories_data.keys())[-2:], ("Geomean", "Score"))
+      tuple(stories_data.keys())[-2:], ("Geomean", "Score")
+    )
 
   @override
   def test_run_combined(self):
-    self._run_combined(["VanillaJS-TodoMVC", "Elm-TodoMVC"],
-                       label_suffix="/total")
+    self._run_combined(
+      ["VanillaJS-TodoMVC", "Elm-TodoMVC"], label_suffix="/total"
+    )
 
   @override
   def test_run_separate(self):
-    self._run_separate(["VanillaJS-TodoMVC", "Elm-TodoMVC"],
-                       label_suffix="/total")
+    self._run_separate(
+      ["VanillaJS-TodoMVC", "Elm-TodoMVC"], label_suffix="/total"
+    )
 
   def test_flags_not_supported(self):
     parser = self.create_parser()
     for flag in (
-        "--sync-wait=10ms",
-        "--sync-warmup=10ms",
-        "--raf",
-        "--timer",
-        "--story-viewport=800x600",
-        "--shuffle-seed=1234",
-        "--detailed-metrics",
-        "--details",
-        "--measure-prepare",
+      "--sync-wait=10ms",
+      "--sync-warmup=10ms",
+      "--raf",
+      "--timer",
+      "--story-viewport=800x600",
+      "--shuffle-seed=1234",
+      "--detailed-metrics",
+      "--details",
+      "--measure-prepare",
     ):
       with self.subTest(flag=flag):
         with self.assertRaises((argparse.ArgumentError, SystemExit)):
@@ -490,7 +512,6 @@ class Speedometer2BaseTestCase(SpeedometerBaseTestCase, metaclass=abc.ABCMeta):
 
 
 class Speedometer3BaseTestCase(SpeedometerBaseTestCase):
-
   @property
   @abc.abstractmethod
   @override
@@ -508,8 +529,9 @@ class Speedometer3BaseTestCase(SpeedometerBaseTestCase):
   def name_all(self):
     return "all"
 
-  def _setup_run_js_expect(self, browser: MockBrowser,
-                           speedometer_probe_results: Json) -> None:
+  def _setup_run_js_expect(
+    self, browser: MockBrowser, speedometer_probe_results: Json
+  ) -> None:
     # Page is ready
     browser.expect_js(result=True)
     # _setup_benchmark_client
@@ -534,17 +556,17 @@ class Speedometer3BaseTestCase(SpeedometerBaseTestCase):
 
   def _generate_s3_metrics(self, name, values):
     return {
-        "children": [],
-        "delta": 0,
-        "geomean": 39.20000000298023,
-        "max": 39.20000000298023,
-        "mean": 39.20000000298023,
-        "min": 39.20000000298023,
-        "name": name,
-        "percentDelta": 0,
-        "sum": 39.20000000298023,
-        "unit": "ms",
-        "values": values,
+      "children": [],
+      "delta": 0,
+      "geomean": 39.20000000298023,
+      "max": 39.20000000298023,
+      "mean": 39.20000000298023,
+      "min": 39.20000000298023,
+      "name": name,
+      "percentDelta": 0,
+      "sum": 39.20000000298023,
+      "unit": "ms",
+      "values": values,
     }
 
   @override
@@ -553,16 +575,19 @@ class Speedometer3BaseTestCase(SpeedometerBaseTestCase):
     probe_result = {}
     for substory_name in story.substories:
       probe_result[substory_name] = self._generate_s3_metrics(
-          substory_name, values)
+        substory_name, values
+      )
 
     for iteration in range(iterations):
       key = f"Iteration-{iteration}-Total"
       probe_result[key] = self._generate_s3_metrics(key, values)
 
-    probe_result.update({
+    probe_result.update(
+      {
         "Geomean": self._generate_s3_metrics("Geomean", values),
         "Score": self._generate_s3_metrics("Score", values),
-    })
+      }
+    )
     return probe_result
 
   @override
@@ -577,7 +602,8 @@ class Speedometer3BaseTestCase(SpeedometerBaseTestCase):
     story_names = ("TodoMVC-JavaScript-ES5", "TodoMVC-Backbone")
     self.browsers = [self.browsers[0]]
     runner = self._test_run(
-        story_names=story_names, separate=False, repetitions=2)
+      story_names=story_names, separate=False, repetitions=2
+    )
     self.assertEqual(len(runner.runs), 2)
     run_1 = runner.runs[0]
     run_2 = runner.runs[1]
@@ -590,8 +616,13 @@ class Speedometer3BaseTestCase(SpeedometerBaseTestCase):
     keys_2 = tuple(data_2.keys())
     self.assertSequenceEqual(keys_1, keys_2)
     # Make sure the aggregate metrics are at the end
-    expected_keys = (*story_names, "Iteration-0-Total", "Iteration-1-Total",
-                     "Geomean", "Score")
+    expected_keys = (
+      *story_names,
+      "Iteration-0-Total",
+      "Iteration-1-Total",
+      "Geomean",
+      "Score",
+    )
     self.assertSequenceEqual(keys_1, expected_keys)
 
     with (runner.story_groups[0].path / probe_file).open() as f:
@@ -828,7 +859,8 @@ class Speedometer3BaseTestCase(SpeedometerBaseTestCase):
     probe_default = self.probe_cls(benchmark=benchmark_default)
     self.assertTrue(probe_default.is_valid_metric_key("Score"))
     self.assertTrue(
-        probe_default.is_valid_metric_key(self.story_cls.SUBSTORIES[0]))
+      probe_default.is_valid_metric_key(self.story_cls.SUBSTORIES[0])
+    )
     self.assertFalse(probe_default.is_valid_metric_key("Iteration-0-Total"))
     self.assertFalse(probe_default.is_valid_metric_key("Geomean"))
     self.assertFalse(probe_default.is_valid_metric_key("some/nested/metric"))
@@ -838,7 +870,8 @@ class Speedometer3BaseTestCase(SpeedometerBaseTestCase):
     probe_detailed = self.probe_cls(benchmark=benchmark_detailed)
     self.assertTrue(probe_detailed.is_valid_metric_key("Score"))
     self.assertTrue(
-        probe_detailed.is_valid_metric_key(self.story_cls.SUBSTORIES[0]))
+      probe_detailed.is_valid_metric_key(self.story_cls.SUBSTORIES[0])
+    )
     self.assertTrue(probe_detailed.is_valid_metric_key("Iteration-0-Total"))
     self.assertTrue(probe_detailed.is_valid_metric_key("Geomean"))
     self.assertFalse(probe_detailed.is_valid_metric_key("some/nested/metric"))
@@ -857,10 +890,11 @@ class Speedometer3BaseTestCase(SpeedometerBaseTestCase):
     benchmark = self.benchmark_cls.from_cli_args(args)
     self.assertTrue(benchmark.stories)
     substory_names = {
-        name for story in benchmark.stories for name in story.substories
+      name for story in benchmark.stories for name in story.substories
     }
-    self.assertSetEqual(substory_names,
-                        set(self.story_cls.default_story_names()))
+    self.assertSetEqual(
+      substory_names, set(self.story_cls.default_story_names())
+    )
 
     args = parser.parse_args(["--story-tag=chart"])
     self.assertEqual(args.story_tags, "chart")
@@ -968,7 +1002,8 @@ class Speedometer3BaseTestCase(SpeedometerBaseTestCase):
       urls = self.filter_splashscreen_urls(browser.url_list)
       self.assertIn(f"{self.story_cls.URL}?suites={default_story_name}", urls)
       self.assertNotIn(
-          f"{self.story_cls.URL_LOCAL}?suites={default_story_name}", urls)
+        f"{self.story_cls.URL_LOCAL}?suites={default_story_name}", urls
+      )
 
   @override
   def test_run_warmups(self):
@@ -979,7 +1014,8 @@ class Speedometer3BaseTestCase(SpeedometerBaseTestCase):
       urls = self.filter_splashscreen_urls(browser.url_list)
       self.assertIn(f"{self.story_cls.URL}?suites={default_story_name}", urls)
       self.assertNotIn(
-          f"{self.story_cls.URL_LOCAL}?suites={default_story_name}", urls)
+        f"{self.story_cls.URL_LOCAL}?suites={default_story_name}", urls
+      )
 
   @override
   def test_run_custom_url(self):
@@ -990,10 +1026,12 @@ class Speedometer3BaseTestCase(SpeedometerBaseTestCase):
     for browser in self.browsers:
       urls = self.filter_splashscreen_urls(browser.url_list)
       self.assertIn(f"{custom_url}?suites={default_story_name}", urls)
-      self.assertNotIn(f"{self.story_cls.URL}?suites={default_story_name}",
-                       urls)
       self.assertNotIn(
-          f"{self.story_cls.URL_LOCAL}?suites={default_story_name}", urls)
+        f"{self.story_cls.URL}?suites={default_story_name}", urls
+      )
+      self.assertNotIn(
+        f"{self.story_cls.URL_LOCAL}?suites={default_story_name}", urls
+      )
 
   @override
   def test_run_custom_iterations(self):
@@ -1003,10 +1041,13 @@ class Speedometer3BaseTestCase(SpeedometerBaseTestCase):
     for browser in self.browsers:
       urls = self.filter_splashscreen_urls(browser.url_list)
       self.assertIn(
-          f"{self.story_cls.URL}?iterationCount=7&suites={default_story_name}",
-          urls)
+        f"{self.story_cls.URL}?iterationCount=7&suites={default_story_name}",
+        urls,
+      )
       self.assertNotIn(self.story_cls.URL, urls)
       self.assertNotIn(
-          f"{self.story_cls.URL_LOCAL}?iterationCount=7"
-          f"&suites={default_story_name}", urls)
+        f"{self.story_cls.URL_LOCAL}?iterationCount=7"
+        f"&suites={default_story_name}",
+        urls,
+      )
       self.assertNotIn(self.story_cls.URL_LOCAL, urls)

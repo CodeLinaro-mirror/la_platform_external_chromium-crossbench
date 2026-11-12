@@ -15,26 +15,29 @@ from crossbench import plt
 from crossbench.benchmarks.loading.input_source import InputSource
 from crossbench.plt.android_adb import Adb
 from tests import test_helper
-from tests.end2end.desktop.test_loading import CLICK_TEST_PAGE, \
-    TestDesktopLoading
+from tests.end2end.desktop.test_loading import (
+  CLICK_TEST_PAGE,
+  TestDesktopLoading,
+)
 
 if TYPE_CHECKING:
   from tests.test_helper import TestEnv
 
 
 def _webview_shell_config(device_id: str, adb_path: str) -> str:
-  return json.dumps({
+  return json.dumps(
+    {
       "browser": "org.chromium.webview_shell",
       "driver": {
-          "type": "adb",
-          "device_id": device_id,
-          "adb_bin": adb_path,
+        "type": "adb",
+        "device_id": device_id,
+        "adb_bin": adb_path,
       },
-  })
+    }
+  )
 
 
 class TestAndroidLoading(TestDesktopLoading):
-
   def test_download(self, browser_config: str, test_env: TestEnv) -> None:
     test_page = urllib.parse.quote("""
 <!doctype html>
@@ -55,39 +58,45 @@ class TestAndroidLoading(TestDesktopLoading):
 """)
 
     page_config = {
-        "pages": {
-            "DownloadTest": {
-                "actions": [{
-                    "action": "get",
-                    "url": f"data:text/html;charset=utf-8,{test_page}",
-                    "ready_state": "complete",
-                }, {
-                    "action": "click",
-                    "position": "#download",
-                }, {
-                    "action": "wait_for_download",
-                    "timeout": "10s",
-                    "pattern": "car.txt",
-                }],
+      "pages": {
+        "DownloadTest": {
+          "actions": [
+            {
+              "action": "get",
+              "url": f"data:text/html;charset=utf-8,{test_page}",
+              "ready_state": "complete",
             },
+            {
+              "action": "click",
+              "position": "#download",
+            },
+            {
+              "action": "wait_for_download",
+              "timeout": "10s",
+              "pattern": "car.txt",
+            },
+          ],
         },
+      },
     }
 
     probe_config = {
-        "probes": {
-            "downloads": {
-                "clear_downloads": True,
-                "save_downloads": True,
-            },
+      "probes": {
+        "downloads": {
+          "clear_downloads": True,
+          "save_downloads": True,
         },
+      },
     }
 
     self.run_loading_test(
-        browser_config, page_config, test_env, probe_config=probe_config)
+      browser_config, page_config, test_env, probe_config=probe_config
+    )
 
   @pytest.mark.legacy_android_sdk
-  def test_webview(self, device_id: str, adb_path: str,
-                   test_env: TestEnv) -> None:
+  def test_webview(
+    self, device_id: str, adb_path: str, test_env: TestEnv
+  ) -> None:
     browser_config = _webview_shell_config(device_id, adb_path)
     test_page = urllib.parse.quote("""
 <!DOCTYPE html>
@@ -104,54 +113,55 @@ class TestAndroidLoading(TestDesktopLoading):
 """)
 
     page_config = {
-        "pages": {
-            "LoadingTest": {
-                "actions": [{
-                    "action": "get",
-                    "url": f"data:text/html;charset=utf-8,{test_page}",
-                    "ready_state": "complete",
-                }],
-            },
+      "pages": {
+        "LoadingTest": {
+          "actions": [
+            {
+              "action": "get",
+              "url": f"data:text/html;charset=utf-8,{test_page}",
+              "ready_state": "complete",
+            }
+          ],
         },
+      },
     }
 
     self.run_loading_test(browser_config, page_config, test_env)
 
-  @pytest.mark.parametrize("input_source",
-                           [InputSource.TOUCH, InputSource.MOUSE])
-  def test_click_ui_selector(self, browser_config: str,
-                             input_source: InputSource,
-                             test_env: TestEnv) -> None:
+  @pytest.mark.parametrize(
+    "input_source", [InputSource.TOUCH, InputSource.MOUSE]
+  )
+  def test_click_ui_selector(
+    self, browser_config: str, input_source: InputSource, test_env: TestEnv
+  ) -> None:
     self.check_input_source_supported(browser_config, input_source)
     page_config = {
-        "pages": {
-            "ClickTest": {
-                "actions": [
-                    {
-                        "action":
-                            "get",
-                        "url":
-                            f"data:text/html;charset=utf-8,{CLICK_TEST_PAGE}",
-                        "ready_state":
-                            "complete",
-                    },
-                    {
-                        "action": "click",
-                        "position": {
-                            "text": "Click me",
-                        },
-                        "verify": "button[id='clicked-button']",
-                        "source": str(input_source),
-                    },
-                ],
+      "pages": {
+        "ClickTest": {
+          "actions": [
+            {
+              "action": "get",
+              "url": f"data:text/html;charset=utf-8,{CLICK_TEST_PAGE}",
+              "ready_state": "complete",
             },
+            {
+              "action": "click",
+              "position": {
+                "text": "Click me",
+              },
+              "verify": "button[id='clicked-button']",
+              "source": str(input_source),
+            },
+          ],
         },
+      },
     }
 
     self.run_loading_test(browser_config, page_config, test_env)
 
-  def test_android_keycodes(self, browser_config: str,
-                            test_env: TestEnv) -> None:
+  def test_android_keycodes(
+    self, browser_config: str, test_env: TestEnv
+  ) -> None:
     self.check_input_source_supported(browser_config, InputSource.KEYBOARD)
     second_page = urllib.parse.quote("""
 <!DOCTYPE html>
@@ -162,121 +172,125 @@ class TestAndroidLoading(TestDesktopLoading):
 </html>
 """)
     page_config = {
-        "pages": {
-            "AndroidKeycodesTest": {
-                "actions": [
-                    {
-                        "action":
-                            "get",
-                        "url":
-                            f"data:text/html;charset=utf-8,{CLICK_TEST_PAGE}",
-                        "ready_state":
-                            "complete",
-                    },
-                    {
-                        "action": "click",
-                        "position": {
-                            "selector": "button[id='button']",
-                            "required": True,
-                            "scroll_into_view": True,
-                            "wait": True,
-                        },
-                        "verify": "button[id='clicked-button']",
-                        "source": str(InputSource.TOUCH),
-                    },
-                    {
-                        "action": "get",
-                        "url": f"data:text/html;charset=utf-8,{second_page}",
-                        "ready_state": "complete",
-                    },
-                    {
-                        "action": "wait_for_element",
-                        "selector": "div[id='page-2']",
-                        "timeout": "5s",
-                    },
-                    # Open Android Overview with KEYCODE_APP_SWITCH. The first
-                    # KEYCODE_BACK dismisses Overview and returns to Chrome on
-                    # page-2 (whereas if Overview had not opened, Chrome would
-                    # have navigated back to the first page immediately).
-                    {
-                        "action": "text_input",
-                        "keyevent": "KEYCODE_APP_SWITCH",
-                        "source": str(InputSource.KEYBOARD),
-                    },
-                    {
-                        "action": "wait",
-                        "duration": "1s",
-                    },
-                    {
-                        "action": "text_input",
-                        "keyevent": "KEYCODE_BACK",
-                        "source": str(InputSource.KEYBOARD),
-                    },
-                    {
-                        "action": "wait",
-                        "duration": "1s",
-                    },
-                    {
-                        "action": "wait_for_element",
-                        "selector": "div[id='page-2']",
-                        "timeout": "5s",
-                    },
-                    # Now that Chrome is focused again, the second KEYCODE_BACK
-                    # navigates back to the first page.
-                    {
-                        "action": "text_input",
-                        "keyevent": "KEYCODE_BACK",
-                        "source": str(InputSource.KEYBOARD),
-                    },
-                    {
-                        "action": "wait_for_element",
-                        "selector": "button",
-                        "timeout": "5s",
-                    },
-                    {
-                        "action": "text_input",
-                        "keyevent": "KEYCODE_HOME",
-                        "source": str(InputSource.KEYBOARD),
-                    },
-                    {
-                        "action": "wait_for_condition",
-                        "condition": "return !document.hasFocus();",
-                        "timeout": "5s",
-                    },
-                ],
+      "pages": {
+        "AndroidKeycodesTest": {
+          "actions": [
+            {
+              "action": "get",
+              "url": f"data:text/html;charset=utf-8,{CLICK_TEST_PAGE}",
+              "ready_state": "complete",
             },
+            {
+              "action": "click",
+              "position": {
+                "selector": "button[id='button']",
+                "required": True,
+                "scroll_into_view": True,
+                "wait": True,
+              },
+              "verify": "button[id='clicked-button']",
+              "source": str(InputSource.TOUCH),
+            },
+            {
+              "action": "get",
+              "url": f"data:text/html;charset=utf-8,{second_page}",
+              "ready_state": "complete",
+            },
+            {
+              "action": "wait_for_element",
+              "selector": "div[id='page-2']",
+              "timeout": "5s",
+            },
+            # Open Android Overview with KEYCODE_APP_SWITCH. The first
+            # KEYCODE_BACK dismisses Overview and returns to Chrome on
+            # page-2 (whereas if Overview had not opened, Chrome would
+            # have navigated back to the first page immediately).
+            {
+              "action": "text_input",
+              "keyevent": "KEYCODE_APP_SWITCH",
+              "source": str(InputSource.KEYBOARD),
+            },
+            {
+              "action": "wait",
+              "duration": "1s",
+            },
+            {
+              "action": "text_input",
+              "keyevent": "KEYCODE_BACK",
+              "source": str(InputSource.KEYBOARD),
+            },
+            {
+              "action": "wait",
+              "duration": "1s",
+            },
+            {
+              "action": "wait_for_element",
+              "selector": "div[id='page-2']",
+              "timeout": "5s",
+            },
+            # Now that Chrome is focused again, the second KEYCODE_BACK
+            # navigates back to the first page.
+            {
+              "action": "text_input",
+              "keyevent": "KEYCODE_BACK",
+              "source": str(InputSource.KEYBOARD),
+            },
+            {
+              "action": "wait_for_element",
+              "selector": "button",
+              "timeout": "5s",
+            },
+            {
+              "action": "text_input",
+              "keyevent": "KEYCODE_HOME",
+              "source": str(InputSource.KEYBOARD),
+            },
+            {
+              "action": "wait_for_condition",
+              "condition": "return !document.hasFocus();",
+              "timeout": "5s",
+            },
+          ],
         },
+      },
     }
 
     self.run_loading_test(browser_config, page_config, test_env)
 
-  def test_close_app(self, browser_config: str, device_id: str, adb_path: str,
-                     test_env: TestEnv) -> None:
+  def test_close_app(
+    self, browser_config: str, device_id: str, adb_path: str, test_env: TestEnv
+  ) -> None:
     test_page = urllib.parse.quote(
-        "<!doctype html><html><head><title>Close App Test</title></head></html>",
+      "<!doctype html><html><head><title>Close App Test</title></head></html>",
     )
     page_config = {
-        "pages": {
-            "CloseAppTest": {
-                "actions": [{
-                    "action": "get",
-                    "url": f"data:text/html;charset=utf-8,{test_page}",
-                    "ready_state": "complete",
-                }, {
-                    "action": "launch_app",
-                    "component": "com.android.settings/.Settings",
-                }, {
-                    "action": "wait",
-                    "duration": "1s",
-                }, {
-                    "action": "close_app",
-                    "package": "com.android.settings",
-                }, {
-                    "action": "js",
-                    "script": "return document.title;",
-                }],
+      "pages": {
+        "CloseAppTest": {
+          "actions": [
+            {
+              "action": "get",
+              "url": f"data:text/html;charset=utf-8,{test_page}",
+              "ready_state": "complete",
             },
+            {
+              "action": "launch_app",
+              "component": "com.android.settings/.Settings",
+            },
+            {
+              "action": "wait",
+              "duration": "1s",
+            },
+            {
+              "action": "close_app",
+              "package": "com.android.settings",
+            },
+            {
+              "action": "js",
+              "script": "return document.title;",
+            },
+          ],
         },
+      },
     }
 
     self.run_loading_test(browser_config, page_config, test_env)
@@ -286,36 +300,46 @@ class TestAndroidLoading(TestDesktopLoading):
     stack_list = adb.shell_stdout("am", "stack", "list")
     assert "com.android.settings/" not in stack_list
 
-  def test_close_all_apps(self, browser_config: str, device_id: str,
-                          adb_path: str, test_env: TestEnv) -> None:
+  def test_close_all_apps(
+    self, browser_config: str, device_id: str, adb_path: str, test_env: TestEnv
+  ) -> None:
     test_page_1 = urllib.parse.quote(
-        "<!doctype html><html><head><title>Page 1</title></head></html>")
+      "<!doctype html><html><head><title>Page 1</title></head></html>"
+    )
     test_page_2 = urllib.parse.quote(
-        "<!doctype html><html><head><title>Page 2</title></head></html>")
+      "<!doctype html><html><head><title>Page 2</title></head></html>"
+    )
     page_config = {
-        "pages": {
-            "CloseAllAppsTest": {
-                "actions": [{
-                    "action": "get",
-                    "url": f"data:text/html;charset=utf-8,{test_page_1}",
-                    "ready_state": "complete",
-                }, {
-                    "action": "launch_app",
-                    "component": "com.android.settings/.Settings",
-                }, {
-                    "action": "wait",
-                    "duration": "1s",
-                }, {
-                    "action": "close_all_apps",
-                }, {
-                    "action": "start_browser",
-                }, {
-                    "action": "get",
-                    "url": f"data:text/html;charset=utf-8,{test_page_2}",
-                    "ready_state": "complete",
-                }],
+      "pages": {
+        "CloseAllAppsTest": {
+          "actions": [
+            {
+              "action": "get",
+              "url": f"data:text/html;charset=utf-8,{test_page_1}",
+              "ready_state": "complete",
             },
+            {
+              "action": "launch_app",
+              "component": "com.android.settings/.Settings",
+            },
+            {
+              "action": "wait",
+              "duration": "1s",
+            },
+            {
+              "action": "close_all_apps",
+            },
+            {
+              "action": "start_browser",
+            },
+            {
+              "action": "get",
+              "url": f"data:text/html;charset=utf-8,{test_page_2}",
+              "ready_state": "complete",
+            },
+          ],
         },
+      },
     }
 
     self.run_loading_test(browser_config, page_config, test_env)
@@ -325,32 +349,36 @@ class TestAndroidLoading(TestDesktopLoading):
     stack_list = adb.shell_stdout("am", "stack", "list")
     assert "com.android.settings/" not in stack_list
 
-  def test_session_start_closes_open_apps(self, browser_config: str,
-                                          device_id: str, adb_path: str,
-                                          test_env: TestEnv) -> None:
+  def test_session_start_closes_open_apps(
+    self, browser_config: str, device_id: str, adb_path: str, test_env: TestEnv
+  ) -> None:
     adb = Adb(plt.PLATFORM, device_id, pth.LocalPath(adb_path))
     adb.shell("am", "start", "-W", "-n", "com.android.settings/.Settings")
     assert "com.android.settings/" in adb.shell_stdout("am", "stack", "list")
 
     test_page = urllib.parse.quote(
-        "<!doctype html><html><head><title>Session Start Test</title></head>"
-        "</html>")
+      "<!doctype html><html><head><title>Session Start Test</title></head>"
+      "</html>"
+    )
     page_config = {
-        "pages": {
-            "SessionStartClosesOpenAppsTest": {
-                "actions": [{
-                    "action": "get",
-                    "url": f"data:text/html;charset=utf-8,{test_page}",
-                    "ready_state": "complete",
-                }],
-            },
+      "pages": {
+        "SessionStartClosesOpenAppsTest": {
+          "actions": [
+            {
+              "action": "get",
+              "url": f"data:text/html;charset=utf-8,{test_page}",
+              "ready_state": "complete",
+            }
+          ],
         },
+      },
     }
 
     self.run_loading_test(browser_config, page_config, test_env)
     self.assert_run_succeeded(test_env)
     assert "com.android.settings/" not in adb.shell_stdout(
-        "am", "stack", "list")
+      "am", "stack", "list"
+    )
 
 
 del TestDesktopLoading

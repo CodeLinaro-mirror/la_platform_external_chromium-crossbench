@@ -22,8 +22,12 @@ if TYPE_CHECKING:
   from crossbench.plt.base import Platform
 
 DeviceConfigValue: TypeAlias = (
-    str | int | float | Sequence["DeviceConfigValue"]
-    | Mapping[str, "DeviceConfigValue"])
+  str
+  | int
+  | float
+  | Sequence["DeviceConfigValue"]
+  | Mapping[str, "DeviceConfigValue"]
+)
 DeviceConfigMap: TypeAlias = Mapping[str, DeviceConfigValue]
 DeviceConfigFile: TypeAlias = pth.LocalPath
 DeviceConfig: TypeAlias = DeviceConfigMap | DeviceConfigFile
@@ -43,6 +47,7 @@ _TARGET_KEY = "$target"
 @dataclasses.dataclass(frozen=True)
 class DeviceConfigDiscrepancy:
   """Represents a device configuration discrepancy."""
+
   key_path: DeviceConfigKeyPath
   expectation: str
   actual: DeviceConfigValue | None
@@ -69,13 +74,15 @@ class DeviceConfigRequirement:
       is, except for "null", which deletes the setting. "" is a real value,
       written as an empty string, and is distinct from an absent setting.
   """
+
   key_path: DeviceConfigKeyPath
   predicate: _Predicate
   target: str | None
 
   @classmethod
-  def parse(cls, key_path: DeviceConfigKeyPath,
-            value: DeviceConfigValue) -> Self:
+  def parse(
+    cls, key_path: DeviceConfigKeyPath, value: DeviceConfigValue
+  ) -> Self:
     """Parses a leaf value, annotating parse errors with its key path."""
     try:
       predicate, target = _Predicate.parse(value)
@@ -84,14 +91,15 @@ class DeviceConfigRequirement:
     return cls(key_path, predicate, target)
 
   def check(
-      self,
-      actual: DeviceConfigValue | None,
+    self,
+    actual: DeviceConfigValue | None,
   ) -> DeviceConfigDiscrepancy | None:
     """Returns a discrepancy if the actual value fails the predicate."""
     if self.predicate.matches(actual):
       return None
-    return DeviceConfigDiscrepancy(self.key_path, self.predicate.expected_str(),
-                                   actual)
+    return DeviceConfigDiscrepancy(
+      self.key_path, self.predicate.expected_str(), actual
+    )
 
 
 # The immutable, parsed requirements of a single platform.
@@ -102,8 +110,11 @@ DeviceConfigRequirements: TypeAlias = tuple[DeviceConfigRequirement, ...]
 class RequiredDeviceConfigMode(ConfigEnum):
   THROW = ("throw", "Raise an error and abort on discrepancies.")
   WARN = ("warn", "Log discrepancies as critical warnings and continue.")
-  SET = ("set", "Set failing values to their targets for the run, "
-         "then restore the original values.")
+  SET = (
+    "set",
+    "Set failing values to their targets for the run, "
+    "then restore the original values.",
+  )
 
 
 class DeviceConfigValueError(ValueError):
@@ -126,6 +137,7 @@ class RequiredDeviceConfig(ConfigObject):
   Attributes:
     platforms: The requirements of each platform, by lower-cased name.
   """
+
   platforms: immutabledict[str, DeviceConfigRequirements]
 
   @classmethod
@@ -146,7 +158,8 @@ class RequiredDeviceConfig(ConfigObject):
 
 
 def _parse_platform_requirements(
-    config: DeviceConfigMap) -> DeviceConfigRequirements:
+  config: DeviceConfigMap,
+) -> DeviceConfigRequirements:
   """Parses one platform's requirement section.
 
   Intermediate nodes must be nested mappings, with an empty mapping denoting
@@ -177,9 +190,9 @@ def _parse_platform_requirements(
 
 
 def check_device_config(
-    required: DeviceConfigRequirements,
-    actual: DeviceConfigMap,
-    mode: RequiredDeviceConfigMode,
+  required: DeviceConfigRequirements,
+  actual: DeviceConfigMap,
+  mode: RequiredDeviceConfigMode,
 ) -> None:
   """Compares a device config against requirements, logging or raising.
 
@@ -202,9 +215,11 @@ def check_device_config(
     case RequiredDeviceConfigMode.WARN:
       logging.critical("%s", msg)
     case RequiredDeviceConfigMode.THROW:
-      msg = (f"{msg}\nUse --required-device-config-mode=warn to bypass.\n"
-             "Use --required-device-config-mode=set to set the values "
-             "for the run.")
+      msg = (
+        f"{msg}\nUse --required-device-config-mode=warn to bypass.\n"
+        "Use --required-device-config-mode=set to set the values "
+        "for the run."
+      )
       raise DeviceConfigValueError(msg)
     case _:
       msg = f"Unhandled device config mode: {mode!r}.\n{msg}"
@@ -219,9 +234,10 @@ def _has_reserved_keys(config: DeviceConfigMap) -> bool:
   unreachable.
   """
   return any(
-      key.startswith(_OPERATOR_PREFIX) or
-      (isinstance(value, Mapping) and _has_reserved_keys(value))
-      for key, value in config.items())
+    key.startswith(_OPERATOR_PREFIX)
+    or (isinstance(value, Mapping) and _has_reserved_keys(value))
+    for key, value in config.items()
+  )
 
 
 def _format_discrepancies(discrepancies: list[DeviceConfigDiscrepancy]) -> str:
@@ -230,8 +246,8 @@ def _format_discrepancies(discrepancies: list[DeviceConfigDiscrepancy]) -> str:
 
 
 def _compare_device_config(
-    required: DeviceConfigRequirements,
-    actual: DeviceConfigMap,
+  required: DeviceConfigRequirements,
+  actual: DeviceConfigMap,
 ) -> list[DeviceConfigDiscrepancy]:
   """Compares actual config against requirements and returns discrepancies."""
   discrepancies: list[DeviceConfigDiscrepancy] = []
@@ -243,8 +259,8 @@ def _compare_device_config(
 
 
 def _get_device_config_value(
-    config: DeviceConfigMap,
-    key_path: DeviceConfigKeyPath,
+  config: DeviceConfigMap,
+  key_path: DeviceConfigKeyPath,
 ) -> DeviceConfigValue | None:
   """Retrieves the value at key_path, or None if absent or unreachable."""
   current: DeviceConfigValue | None = config
@@ -263,8 +279,9 @@ class DeviceConfigSetter:
   it back.
   """
 
-  def __init__(self, platform: Platform,
-               requirements: DeviceConfigRequirements) -> None:
+  def __init__(
+    self, platform: Platform, requirements: DeviceConfigRequirements
+  ) -> None:
     self._platform: Final[Platform] = platform
     self._requirements: Final[DeviceConfigRequirements] = requirements
     # Discrepancies fixed by a write; restore() writes back their actual
@@ -284,20 +301,26 @@ class DeviceConfigSetter:
     for requirement in self._requirements:
       self._apply_requirement(requirement, actual)
     # Not check_device_config(), whose error suggests using SET mode.
-    if discrepancies := _compare_device_config(self._requirements,
-                                               self._read_device_config()):
+    if discrepancies := _compare_device_config(
+      self._requirements, self._read_device_config()
+    ):
       raise DeviceConfigValueError(_format_discrepancies(discrepancies))
 
-  def _apply_requirement(self, requirement: DeviceConfigRequirement,
-                         actual: DeviceConfigMap) -> None:
+  def _apply_requirement(
+    self, requirement: DeviceConfigRequirement, actual: DeviceConfigMap
+  ) -> None:
     if requirement.target is None:
       return
     original = _get_device_config_value(actual, requirement.key_path)
     if not (discrepancy := requirement.check(original)):
       return
     target = _written_value(requirement.target)
-    logging.info("Setting device config %s %r -> %r.",
-                 ".".join(requirement.key_path), original, target)
+    logging.info(
+      "Setting device config %s %r -> %r.",
+      ".".join(requirement.key_path),
+      original,
+      target,
+    )
     self._platform.set_device_config_value(requirement.key_path, target)
     self._changed.append(discrepancy)
 
@@ -339,8 +362,8 @@ class DeviceConfigSetter:
 
 
 def _iter_device_config(
-    config: DeviceConfigMap,
-    prefix: DeviceConfigKeyPath = (),
+  config: DeviceConfigMap,
+  prefix: DeviceConfigKeyPath = (),
 ) -> Iterator[DeviceConfigRequirement]:
   """Yields the leaf requirements of a hierarchical config.
 
@@ -407,6 +430,7 @@ class _Predicate(abc.ABC):
 @dataclasses.dataclass(frozen=True)
 class _ValuePredicate(_Predicate):
   """Matches an exact string value, or absent/None if expected is 'null'."""
+
   expected: str
 
   @classmethod
@@ -464,6 +488,7 @@ class _MappingPredicate(_Predicate):
 @dataclasses.dataclass(frozen=True)
 class _RegexPredicate(_MappingPredicate):
   """Matches if the actual value matches a regular expression pattern."""
+
   KEYS = ("$regex",)
 
   pattern: re.Pattern[str]
@@ -492,6 +517,7 @@ class _RegexPredicate(_MappingPredicate):
 @dataclasses.dataclass(frozen=True)
 class _NumericRangePredicate(_MappingPredicate):
   """Matches if the actual value is a number within [min, max]."""
+
   KEYS = ("$min", "$max")
 
   min: float | None = None
@@ -508,8 +534,8 @@ class _NumericRangePredicate(_MappingPredicate):
     min_val = mapping.get("$min")
     max_val = mapping.get("$max")
     return cls(
-        float(str(min_val)) if min_val is not None else None,
-        float(str(max_val)) if max_val is not None else None,
+      float(str(min_val)) if min_val is not None else None,
+      float(str(max_val)) if max_val is not None else None,
     )
 
   @override
@@ -520,8 +546,9 @@ class _NumericRangePredicate(_MappingPredicate):
       value = float(actual)
     except ValueError:
       return False  # Could be 'auto' or some other allowed key word.
-    return ((self.min is None or value >= self.min) and
-            (self.max is None or value <= self.max))
+    return (self.min is None or value >= self.min) and (
+      self.max is None or value <= self.max
+    )
 
   @override
   def expected_str(self) -> str:
@@ -538,12 +565,13 @@ class _NumericRangePredicate(_MappingPredicate):
 @dataclasses.dataclass(frozen=True)
 class _AnyOfPredicate(_Predicate):
   """Matches if any of the sub-predicates match."""
+
   predicates: tuple[_Predicate, ...]
 
   @classmethod
   def parse_sequence(
-      cls,
-      sequence: Sequence[DeviceConfigValue],
+    cls,
+    sequence: Sequence[DeviceConfigValue],
   ) -> _PredicateAndTarget:
     """Parses a list of alternatives, taking the first one's target."""
     if not sequence:
@@ -563,11 +591,12 @@ class _AnyOfPredicate(_Predicate):
 
 
 _MAPPING_PREDICATES: tuple[type[_MappingPredicate], ...] = (
-    _RegexPredicate,
-    _NumericRangePredicate,
+  _RegexPredicate,
+  _NumericRangePredicate,
 )
 assert set(_MAPPING_PREDICATES) == get_all_subclasses(_MappingPredicate), (
-    "Every mapping predicate must be listed.")
+  "Every mapping predicate must be listed."
+)
 _MAPPING_KEYS = [key for p in _MAPPING_PREDICATES for key in p.KEYS]
 assert all(key.startswith(_OPERATOR_PREFIX) for key in _MAPPING_KEYS)
 assert _TARGET_KEY not in _MAPPING_KEYS, "$target accompanies any form."

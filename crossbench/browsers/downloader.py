@@ -13,8 +13,14 @@ import shutil
 import stat
 import tempfile
 import zipfile
-from typing import TYPE_CHECKING, ClassVar, Final, Iterable, NamedTuple, \
-    override
+from typing import (
+  TYPE_CHECKING,
+  ClassVar,
+  Final,
+  Iterable,
+  NamedTuple,
+  override,
+)
 
 from crossbench import path as pth
 from crossbench.browsers.version import BrowserVersion, UnknownBrowserVersion
@@ -46,13 +52,15 @@ class Downloader(abc.ABC):
 
   @classmethod
   @abc.abstractmethod
-  def _get_loader_cls(cls,
-                      browser_platform: Platform) -> type[Downloader] | None:
+  def _get_loader_cls(
+    cls, browser_platform: Platform
+  ) -> type[Downloader] | None:
     pass
 
   @classmethod
-  def is_valid(cls, path_or_identifier: pth.AnyPathLike,
-               browser_platform: Platform) -> bool:
+  def is_valid(
+    cls, path_or_identifier: pth.AnyPathLike, browser_platform: Platform
+  ) -> bool:
     if loader_cls := cls._get_loader_cls(browser_platform):
       return loader_cls.is_valid(path_or_identifier, browser_platform)
     return False
@@ -63,26 +71,36 @@ class Downloader(abc.ABC):
     pass
 
   @classmethod
-  def load(cls,
-           archive_path_or_version_identifier: str | pth.LocalPath,
-           browser_platform: Platform,
-           reinstall: bool = False) -> pth.LocalPath:
-    logging.debug("Downloading chrome %s binary for %s",
-                  archive_path_or_version_identifier, browser_platform)
+  def load(
+    cls,
+    archive_path_or_version_identifier: str | pth.LocalPath,
+    browser_platform: Platform,
+    reinstall: bool = False,
+  ) -> pth.LocalPath:
+    logging.debug(
+      "Downloading chrome %s binary for %s",
+      archive_path_or_version_identifier,
+      browser_platform,
+    )
     loader_cls: type[Downloader] | None = cls._get_loader_cls(browser_platform)
     if not loader_cls:
-      raise ValueError(f"Downloading {cls.name()} is not supported "
-                       f"on {browser_platform.name} {browser_platform.machine}")
-    loader: Downloader = loader_cls(archive_path_or_version_identifier, "", "",
-                                    browser_platform, reinstall)
+      raise ValueError(
+        f"Downloading {cls.name()} is not supported "
+        f"on {browser_platform.name} {browser_platform.machine}"
+      )
+    loader: Downloader = loader_cls(
+      archive_path_or_version_identifier, "", "", browser_platform, reinstall
+    )
     return loader.app_path
 
-  def __init__(self,
-               archive_path_or_version_identifier: str | pth.LocalPath,
-               browser_type: str,
-               platform_name: str,
-               browser_platform: Platform,
-               reinstall: bool = False) -> None:
+  def __init__(
+    self,
+    archive_path_or_version_identifier: str | pth.LocalPath,
+    browser_type: str,
+    platform_name: str,
+    browser_platform: Platform,
+    reinstall: bool = False,
+  ) -> None:
     assert browser_type, "Missing browser_type"
     self._browser_type: Final[str] = browser_type
     self._browser_platform: Final[Platform] = browser_platform
@@ -91,24 +109,27 @@ class Downloader(abc.ABC):
     self._reinstall: Final[bool] = reinstall
     self._archive_url: str = ""
     self._archive_path: pth.LocalPath = pth.LocalPath()
-    self._out_dir: pth.LocalPath = (
-        self.host_platform.local_cache_dir("browser_bin"))
+    self._out_dir: pth.LocalPath = self.host_platform.local_cache_dir(
+      "browser_bin"
+    )
     self._archive_dir: Final[pth.LocalPath] = (
-        self.host_platform.local_cache_dir("browser_archive"))
+      self.host_platform.local_cache_dir("browser_archive")
+    )
     self._archive_dir.mkdir(parents=True, exist_ok=True)
     self._requested_version: BrowserVersion = UnknownBrowserVersion()
     with ui.spinner(title="BROWSER: ") as spinner:
       self._spinner: Final = spinner
       self._app_path: Final[pth.LocalPath] = self.find(
-          archive_path_or_version_identifier)
+        archive_path_or_version_identifier
+      )
     self._validate()
 
   def info(self, message: str) -> None:
     self._spinner.write(message)
 
   def find(
-      self,
-      archive_path_or_version_identifier: str | pth.LocalPath) -> pth.LocalPath:
+    self, archive_path_or_version_identifier: str | pth.LocalPath
+  ) -> pth.LocalPath:
     version_value = os.fspath(archive_path_or_version_identifier)
     if self.is_valid_version(version_value):
       self._requested_version = self._parse_version(version_value)
@@ -119,15 +140,18 @@ class Downloader(abc.ABC):
     self._archive_path = pth.LocalPath(archive_path_or_version_identifier)
     self._pre_check()
     if not archive_path_or_version_identifier or (
-        not self._archive_path.exists()):
+      not self._archive_path.exists()
+    ):
       raise ValueError(
-          f"{self._browser_type} archive does not exist: {self._archive_path}")
+        f"{self._browser_type} archive does not exist: {self._archive_path}"
+      )
     return self._load_from_archive()
 
   def _validate(self) -> None:
     assert self._app_path != pth.LocalPath(), "Did not set app_path"
     assert self._is_app_installed(self._app_path), (
-        f"Could not extract {self._browser_type}  binary: {self._app_path}")
+      f"Could not extract {self._browser_type}  binary: {self._app_path}"
+    )
     self.info(f"Extracted app: {self._app_path}")
 
   @property
@@ -161,8 +185,9 @@ class Downloader(abc.ABC):
 
   def _load_from_version(self) -> pth.LocalPath:
     self._archive_path = self._create_archive_path(self.requested_version)
-    if (not self._reinstall and
-        (app_path := self._find_matching_installed_version())):
+    if not self._reinstall and (
+      app_path := self._find_matching_installed_version()
+    ):
       if cached_version := self._validate_installed(app_path):
         self.info(f"CACHED: {cached_version} {app_path}")
         return app_path
@@ -180,7 +205,8 @@ class Downloader(abc.ABC):
     archive_version, archive_url = self._find_archive_url()
     if not archive_url:
       raise ValueError(
-          f"Could not find matching version for {self.requested_version}")
+        f"Could not find matching version for {self.requested_version}"
+      )
     self._archive_url = archive_url
     self._archive_path = self._create_archive_path(archive_version)
     if self._archive_path.exists():
@@ -198,11 +224,13 @@ class Downloader(abc.ABC):
   def _load_from_archive(self) -> pth.LocalPath:
     assert not self.requested_version.is_complete
     assert self._archive_path.exists(), (
-        f"Archive does not exist: {self._archive_path}")
+      f"Archive does not exist: {self._archive_path}"
+    )
     self.info(f"EXTRACTING ARCHIVE: {self._archive_path}")
     original_out_dir = self._out_dir
     with tempfile.TemporaryDirectory(
-        prefix="cb_extract_", dir=original_out_dir) as tmpdir:
+      prefix="cb_extract_", dir=original_out_dir
+    ) as tmpdir:
       # Extract input archive to temp dir for version extraction.
       self._out_dir = pth.LocalPath(tmpdir)
       temp_extracted_path = self._extract_unknown_version_archive()
@@ -225,7 +253,8 @@ class Downloader(abc.ABC):
     tmp_app_path: pth.LocalPath = self._installed_app_path()
     logging.debug("Parsing browser version: %s", tmp_app_path)
     assert self._is_app_installed(tmp_app_path), (
-        f"Extraction failed, app does not exist: {tmp_app_path}")
+      f"Extraction failed, app does not exist: {tmp_app_path}"
+    )
     full_version_string = self._browser_platform.app_version(tmp_app_path)
     self._requested_version = self._parse_version(full_version_string)
     return temp_extracted_path
@@ -254,19 +283,25 @@ class Downloader(abc.ABC):
     if requested_version.is_complete:
       if requested_version.contains(cached_version):
         return cached_version
-      msg = (f"Previously downloaded browser at {app_path} "
-             "might have been auto-updated.\n")
+      msg = (
+        f"Previously downloaded browser at {app_path} "
+        "might have been auto-updated.\n"
+      )
     else:
       logging.debug("Validating installed milestone %s", requested_version)
       latest_milestone_version = self._find_archive_url().version
       if cached_version == latest_milestone_version:
         return cached_version
-      msg = (f"Previously downloaded browser at {app_path} "
-             f"does not match latest milestone {requested_version} "
-             f"version: {latest_milestone_version}.\n")
+      msg = (
+        f"Previously downloaded browser at {app_path} "
+        f"does not match latest milestone {requested_version} "
+        f"version: {latest_milestone_version}.\n"
+      )
       expected_version_str = f"{requested_version}/{latest_milestone_version}"
-    msg += ("Please delete the old version and re-install/-download it.\n"
-            f"Expected: {expected_version_str} Got: {cached_version}")
+    msg += (
+      "Please delete the old version and re-install/-download it.\n"
+      f"Expected: {expected_version_str} Got: {cached_version}"
+    )
     logging.debug(msg)
     raise IncompatibleVersionError(msg)
 
@@ -275,8 +310,9 @@ class Downloader(abc.ABC):
     pass
 
   @abc.abstractmethod
-  def _archive_urls(self, folder_url: str,
-                    version: BrowserVersion) -> Iterable[ArchiveUrlCandidate]:
+  def _archive_urls(
+    self, folder_url: str, version: BrowserVersion
+  ) -> Iterable[ArchiveUrlCandidate]:
     pass
 
   @abc.abstractmethod
@@ -289,14 +325,21 @@ class Downloader(abc.ABC):
 
 
 class ArchiveHelper(abc.ABC):
-
   @classmethod
-  def extract(cls, platform: Platform, archive_path: pth.LocalPath,
-              dest_path: pth.LocalPath) -> pth.LocalPath:
+  def extract(
+    cls,
+    platform: Platform,
+    archive_path: pth.LocalPath,
+    dest_path: pth.LocalPath,
+  ) -> pth.LocalPath:
     return cls(platform, archive_path, dest_path).run()
 
-  def __init__(self, platform: Platform, archive_path: pth.LocalPath,
-               dest_path: pth.LocalPath) -> None:
+  def __init__(
+    self,
+    platform: Platform,
+    archive_path: pth.LocalPath,
+    dest_path: pth.LocalPath,
+  ) -> None:
     self._platform: Final[Platform] = platform
     self._archive_path: Final[pth.LocalPath] = archive_path
     self._dest_path: Final[pth.LocalPath] = dest_path
@@ -313,12 +356,12 @@ class ArchiveHelper(abc.ABC):
 
 
 class RPMArchiveHelper(ArchiveHelper):
-
   @override
   def _extract(self) -> None:
     platform = self._platform
-    assert not platform.exists(
-        self._dest_path), f"{self._dest_path} already exists."
+    assert not platform.exists(self._dest_path), (
+      f"{self._dest_path} already exists."
+    )
     rpm2archive = Binaries.RPM2ARCHIVE.search(platform)
     tar = Binaries.TAR.search(platform)
     if rpm2archive and tar:
@@ -326,32 +369,37 @@ class RPMArchiveHelper(ArchiveHelper):
       return
     self._extract_with_rpm2cpio()
 
-  def _extract_with_rpm2archive(self, rpm2archive: pth.AnyPath,
-                                tar: pth.AnyPath) -> None:
+  def _extract_with_rpm2archive(
+    self, rpm2archive: pth.AnyPath, tar: pth.AnyPath
+  ) -> None:
     platform = self._platform
     tar_file = self._archive_path.with_suffix(".tar")
     assert not platform.exists(tar_file), f"{tar_file} already exists."
     platform.mkdir(self._archive_path.parent)
     try:
       with (
-          self._archive_path.open("rb") as rpm_f,
-          tar_file.open("wb") as tar_f,
+        self._archive_path.open("rb") as rpm_f,
+        tar_file.open("wb") as tar_f,
       ):
         # Pass "-" to stream from stdin to stdout across RPM 4.17+ versions
         # (older rpm2archive writes a .tar/.tgz file next to filename args).
         platform.sh(
-            rpm2archive, "--nocompression", "-", stdin=rpm_f, stdout=tar_f)
+          rpm2archive, "--nocompression", "-", stdin=rpm_f, stdout=tar_f
+        )
       assert platform.is_file(tar_file), (
-          f"Could not extract archive: {self._archive_path}")
+        f"Could not extract archive: {self._archive_path}"
+      )
       platform.mkdir(self._dest_path)
       try:
-        platform.sh(tar, "--extract", "--directory", self._dest_path, "--file",
-                    tar_file)
+        platform.sh(
+          tar, "--extract", "--directory", self._dest_path, "--file", tar_file
+        )
       except Exception:
         platform.rm(self._dest_path, dir=True, missing_ok=True)
         raise
-      if platform.is_dir(
-          self._dest_path) and not any(platform.iterdir(self._dest_path)):
+      if platform.is_dir(self._dest_path) and not any(
+        platform.iterdir(self._dest_path)
+      ):
         platform.rm(self._dest_path, dir=True, missing_ok=True)
     finally:
       platform.rm(tar_file, missing_ok=True)
@@ -369,16 +417,18 @@ class RPMArchiveHelper(ArchiveHelper):
       with cpio_file.open("wb") as f:
         platform.sh(rpm2cpio, self._archive_path, stdout=f)
       assert platform.is_file(cpio_file), (
-          f"Could not extract archive: {self._archive_path}")
+        f"Could not extract archive: {self._archive_path}"
+      )
       try:
         with cpio_file.open("rb") as f:
           platform.sh(
-              cpio,
-              "--extract",
-              "--directory",
-              self._dest_path,
-              "--make-directories",
-              stdin=f)
+            cpio,
+            "--extract",
+            "--directory",
+            self._dest_path,
+            "--make-directories",
+            stdin=f,
+          )
       except Exception:
         platform.rm(self._dest_path, dir=True, missing_ok=True)
         raise
@@ -387,14 +437,14 @@ class RPMArchiveHelper(ArchiveHelper):
 
 
 class DMGArchiveHelper(ArchiveHelper):
-
   @override
   def _extract(self) -> None:
     platform = self._platform
     assert platform.is_macos, "DMG are only supported on macOS."
     assert not platform.is_remote, "Remote platform not supported yet"
-    result = platform.sh_stdout("hdiutil", "attach", "-plist",
-                                self._archive_path).strip()
+    result = platform.sh_stdout(
+      "hdiutil", "attach", "-plist", self._archive_path
+    ).strip()
     data = plistlib.loads(str.encode(result))
     dmg_path: pth.LocalPath | None = None
     for item in data["system-entities"]:
@@ -410,10 +460,11 @@ class DMGArchiveHelper(ArchiveHelper):
     try:
       logging.info("COPYING BROWSER src=%s dst=%s", app, self._dest_path)
       shutil.copytree(
-          os.fspath(app),
-          os.fspath(self._dest_path),
-          symlinks=True,
-          dirs_exist_ok=False)
+        os.fspath(app),
+        os.fspath(self._dest_path),
+        symlinks=True,
+        dirs_exist_ok=False,
+      )
     finally:
       platform.sh("hdiutil", "detach", dmg_path)
 
@@ -445,36 +496,47 @@ class ZipArchiveHelper(ArchiveHelper):
 
   @classmethod
   @override
-  def extract(cls,
-              platform: Platform,
-              archive_path: pth.LocalPath,
-              dest_path: pth.LocalPath,
-              archive_subpath: pth.LocalPath | None = None) -> pth.LocalPath:
+  def extract(
+    cls,
+    platform: Platform,
+    archive_path: pth.LocalPath,
+    dest_path: pth.LocalPath,
+    archive_subpath: pth.LocalPath | None = None,
+  ) -> pth.LocalPath:
     return cls(platform, archive_path, dest_path, archive_subpath).run()
 
-  def __init__(self,
-               platform: Platform,
-               archive_path: pth.LocalPath,
-               dest_path: pth.LocalPath,
-               archive_subpath: pth.LocalPath | None = None) -> None:
+  def __init__(
+    self,
+    platform: Platform,
+    archive_path: pth.LocalPath,
+    dest_path: pth.LocalPath,
+    archive_subpath: pth.LocalPath | None = None,
+  ) -> None:
     super().__init__(platform, archive_path, dest_path)
-    self._archive_subpath: Final[pth.LocalPath | None] = (
-        self._validate_subpath(archive_subpath))
+    self._archive_subpath: Final[pth.LocalPath | None] = self._validate_subpath(
+      archive_subpath
+    )
 
   @classmethod
   def _validate_subpath(
-      cls, archive_subpath: pth.LocalPath | None) -> pth.LocalPath | None:
+    cls, archive_subpath: pth.LocalPath | None
+  ) -> pth.LocalPath | None:
     if archive_subpath is None:
       return None
-    if (archive_subpath.is_absolute() or bool(archive_subpath.anchor) or
-        not archive_subpath.parts or ".." in archive_subpath.parts):
+    if (
+      archive_subpath.is_absolute()
+      or bool(archive_subpath.anchor)
+      or not archive_subpath.parts
+      or ".." in archive_subpath.parts
+    ):
       raise ValueError(f"Invalid archive subpath: {archive_subpath}")
     return archive_subpath
 
   @override
   def _extract(self) -> None:
-    assert not self._platform.exists(
-        self._dest_path), (f"{self._dest_path} already exists.")
+    assert not self._platform.exists(self._dest_path), (
+      f"{self._dest_path} already exists."
+    )
     self._platform.mkdir(self._dest_path.parent)
     if not self._archive_subpath:
       self._extract_zip(self._dest_path)
@@ -483,13 +545,16 @@ class ZipArchiveHelper(ArchiveHelper):
 
   def _extract_zip_subpath(self, archive_subpath: pth.LocalPath) -> None:
     with self._platform.TemporaryDirectory(
-        prefix="cb_zip_", dir=self._dest_path.parent) as tmp_dir:
+      prefix="cb_zip_", dir=self._dest_path.parent
+    ) as tmp_dir:
       local_tmp_dir = self._platform.local_path(tmp_dir)
       self._extract_zip(local_tmp_dir)
       src_path = local_tmp_dir / archive_subpath
       if not self._platform.exists(src_path):
-        raise ValueError(f"Expected {archive_subpath} in {self._archive_path}, "
-                         f"but {src_path} does not exist.")
+        raise ValueError(
+          f"Expected {archive_subpath} in {self._archive_path}, "
+          f"but {src_path} does not exist."
+        )
       self._platform.rename(src_path, self._dest_path)
 
   def _extract_zip(self, extract_dir: pth.LocalPath) -> None:
@@ -500,30 +565,42 @@ class ZipArchiveHelper(ArchiveHelper):
       for info in zip_file.infolist():
         self._extract_zip_info(zip_file, info, extract_dir)
 
-  def _extract_zip_info(self, zip_file: zipfile.ZipFile, info: zipfile.ZipInfo,
-                        extract_dir: pth.LocalPath) -> None:
+  def _extract_zip_info(
+    self,
+    zip_file: zipfile.ZipFile,
+    info: zipfile.ZipInfo,
+    extract_dir: pth.LocalPath,
+  ) -> None:
     target_path = (extract_dir / info.filename).resolve()
     if not target_path.is_relative_to(extract_dir):
       raise ValueError(
-          f"Unsafe zip entry path outside extract dir: {info.filename}")
+        f"Unsafe zip entry path outside extract dir: {info.filename}"
+      )
     if zipfile.Path(zip_file, info.filename).is_symlink():
       self._extract_zip_symlink(zip_file, info, target_path, extract_dir)
       return
     extracted_item = pth.LocalPath(zip_file.extract(info, extract_dir))
     mode = self.unix_mode(info)
-    if not info.is_dir() and (mode &
-                              (stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)):
+    if not info.is_dir() and (
+      mode & (stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+    ):
       self._platform.chmod(extracted_item, stat.S_IMODE(mode))
 
-  def _extract_zip_symlink(self, zip_file: zipfile.ZipFile,
-                           info: zipfile.ZipInfo, target_path: pth.LocalPath,
-                           extract_dir: pth.LocalPath) -> None:
+  def _extract_zip_symlink(
+    self,
+    zip_file: zipfile.ZipFile,
+    info: zipfile.ZipInfo,
+    target_path: pth.LocalPath,
+    extract_dir: pth.LocalPath,
+  ) -> None:
     # Symlink entries store the link target as the entry's file contents.
     link_target = pth.LocalPath(zip_file.read(info).decode("utf-8"))
     resolved_target = (target_path.parent / link_target).resolve()
-    if (link_target.is_absolute() or
-        not resolved_target.is_relative_to(extract_dir)):
+    if link_target.is_absolute() or not resolved_target.is_relative_to(
+      extract_dir
+    ):
       raise ValueError(
-          f"Unsafe zip symlink target outside extract dir: {link_target}")
+        f"Unsafe zip symlink target outside extract dir: {link_target}"
+      )
     self._platform.mkdir(target_path.parent)
     self._platform.symlink_or_copy(link_target, target_path)

@@ -66,9 +66,9 @@ class WDAClient:
   SETTLE_MOVE_POINTS: Final[int] = 4
 
   def __init__(
-      self,
-      platform: IOSPlatform,
-      remote_port: int = DEFAULT_REMOTE_PORT,
+    self,
+    platform: IOSPlatform,
+    remote_port: int = DEFAULT_REMOTE_PORT,
   ) -> None:
     self._platform: Final[IOSPlatform] = platform
     self._local_port: int = 0
@@ -89,23 +89,24 @@ class WDAClient:
     return f"http://localhost:{self._local_port}"
 
   def _request(
-      self,
-      method: str,
-      endpoint: str,
-      data: JsonMapping | None = None,
-      timeout: dt.timedelta = REQUEST_TIMEOUT,
+    self,
+    method: str,
+    endpoint: str,
+    data: JsonMapping | None = None,
+    timeout: dt.timedelta = REQUEST_TIMEOUT,
   ) -> JsonDict:
     url = f"{self.base_url}/{endpoint.lstrip('/')}"
     req_data = json.dumps(data).encode("utf-8") if data is not None else None
     req = urllib.request.Request(  # noqa: S310
-        url,
-        data=req_data,
-        headers={"Content-Type": "application/json"},
-        method=method,
+      url,
+      data=req_data,
+      headers={"Content-Type": "application/json"},
+      method=method,
     )
     try:
       with urllib.request.urlopen(  # noqa: S310
-          req, timeout=timeout.total_seconds()) as resp:
+        req, timeout=timeout.total_seconds()
+      ) as resp:
         body = resp.read().decode("utf-8")
         return json.loads(body) if body else {}
     except urllib.error.HTTPError as e:
@@ -113,25 +114,27 @@ class WDAClient:
       raise WDAError(f"{method} {url}: HTTP {e.code}: {body}") from e
 
   def _session_get(
-      self,
-      endpoint: str,
-      timeout: dt.timedelta = REQUEST_TIMEOUT,
+    self,
+    endpoint: str,
+    timeout: dt.timedelta = REQUEST_TIMEOUT,
   ) -> JsonDict:
     """GET an endpoint of the active session, starting one if needed."""
     session_id = self.ensure_session()
     return self._request(
-        "GET", f"/session/{session_id}/{endpoint}", timeout=timeout)
+      "GET", f"/session/{session_id}/{endpoint}", timeout=timeout
+    )
 
   def _session_post(
-      self,
-      endpoint: str,
-      data: JsonMapping | None = None,
-      timeout: dt.timedelta = REQUEST_TIMEOUT,
+    self,
+    endpoint: str,
+    data: JsonMapping | None = None,
+    timeout: dt.timedelta = REQUEST_TIMEOUT,
   ) -> JsonDict:
     """POST to an endpoint of the active session, starting one if needed."""
     session_id = self.ensure_session()
     return self._request(
-        "POST", f"/session/{session_id}/{endpoint}", data, timeout=timeout)
+      "POST", f"/session/{session_id}/{endpoint}", data, timeout=timeout
+    )
 
   def is_connected(self) -> bool:
     """Check whether WebDriverAgent HTTP server is responsive and ready."""
@@ -161,24 +164,26 @@ class WDAClient:
     xctestrun_path = self._find_xctestrun()
     if not xctestrun_path:
       raise WDAError(
-          f"WebDriverAgent is not running on {self.base_url} and no "
-          ".xctestrun file was found to launch it automatically.\n"
-          "To enable iOS touch gestures / Safari automation:\n"
-          "1. Build WebDriverAgentRunner "
-          "(https://github.com/appium/WebDriverAgent)\n"
-          "   in Xcode or with xcodebuild so its .xctestrun file is in\n"
-          "   ~/Library/Developer/Xcode/DerivedData, or\n"
-          "2. Pass --bin-override wda-xctestrun=/path/to/your.xctestrun\n"
-          "   (or wda-xctestrun-simulator for simulators), or\n"
-          "3. Start WebDriverAgentRunner on the device beforehand.")
+        f"WebDriverAgent is not running on {self.base_url} and no "
+        ".xctestrun file was found to launch it automatically.\n"
+        "To enable iOS touch gestures / Safari automation:\n"
+        "1. Build WebDriverAgentRunner "
+        "(https://github.com/appium/WebDriverAgent)\n"
+        "   in Xcode or with xcodebuild so its .xctestrun file is in\n"
+        "   ~/Library/Developer/Xcode/DerivedData, or\n"
+        "2. Pass --bin-override wda-xctestrun=/path/to/your.xctestrun\n"
+        "   (or wda-xctestrun-simulator for simulators), or\n"
+        "3. Start WebDriverAgentRunner on the device beforehand."
+      )
 
     logging.info("Starting WebDriverAgentRunner on %s...", self._platform.udid)
     with tempfile.TemporaryFile(mode="w+", encoding="utf-8") as log_file:
       self._xcodebuild_proc = self._platform.host_platform.popen(
-          *self._build_runner_cmd(xctestrun_path),
-          stdin=subprocess.DEVNULL,
-          stdout=log_file,
-          stderr=subprocess.STDOUT)
+        *self._build_runner_cmd(xctestrun_path),
+        stdin=subprocess.DEVNULL,
+        stdout=log_file,
+        stderr=subprocess.STDOUT,
+      )
       if self._wait_for_runner(log_file):
         logging.info("WebDriverAgent is ready.")
         return
@@ -186,17 +191,18 @@ class WDAClient:
     self._raise_startup_timeout(output)
 
   def _build_runner_cmd(
-      self, xctestrun_path: pth.AnyPath) -> tuple[pth.AnyPathLike, ...]:
+    self, xctestrun_path: pth.AnyPath
+  ) -> tuple[pth.AnyPathLike, ...]:
     xcodebuild_bin = Binaries.XCODEBUILD.resolve(self._platform.host_platform)
     return (
-        xcodebuild_bin,
-        "test-without-building",
-        "-collect-test-diagnostics",
-        "never",
-        "-xctestrun",
-        str(xctestrun_path),
-        "-destination",
-        f"id={self._platform.udid}",
+      xcodebuild_bin,
+      "test-without-building",
+      "-collect-test-diagnostics",
+      "never",
+      "-xctestrun",
+      str(xctestrun_path),
+      "-destination",
+      f"id={self._platform.udid}",
     )
 
   def _wait_for_runner(self, log_file: IO[str]) -> bool:
@@ -222,8 +228,10 @@ class WDAClient:
   def _raise_startup_timeout(self, output: str) -> None:
     timeout_sec = self.STARTUP_TIMEOUT.total_seconds()
     self.stop()
-    message = (f"Timed out after {timeout_sec}s waiting for WebDriverAgent on "
-               f"{self.base_url}")
+    message = (
+      f"Timed out after {timeout_sec}s waiting for WebDriverAgent on "
+      f"{self.base_url}"
+    )
     if not output:
       raise WDAError(f"{message}.")
     self._check_runner_output_for_known_errors(output)
@@ -231,15 +239,18 @@ class WDAClient:
 
   def _check_devtools_security(self) -> None:
     try:
-      status = self._platform.host_platform.sh_stdout("DevToolsSecurity",
-                                                      "-status")
+      status = self._platform.host_platform.sh_stdout(
+        "DevToolsSecurity", "-status"
+      )
     except (subprocess.SubprocessError, OSError) as e:
       logging.warning("Could not check DevToolsSecurity status: %s", e)
       return
     if "disabled" in status.lower():
-      raise WDAError("macOS Developer Mode is disabled. "
-                     "Please run 'sudo DevToolsSecurity -enable' in a "
-                     "Terminal.")
+      raise WDAError(
+        "macOS Developer Mode is disabled. "
+        "Please run 'sudo DevToolsSecurity -enable' in a "
+        "Terminal."
+      )
 
   def _read_runner_log(self, log_file: IO[str]) -> str:
     try:
@@ -259,12 +270,14 @@ class WDAClient:
 
   def _check_runner_output_for_known_errors(self, output: str) -> None:
     combined_output = output
-    if match := re.search(r"attach the result bundle at\s+(\S+\.xcresult)",
-                          output):
+    if match := re.search(
+      r"attach the result bundle at\s+(\S+\.xcresult)", output
+    ):
       try:
         xcresult = self._platform.host_platform.path(match.group(1))
         for log_file in self._platform.host_platform.glob(
-            xcresult, "**/Session-*.log"):
+          xcresult, "**/Session-*.log"
+        ):
           combined_output += "\n" + (self._platform.host_platform.cat(log_file))
       except (OSError, subprocess.SubprocessError) as e:
         logging.warning("Could not inspect xcresult log: %s", e)
@@ -272,72 +285,91 @@ class WDAClient:
     combined_output = combined_output.lower()
     # 0xe8008012 (kAMDProvisioningProfileInstallFailedError) is reported when
     # the embedded provisioning profile does not include this device's UDID.
-    if ("provisioning profile cannot be installed on this device"
-        in combined_output or "0xe8008012" in combined_output):
+    if (
+      "provisioning profile cannot be installed on this device"
+      in combined_output
+      or "0xe8008012" in combined_output
+    ):
       self.stop()
       xcodeproj = self._find_xcodeproj_for_hint()
       raise WDAError(
-          f"The pre-built WebDriverAgentRunner on this Mac was signed for a "
-          f"different iOS device and is not authorized to run on device "
-          f"{self._platform.udid}.\n"
-          "To authorize and rebuild it for this device:\n"
-          "1. Open the project in Xcode by running:\n"
-          f"     open {xcodeproj}\n"
-          "2. In Xcode's top toolbar, select the 'WebDriverAgentRunner' scheme "
-          "and select your connected iPhone/iPad as the target device.\n"
-          "3. In the Xcode menu bar, click Product -> Build For -> Testing "
-          "(Cmd+Shift+U) so Xcode registers this device and updates the build.")
-    if ("developer app certificate is not trusted" in combined_output or
-        "profile has not been explicitly trusted" in combined_output):
+        f"The pre-built WebDriverAgentRunner on this Mac was signed for a "
+        f"different iOS device and is not authorized to run on device "
+        f"{self._platform.udid}.\n"
+        "To authorize and rebuild it for this device:\n"
+        "1. Open the project in Xcode by running:\n"
+        f"     open {xcodeproj}\n"
+        "2. In Xcode's top toolbar, select the 'WebDriverAgentRunner' scheme "
+        "and select your connected iPhone/iPad as the target device.\n"
+        "3. In the Xcode menu bar, click Product -> Build For -> Testing "
+        "(Cmd+Shift+U) so Xcode registers this device and updates the build."
+      )
+    if (
+      "developer app certificate is not trusted" in combined_output
+      or "profile has not been explicitly trusted" in combined_output
+    ):
       self.stop()
       raise WDAError(
-          f"The Developer App Certificate is not trusted on device "
-          f"{self._platform.udid}. "
-          "Please open Settings -> General -> VPN & Device Management on the "
-          "device and trust your Developer App certificate. Note: The device "
-          "requires an internet connection (Wi-Fi or cellular) to verify the "
-          "certificate.")
+        f"The Developer App Certificate is not trusted on device "
+        f"{self._platform.udid}. "
+        "Please open Settings -> General -> VPN & Device Management on the "
+        "device and trust your Developer App certificate. Note: The device "
+        "requires an internet connection (Wi-Fi or cellular) to verify the "
+        "certificate."
+      )
     if "guided access active" in combined_output:
       self.stop()
       raise WDAError(
-          f"Guided Access is active on device {self._platform.udid}, which "
-          "prevents WebDriverAgentRunner from launching. Please end Guided "
-          "Access on the device (triple-click the side button, enter your "
-          "passcode, and tap 'End', or disable it under "
-          "Settings -> Accessibility -> Guided Access).")
+        f"Guided Access is active on device {self._platform.udid}, which "
+        "prevents WebDriverAgentRunner from launching. Please end Guided "
+        "Access on the device (triple-click the side button, enter your "
+        "passcode, and tap 'End', or disable it under "
+        "Settings -> Accessibility -> Guided Access)."
+      )
     if "agreed to the xcode license agreements" in combined_output:
       self.stop()
       raise WDAError(
-          "Xcode license agreements have not been accepted. "
-          "Please run 'sudo xcodebuild -license accept' in a Terminal.")
-    if ("developer mode is disabled" in combined_output or
-        "developer mode not enabled" in combined_output):
+        "Xcode license agreements have not been accepted. "
+        "Please run 'sudo xcodebuild -license accept' in a Terminal."
+      )
+    if (
+      "developer mode is disabled" in combined_output
+      or "developer mode not enabled" in combined_output
+    ):
       self.stop()
       raise WDAError(
-          f"Developer Mode is disabled on device {self._platform.udid}. "
-          "Please open Settings -> Privacy & Security -> Developer Mode on "
-          "the device to enable it.")
-    if ("device is locked" in combined_output or
-        "device was locked" in combined_output):
+        f"Developer Mode is disabled on device {self._platform.udid}. "
+        "Please open Settings -> Privacy & Security -> Developer Mode on "
+        "the device to enable it."
+      )
+    if (
+      "device is locked" in combined_output
+      or "device was locked" in combined_output
+    ):
       self.stop()
-      raise WDAError(f"Device {self._platform.udid} is locked. "
-                     "Please unlock the device.")
+      raise WDAError(
+        f"Device {self._platform.udid} is locked. Please unlock the device."
+      )
     if "password" in combined_output:
       self.stop()
       raise WDAError(
-          "xcodebuild is requesting authentication. "
-          "macOS Developer Mode may be disabled. "
-          "Please run 'sudo DevToolsSecurity -enable' in a Terminal.")
+        "xcodebuild is requesting authentication. "
+        "macOS Developer Mode may be disabled. "
+        "Please run 'sudo DevToolsSecurity -enable' in a Terminal."
+      )
 
   def _handle_runner_error(self, returncode: int, output: str) -> None:
     self.stop()
     self._check_runner_output_for_known_errors(output)
     output_summary = self._truncate_log(output)
     if output_summary:
-      raise WDAError(f"xcodebuild process terminated unexpectedly with code "
-                     f"{returncode}:\n{output_summary}")
+      raise WDAError(
+        f"xcodebuild process terminated unexpectedly with code "
+        f"{returncode}:\n{output_summary}"
+      )
     raise WDAError(
-        f"xcodebuild process terminated unexpectedly with code {returncode}.")
+      f"xcodebuild process terminated unexpectedly with code {returncode}."
+    )
 
   def _find_xctestrun(self) -> pth.AnyPath | None:
     """Find a WebDriverAgentRunner .xctestrun file on the host platform."""
@@ -354,15 +386,17 @@ class WDAClient:
       info_plist = xctestrun_path.parents[2] / "info.plist"
       if host.is_file(info_plist):
         try:
-          workspace = plistlib.loads(
-              host.cat_bytes(info_plist)).get("WorkspacePath")
+          workspace = plistlib.loads(host.cat_bytes(info_plist)).get(
+            "WorkspacePath"
+          )
           if workspace and host.exists(host.path(workspace)):
             return host.path(workspace)
         except (plistlib.InvalidFileException, OSError) as e:
           logging.warning("Could not read info.plist at %s: %s", info_plist, e)
     try:
       out = host.sh_stdout(
-          "mdfind", "kMDItemFSName == 'WebDriverAgent.xcodeproj'").strip()
+        "mdfind", "kMDItemFSName == 'WebDriverAgent.xcodeproj'"
+      ).strip()
       if out:
         return host.path(out.splitlines()[0])
     except (subprocess.SubprocessError, OSError) as e:
@@ -397,13 +431,15 @@ class WDAClient:
 
     try:
       resp = self._request(
-          "POST",
-          "/session", {
-              "capabilities": {
-                  "waitForIdleTimeout": 0,
-              },
+        "POST",
+        "/session",
+        {
+          "capabilities": {
+            "waitForIdleTimeout": 0,
           },
-          timeout=self.REQUEST_TIMEOUT)
+        },
+        timeout=self.REQUEST_TIMEOUT,
+      )
     except (WDAError, urllib.error.URLError, TimeoutError, OSError) as e:
       raise WDAError("Failed to create WebDriverAgent session") from e
     session_id = self._extract_session_id(resp)
@@ -416,15 +452,17 @@ class WDAClient:
   @staticmethod
   def _extract_session_id(resp: Mapping[str, object]) -> str | None:
     session_id = resp.get("sessionId")
-    assert session_id is None or isinstance(
-        session_id, str), f"Invalid WDA sessionId: {session_id!r}"
+    assert session_id is None or isinstance(session_id, str), (
+      f"Invalid WDA sessionId: {session_id!r}"
+    )
     if session_id:
       return session_id
     value = resp.get("value", {})
     assert isinstance(value, Mapping), f"Invalid WDA value: {value!r}"
     session_id = value.get("sessionId")
-    assert session_id is None or isinstance(
-        session_id, str), f"Invalid WDA sessionId: {session_id!r}"
+    assert session_id is None or isinstance(session_id, str), (
+      f"Invalid WDA sessionId: {session_id!r}"
+    )
     return session_id
 
   def set_settings(self, settings: JsonMapping) -> None:
@@ -434,15 +472,18 @@ class WDAClient:
   def _configure_session(self) -> None:
     """Disable quiescence, animation cooldown, and deep DOM snapshots."""
     try:
-      self.set_settings({
+      self.set_settings(
+        {
           "animationCoolOffTimeout": 0,
           "snapshotMaxChildren": 1,
           "snapshotMaxDepth": 1,
           "waitForIdleTimeout": 0,
-      })
+        }
+      )
     except (WDAError, urllib.error.URLError, TimeoutError, OSError) as e:
-      logging.warning("Failed to configure WDA session %s: %s",
-                      self._session_id, e)
+      logging.warning(
+        "Failed to configure WDA session %s: %s", self._session_id, e
+      )
 
   def window_size(self) -> DisplayResolution:
     """Return device window dimensions in points."""
@@ -467,10 +508,13 @@ class WDAClient:
   def webview_offset(self) -> tuple[int, int] | None:
     """Return the (x, y) screen offset in points of the active WebView."""
     try:
-      resp = self._session_post("element", {
+      resp = self._session_post(
+        "element",
+        {
           "using": "class name",
           "value": "XCUIElementTypeWebView",
-      })
+        },
+      )
       elem_id = self._extract_element_id(resp)
       if not elem_id:
         return None
@@ -479,8 +523,13 @@ class WDAClient:
       if isinstance(rect, dict) and "x" in rect and "y" in rect:
         coords = cast(dict[str, float], rect)
         return (int(coords["x"]), int(coords["y"]))
-    except (WDAError, urllib.error.URLError, TimeoutError, OSError,
-            ValueError) as e:
+    except (
+      WDAError,
+      urllib.error.URLError,
+      TimeoutError,
+      OSError,
+      ValueError,
+    ) as e:
       logging.debug("Could not query WebView offset from WDA: %s", e)
     return None
 
@@ -491,14 +540,19 @@ class WDAClient:
     value starts with `prefix`; callers should use a prefix unique to the
     page. None if there is no such element or the query fails.
     """
-    predicate = (f"label BEGINSWITH '{prefix}' OR "
-                 f"name BEGINSWITH '{prefix}' OR "
-                 f"value BEGINSWITH '{prefix}'")
+    predicate = (
+      f"label BEGINSWITH '{prefix}' OR "
+      f"name BEGINSWITH '{prefix}' OR "
+      f"value BEGINSWITH '{prefix}'"
+    )
     try:
-      resp = self._session_post("element", {
+      resp = self._session_post(
+        "element",
+        {
           "using": "predicate string",
           "value": predicate,
-      })
+        },
+      )
       elem_id = self._extract_element_id(resp)
       if not elem_id:
         return None
@@ -506,41 +560,42 @@ class WDAClient:
         attr_resp = self._session_get(f"element/{elem_id}/attribute/{attr}")
         val = attr_resp.get("value")
         if isinstance(val, str) and val.startswith(prefix):
-          return val[len(prefix):]
+          return val[len(prefix) :]
     except (WDAError, urllib.error.URLError, TimeoutError, OSError) as e:
       logging.debug("Could not read WDA element with prefix %s: %s", prefix, e)
     return None
 
   def drag(
-      self,
-      from_x: int,
-      from_y: int,
-      to_x: int,
-      to_y: int,
-      duration: dt.timedelta = dt.timedelta(milliseconds=400),
+    self,
+    from_x: int,
+    from_y: int,
+    to_x: int,
+    to_y: int,
+    duration: dt.timedelta = dt.timedelta(milliseconds=400),
   ) -> None:
     """Perform a coordinate-based drag/swipe gesture in points."""
     payload = {
-        "fromX": from_x,
-        "fromY": from_y,
-        "toX": to_x,
-        "toY": to_y,
-        "duration": duration.total_seconds(),
+      "fromX": from_x,
+      "fromY": from_y,
+      "toX": to_x,
+      "toY": to_y,
+      "duration": duration.total_seconds(),
     }
     self._session_post(
-        "wda/dragfromtoforduration",
-        payload,
-        timeout=self.REQUEST_TIMEOUT + duration)
+      "wda/dragfromtoforduration",
+      payload,
+      timeout=self.REQUEST_TIMEOUT + duration,
+    )
 
   def _build_swipe_actions(
-      self,
-      from_x: int,
-      from_y: int,
-      to_x: int,
-      to_y: int,
-      duration: dt.timedelta,
-      settle_duration: dt.timedelta,
-      start_delay_ms: int = 0,
+    self,
+    from_x: int,
+    from_y: int,
+    to_x: int,
+    to_y: int,
+    duration: dt.timedelta,
+    settle_duration: dt.timedelta,
+    start_delay_ms: int = 0,
   ) -> list[JsonDict]:
     duration_ms = max(50, int(duration.total_seconds() * 1000))
     settle_ms = max(0, int(settle_duration.total_seconds() * 1000))
@@ -549,23 +604,25 @@ class WDAClient:
     actions: list[JsonDict] = []
     if start_delay_ms > 0:
       actions.append({"type": "pause", "duration": start_delay_ms})
-    actions.extend([
+    actions.extend(
+      [
         {
-            "type": "pointerMove",
-            "duration": 0,
-            "x": from_x,
-            "y": from_y,
-            "origin": "viewport",
+          "type": "pointerMove",
+          "duration": 0,
+          "x": from_x,
+          "y": from_y,
+          "origin": "viewport",
         },
         {
-            "type": "pointerDown",
-            "button": 0,
+          "type": "pointerDown",
+          "button": 0,
         },
         {
-            "type": "pause",
-            "duration": 10,
+          "type": "pause",
+          "duration": 10,
         },
-    ])
+      ]
+    )
     # WDA's FBPointerPauseItem does not emit UITouchPhaseMoved events, leaving
     # UIScrollView with non-zero velocity at lift-up. Split the final points
     # into a slow pointerMove over settle_duration to decay pan velocity to 0.
@@ -573,122 +630,133 @@ class WDAClient:
       if abs(dy) >= abs(dx):
         settle_dx = 0
         settle_dy = (
-            self.SETTLE_MOVE_POINTS if dy > 0 else -self.SETTLE_MOVE_POINTS)
+          self.SETTLE_MOVE_POINTS if dy > 0 else -self.SETTLE_MOVE_POINTS
+        )
       else:
         settle_dx = (
-            self.SETTLE_MOVE_POINTS if dx > 0 else -self.SETTLE_MOVE_POINTS)
+          self.SETTLE_MOVE_POINTS if dx > 0 else -self.SETTLE_MOVE_POINTS
+        )
         settle_dy = 0
-      actions.extend([
+      actions.extend(
+        [
           {
-              "type": "pointerMove",
-              "duration": duration_ms,
-              "x": dx - settle_dx,
-              "y": dy - settle_dy,
-              "origin": "pointer",
+            "type": "pointerMove",
+            "duration": duration_ms,
+            "x": dx - settle_dx,
+            "y": dy - settle_dy,
+            "origin": "pointer",
           },
           {
-              "type": "pointerMove",
-              "duration": settle_ms - 10,
-              "x": settle_dx,
-              "y": settle_dy,
-              "origin": "pointer",
+            "type": "pointerMove",
+            "duration": settle_ms - 10,
+            "x": settle_dx,
+            "y": settle_dy,
+            "origin": "pointer",
           },
           {
-              "type": "pause",
-              "duration": 10,
+            "type": "pause",
+            "duration": 10,
           },
-      ])
+        ]
+      )
     else:
-      actions.append({
+      actions.append(
+        {
           "type": "pointerMove",
           "duration": duration_ms,
           "x": dx,
           "y": dy,
           "origin": "pointer",
-      })
+        }
+      )
       if settle_ms > 0:
-        actions.append({
+        actions.append(
+          {
             "type": "pause",
             "duration": settle_ms,
-        })
-    actions.append({
+          }
+        )
+    actions.append(
+      {
         "type": "pointerUp",
         "button": 0,
-    })
+      }
+    )
     return actions
 
   def swipe(
-      self,
-      from_x: int,
-      from_y: int,
-      to_x: int,
-      to_y: int,
-      duration: dt.timedelta = dt.timedelta(milliseconds=300),
-      settle_duration: dt.timedelta = dt.timedelta(),
-      lift_duration: dt.timedelta = dt.timedelta(),
-      count: int = 1,
+    self,
+    from_x: int,
+    from_y: int,
+    to_x: int,
+    to_y: int,
+    duration: dt.timedelta = dt.timedelta(milliseconds=300),
+    settle_duration: dt.timedelta = dt.timedelta(),
+    lift_duration: dt.timedelta = dt.timedelta(),
+    count: int = 1,
   ) -> None:
     """Perform one or more coordinate-based touch swipe gestures in points."""
     if count <= 0:
       return
     self.swipe_sequence(
-        [(from_x, from_y, to_x, to_y)] * count,
-        duration=duration,
-        settle_duration=settle_duration,
-        lift_duration=lift_duration,
+      [(from_x, from_y, to_x, to_y)] * count,
+      duration=duration,
+      settle_duration=settle_duration,
+      lift_duration=lift_duration,
     )
 
   def swipe_sequence(
-      self,
-      swipes: Sequence[tuple[int, int, int, int]],
-      duration: dt.timedelta = dt.timedelta(milliseconds=300),
-      settle_duration: dt.timedelta = dt.timedelta(),
-      lift_duration: dt.timedelta = dt.timedelta(),
+    self,
+    swipes: Sequence[tuple[int, int, int, int]],
+    duration: dt.timedelta = dt.timedelta(milliseconds=300),
+    settle_duration: dt.timedelta = dt.timedelta(),
+    lift_duration: dt.timedelta = dt.timedelta(),
   ) -> None:
     """Perform a sequence of touch swipes in a single W3C action batch."""
     if not swipes:
       return
     duration_ms = max(50, int(duration.total_seconds() * 1000))
     cycle_ms = (
-        duration_ms + max(0, int(settle_duration.total_seconds() * 1000)) +
-        max(0, int(lift_duration.total_seconds() * 1000)))
+      duration_ms
+      + max(0, int(settle_duration.total_seconds() * 1000))
+      + max(0, int(lift_duration.total_seconds() * 1000))
+    )
     pointer_chains: list[JsonDict] = []
     for i, (from_x, from_y, to_x, to_y) in enumerate(swipes):
-      pointer_chains.append({
-          "type":
-              "pointer",
-          "id":
-              f"finger{i + 1}",
+      pointer_chains.append(
+        {
+          "type": "pointer",
+          "id": f"finger{i + 1}",
           "parameters": {
-              "pointerType": "touch",
+            "pointerType": "touch",
           },
-          "actions":
-              self._build_swipe_actions(
-                  from_x,
-                  from_y,
-                  to_x,
-                  to_y,
-                  duration,
-                  settle_duration,
-                  start_delay_ms=i * cycle_ms,
-              ),
-      })
+          "actions": self._build_swipe_actions(
+            from_x,
+            from_y,
+            to_x,
+            to_y,
+            duration,
+            settle_duration,
+            start_delay_ms=i * cycle_ms,
+          ),
+        }
+      )
     total_duration = len(swipes) * (duration + settle_duration + lift_duration)
     self.perform_pointer_chains(pointer_chains, total_duration)
 
   def perform_pointer_chains(
-      self,
-      pointer_chains: Sequence[JsonMapping],
-      total_duration: dt.timedelta,
+    self,
+    pointer_chains: Sequence[JsonMapping],
+    total_duration: dt.timedelta,
   ) -> None:
     """Execute a batch of W3C pointer action chains in a single request."""
     if not pointer_chains:
       return
     try:
       self._session_post(
-          "actions",
-          {"actions": list(pointer_chains)},
-          timeout=self.REQUEST_TIMEOUT + total_duration,
+        "actions",
+        {"actions": list(pointer_chains)},
+        timeout=self.REQUEST_TIMEOUT + total_duration,
       )
     except BaseException:
       self.stop()
@@ -703,14 +771,14 @@ class WDAClient:
     try:
       with host_platform.NamedTemporaryFile(suffix=".json") as tmp_file:
         host_platform.sh_stdout(
-            "xcrun",
-            "devicectl",
-            "device",
-            "info",
-            "processes",
-            "--device",
-            self._platform.udid,
-            f"--json-output={tmp_file}",
+          "xcrun",
+          "devicectl",
+          "device",
+          "info",
+          "processes",
+          "--device",
+          self._platform.udid,
+          f"--json-output={tmp_file}",
         )
         data = json.loads(host_platform.read_text(tmp_file))
     except (subprocess.SubprocessError, OSError, ValueError) as e:
@@ -721,20 +789,21 @@ class WDAClient:
     for suffix in ("/WebDriverAgentRunner-Runner", "/testmanagerd"):
       for proc in processes:
         executable = str(proc.get("executable", ""))
-        if (pid :=
-            proc.get("processIdentifier")) and executable.endswith(suffix):
+        if (pid := proc.get("processIdentifier")) and executable.endswith(
+          suffix
+        ):
           try:
             host_platform.sh(
-                "xcrun",
-                "devicectl",
-                "device",
-                "process",
-                "terminate",
-                "--device",
-                self._platform.udid,
-                "--pid",
-                str(pid),
-                "--kill",
+              "xcrun",
+              "devicectl",
+              "device",
+              "process",
+              "terminate",
+              "--device",
+              self._platform.udid,
+              "--pid",
+              str(pid),
+              "--kill",
             )
           except (subprocess.SubprocessError, OSError) as e:
             logging.warning("Failed to terminate device process %s: %s", pid, e)
@@ -749,10 +818,10 @@ class WDAClient:
     self._session_post("wda/scroll", {"direction": direction})
 
   def launch_app(
-      self,
-      bundle_id: str,
-      arguments: Sequence[str] | None = None,
-      env_vars: Mapping[str, str] | None = None,
+    self,
+    bundle_id: str,
+    arguments: Sequence[str] | None = None,
+    env_vars: Mapping[str, str] | None = None,
   ) -> None:
     """Launch an application on the device by bundle identifier."""
     payload: JsonDict = {"bundleId": bundle_id}
@@ -775,10 +844,10 @@ class WDAClient:
       return
     try:
       self._request(
-          "POST",
-          f"/session/{self._session_id}/wda/apps/terminate",
-          {"bundleId": bundle_id},
-          timeout=dt.timedelta(seconds=5),
+        "POST",
+        f"/session/{self._session_id}/wda/apps/terminate",
+        {"bundleId": bundle_id},
+        timeout=dt.timedelta(seconds=5),
       )
     except (urllib.error.URLError, TimeoutError, OSError) as e:
       logging.warning("Failed to terminate app %s via WDA: %s", bundle_id, e)

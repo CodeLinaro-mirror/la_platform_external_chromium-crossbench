@@ -11,7 +11,6 @@ from tests import test_helper
 
 
 class MachineArchTestCase(unittest.TestCase):
-
   def test_is_arm(self):
     self.assertFalse(MachineArch.IA32.is_arm)
     self.assertFalse(MachineArch.X64.is_arm)

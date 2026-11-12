@@ -26,10 +26,13 @@ BANNER = r"""
 
 
 class Banner:
-
   @classmethod
-  def print(cls, subcommand: BenchmarkSubcommand, benchmark: Benchmark,
-            variants: Sequence[BrowserVariantConfig]) -> None:
+  def print(
+    cls,
+    subcommand: BenchmarkSubcommand,
+    benchmark: Benchmark,
+    variants: Sequence[BrowserVariantConfig],
+  ) -> None:
     version_str = cls._get_version_info()
     extra_info = cls.benchmark_banner_info(subcommand)
     browser_info = cls.browser_banner_info(variants)
@@ -76,14 +79,17 @@ class Banner:
     logging.info("🛠 v%s", version)
 
   @classmethod
-  def _print_banner_logo(cls,
-                         version: str,
-                         extra_info: str | None = None,
-                         browser_info: str | None = None) -> None:
+  def _print_banner_logo(
+    cls,
+    version: str,
+    extra_info: str | None = None,
+    browser_info: str | None = None,
+  ) -> None:
     formatted_banner = BANNER.format(
-        version=version,
-        extra_info=extra_info or "",
-        browser_info=browser_info or "")
+      version=version,
+      extra_info=extra_info or "",
+      browser_info=browser_info or "",
+    )
     lines = formatted_banner.strip("\n").split("\n")
 
     if not ui.COLOR_LOGGING:
@@ -113,14 +119,19 @@ class Banner:
   @classmethod
   def log_stories(cls, benchmark: Benchmark) -> None:
     substory_names = [
-        name for story in benchmark.stories for name in story.substories
+      name for story in benchmark.stories for name in story.substories
     ]
     stories_str = ", ".join(substory_names)
-    logging.info("📚 SELECTED %s STORIES AND %s SUBSTORIES: %s",
-                 len(benchmark.stories), len(substory_names), stories_str)
+    logging.info(
+      "📚 SELECTED %s STORIES AND %s SUBSTORIES: %s",
+      len(benchmark.stories),
+      len(substory_names),
+      stories_str,
+    )
 
   @classmethod
   def log_variants(cls, variants: Sequence[BrowserVariantConfig]) -> None:
     for variant in variants:
-      logging.info("🌐 SELECTED BROWSER: name=%s path='%s' ", variant.label,
-                   variant.path)
+      logging.info(
+        "🌐 SELECTED BROWSER: name=%s path='%s' ", variant.label, variant.path
+      )

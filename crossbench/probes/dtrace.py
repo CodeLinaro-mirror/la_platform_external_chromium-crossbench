@@ -8,8 +8,12 @@ import subprocess
 from typing import TYPE_CHECKING, ClassVar, Final, Self, TextIO, override
 
 from crossbench.parse import PathParser
-from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext, \
-    ProbeKeyT
+from crossbench.probes.probe import (
+  Probe,
+  ProbeConfigParser,
+  ProbeContext,
+  ProbeKeyT,
+)
 from crossbench.probes.probe_error import ProbeValidationError
 from crossbench.probes.result_location import ResultLocation
 
@@ -34,7 +38,8 @@ class DTraceProbe(Probe):
   def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     parser.add_default_argument(
-        "script_path", required=True, type=PathParser.non_empty_file_path)
+      "script_path", required=True, type=PathParser.non_empty_file_path
+    )
     return parser
 
   def __init__(self, script_path: pth.LocalPath) -> None:
@@ -70,18 +75,19 @@ class DTraceProbe(Probe):
     # Execute and check the returncode, while ignoring output.
     try:
       browser.platform.sh(
-          "sudo",
-          "-n",
-          "dtrace",
-          "-l",
-          "-P",
-          dtrace_probe_name,
-          stdout=subprocess.DEVNULL,
-          stderr=subprocess.STDOUT)
+        "sudo",
+        "-n",
+        "dtrace",
+        "-l",
+        "-P",
+        dtrace_probe_name,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.STDOUT,
+      )
     except subprocess.CalledProcessError as e:
       raise ProbeValidationError(
-          self, "Cannot execute 'sudo dtrace'. "
-          "This probe will fail to start.") from e
+        self, "Cannot execute 'sudo dtrace'. This probe will fail to start."
+      ) from e
 
   @override
   def get_context_cls(self) -> type[DTraceProbeContext]:
@@ -89,14 +95,15 @@ class DTraceProbe(Probe):
 
 
 class DTraceProbeContext(ProbeContext[DTraceProbe]):
-
   def __init__(self, probe: DTraceProbe, run: Run) -> None:
     super().__init__(probe, run)
     self._script_path: Final[pth.LocalPath] = probe.script_path
     self._output_path: Final[pth.LocalPath] = (
-        self.local_result_path.with_suffix(".output.txt"))
+      self.local_result_path.with_suffix(".output.txt")
+    )
     self._log_path: Final[pth.LocalPath] = self.local_result_path.with_suffix(
-        ".log")
+      ".log"
+    )
     self._dtrace_process: subprocess.Popen | None = None
     self._log_file: TextIO | None = None
 
@@ -105,19 +112,19 @@ class DTraceProbeContext(ProbeContext[DTraceProbe]):
     # TODO: copy over script to remote machine
     assert self.browser_platform.is_local, "Remote dtrace not supported yet"
     self._dtrace_process = self.browser_platform.popen(
-        "sudo",
-        "-n",
-        "dtrace",
-        "-p",
-        str(self.browser_pid),
-        "-o",
-        self._output_path,
-        "-s",
-        self._script_path,
-        stdout=self._log_file,
-        stderr=self._log_file,
+      "sudo",
+      "-n",
+      "dtrace",
+      "-p",
+      str(self.browser_pid),
+      "-o",
+      self._output_path,
+      "-s",
+      self._script_path,
+      stdout=self._log_file,
+      stderr=self._log_file,
     )
-    assert self._dtrace_process is not None, ("Could not start DTrace")
+    assert self._dtrace_process is not None, "Could not start DTrace"
 
   def stop(self) -> None:
     if not self._dtrace_process:
@@ -128,8 +135,10 @@ class DTraceProbeContext(ProbeContext[DTraceProbe]):
       # Print an error message if DTrace was already closed.
       if returncode == 0:
         raise RuntimeError("DTrace exited early without errors.")
-      raise RuntimeError(f"DTrace exited early with error {returncode}.\n"
-                         f"Check {self._log_path} for the program's log.")
+      raise RuntimeError(
+        f"DTrace exited early with error {returncode}.\n"
+        f"Check {self._log_path} for the program's log."
+      )
 
   def teardown(self) -> ProbeResult:
     self.stop_dtrace_process()
@@ -144,16 +153,19 @@ class DTraceProbeContext(ProbeContext[DTraceProbe]):
       # Wait for the process to terminate normally.
       returncode = self._dtrace_process.wait(timeout=5)
       if returncode != 0:
-        raise RuntimeError(f"DTrace exited with error {returncode}.\n"
-                           f"Check {self._log_path} for the program's log.")
+        raise RuntimeError(
+          f"DTrace exited with error {returncode}.\n"
+          f"Check {self._log_path} for the program's log."
+        )
     except subprocess.TimeoutExpired:
       # DTrace took too long to terminate. Send SIGKILL.
       # Note: Not using .kill() because the process was started with sudo so
       # it would raise an PermissionError exception.
       self.browser_platform.sh(
-          "sudo",
-          "-n",
-          "kill",
-          "-SIGKILL",
-          str(self._dtrace_process.pid),
-          check=True)
+        "sudo",
+        "-n",
+        "kill",
+        "-SIGKILL",
+        str(self._dtrace_process.pid),
+        check=True,
+      )

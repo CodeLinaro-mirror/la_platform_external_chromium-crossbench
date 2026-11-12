@@ -32,6 +32,7 @@ class JSProbe(JsonResultProbe):
   """
   Probe for extracting arbitrary metrics using custom javascript code.
   """
+
   NAME: ClassVar = "js"
 
   @classmethod
@@ -39,18 +40,23 @@ class JSProbe(JsonResultProbe):
   def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
-        "setup",
-        type=parse_javascript,
-        help=(
-            "Optional JavaScript code that is run immediately before a story. "
-            "This can be used for setting up some JS tracking code or patch "
-            "existing code for custom metric tracking."))
+      "setup",
+      type=parse_javascript,
+      help=(
+        "Optional JavaScript code that is run immediately before a story. "
+        "This can be used for setting up some JS tracking code or patch "
+        "existing code for custom metric tracking."
+      ),
+    )
     parser.add_default_argument(
-        "js",
-        type=parse_javascript,
-        help=("Required JavaScript code that is run immediately after "
-              "a story has finished. The code must return a JS object with "
-              "(nested) metric values (numbers)."))
+      "js",
+      type=parse_javascript,
+      help=(
+        "Required JavaScript code that is run immediately after "
+        "a story has finished. The code must return a JS object with "
+        "(nested) metric values (numbers)."
+      ),
+    )
     return parser
 
   def __init__(self, js: str | None, setup: str | None = None) -> None:
@@ -69,33 +75,38 @@ class JSProbe(JsonResultProbe):
   @property
   @override
   def key(self) -> ProbeKeyT:
-    return (*super().key, ("setup_js", self._setup_js), ("metric_js",
-                                                         self._metric_js))
+    return (
+      *super().key,
+      ("setup_js", self._setup_js),
+      ("metric_js", self._metric_js),
+    )
 
   def get_context_cls(self) -> type[JSProbeContext]:
     return JSProbeContext
 
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
     merged = MetricsMerger.merge_json_list(
-        repetition_group.results[self].json
-        for repetition_group in group.repetitions_groups)
+      repetition_group.results[self].json
+      for repetition_group in group.repetitions_groups
+    )
     return self.write_group_result(group, merged)
 
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
     return self.merge_browsers_json_list(group).merge(
-        self.merge_browsers_csv_list(group))
+      self.merge_browsers_csv_list(group)
+    )
 
 
 class JSProbeContext(JsonResultProbeContext[JSProbe]):
-
   def __init__(self, *args, **kwargs) -> None:
     super().__init__(*args, **kwargs)
     self._json_data: JsonDict = {}
 
   def _update_metrics(self, data: JsonDict) -> None:
     existing_metrics = {k: v for k, v in self._json_data.items() if k in data}
-    logging.debug("JSProbe: The following metrics will be overwritten: %s",
-                  existing_metrics)
+    logging.debug(
+      "JSProbe: The following metrics will be overwritten: %s", existing_metrics
+    )
     self._json_data.update(data)
 
   @override
@@ -105,13 +116,15 @@ class JSProbeContext(JsonResultProbeContext[JSProbe]):
       self._update_metrics(ObjectParser.non_empty_dict(data, "JS metric data"))
     return self._json_data
 
-  def invoke(self, info_stack: exception.TInfoStack, timeout: dt.timedelta,
-             **kwargs) -> None:
+  def invoke(
+    self, info_stack: exception.TInfoStack, timeout: dt.timedelta, **kwargs
+  ) -> None:
     del info_stack
     js = kwargs.pop("js")
     self.expect_no_extra_kwargs(kwargs)
     with self.run.actions(
-        f"Probe({self.probe.name}) invoke", measure=False) as actions:
+      f"Probe({self.probe.name}) invoke", measure=False
+    ) as actions:
       data = actions.js(js, timeout=timeout)
       self._update_metrics(ObjectParser.non_empty_dict(data, "JS metric data"))
 

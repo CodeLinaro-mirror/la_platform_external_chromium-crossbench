@@ -13,7 +13,6 @@ from crossbench.parse import NumberParser
 
 
 class TabController(ConfigObject):
-
   @classmethod
   @override
   def parse_str(cls, value: str) -> TabController:
@@ -95,6 +94,7 @@ class RepeatTabController(TabController):
   Example 2: if urls='amazon,cnn', count=3, it will open 6 tabs:
   amazon,cnn,amazon,cnn,amazon,cnn
   """
+
   count: int
 
   def __iter__(self) -> Iterator[None]:

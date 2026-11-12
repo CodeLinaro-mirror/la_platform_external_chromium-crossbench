@@ -10,7 +10,6 @@ from tests import test_helper
 
 
 class MockStory(Story):
-
   @classmethod
   def all_story_names(cls) -> tuple[str, ...]:
     return ("valid1", "valid2")
@@ -20,7 +19,6 @@ class MockStory(Story):
 
 
 class StoryTestCase(unittest.TestCase):
-
   def test_valid_names(self):
     story = MockStory("valid-name")
     self.assertEqual(story.name, "valid-name")

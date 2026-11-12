@@ -13,14 +13,16 @@ from crossbench.pinpoint.helper import annotate
 from crossbench.pinpoint.job_info import UrlSource
 
 if TYPE_CHECKING:
-  from crossbench.pinpoint.config import PinpointBisectJobConfig, \
-      PinpointTryJobConfig
+  from crossbench.pinpoint.config import (
+    PinpointBisectJobConfig,
+    PinpointTryJobConfig,
+  )
   from crossbench.types import JsonDict
 
 
 def _print_started_job(
-    data: JsonDict,
-    url_source: UrlSource = UrlSource.LESZEK_PERF,
+  data: JsonDict,
+  url_source: UrlSource = UrlSource.LESZEK_PERF,
 ) -> None:
   if job_id := data.get("jobId"):
     data = dict(data)
@@ -29,24 +31,26 @@ def _print_started_job(
 
 
 def start_job(
-    config: PinpointTryJobConfig,
-    url_source: UrlSource = UrlSource.LESZEK_PERF,
+  config: PinpointTryJobConfig,
+  url_source: UrlSource = UrlSource.LESZEK_PERF,
 ) -> None:
   """Starts a new Pinpoint job."""
   with annotate("Starting Pinpoint job"):
     response = http_requests.post(
-        PINPOINT_START_JOB_API_URL, data=config.to_request_dict())
+      PINPOINT_START_JOB_API_URL, data=config.to_request_dict()
+    )
     response.raise_for_status()
   _print_started_job(response.json(), url_source=url_source)
 
 
 def bisect_job(
-    config: PinpointBisectJobConfig,
-    url_source: UrlSource = UrlSource.LESZEK_PERF,
+  config: PinpointBisectJobConfig,
+  url_source: UrlSource = UrlSource.LESZEK_PERF,
 ) -> None:
   """Starts a new Pinpoint bisect job."""
   with annotate("Starting Pinpoint bisect job"):
     response = http_requests.post(
-        PINPOINT_START_JOB_API_URL, data=config.to_request_dict())
+      PINPOINT_START_JOB_API_URL, data=config.to_request_dict()
+    )
     response.raise_for_status()
   _print_started_job(response.json(), url_source=url_source)

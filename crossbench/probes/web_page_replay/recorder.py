@@ -6,16 +6,27 @@ from __future__ import annotations
 
 import logging
 import shutil
-from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Self, TypedDict, \
-    override
+from typing import (
+  TYPE_CHECKING,
+  ClassVar,
+  Final,
+  Iterable,
+  Self,
+  TypedDict,
+  override,
+)
 
 from crossbench.helper import fs_helper
 from crossbench.helper.path_finder import WprGoFinder
 from crossbench.network.replay.web_page_replay import WprRecorder
 from crossbench.parse import NumberParser, ObjectParser, PathParser
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
-from crossbench.probes.results import EmptyProbeResult, LocalProbeResult, \
-    ProbeResult, ProbeResultDict
+from crossbench.probes.results import (
+  EmptyProbeResult,
+  LocalProbeResult,
+  ProbeResult,
+  ProbeResultDict,
+)
 
 if TYPE_CHECKING:
   from crossbench import path as pth
@@ -52,53 +63,56 @@ class WebPageReplayProbe(Probe):
   def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
-        "http_port",
-        type=NumberParser.port_number,
-        default=8080,
-        required=False)
+      "http_port", type=NumberParser.port_number, default=8080, required=False
+    )
     parser.add_argument(
-        "https_port",
-        type=NumberParser.port_number,
-        default=8081,
-        required=False)
+      "https_port", type=NumberParser.port_number, default=8081, required=False
+    )
     parser.add_argument(
-        "key_file", type=PathParser.existing_file_path, required=False)
+      "key_file", type=PathParser.existing_file_path, required=False
+    )
     parser.add_argument(
-        "cert_file", type=PathParser.existing_file_path, required=False)
+      "cert_file", type=PathParser.existing_file_path, required=False
+    )
     parser.add_argument(
-        "inject_scripts",
-        is_list=True,
-        type=PathParser.existing_file_path,
-        required=False)
+      "inject_scripts",
+      is_list=True,
+      type=PathParser.existing_file_path,
+      required=False,
+    )
     parser.add_argument(
-        "use_test_root_certificate",
-        type=ObjectParser.bool,
-        default=False,
-        required=False)
+      "use_test_root_certificate",
+      type=ObjectParser.bool,
+      default=False,
+      required=False,
+    )
     parser.add_argument(
-        "record_setup",
-        type=ObjectParser.bool,
-        default=True,
-        help="Also include the requests that are part of "
-        "the setup / login steps, "
-        "which might include passwords.")
+      "record_setup",
+      type=ObjectParser.bool,
+      default=True,
+      help="Also include the requests that are part of "
+      "the setup / login steps, "
+      "which might include passwords.",
+    )
     return parser
 
-  def __init__(self,
-               http_port: int = 0,
-               https_port: int = 0,
-               inject_scripts: Iterable[pth.LocalPath] | None = None,
-               key_file: pth.LocalPath | None = None,
-               cert_file: pth.LocalPath | None = None,
-               use_test_root_certificate: bool = False,
-               record_setup: bool = True) -> None:
+  def __init__(
+    self,
+    http_port: int = 0,
+    https_port: int = 0,
+    inject_scripts: Iterable[pth.LocalPath] | None = None,
+    key_file: pth.LocalPath | None = None,
+    cert_file: pth.LocalPath | None = None,
+    use_test_root_certificate: bool = False,
+    record_setup: bool = True,
+  ) -> None:
     super().__init__()
     self._recorder_kwargs: Final[WprRecorderKwargs] = {
-        "http_port": http_port,
-        "https_port": https_port,
-        "inject_scripts": inject_scripts,
-        "key_file": key_file,
-        "cert_file": cert_file,
+      "http_port": http_port,
+      "https_port": https_port,
+      "inject_scripts": inject_scripts,
+      "key_file": key_file,
+      "cert_file": cert_file,
     }
 
     self._https_port: Final[int] = https_port
@@ -146,7 +160,7 @@ class WebPageReplayProbe(Probe):
   @override
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
     results = [
-        subgroup.results[self].file for subgroup in group.repetitions_groups
+      subgroup.results[self].file for subgroup in group.repetitions_groups
     ]
     return self.merge_group(results, group)
 
@@ -155,8 +169,9 @@ class WebPageReplayProbe(Probe):
     results = [subgroup.results[self].file for subgroup in group.story_groups]
     return self.merge_group(results, group)
 
-  def merge_group(self, results: list[pth.LocalPath],
-                  group: RunGroup) -> ProbeResult:
+  def merge_group(
+    self, results: list[pth.LocalPath], group: RunGroup
+  ) -> ProbeResult:
     result_file = group.get_local_probe_result_path(self)
     if not results:
       return EmptyProbeResult()
@@ -167,14 +182,15 @@ class WebPageReplayProbe(Probe):
       self.httparchive_merge(repetition_file, result_file)
     return LocalProbeResult(file=[result_file])
 
-  def httparchive_merge(self, input_archive: pth.LocalPath,
-                        output_archive: pth.LocalPath) -> None:
+  def httparchive_merge(
+    self, input_archive: pth.LocalPath, output_archive: pth.LocalPath
+  ) -> None:
     self.host_platform.sh(
-        WprGoFinder(self.host_platform).httparchive(),
-        "merge",
-        output_archive,
-        input_archive,
-        output_archive,
+      WprGoFinder(self.host_platform).httparchive(),
+      "merge",
+      output_archive,
+      input_archive,
+      output_archive,
     )
 
   @override
@@ -191,23 +207,24 @@ class WebPageReplayProbe(Probe):
     wpr_archive: pth.LocalPath = result_dict[self].file
     logging.info("-" * 80)
     logging.critical("WPR archive:")
-    logging.critical("  %s [%s]", wpr_archive,
-                     fs_helper.get_file_size(wpr_archive))
+    logging.critical(
+      "  %s [%s]", wpr_archive, fs_helper.get_file_size(wpr_archive)
+    )
 
 
 class WprRecorderProbeContext(ProbeContext[WebPageReplayProbe]):
-
   def __init__(self, probe: WebPageReplayProbe, run: Run) -> None:
     super().__init__(probe, run)
     self._wprgo_log: Final[pth.LocalPath] = self.local_result_path.with_name(
-        "wpr_record.log")
+      "wpr_record.log"
+    )
     self._host: Final[str] = "127.0.0.1"
     self._recorder: Final[WprRecorder] = WprRecorder(
-        platform=run.host_platform,
-        log_path=self._wprgo_log,
-        archive_path=self.result_path,
-        bin_path=WprGoFinder(run.host_platform).wpr(run.host_platform),
-        **self.probe.recorder_kwargs,
+      platform=run.host_platform,
+      log_path=self._wprgo_log,
+      archive_path=self.result_path,
+      bin_path=WprGoFinder(run.host_platform).wpr(run.host_platform),
+      **self.probe.recorder_kwargs,
     )
     self._browser_platform: Final[Platform] = run.browser_platform
     self._ports: PortScope = run.host_platform.ports
@@ -223,18 +240,21 @@ class WprRecorderProbeContext(ProbeContext[WebPageReplayProbe]):
       cert_hash_file = self._recorder.cert_file.parent / "wpr_public_hash.txt"
       if not cert_hash_file.is_file():
         raise ValueError(
-            f"Could not read public key hash file: {cert_hash_file}")
+          f"Could not read public key hash file: {cert_hash_file}"
+        )
       cert_skip_list = ",".join(cert_hash_file.read_text().strip().splitlines())
-      self.session.extra_flags[
-          "--ignore-certificate-errors-spki-list"] = cert_skip_list
+      self.session.extra_flags["--ignore-certificate-errors-spki-list"] = (
+        cert_skip_list
+      )
     # TODO: support ts_proxy traffic shaping
     # session.extra_flags["--proxy-server"] =  (
     #   "socks://{self._ts_proxy_host}:{self._ts_proxy_port}")
     # session.extra_flags["--proxy-bypass-list"] = "<-loopback>"
     self.session.extra_flags["--host-resolver-rules"] = (
-        f"MAP *:80 {self._host}:{self._recorder.http_port},"
-        f"MAP *:443 {self._host}:{self._recorder.https_port},"
-        "EXCLUDE localhost")
+      f"MAP *:80 {self._host}:{self._recorder.http_port},"
+      f"MAP *:443 {self._host}:{self._recorder.https_port},"
+      "EXCLUDE localhost"
+    )
     # TODO: add replay support, see:
     # https://crsrc.org/c/third_party/catapult/telemetry/telemetry/internal/backends/chrome/chrome_startup_args.py
 
@@ -243,10 +263,12 @@ class WprRecorderProbeContext(ProbeContext[WebPageReplayProbe]):
       # TODO: Fix run.setup and teardown layering so they they're called with
       # the same active port scope.
       self._ports = self._browser_platform.ports
-      self._ports.reverse_forward(self._recorder.http_port,
-                                  self._recorder.http_port)
-      self._ports.reverse_forward(self._recorder.https_port,
-                                  self._recorder.https_port)
+      self._ports.reverse_forward(
+        self._recorder.http_port, self._recorder.http_port
+      )
+      self._ports.reverse_forward(
+        self._recorder.https_port, self._recorder.https_port
+      )
 
   def start(self) -> None:
     if not self.probe.record_setup:

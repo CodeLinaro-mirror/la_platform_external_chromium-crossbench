@@ -47,6 +47,7 @@ class Build:
     date: The date and time when the build was created in format
       "%Y-%m-%d %H:%M:%S".
   """
+
   commit: str
   number: int
   date: str
@@ -61,7 +62,8 @@ def list_builds(bot: str, limit: int) -> None:
 def fetch_builds(bot: str) -> list[Build]:
   if not bot:
     raise ValueError(
-        "Bot is required. Run 'cb pp bots' to list all available bots.")
+      "Bot is required. Run 'cb pp bots' to list all available bots."
+    )
   url = PINPOINT_BUILDS_API_URL_TEMPLATE.format(bot=bot)
 
   with annotate(f"Fetching recent builds for '{bot}'"):
@@ -74,7 +76,8 @@ def fetch_builds(bot: str) -> list[Build]:
         available_bots = fetch_bots()
         msg, _ = close_matches_message(bot, available_bots, "bot")
         raise ValueError(
-            f"{msg}\nRun 'cb pp bots' to list all available bots.") from e
+          f"{msg}\nRun 'cb pp bots' to list all available bots."
+        ) from e
       raise
 
 
@@ -94,7 +97,8 @@ def _convert_json_to_builds(builds_json: BuildsResponseJson) -> list[Build]:
       continue
     try:
       datetime_obj = datetime.datetime.fromisoformat(
-          end_time.replace("Z", "+00:00"))
+        end_time.replace("Z", "+00:00")
+      )
       date = datetime_obj.strftime(DATETIME_FORMAT)
     except ValueError:
       logging.warning("Invalid date format: %s", end_time)
@@ -108,9 +112,12 @@ def _convert_json_to_builds(builds_json: BuildsResponseJson) -> list[Build]:
 
 def _display_builds(builds: list[Build]) -> None:
   headers = ["Commit", "Number", "Date"]
-  table_data: TableData = [[
+  table_data: TableData = [
+    [
       build.commit,
       str(build.number),
       format_time(build.date),
-  ] for build in builds]
+    ]
+    for build in builds
+  ]
   print(tabulate(table_data, headers=headers, numalign="left"))

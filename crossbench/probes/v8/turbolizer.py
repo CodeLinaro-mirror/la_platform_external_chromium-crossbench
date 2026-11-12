@@ -10,8 +10,11 @@ from crossbench.helper import fs_helper
 from crossbench.probes.chromium_probe import ChromiumProbe
 from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.result_location import ResultLocation
-from crossbench.probes.results import BrowserProbeResult, LocalProbeResult, \
-    ProbeResult
+from crossbench.probes.results import (
+  BrowserProbeResult,
+  LocalProbeResult,
+  ProbeResult,
+)
 
 if TYPE_CHECKING:
   from crossbench import path as pth
@@ -24,6 +27,7 @@ class V8TurbolizerProbe(ChromiumProbe):
   Note: This probe can have significant overhead.
   Tool: https://v8.dev/tools/head/turbolizer
   """
+
   NAME: ClassVar = "v8.turbolizer"
   RESULT_LOCATION = ResultLocation.BROWSER
 
@@ -39,7 +43,6 @@ class V8TurbolizerProbe(ChromiumProbe):
 
 
 class V8TurbolizerProbeContext(ProbeContext[V8TurbolizerProbe]):
-
   @property
   def results_dir(self) -> pth.AnyPath:
     # Put v8.turbolizer files into separate dirs in case we have

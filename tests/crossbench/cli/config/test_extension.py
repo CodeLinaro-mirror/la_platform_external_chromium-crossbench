@@ -14,7 +14,6 @@ from tests.crossbench.cli.config.base import BaseConfigTestCase
 
 
 class ExtensionConfigTestCase(BaseConfigTestCase):
-
   def test_crx(self):
     crx_file = pathlib.Path("/extension.crx")
     with self.assertRaisesRegex(argparse.ArgumentTypeError, "extension.crx"):
@@ -112,9 +111,10 @@ class ExtensionConfigTestCase(BaseConfigTestCase):
 
     tmp_dir = pathlib.Path("/tmp")
 
-    with unittest.mock.patch("crossbench.helper.url_helper.get") as mock_get, \
-         unittest.mock.patch("zipfile.ZipFile") as mock_zip:
-
+    with (
+      unittest.mock.patch("crossbench.helper.url_helper.get") as mock_get,
+      unittest.mock.patch("zipfile.ZipFile") as mock_zip,
+    ):
       mock_response = unittest.mock.MagicMock()
       mock_response.content = b"fake crx content"
       mock_get.return_value = mock_response
@@ -134,8 +134,8 @@ class ExtensionConfigTestCase(BaseConfigTestCase):
       ExtensionConfig(crx=None, id=None, unpacked=None).validate()
     with self.assertRaisesRegex(ValueError, "crx, id, unpacked"):
       ExtensionConfig(
-          crx=pathlib.Path("foo.crx"),
-          id="abcdefghijklmnopabcdefghijklmnop").validate()
+        crx=pathlib.Path("foo.crx"), id="abcdefghijklmnopabcdefghijklmnop"
+      ).validate()
 
   def test_get_unpacked_id_cached(self):
     config = ExtensionConfig.parse("abcdefghijklmnopabcdefghijklmnop")
@@ -157,13 +157,15 @@ class ExtensionConfigTestCase(BaseConfigTestCase):
 
   def test_get_unpacked_unsupported(self):
     config = ExtensionConfig(
-        crx=None, id="abcdefghijklmnopabcdefghijklmnop", unpacked=None)
+      crx=None, id="abcdefghijklmnopabcdefghijklmnop", unpacked=None
+    )
     object.__setattr__(config, "id", None)
     mock_platform = unittest.mock.MagicMock()
     tmp_dir = pathlib.Path("/tmp")
 
-    with self.assertRaisesRegex(RuntimeError,
-                                "Unsupported ExtensionConfig type"):
+    with self.assertRaisesRegex(
+      RuntimeError, "Unsupported ExtensionConfig type"
+    ):
       config.get_unpacked("1.0", tmp_dir, mock_platform)
 
 

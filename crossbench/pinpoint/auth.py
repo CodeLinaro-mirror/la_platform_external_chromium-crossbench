@@ -14,8 +14,10 @@ from google.oauth2 import credentials as oauth2_credentials
 
 from crossbench import plt
 from crossbench.cli.ui import ui
-from crossbench.pinpoint.exceptions import AuthenticationError, \
-    GCloudNotInstalledError
+from crossbench.pinpoint.exceptions import (
+  AuthenticationError,
+  GCloudNotInstalledError,
+)
 from crossbench.pinpoint.helper import annotate
 from crossbench.plt.bin import Binaries
 
@@ -37,24 +39,33 @@ def _get_luci_auth_session() -> auth_requests.AuthorizedSession | None:
 def _get_gcloud_auth_session() -> auth_requests.AuthorizedSession:
   if not (gcloud_bin := Binaries.GCLOUD.search(plt.PLATFORM)):
     raise GCloudNotInstalledError(
-        "gcloud not found. Please install the Google Cloud SDK: "
-        "https://docs.cloud.google.com/sdk/docs/install-sdk")
+      "gcloud not found. Please install the Google Cloud SDK: "
+      "https://docs.cloud.google.com/sdk/docs/install-sdk"
+    )
   try:
     # TODO(b/455510346): Make sure it supports @chromium.org accounts.
     credentials, _ = google_auth.default(
-        scopes=["https://www.googleapis.com/auth/userinfo.email"])
+      scopes=["https://www.googleapis.com/auth/userinfo.email"]
+    )
   except (
-      google_auth.exceptions.DefaultCredentialsError,
-      google_auth.exceptions.RefreshError,
+    google_auth.exceptions.DefaultCredentialsError,
+    google_auth.exceptions.RefreshError,
   ) as e:
-    user_input = ui.prompt(
+    user_input = (
+      ui.prompt(
         "Authentication failed. "
         "Please run 'gcloud auth application-default login' "
         "to configure your credentials.\n"
-        "Would you like to run it now?", "[Y/n] ").lower().strip()
+        "Would you like to run it now?",
+        "[Y/n] ",
+      )
+      .lower()
+      .strip()
+    )
     if user_input in ("", "y", "yes"):
       plt.PLATFORM.sh(
-          gcloud_bin, "auth", "application-default", "login", check=True)
+        gcloud_bin, "auth", "application-default", "login", check=True
+      )
       return _get_gcloud_auth_session()
     raise AuthenticationError from e
   return auth_requests.AuthorizedSession(credentials)

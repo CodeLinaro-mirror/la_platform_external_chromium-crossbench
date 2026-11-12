@@ -22,7 +22,7 @@ if TYPE_CHECKING:
   from crossbench.uploader.base import BaseUploader
 
 _SCHEME_TO_UPLOADER: dict[str, type[BaseUploader]] = {
-    "gs": GoogleCloudStorageUploader,
+  "gs": GoogleCloudStorageUploader,
 }
 
 
@@ -33,16 +33,19 @@ def result_dir(value: pth.LocalPathLike) -> pth.LocalPath:
     path = path.resolve()
   except (RuntimeError, OSError) as e:
     raise argparse.ArgumentTypeError(
-        f"Failed to resolve path {str(path)!r}: {e}") from e
+      f"Failed to resolve path {str(path)!r}: {e}"
+    ) from e
   if not path.exists():
     raise argparse.ArgumentTypeError(f"Path does not exist: {str(path)!r}")
   if not path.is_dir():
     raise argparse.ArgumentTypeError(
-        f"Result path must be a directory, not a file: {str(path)!r}")
+      f"Result path must be a directory, not a file: {str(path)!r}"
+    )
   if not _is_result_dir(path):
     raise argparse.ArgumentTypeError(
-        f"Path is not a valid Crossbench result directory: {str(path)!r} "
-        f"(missing {ResultsSummaryProbe.FILE_NAME!r}).")
+      f"Path is not a valid Crossbench result directory: {str(path)!r} "
+      f"(missing {ResultsSummaryProbe.FILE_NAME!r})."
+    )
   return path
 
 
@@ -76,10 +79,12 @@ def target_url(url: str) -> str:
     url = os.environ.get("CROSSBENCH_RESULT_UPLOAD_TARGET", "")
     if not url:
       raise argparse.ArgumentTypeError(
-          "Target upload URL not specified, and "
-          "CROSSBENCH_RESULT_UPLOAD_TARGET environment variable is not set.")
+        "Target upload URL not specified, and "
+        "CROSSBENCH_RESULT_UPLOAD_TARGET environment variable is not set."
+      )
   return ObjectParser.url_str(
-      url, name="results upload URL", schemes=tuple(_SCHEME_TO_UPLOADER.keys()))
+    url, name="results upload URL", schemes=tuple(_SCHEME_TO_UPLOADER.keys())
+  )
 
 
 def _is_result_dir(path: pth.LocalPath) -> bool:
@@ -100,20 +105,23 @@ def _uploader_for_url(url: str) -> BaseUploader:
   raise ValueError(f"Unsupported upload URL scheme: {url!r}")
 
 
-def _create_archive(source_dir: pth.LocalPath,
-                    dest_dir: pth.LocalPath) -> pth.LocalPath:
+def _create_archive(
+  source_dir: pth.LocalPath, dest_dir: pth.LocalPath
+) -> pth.LocalPath:
   """Creates a compressed tarball of source_dir in dest_dir."""
   archive_id = str(uuid.uuid4())
   archive_path = dest_dir / f"{archive_id}.tar.gz"
   tar_filter = functools.partial(
-      _filter_tarinfo, source_dir=source_dir, archive_id=archive_id)
+    _filter_tarinfo, source_dir=source_dir, archive_id=archive_id
+  )
   with tarfile.open(archive_path, "w:gz") as tar:
     tar.add(source_dir, arcname=archive_id, filter=tar_filter)
   return archive_path
 
 
-def _filter_tarinfo(tarinfo: tarfile.TarInfo, source_dir: pth.LocalPath,
-                    archive_id: str) -> tarfile.TarInfo:
+def _filter_tarinfo(
+  tarinfo: tarfile.TarInfo, source_dir: pth.LocalPath, archive_id: str
+) -> tarfile.TarInfo:
   """Rewrites internal absolute symlinks into relative paths for portability."""
   if tarinfo.issym() or tarinfo.islnk():
     relative_name = pth.LocalPath(tarinfo.name).relative_to(archive_id)

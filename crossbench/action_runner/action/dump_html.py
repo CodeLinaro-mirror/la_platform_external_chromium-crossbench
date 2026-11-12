@@ -32,10 +32,12 @@ class DumpHtmlAction(BaseProbeAction):
 
   @classmethod
   @override
-  def create(cls: type[Self],
-             suffix: str | None = None,
-             timeout: dt.timedelta = ACTION_TIMEOUT,
-             index: int = 0) -> Self:
+  def create(
+    cls: type[Self],
+    suffix: str | None = None,
+    timeout: dt.timedelta = ACTION_TIMEOUT,
+    index: int = 0,
+  ) -> Self:
     if suffix:
       kwargs: immutabledict[str, str] = immutabledict({"suffix": suffix})
     else:

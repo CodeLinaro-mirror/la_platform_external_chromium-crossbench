@@ -24,17 +24,17 @@ class WarnLevel(enum.IntEnum):
 
 
 WARN_COLORS_LOOKUP: Final = {
-    WarnLevel.FATAL: "❌",
-    WarnLevel.ERROR: "❗",
-    WarnLevel.WARNING: "🔶",
-    WarnLevel.INFO: "🔵",
+  WarnLevel.FATAL: "❌",
+  WarnLevel.ERROR: "❗",
+  WarnLevel.WARNING: "🔶",
+  WarnLevel.INFO: "🔵",
 }
 
 LOG_LEVEL_LOOKUP: Final = {
-    WarnLevel.FATAL: logging.FATAL,
-    WarnLevel.ERROR: logging.ERROR,
-    WarnLevel.WARNING: logging.WARNING,
-    WarnLevel.INFO: logging.INFO,
+  WarnLevel.FATAL: logging.FATAL,
+  WarnLevel.ERROR: logging.ERROR,
+  WarnLevel.WARNING: logging.WARNING,
+  WarnLevel.INFO: logging.INFO,
 }
 
 
@@ -63,15 +63,20 @@ class RunAnnotation:
     return {"message": self.message, "level": self.level.name}
 
   def log(self) -> None:
-    logging.log(LOG_LEVEL_LOOKUP[self.level], "%s: %s",
-                WARN_COLORS_LOOKUP[self.level], self.message)
+    logging.log(
+      LOG_LEVEL_LOOKUP[self.level],
+      "%s: %s",
+      WARN_COLORS_LOOKUP[self.level],
+      self.message,
+    )
 
   @classmethod
-  def log_all(cls,
-              annotations: Iterable[RunAnnotation],
-              limit: int = 2) -> None:
+  def log_all(
+    cls, annotations: Iterable[RunAnnotation], limit: int = 2
+  ) -> None:
     groups: dict[WarnLevel, list[RunAnnotation]] = collection_helper.group_by(
-        annotations, key=lambda annotation: annotation.level)
+      annotations, key=lambda annotation: annotation.level
+    )
     if not groups:
       return
     logging.info("RUN ANNOTATIONS:")

@@ -12,10 +12,10 @@ from tests.crossbench.base import CrossbenchFakeFsTestCase
 
 
 class TestExampleCUJConfig(CrossbenchFakeFsTestCase):
-
   def test_parse_embedder_cuj_config_file(self):
     example_config_file = (
-        test_helper.config_dir() / "team/woa/embedder_cuj_config.hjson")
+      test_helper.config_dir() / "team/woa/embedder_cuj_config.hjson"
+    )
     self.fs.add_real_file(example_config_file)
     file_config = CUJsConfig.parse(example_config_file)
     with example_config_file.open(encoding="utf-8") as f:
@@ -29,7 +29,8 @@ class TestExampleCUJConfig(CrossbenchFakeFsTestCase):
 
   def test_parse_notification_cuj_config_file(self):
     example_config_file = (
-        test_helper.config_dir() / "team/woa/notification_cuj_config.hjson")
+      test_helper.config_dir() / "team/woa/notification_cuj_config.hjson"
+    )
     self.fs.add_real_file(example_config_file)
     file_config = CUJsConfig.parse(example_config_file)
     with example_config_file.open(encoding="utf-8") as f:

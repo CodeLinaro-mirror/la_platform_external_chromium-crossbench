@@ -49,19 +49,30 @@ class ViewportInfo:
       +-------------------------------------------------------------------+
   """
 
-  def __init__(self, device_pixel_ratio: float, window_outer_width: int,
-               window_outer_height: int, window_inner_width: float,
-               window_inner_height: float, screen_width: int,
-               screen_height: int, screen_avail_width: int,
-               screen_avail_height: int, window_offset_x: int,
-               window_offset_y: int,
-               element_rect: DisplayRectangle | None) -> None:
+  def __init__(
+    self,
+    device_pixel_ratio: float,
+    window_outer_width: int,
+    window_outer_height: int,
+    window_inner_width: float,
+    window_inner_height: float,
+    screen_width: int,
+    screen_height: int,
+    screen_avail_width: int,
+    screen_avail_height: int,
+    window_offset_x: int,
+    window_offset_y: int,
+    element_rect: DisplayRectangle | None,
+  ) -> None:
     # When page zoom or mobile viewport scaling is active, the ratio between
     # the outer window width (in DIPs) and the inner webview width (in CSS px)
     # reflects the scaling factor between DIPs and CSS pixels:
     #   zoom_ratio = window_outer_width (DIP) / window_inner_width (CSS px)
-    zoom_ratio = ((window_outer_width / window_inner_width)
-                  if window_inner_width and window_outer_width else 1.0)
+    zoom_ratio = (
+      (window_outer_width / window_inner_width)
+      if window_inner_width and window_outer_width
+      else 1.0
+    )
 
     if zoom_ratio < 1.0:
       # On mobile viewports (e.g. Android Clank when a page is zoomed out to fit
@@ -75,7 +86,8 @@ class ViewportInfo:
       # window.devicePixelRatio already includes the zoom factor (pixels per CSS
       # pixel), so divide by zoom_ratio to recover display density (pixels/DIP).
       screen_dpr = (
-          device_pixel_ratio / zoom_ratio if zoom_ratio else device_pixel_ratio)
+        device_pixel_ratio / zoom_ratio if zoom_ratio else device_pixel_ratio
+      )
       self._actual_pixel_ratio = device_pixel_ratio
 
     # Calculate native display resolution in physical pixels from DIPs.
@@ -92,8 +104,9 @@ class ViewportInfo:
 
     # Inner webview content area in physical pixels (scaled from CSS pixels).
     window_inner_width_px = round(window_inner_width * self._actual_pixel_ratio)
-    window_inner_height_px = round(window_inner_height *
-                                   self._actual_pixel_ratio)
+    window_inner_height_px = round(
+      window_inner_height * self._actual_pixel_ratio
+    )
 
     # Top-left origin of the window on the physical display (scaled from DIPs).
     window_offset_x_px = round(window_offset_x * screen_dpr)
@@ -103,7 +116,8 @@ class ViewportInfo:
     # Distribute the excess width equally between left and right borders.
     if window_outer_width_px > window_inner_width_px:
       window_offset_x_px += round(
-          (window_outer_width_px - window_inner_width_px) / 2)
+        (window_outer_width_px - window_inner_width_px) / 2
+      )
 
     # Account for top UI decorations (omnibox, tab strip, window title bar)
     # by taking the difference between outer window height and inner webview.
@@ -111,17 +125,22 @@ class ViewportInfo:
     window_offset_y_px += top_toolbar_height
 
     # Calculate the visible viewport dimensions bounded by the display.
-    visible_width = min(window_inner_width_px,
-                        screen_avail_width_px - window_offset_x_px)
-    visible_height = min(window_inner_height_px,
-                         screen_avail_height_px - window_offset_y_px)
+    visible_width = min(
+      window_inner_width_px, screen_avail_width_px - window_offset_x_px
+    )
+    visible_height = min(
+      window_inner_height_px, screen_avail_height_px - window_offset_y_px
+    )
 
     self._native_screen: Final[DisplayRectangle] = DisplayRectangle(
-        Point(0, 0), screen_width_pixels, screen_height_pixels)
+      Point(0, 0), screen_width_pixels, screen_height_pixels
+    )
 
     self._browser_viewable: Final[DisplayRectangle] = DisplayRectangle(
-        Point(window_offset_x_px, window_offset_y_px), visible_width,
-        visible_height)
+      Point(window_offset_x_px, window_offset_y_px),
+      visible_width,
+      visible_height,
+    )
 
     self._element_rect: DisplayRectangle | None = None
     if element_rect:
@@ -143,8 +162,9 @@ class ViewportInfo:
   def element_rect(self) -> DisplayRectangle | None:
     return self._element_rect
 
-  def _dom_rect_to_native_rect(self,
-                               dom_rect: DisplayRectangle) -> DisplayRectangle:
+  def _dom_rect_to_native_rect(
+    self, dom_rect: DisplayRectangle
+  ) -> DisplayRectangle:
     # Converts a DOM element rectangle from viewport-relative CSS pixels to
     # absolute physical screen coordinates.
     browser_viewable = self.browser_viewable
@@ -152,13 +172,16 @@ class ViewportInfo:
 
     adjusted_left = correct_ratio_rect.left + browser_viewable.left
     adjusted_top = correct_ratio_rect.top + browser_viewable.top
-    adjusted_width = min(correct_ratio_rect.width,
-                         self._native_screen.width - adjusted_left)
-    adjusted_height = min(correct_ratio_rect.height,
-                          self._native_screen.height - adjusted_top)
+    adjusted_width = min(
+      correct_ratio_rect.width, self._native_screen.width - adjusted_left
+    )
+    adjusted_height = min(
+      correct_ratio_rect.height, self._native_screen.height - adjusted_top
+    )
 
     return DisplayRectangle(
-        Point(adjusted_left, adjusted_top), adjusted_width, adjusted_height)
+      Point(adjusted_left, adjusted_top), adjusted_width, adjusted_height
+    )
 
   def css_to_native_distance(self, distance: float) -> float:
     # Converts a distance measurement in CSS pixels to native screen pixels.

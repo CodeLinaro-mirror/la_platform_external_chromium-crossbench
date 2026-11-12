@@ -19,7 +19,6 @@ MOCK_DIR: Final[pth.LocalPath] = pth.LocalPath(__file__).parent / "mock"
 
 
 class D8URLMapper:
-
   @classmethod
   def create(cls, d8: D8, session: BrowserSessionRunGroup) -> D8URLMapper:
     benchmark_name: str = session.benchmark.NAME
@@ -30,8 +29,9 @@ class D8URLMapper:
   def __init__(self, d8: D8):
     self._d8: Final[D8] = d8
     network: Network = d8.network
-    assert isinstance(
-        network, LocalFileNetwork), (f"Expected LocalFileNetwork got {network}")
+    assert isinstance(network, LocalFileNetwork), (
+      f"Expected LocalFileNetwork got {network}"
+    )
     self._network: Final[LocalFileNetwork] = network
 
   @property
@@ -48,14 +48,12 @@ class D8URLMapper:
 
 
 class DummyURLMapper(D8URLMapper):
-
   def lookup(self, url: str) -> pth.LocalPath | None:
     del url
     return None
 
 
 class JetStreamURLMapper(D8URLMapper):
-
   def __init__(self, d8: D8):
     super().__init__(d8)
     driver_js: pth.LocalPath = self.path / "JetStreamDriver.js"

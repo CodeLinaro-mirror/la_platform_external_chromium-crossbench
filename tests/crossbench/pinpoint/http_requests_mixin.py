@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 from unittest import mock
+
 from tests.crossbench.base import BaseCrossbenchTestCase
 
 
@@ -14,8 +15,10 @@ class MockHttpRequestsMixin(BaseCrossbenchTestCase):
   def setUp(self):
     super().setUp()
     self.mock_get = self.enterContext(
-        mock.patch("crossbench.pinpoint.http_requests.get"))
+      mock.patch("crossbench.pinpoint.http_requests.get")
+    )
     self.mock_get.return_value.raise_for_status.return_value = None
     self.mock_post = self.enterContext(
-        mock.patch("crossbench.pinpoint.http_requests.post"))
+      mock.patch("crossbench.pinpoint.http_requests.post")
+    )
     self.mock_post.return_value.raise_for_status.return_value = None

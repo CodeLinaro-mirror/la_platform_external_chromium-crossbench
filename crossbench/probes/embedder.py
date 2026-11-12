@@ -29,18 +29,22 @@ class WebviewEmbedderProbe(JsonResultProbe):
   """
   Android-only probe to collect performance data from an embedder.
   """
+
   NAME: ClassVar = "embedder"
 
   @classmethod
   def config_parser(cls) -> ProbeConfigParser:
     parser = super().config_parser()
     parser.add_argument(
-        "js",
-        type=parse_javascript,
-        required=True,
-        help=("Required JavaScript code that is run immediately after "
-              "a story has finished. The code must return a JS object with "
-              "(nested) metric values (numbers)."))
+      "js",
+      type=parse_javascript,
+      required=True,
+      help=(
+        "Required JavaScript code that is run immediately after "
+        "a story has finished. The code must return a JS object with "
+        "(nested) metric values (numbers)."
+      ),
+    )
     return parser
 
   def __init__(self, js: str):
@@ -53,32 +57,37 @@ class WebviewEmbedderProbe(JsonResultProbe):
 
   def validate_browser(self, env: RunnerEnv, browser: Browser) -> None:
     del env
-    self.expect_browser(browser, BrowserAttributes.WEBVIEW_EMBEDDER,
-                        "Only supported for WV embedders")
+    self.expect_browser(
+      browser,
+      BrowserAttributes.WEBVIEW_EMBEDDER,
+      "Only supported for WV embedders",
+    )
 
   def get_context_cls(self) -> type[WebviewEmbedderProbeContext]:
     return WebviewEmbedderProbeContext
 
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
     merged = MetricsMerger.merge_json_list(
-        repetition_group.results[self].json
-        for repetition_group in group.repetitions_groups)
+      repetition_group.results[self].json
+      for repetition_group in group.repetitions_groups
+    )
     return self.write_group_result(group, merged)
 
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
     return self.merge_browsers_json_list(group).merge(
-        self.merge_browsers_csv_list(group))
+      self.merge_browsers_csv_list(group)
+    )
 
 
 class WebviewEmbedderProbeContext(JsonResultProbeContext[WebviewEmbedderProbe]):
-
   @property
   @override
   def browser(self) -> WebviewEmbedder:
     browser = super().browser
     # TODO(b/412981884): use BrowserAttributes instead of instance check
-    assert isinstance(browser,
-                      WebviewEmbedder), ("Only supported for WV embedders")
+    assert isinstance(browser, WebviewEmbedder), (
+      "Only supported for WV embedders"
+    )
     return browser
 
   @property
@@ -86,7 +95,8 @@ class WebviewEmbedderProbeContext(JsonResultProbeContext[WebviewEmbedderProbe]):
   def browser_platform(self) -> AndroidAdbPlatform:
     browser_platform = super().browser_platform
     assert isinstance(browser_platform, AndroidAdbPlatform), (
-        f"Expected android platform, but got {browser_platform}")
+      f"Expected android platform, but got {browser_platform}"
+    )
     return browser_platform
 
   @override

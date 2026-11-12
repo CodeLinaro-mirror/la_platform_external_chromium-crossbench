@@ -17,8 +17,12 @@ from crossbench import exception
 from crossbench.action_runner.action.enums import ButtonClick
 from crossbench.benchmarks.loading.input_source import InputSource
 from crossbench.benchmarks.loading.point import Point
-from crossbench.config import ConfigEnum, ConfigObject, ConfigParser, \
-    UnusedPropertiesMode
+from crossbench.config import (
+  ConfigEnum,
+  ConfigObject,
+  ConfigParser,
+  UnusedPropertiesMode,
+)
 from crossbench.parse import DurationParser, NumberParser, ObjectParser
 
 if TYPE_CHECKING:
@@ -37,15 +41,17 @@ class InputEventType(ConfigEnum):
 
 
 class InputEventTypeConfigParser(ConfigParser[InputEventType]):
-
   def __init__(self) -> None:
     super().__init__(
-        InputEventType, unused_properties_mode=UnusedPropertiesMode.IGNORE)
+      InputEventType, unused_properties_mode=UnusedPropertiesMode.IGNORE
+    )
     self.add_argument(
-        "event", aliases=("type",), type=InputEventType.parse, required=True)
+      "event", aliases=("type",), type=InputEventType.parse, required=True
+    )
 
-  def new_instance_from_kwargs(self, kwargs: dict[str,
-                                                  object]) -> InputEventType:
+  def new_instance_from_kwargs(
+    self, kwargs: dict[str, object]
+  ) -> InputEventType:
     event_type = kwargs["event"]
     assert isinstance(event_type, InputEventType)
     return event_type
@@ -83,7 +89,8 @@ class InputEvent(ConfigObject, metaclass=abc.ABCMeta):
     config.pop("type", None)
 
     with exception.annotate_argparsing(
-        f'Parsing InputEvent details  ...{{ event: "{event_type}", ...}}:'):
+      f'Parsing InputEvent details  ...{{ event: "{event_type}", ...}}:'
+    ):
       event = event_cls.config_parser().parse(config, **kwargs)
     assert isinstance(event, cls), f"Expected {cls} but got {type(event)}"
     return cast(Self, event)
@@ -115,7 +122,8 @@ class WaitEvent(InputEvent):
   def config_parser(cls: type[Self]) -> ConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
-        "duration", type=DurationParser.positive_duration, required=True)
+      "duration", type=DurationParser.positive_duration, required=True
+    )
     return parser
 
   @override
@@ -123,7 +131,8 @@ class WaitEvent(InputEvent):
     super().validate()
     if self.duration.total_seconds() <= 0:
       raise ValueError(
-          f"{self}.duration should be positive, but got {self.duration}")
+        f"{self}.duration should be positive, but got {self.duration}"
+      )
 
   @override
   def to_json(self) -> JsonDict:
@@ -154,12 +163,14 @@ class KeyEvent(InputEvent):
   def config_parser(cls: type[Self]) -> ConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
-        "key_code",
-        aliases=("key", "code"),
-        type=ObjectParser.non_empty_str,
-        required=True)
+      "key_code",
+      aliases=("key", "code"),
+      type=ObjectParser.non_empty_str,
+      required=True,
+    )
     parser.add_argument(
-        "is_down", aliases=("down",), type=ObjectParser.bool, required=True)
+      "is_down", aliases=("down",), type=ObjectParser.bool, required=True
+    )
     return parser
 
   @override
@@ -198,7 +209,8 @@ class TouchEvent(InputEvent):
     parser = super().config_parser()
     parser.add_argument("position", aliases=("pos",), type=Point, required=True)
     parser.add_argument(
-        "is_down", aliases=("down",), type=ObjectParser.bool, required=True)
+      "is_down", aliases=("down",), type=ObjectParser.bool, required=True
+    )
     parser.add_argument("slot", type=NumberParser.positive_zero_int, default=0)
     return parser
 
@@ -232,7 +244,8 @@ class MouseButtonEvent(InputEvent):
     parser = super().config_parser()
     parser.add_argument("button", type=ButtonClick.parse, required=True)
     parser.add_argument(
-        "is_down", aliases=("down",), type=ObjectParser.bool, required=True)
+      "is_down", aliases=("down",), type=ObjectParser.bool, required=True
+    )
     return parser
 
   @override
@@ -266,27 +279,27 @@ class MouseMoveEvent(InputEvent):
     return details
 
 
-EVENT_INPUT_SOURCES: Final[immutabledict[type[InputEvent],
-                                         InputSource]] = immutabledict({
-                                             KeyEvent:
-                                                 InputSource.KEYBOARD,
-                                             TouchEvent:
-                                                 InputSource.TOUCH,
-                                             MouseButtonEvent:
-                                                 InputSource.MOUSE,
-                                             MouseMoveEvent:
-                                                 InputSource.MOUSE,
-                                         })
+EVENT_INPUT_SOURCES: Final[immutabledict[type[InputEvent], InputSource]] = (
+  immutabledict(
+    {
+      KeyEvent: InputSource.KEYBOARD,
+      TouchEvent: InputSource.TOUCH,
+      MouseButtonEvent: InputSource.MOUSE,
+      MouseMoveEvent: InputSource.MOUSE,
+    }
+  )
+)
 
 INPUT_EVENTS_TUPLE: Final[tuple[type[InputEvent], ...]] = (
-    WaitEvent,
-    KeyEvent,
-    TouchEvent,
-    MouseButtonEvent,
-    MouseMoveEvent,
+  WaitEvent,
+  KeyEvent,
+  TouchEvent,
+  MouseButtonEvent,
+  MouseMoveEvent,
 )
 for event_cls in INPUT_EVENTS_TUPLE:
   INPUT_EVENTS[event_cls.TYPE] = event_cls
 
 assert len(INPUT_EVENTS_TUPLE) == len(INPUT_EVENTS), (
-    "Non unique InputEvent.TYPE present")
+  "Non unique InputEvent.TYPE present"
+)

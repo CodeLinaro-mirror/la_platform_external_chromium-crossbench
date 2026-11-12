@@ -20,7 +20,6 @@ if TYPE_CHECKING:
 
 
 class ResultsUploaderTestCase(BaseCrossbenchTestCase):
-
   @override
   def setUp(self) -> None:
     super().setUp()
@@ -43,15 +42,17 @@ class ResultsUploaderTestCase(BaseCrossbenchTestCase):
 
   def test_target_url_empty_with_env_var(self) -> None:
     url = "gs://my-bucket/env-target/"
-    with mock.patch.dict("os.environ",
-                         {"CROSSBENCH_RESULT_UPLOAD_TARGET": url}):
+    with mock.patch.dict(
+      "os.environ", {"CROSSBENCH_RESULT_UPLOAD_TARGET": url}
+    ):
       self.assertEqual(results_uploader.target_url(""), url)
 
   def test_target_url_explicit_overrides_env_var(self) -> None:
     env_url = "gs://my-bucket/env-target/"
     explicit_url = "gs://my-bucket/explicit-target/"
-    with mock.patch.dict("os.environ",
-                         {"CROSSBENCH_RESULT_UPLOAD_TARGET": env_url}):
+    with mock.patch.dict(
+      "os.environ", {"CROSSBENCH_RESULT_UPLOAD_TARGET": env_url}
+    ):
       self.assertEqual(results_uploader.target_url(explicit_url), explicit_url)
 
   def test_target_url_empty_without_env_var(self) -> None:
@@ -82,8 +83,9 @@ class ResultsUploaderTestCase(BaseCrossbenchTestCase):
     mock_uploader.upload.return_value = "gs://my-bucket/test/archive.tar.gz"
 
     with mock.patch(
-        "crossbench.uploader.results_uploader._uploader_for_url",
-        return_value=mock_uploader):
+      "crossbench.uploader.results_uploader._uploader_for_url",
+      return_value=mock_uploader,
+    ):
       result_url = results_uploader.upload(run_dir, "gs://my-bucket/test/")
       self.assertEqual(result_url, "gs://my-bucket/test/archive.tar.gz")
       mock_uploader.upload.assert_called_once()
@@ -98,14 +100,15 @@ class ResultsUploaderTestCase(BaseCrossbenchTestCase):
     mock_uploader.upload.side_effect = RuntimeError("GCS network failure")
 
     with mock.patch(
-        "crossbench.uploader.results_uploader._uploader_for_url",
-        return_value=mock_uploader):
+      "crossbench.uploader.results_uploader._uploader_for_url",
+      return_value=mock_uploader,
+    ):
       result_url = results_uploader.upload(run_dir, "gs://my-bucket/test/")
       self.assertIsNone(result_url)
 
   def _get_archive_symlink_member(
-      self, symlink_rel_path: str,
-      target_path: pth.LocalPath) -> tarfile.TarInfo:
+    self, symlink_rel_path: str, target_path: pth.LocalPath
+  ) -> tarfile.TarInfo:
     run_dir = self.out_dir / "run_results"
     run_dir.mkdir(exist_ok=True)
     symlink_file = run_dir / symlink_rel_path
@@ -132,8 +135,9 @@ class ResultsUploaderTestCase(BaseCrossbenchTestCase):
     target_file.parent.mkdir(exist_ok=True)
     target_file.write_text("data", encoding="utf-8")
 
-    member = self._get_archive_symlink_member("sub/nested_link.txt",
-                                              target_file)
+    member = self._get_archive_symlink_member(
+      "sub/nested_link.txt", target_file
+    )
     self.assertTrue(member.issym())
     self.assertEqual(member.linkname, "../output.txt")
 
@@ -147,7 +151,6 @@ class ResultsUploaderTestCase(BaseCrossbenchTestCase):
 
 
 class ResultDirTestCase(BaseCrossbenchTestCase):
-
   @override
   def setUp(self) -> None:
     super().setUp()

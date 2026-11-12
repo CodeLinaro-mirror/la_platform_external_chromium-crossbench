@@ -6,9 +6,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, ClassVar, override
 
-from crossbench.benchmarks.speedometer.speedometer import ProbeClsTupleT, \
-    SpeedometerBenchmark, SpeedometerProbe, SpeedometerProbeContext, \
-    SpeedometerStory
+from crossbench.benchmarks.speedometer.speedometer import (
+  ProbeClsTupleT,
+  SpeedometerBenchmark,
+  SpeedometerProbe,
+  SpeedometerProbeContext,
+  SpeedometerStory,
+)
 from crossbench.parse import NumberParser, ObjectParser
 
 if TYPE_CHECKING:
@@ -25,12 +29,12 @@ class Speedometer10Probe(SpeedometerProbe):
 
 
 class Speedometer10ProbeContext(SpeedometerProbeContext):
-
   @override
   def process_json_data(self, json_data: Json) -> Json:
     # Move aggregate scores to the end
     for raw_iteration_data in ObjectParser.non_empty_sequence(
-        json_data, f"{self.probe.name} metrics"):
+      json_data, f"{self.probe.name} metrics"
+    ):
       iteration_data = ObjectParser.dict(raw_iteration_data, "iteration data")
       total = NumberParser.any_float(iteration_data.pop("total"), "total")
       suite_count = len(ObjectParser.dict(iteration_data["tests"], "tests"))
@@ -47,14 +51,14 @@ class Speedometer10Story(SpeedometerStory):
   URL: ClassVar[str] = "https://browserbench.org/Speedometer/"
   URL_OFFICIAL: ClassVar[str] = "https://browserbench.org/Speedometer/"
   SUBSTORIES: ClassVar[tuple[str, ...]] = (
-      "VanillaJS-TodoMVC",
-      "EmberJS-TodoMVC",
-      "BackboneJS-TodoMVC",
-      "jQuery-TodoMVC",
-      "AngularJS-TodoMVC",
-      "React-TodoMVC",
-      "FlightJS-TodoMVC",
-      "FlightJS-MailClient",
+    "VanillaJS-TodoMVC",
+    "EmberJS-TodoMVC",
+    "BackboneJS-TodoMVC",
+    "jQuery-TodoMVC",
+    "AngularJS-TodoMVC",
+    "React-TodoMVC",
+    "FlightJS-TodoMVC",
+    "FlightJS-MailClient",
   )
 
 
@@ -62,6 +66,7 @@ class Speedometer10Benchmark(SpeedometerBenchmark):
   """
   Benchmark runner for Speedometer 1.0
   """
+
   NAME: ClassVar[str] = "speedometer_1.0"
   DEFAULT_STORY_CLS: ClassVar = Speedometer10Story
   PROBES: ClassVar[ProbeClsTupleT] = (Speedometer10Probe,)

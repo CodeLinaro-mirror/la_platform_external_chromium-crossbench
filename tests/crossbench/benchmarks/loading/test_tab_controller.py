@@ -7,14 +7,16 @@ from __future__ import annotations
 import argparse
 import unittest
 
-from crossbench.benchmarks.loading.tab_controller import \
-    ForeverTabController, RepeatTabController, SingleTabController, \
-    TabController
+from crossbench.benchmarks.loading.tab_controller import (
+  ForeverTabController,
+  RepeatTabController,
+  SingleTabController,
+  TabController,
+)
 from tests import test_helper
 
 
 class TabControllerTestCase(unittest.TestCase):
-
   def test_parse_invalid(self):
     for invalid in ["sing", "mult", "mlt", "x5"]:
       with self.subTest(pattern=invalid):

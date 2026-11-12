@@ -13,17 +13,16 @@ if TYPE_CHECKING:
   from types import ModuleType
 
   from selenium import webdriver
-  from selenium.webdriver.remote.websocket_connection import \
-      WebSocketConnection
+  from selenium.webdriver.remote.websocket_connection import WebSocketConnection
 
 
 class _TracingCompleteEvent(Protocol):
   """Protocol for CDP Tracing.tracingComplete event objects."""
+
   stream: object
 
 
 class DevToolsTracer:
-
   def __init__(self, driver: webdriver.Remote) -> None:
     module_and_socket = driver.start_devtools()
     self._devtools: Final[ModuleType] = module_and_socket[0]
@@ -35,24 +34,27 @@ class DevToolsTracer:
   def start(self) -> None:
     config = self._devtools.tracing.TraceConfig()
     config.included_categories = [
-        "devtools.timeline",
-        "v8.execute",
-        "disabled-by-default-devtools.timeline",
-        "disabled-by-default-devtools.timeline.frame",
-        "toplevel",
-        "blink.console",
-        "blink.user_timing",
-        "latencyInfo",
-        "disabled-by-default-devtools.timeline.stack",
-        "disabled-by-default-v8.cpu_profiler",
+      "devtools.timeline",
+      "v8.execute",
+      "disabled-by-default-devtools.timeline",
+      "disabled-by-default-devtools.timeline.frame",
+      "toplevel",
+      "blink.console",
+      "blink.user_timing",
+      "latencyInfo",
+      "disabled-by-default-devtools.timeline.stack",
+      "disabled-by-default-v8.cpu_profiler",
     ]
-    self._websocket.on(self._devtools.tracing.TracingComplete,
-                       self._on_tracing_complete)
+    self._websocket.on(
+      self._devtools.tracing.TracingComplete, self._on_tracing_complete
+    )
     self._websocket.execute(
-        self._devtools.tracing.start(
-            transfer_mode="ReturnAsStream",
-            trace_config=config,
-            stream_format=self._devtools.tracing.StreamFormat.PROTO))
+      self._devtools.tracing.start(
+        transfer_mode="ReturnAsStream",
+        trace_config=config,
+        stream_format=self._devtools.tracing.StreamFormat.PROTO,
+      )
+    )
 
   def end(self) -> bytearray:
     self._websocket.execute(self._devtools.tracing.end())
@@ -62,7 +64,8 @@ class DevToolsTracer:
     output = bytearray()
     while True:
       base64_encoded, chunk, eof = self._websocket.execute(
-          self._devtools.io.read(self._out_stream))
+        self._devtools.io.read(self._out_stream)
+      )
       if chunk:
         if base64_encoded:
           output += base64.b64decode(chunk)

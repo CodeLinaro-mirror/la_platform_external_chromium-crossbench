@@ -32,7 +32,8 @@ class MeetCreateAction(BondAction):
     parser = super().config_parser()
     parser.add_argument("bots", type=AddBotsConfig)
     parser.add_argument(
-        "target", type=WindowTarget.parse, default=WindowTarget.SELF)
+      "target", type=WindowTarget.parse, default=WindowTarget.SELF
+    )
     return parser
 
   @override

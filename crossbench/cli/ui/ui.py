@@ -27,20 +27,18 @@ COLOR_LOGGING: bool = True
 
 
 class ColoredLogFormatter(logging.Formatter):
-
   FORMAT: Final = "%(message)s"
 
   FORMATS: Final = {
-      logging.DEBUG:
-          FORMAT,
-      logging.INFO:
-          str(colorama.Fore.GREEN) + FORMAT + str(colorama.Fore.RESET),
-      logging.WARNING:
-          str(colorama.Fore.YELLOW) + FORMAT + str(colorama.Fore.RESET),
-      logging.ERROR:
-          str(colorama.Fore.RED) + FORMAT + str(colorama.Fore.RESET),
-      logging.CRITICAL:
-          str(colorama.Style.BRIGHT) + FORMAT + str(colorama.Style.RESET_ALL),
+    logging.DEBUG: FORMAT,
+    logging.INFO: str(colorama.Fore.GREEN) + FORMAT + str(colorama.Fore.RESET),
+    logging.WARNING: str(colorama.Fore.YELLOW)
+    + FORMAT
+    + str(colorama.Fore.RESET),
+    logging.ERROR: str(colorama.Fore.RED) + FORMAT + str(colorama.Fore.RESET),
+    logging.CRITICAL: str(colorama.Style.BRIGHT)
+    + FORMAT
+    + str(colorama.Style.RESET_ALL),
   }
 
   def format(self, record: logging.LogRecord) -> str:
@@ -50,9 +48,9 @@ class ColoredLogFormatter(logging.Formatter):
 
   @override
   def formatException(
-      self,
-      ei: tuple[type[BaseException], BaseException, TracebackType | None]
-      | tuple[None, ...],
+    self,
+    ei: tuple[type[BaseException], BaseException, TracebackType | None]
+    | tuple[None, ...],
   ) -> str:
     del ei
     return ""
@@ -95,8 +93,9 @@ DEFAULT_INTERVAL_S: Final[float] = 0.5
 
 
 @contextlib.contextmanager
-def timer(msg: str = "Elapsed Time",
-          update_interval: float = DEFAULT_INTERVAL_S) -> Iterator[None]:
+def timer(
+  msg: str = "Elapsed Time", update_interval: float = DEFAULT_INTERVAL_S
+) -> Iterator[None]:
   if not IS_ATTY:
     yield
     return
@@ -115,9 +114,11 @@ def timer(msg: str = "Elapsed Time",
 
 
 @contextlib.contextmanager
-def countdown(duration: dt.timedelta,
-              msg: str = "Waiting",
-              update_interval: float = DEFAULT_INTERVAL_S) -> Iterator[None]:
+def countdown(
+  duration: dt.timedelta,
+  msg: str = "Waiting",
+  update_interval: float = DEFAULT_INTERVAL_S,
+) -> Iterator[None]:
   if not IS_ATTY:
     print(f"{msg}: {format_duration(duration)}")
     yield
@@ -138,7 +139,6 @@ def countdown(duration: dt.timedelta,
 
 
 class RepeatTimer(threading.Timer):
-
   def run(self) -> None:
     while not self.finished.wait(self.interval):
       self.function(*self.args, **self.kwargs)
@@ -156,9 +156,9 @@ def spinner(sleep: float = 0.5, title: str = "") -> Iterator[Spinner]:
     yield spinner_instance
 
 
-def prompt(message: str = "",
-           hint: str = "",
-           color: str = colorama.Fore.RESET) -> str:
+def prompt(
+  message: str = "", hint: str = "", color: str = colorama.Fore.RESET
+) -> str:
   return input_helper.prompt(f"{color}{message}{colorama.Fore.RESET} {hint}")
 
 

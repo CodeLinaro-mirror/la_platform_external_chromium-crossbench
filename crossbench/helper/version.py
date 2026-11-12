@@ -11,7 +11,6 @@ VersionPartsData: TypeAlias = Iterable[int] | int
 
 
 class VersionParseError(ValueError):
-
   def __init__(self, name: str, msg: str, version_str: str) -> None:
     self._version_str: Final[str] = version_str
     super().__init__(f"Invalid {name} {version_str!r}: {msg}")
@@ -31,12 +30,14 @@ class Version:
 
   def __init__(self, parts: VersionPartsData, version_str: str = "") -> None:
     self._parts: Final[tuple[int, ...]] = self._validate_parts(
-        parts, version_str or repr(parts))
+      parts, version_str or repr(parts)
+    )
     self._version_str: Final[str] = version_str
 
   @classmethod
-  def _validate_parts(cls, parts: VersionPartsData,
-                      value: str) -> tuple[int, ...]:
+  def _validate_parts(
+    cls, parts: VersionPartsData, value: str
+  ) -> tuple[int, ...]:
     if parts is None:
       raise cls.parse_error("Invalid version format", value)
     if isinstance(parts, int):
@@ -86,9 +87,11 @@ class Version:
 
   def __le__(self, other: Version) -> bool:
     if not self.is_compatible_type(other):
-      raise TypeError("Cannot compare unrelated versions : "
-                      f"{type(self).__name__} vs. "
-                      f"{type(other).__name__}.")
+      raise TypeError(
+        "Cannot compare unrelated versions : "
+        f"{type(self).__name__} vs. "
+        f"{type(other).__name__}."
+      )
     return self._parts <= other._parts
 
   @property

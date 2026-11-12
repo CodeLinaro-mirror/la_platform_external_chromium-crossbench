@@ -11,28 +11,39 @@ from unittest import mock
 import pandas as pd
 
 from crossbench.benchmarks.loading.tab_controller import TabController
-from crossbench.benchmarks.loadline import LoadLine1PhoneBenchmark, \
-    LoadLine1PhoneDebugBenchmark, LoadLine1PhoneFastBenchmark, \
-    LoadLine1TabletBenchmark, LoadLine1TabletDebugBenchmark, \
-    LoadLine1TabletFastBenchmark, loadline_1
+from crossbench.benchmarks.loadline import (
+  LoadLine1PhoneBenchmark,
+  LoadLine1PhoneDebugBenchmark,
+  LoadLine1PhoneFastBenchmark,
+  LoadLine1TabletBenchmark,
+  LoadLine1TabletDebugBenchmark,
+  LoadLine1TabletFastBenchmark,
+  loadline_1,
+)
 from crossbench.benchmarks.loadline.loadline import LoadLineProbe
 from crossbench.cli.parser import CBArgumentParser
 from crossbench.probes.trace_processor.constants import QUERIES_DIR
 from tests import test_helper
-from tests.crossbench.base import BaseCliTestCase, BaseCrossbenchTestCase, \
-    SysExitTestException
+from tests.crossbench.base import (
+  BaseCliTestCase,
+  BaseCrossbenchTestCase,
+  SysExitTestException,
+)
 from tests.crossbench.benchmarks.helper import SubStoryTestCase
-from tests.crossbench.benchmarks.loading.test_loading import \
-    LoadingBenchmarkCliTestCaseMixin
-from tests.crossbench.benchmarks.loadline.base import \
-    BaseLoadLineBenchmarkTestCase, BaseLoadLineTestCase
+from tests.crossbench.benchmarks.loading.test_loading import (
+  LoadingBenchmarkCliTestCaseMixin,
+)
+from tests.crossbench.benchmarks.loadline.base import (
+  BaseLoadLineBenchmarkTestCase,
+  BaseLoadLineTestCase,
+)
 
 
 class BaseLoadLine1BenchmarkTestCase(
-    LoadingBenchmarkCliTestCaseMixin,
-    BaseLoadLineBenchmarkTestCase,
-    metaclass=abc.ABCMeta):
-
+  LoadingBenchmarkCliTestCaseMixin,
+  BaseLoadLineBenchmarkTestCase,
+  metaclass=abc.ABCMeta,
+):
   @property
   @override
   def expected_tabs(self):
@@ -50,7 +61,6 @@ class BaseLoadLine1BenchmarkTestCase(
 
 
 class TestLoadLine1TabletBenchmark(BaseLoadLine1BenchmarkTestCase):
-
   @property
   @override
   def benchmark_cls(self):
@@ -58,7 +68,6 @@ class TestLoadLine1TabletBenchmark(BaseLoadLine1BenchmarkTestCase):
 
 
 class TestLoadLine1PhoneBenchmark(BaseLoadLine1BenchmarkTestCase):
-
   @property
   @override
   def benchmark_cls(self):
@@ -66,7 +75,6 @@ class TestLoadLine1PhoneBenchmark(BaseLoadLine1BenchmarkTestCase):
 
 
 class TestLoadLine1TabletDebugBenchmark(BaseLoadLine1BenchmarkTestCase):
-
   @property
   @override
   def benchmark_cls(self):
@@ -74,7 +82,6 @@ class TestLoadLine1TabletDebugBenchmark(BaseLoadLine1BenchmarkTestCase):
 
 
 class TestLoadLine1PhoneDebugBenchmark(BaseLoadLine1BenchmarkTestCase):
-
   @property
   @override
   def benchmark_cls(self):
@@ -82,7 +89,6 @@ class TestLoadLine1PhoneDebugBenchmark(BaseLoadLine1BenchmarkTestCase):
 
 
 class TestLoadLine1TabletFastBenchmark(BaseLoadLine1BenchmarkTestCase):
-
   @property
   @override
   def benchmark_cls(self):
@@ -90,7 +96,6 @@ class TestLoadLine1TabletFastBenchmark(BaseLoadLine1BenchmarkTestCase):
 
 
 class TestLoadLine1PhoneFastBenchmark(BaseLoadLine1BenchmarkTestCase):
-
   @property
   @override
   def benchmark_cls(self):
@@ -98,7 +103,6 @@ class TestLoadLine1PhoneFastBenchmark(BaseLoadLine1BenchmarkTestCase):
 
 
 class LoadLine1BenchmarkCliTestCase(BaseCliTestCase):
-
   def setUp(self) -> None:
     super().setUp()
     self.setup_config_dir(QUERIES_DIR)
@@ -116,49 +120,52 @@ class LoadLine1BenchmarkCliTestCase(BaseCliTestCase):
     self.assertTrue(args.separate)
 
   def test_run_default_phone(self) -> None:
-    with self._patch_get_browser(), mock.patch.object(
-        LoadLineProbe, "_is_device_online", return_value=True):
+    with (
+      self._patch_get_browser(),
+      mock.patch.object(LoadLineProbe, "_is_device_online", return_value=True),
+    ):
       for browser in self.browsers:
         browser.set_default_js_return(True)
       self.run_cli(
-          "loadline-phone",
-          "run",
-          "--network=live",
-          "--dry-run",
-          "--env-validation=skip",
-          "--throw",
-          "--repetitions=1",
-          "--stories=amazon_product",
+        "loadline-phone",
+        "run",
+        "--network=live",
+        "--dry-run",
+        "--env-validation=skip",
+        "--throw",
+        "--repetitions=1",
+        "--stories=amazon_product",
       )
 
   def test_run_default_tablet(self) -> None:
-    with self._patch_get_browser(), mock.patch.object(
-        LoadLineProbe, "_is_device_online", return_value=True):
+    with (
+      self._patch_get_browser(),
+      mock.patch.object(LoadLineProbe, "_is_device_online", return_value=True),
+    ):
       for browser in self.browsers:
         browser.set_default_js_return(True)
       self.run_cli(
-          "loadline-tablet",
-          "run",
-          "--network=live",
-          "--dry-run",
-          "--env-validation=skip",
-          "--throw",
-          "--repetitions=1",
-          "--stories=amazon_product",
+        "loadline-tablet",
+        "run",
+        "--network=live",
+        "--dry-run",
+        "--env-validation=skip",
+        "--throw",
+        "--repetitions=1",
+        "--stories=amazon_product",
       )
 
 
 class TestLoadLine1Helpers(BaseCrossbenchTestCase):
-
   def test_process_scores(self) -> None:
     query_result = pd.DataFrame(
-        columns=["score", "cb_browser", "cb_story", "cb_temperature", "cb_run"],
-        data=[
-            [4, "chrome", "story1", 0, 0],
-            [6, "chrome", "story1", 0, 1],
-            [19, "chrome", "story2", 0, 0],
-            [21, "chrome", "story2", 0, 1],
-        ],
+      columns=["score", "cb_browser", "cb_story", "cb_temperature", "cb_run"],
+      data=[
+        [4, "chrome", "story1", 0, 0],
+        [6, "chrome", "story1", 0, 1],
+        [19, "chrome", "story2", 0, 0],
+        [21, "chrome", "story2", 0, 1],
+      ],
     )
     scores = loadline_1.process_scores(query_result)
 
@@ -169,24 +176,24 @@ class TestLoadLine1Helpers(BaseCrossbenchTestCase):
 
   def test_process_breakdown(self) -> None:
     query_result = pd.DataFrame(
-        columns=[
-            "network",
-            "process_launch",
-            "renderer",
-            "compositor",
-            "gpu",
-            "surfaceflinger",
-            "cb_browser",
-            "cb_story",
-            "cb_temperature",
-            "cb_run",
-        ],
-        data=[
-            [5, 3, 9, 11, 10, 10, "chrome", "story1", 0, 0],
-            [5, 3, 11, 9, 10, 10, "chrome", "story1", 0, 1],
-            [7, 10, 19, 21, 20, 20, "chrome", "story2", 0, 0],
-            [7, 10, 21, 19, 20, 20, "chrome", "story2", 0, 1],
-        ],
+      columns=[
+        "network",
+        "process_launch",
+        "renderer",
+        "compositor",
+        "gpu",
+        "surfaceflinger",
+        "cb_browser",
+        "cb_story",
+        "cb_temperature",
+        "cb_run",
+      ],
+      data=[
+        [5, 3, 9, 11, 10, 10, "chrome", "story1", 0, 0],
+        [5, 3, 11, 9, 10, 10, "chrome", "story1", 0, 1],
+        [7, 10, 19, 21, 20, 20, "chrome", "story2", 0, 0],
+        [7, 10, 21, 19, 20, 20, "chrome", "story2", 0, 1],
+      ],
     )
     breakdown = loadline_1.process_breakdown(query_result)
 

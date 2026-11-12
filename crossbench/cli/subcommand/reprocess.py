@@ -22,13 +22,13 @@ if TYPE_CHECKING:
 
 
 class ReprocessableProbe(Protocol):
-
   @classmethod
-  def process_result_dir(cls,
-                         result_dir: pth.LocalPath,
-                         base_df: pd.DataFrame,
-                         reprocess: bool = False) -> pd.DataFrame:
-    ...
+  def process_result_dir(
+    cls,
+    result_dir: pth.LocalPath,
+    base_df: pd.DataFrame,
+    reprocess: bool = False,
+  ) -> pd.DataFrame: ...
 
 
 class ReprocessSubcommand(CrossbenchSubcommand):
@@ -36,33 +36,37 @@ class ReprocessSubcommand(CrossbenchSubcommand):
 
   NAME = "reprocess"
   SUPPORTED_PROBES: dict[str, type[ReprocessableProbe]] = {
-      "web_power": WebPowerProbe,
+    "web_power": WebPowerProbe,
   }
 
   @override
-  def register_subcommand(self,
-                          subparsers: Subparsers) -> argparse.ArgumentParser:
+  def register_subcommand(
+    self, subparsers: Subparsers
+  ) -> argparse.ArgumentParser:
     self._parser = subparsers.add_parser(
-        "reprocess",
-        help="Reprocesses benchmark results from existing CSV/trace files "
-        "without re-running the benchmark.")
+      "reprocess",
+      help="Reprocesses benchmark results from existing CSV/trace files "
+      "without re-running the benchmark.",
+    )
     self._parser.set_defaults(crossbench_subcommand=self)
     return self.parser
 
   @override
   def add_cli_arguments(self, parser: CBArgumentParser) -> CBArgumentParser:
     parser.add_argument(
-        "result_dir",
-        type=PathParser.dir_path,
-        nargs="?",
-        default=pth.LATEST_RESULT_DIR,
-        help="Path to the benchmark result directory.")
+      "result_dir",
+      type=PathParser.dir_path,
+      nargs="?",
+      default=pth.LATEST_RESULT_DIR,
+      help="Path to the benchmark result directory.",
+    )
     parser.add_argument(
-        "--probe",
-        "--probes",
-        type=self._parse_probes,
-        default=list(self.SUPPORTED_PROBES.keys()),
-        help="Comma-separated list of probes to reprocess.")
+      "--probe",
+      "--probes",
+      type=self._parse_probes,
+      default=list(self.SUPPORTED_PROBES.keys()),
+      help="Comma-separated list of probes to reprocess.",
+    )
     self.cli.add_debugging_arguments(parser)
     return parser
 
@@ -82,25 +86,30 @@ class ReprocessSubcommand(CrossbenchSubcommand):
     for probe_name in probe_names:
       self._process_probe(probe_name, result_dir, base_df)
 
-  def _process_probe(self, probe_name: str, result_dir: pth.LocalPath,
-                     base_df: pd.DataFrame) -> None:
+  def _process_probe(
+    self, probe_name: str, result_dir: pth.LocalPath, base_df: pd.DataFrame
+  ) -> None:
     probe_cls = self.SUPPORTED_PROBES[probe_name]
     # TODO: Upstream this to the base Probe interface or find an alternative to
     # unify offline reprocessing across all probes.
     new_scores: pd.DataFrame = probe_cls.process_result_dir(
-        result_dir, base_df, reprocess=True)
+      result_dir, base_df, reprocess=True
+    )
     print(
-        tabulate(
-            new_scores.to_dict(orient="list"),
-            headers="keys",
-            tablefmt="plain",
-            showindex=False))
+      tabulate(
+        new_scores.to_dict(orient="list"),
+        headers="keys",
+        tablefmt="plain",
+        showindex=False,
+      )
+    )
 
   @classmethod
   def _get_device_model_from_run(cls, run_dir: pth.LocalPath) -> str:
-    for json_name, keys in (("cb.system.details.json",
-                             ["Android", "ro.product.model"]),
-                            ("cb.results.json", ["browser", "os", "model"])):
+    for json_name, keys in (
+      ("cb.system.details.json", ["Android", "ro.product.model"]),
+      ("cb.results.json", ["browser", "os", "model"]),
+    ):
       file_path = run_dir / json_name
       if not file_path.is_file():
         continue
@@ -124,10 +133,12 @@ class ReprocessSubcommand(CrossbenchSubcommand):
 
       # rel_parts: (`browser`, "stories", `story`, `run`, `probe`).
       if len(rel_parts) == 5 and rel_parts[1] == "stories":
-        combinations.append({
+        combinations.append(
+          {
             "device_model": self._get_device_model_from_run(run_dir),
             "cb_browser": rel_parts[0],
             "cb_story": rel_parts[2],
-        })
+          }
+        )
 
     return pd.DataFrame(combinations).drop_duplicates()

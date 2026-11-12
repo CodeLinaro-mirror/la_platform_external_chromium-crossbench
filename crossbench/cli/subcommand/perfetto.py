@@ -25,8 +25,10 @@ from crossbench.cli.parser import CBArgumentParser
 from crossbench.cli.subcommand.base import CrossbenchSubcommand
 from crossbench.flags.base import Flags
 from crossbench.helper import collection_helper, txt_helper
-from crossbench.probes.perfetto_info import CategoryDescription, \
-    PerfettoInfoProbe
+from crossbench.probes.perfetto_info import (
+  CategoryDescription,
+  PerfettoInfoProbe,
+)
 from crossbench.runner.runner import Runner
 from crossbench.runner.timing import Timing
 from crossbench.stories.story import Story
@@ -60,6 +62,7 @@ class PerfettoInfoStory(Story):
 
 class PerfettoInfoBenchmark(Benchmark):
   """A benchmark to run the PerfettoInfoStory with the PerfettoInfoProbe."""
+
   NAME = "perfetto_info"
   DEFAULT_STORY_CLS = PerfettoInfoStory
 
@@ -68,22 +71,24 @@ class PerfettoInfoBenchmark(Benchmark):
 
 
 class PerfettoCrossbenchSubcommand(CrossbenchSubcommand):
-
   def __init__(self, cli: CrossBenchCLI) -> None:
     super().__init__(cli)
 
   @override
-  def register_subcommand(self,
-                          subparsers: Subparsers) -> argparse.ArgumentParser:
+  def register_subcommand(
+    self, subparsers: Subparsers
+  ) -> argparse.ArgumentParser:
     self._parser = subparsers.add_parser(
-        "perfetto", help="Perfetto related utilities")
+      "perfetto", help="Perfetto related utilities"
+    )
     self._parser.set_defaults(crossbench_subcommand=self)
 
     self._subparsers = self.parser.add_subparsers(
-        title="Perfetto Actions",
-        parser_class=CBArgumentParser,
-        dest="perfetto_action",
-        required=True)
+      title="Perfetto Actions",
+      parser_class=CBArgumentParser,
+      dest="perfetto_action",
+      required=True,
+    )
     self._categories_subcommand = PerfettoCategoriesSubcommand(self)
     self._data_sources_subcommand = PerfettoDataSourcesSubcommand(self)
     return self.parser
@@ -102,7 +107,6 @@ class PerfettoCrossbenchSubcommand(CrossbenchSubcommand):
 
 
 class PerfettoBaseSubcommand(abc.ABC):
-
   def __init__(self, parent: PerfettoCrossbenchSubcommand) -> None:
     self._parent: Final[PerfettoCrossbenchSubcommand] = parent
     self._parser = self.add_cli_parser()
@@ -110,16 +114,18 @@ class PerfettoBaseSubcommand(abc.ABC):
 
   def add_query_arguments(self, parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
-        "--browser",
-        "-b",
-        type=BrowserConfig.parse,
-        default="chrome-stable",
-        help="Browser configuration. Defaults to 'chrome-stable'.")
+      "--browser",
+      "-b",
+      type=BrowserConfig.parse,
+      default="chrome-stable",
+      help="Browser configuration. Defaults to 'chrome-stable'.",
+    )
     parser.add_argument(
-        "--format",
-        choices=("json", "table"),
-        default="json",
-        help="Output format (json, table). Defaults to 'json'.")
+      "--format",
+      choices=("json", "table"),
+      default="json",
+      help="Output format (json, table). Defaults to 'json'.",
+    )
     self.cli.add_debugging_arguments(parser)
 
   @property
@@ -154,18 +160,22 @@ class PerfettoBaseSubcommand(abc.ABC):
 
     browser_cls = BrowserVariantsConfig.get_browser_cls(browser_config)
     if not issubclass(browser_cls, WebDriverBrowser):
-      self.error("Only webdriver-based browsers are supported, "
-                 f"but got {browser_cls.type_name}")
+      self.error(
+        "Only webdriver-based browsers are supported, "
+        f"but got {browser_cls.type_name}"
+      )
 
     settings = Settings(
-        cache_dir=browser_config.cache_dir,
-        flags=browser_cls.default_flags(Flags()),
-        network=NetworkConfig.default().create_network(
-            browser_config.get_platform()),
-        platform=browser_config.get_platform(),
-        env_config=EnvConfig(),
-        viewport=Viewport.HEADLESS,
-        driver_path=driver_path)
+      cache_dir=browser_config.cache_dir,
+      flags=browser_cls.default_flags(Flags()),
+      network=NetworkConfig.default().create_network(
+        browser_config.get_platform()
+      ),
+      platform=browser_config.get_platform(),
+      env_config=EnvConfig(),
+      viewport=Viewport.HEADLESS,
+      driver_path=driver_path,
+    )
 
     browser = browser_cls("browser", browser_config.path, settings)
     # WebDriver runs on the host platform and writes logs locally.
@@ -179,14 +189,14 @@ class PerfettoBaseSubcommand(abc.ABC):
     with plt.PLATFORM.TemporaryDirectory(prefix="crossbench") as tmp_dir:
       out_dir = pth.LocalPath(tmp_dir) / "results"
       runner = Runner(
-          out_dir=out_dir,
-          browsers=(browser,),
-          benchmark=benchmark,
-          probes=(perfetto_info_probe,),
-          env_validation_mode=ValidationMode.SKIP,
-          timing=Timing(cool_down_time=dt.timedelta(seconds=0)),
-          create_symlinks=False,
-          throw=True,
+        out_dir=out_dir,
+        browsers=(browser,),
+        benchmark=benchmark,
+        probes=(perfetto_info_probe,),
+        env_validation_mode=ValidationMode.SKIP,
+        timing=Timing(cool_down_time=dt.timedelta(seconds=0)),
+        create_symlinks=False,
+        throw=True,
       )
       runner.run()
 
@@ -196,39 +206,43 @@ class PerfettoBaseSubcommand(abc.ABC):
       return [CategoryDescription.parse(cat) for cat in raw_data]
 
   @abc.abstractmethod
-  def subcommand_run(self, args: argparse.Namespace, categories: Categories,
-                     browser_name: str) -> None:
+  def subcommand_run(
+    self, args: argparse.Namespace, categories: Categories, browser_name: str
+  ) -> None:
     pass
 
-  def print_table(self, title: str, header_row: list[str],
-                  data: TableData) -> None:
+  def print_table(
+    self, title: str, header_row: list[str], data: TableData
+  ) -> None:
     print(f"\n{title}:")
     table: TableData = [header_row, *data]
     print(tbl.tabulate(table, headers="firstrow", tablefmt="fancy_grid"))
 
 
 class PerfettoCategoriesSubcommand(PerfettoBaseSubcommand):
-
   @override
   def add_cli_parser(self) -> argparse.ArgumentParser:
     categories_parser = self.parent.subparsers.add_parser(
-        "categories",
-        aliases=["cats"],
-        help="List available trace categories from a browser / os")
+      "categories",
+      aliases=["cats"],
+      help="List available trace categories from a browser / os",
+    )
     self.add_query_arguments(categories_parser)
     return categories_parser
 
   @override
-  def subcommand_run(self, args: argparse.Namespace, categories: Categories,
-                     browser_name: str) -> None:
+  def subcommand_run(
+    self, args: argparse.Namespace, categories: Categories, browser_name: str
+  ) -> None:
     categories = [cat for cat in categories if cat.name]
     if args.format == "table":
       self.print_categories_table(browser_name, categories)
     else:
       self.print_categories_json(categories)
 
-  def print_categories_table(self, browser_name: str,
-                             categories: list[CategoryDescription]) -> None:
+  def print_categories_table(
+    self, browser_name: str, categories: list[CategoryDescription]
+  ) -> None:
     header = ["Data Source", "Name", "Description", "Tags"]
     data: TableData = []
     for category in categories:
@@ -239,31 +253,36 @@ class PerfettoCategoriesSubcommand(PerfettoBaseSubcommand):
       data.append([category.data_source, category.name, description, tags])
     self.print_table(f"Categories for {browser_name}", header, data)
 
-  def print_categories_json(self,
-                            categories: list[CategoryDescription]) -> None:
+  def print_categories_json(
+    self, categories: list[CategoryDescription]
+  ) -> None:
     print(json.dumps([cat.as_dict() for cat in categories], indent=2))
 
 
 class PerfettoDataSourcesSubcommand(PerfettoBaseSubcommand):
-
   @override
   def add_cli_parser(self) -> argparse.ArgumentParser:
     data_sources_parser = self.parent.subparsers.add_parser(
-        "data_sources",
-        aliases=["sources", "ds"],
-        help=("List available Perfetto data sources from "
-              "a browser and their categories"))
+      "data_sources",
+      aliases=["sources", "ds"],
+      help=(
+        "List available Perfetto data sources from "
+        "a browser and their categories"
+      ),
+    )
     self.add_query_arguments(data_sources_parser)
     return data_sources_parser
 
   @override
-  def subcommand_run(self, args: argparse.Namespace, categories: Categories,
-                     browser_name: str) -> None:
+  def subcommand_run(
+    self, args: argparse.Namespace, categories: Categories, browser_name: str
+  ) -> None:
     data_sources = collection_helper.group_by(
-        categories,
-        key=lambda cat: cat.data_source,
-        value=lambda cat: cat,
-        sort_key=str)
+      categories,
+      key=lambda cat: cat.data_source,
+      value=lambda cat: cat,
+      sort_key=str,
+    )
 
     # Filter out empty-name category placeholders and sort
     for ds, cats in data_sources.items():
@@ -276,16 +295,19 @@ class PerfettoDataSourcesSubcommand(PerfettoBaseSubcommand):
       self.print_data_sources_json(data_sources)
 
   def print_data_sources_json(
-      self, data_sources: Mapping[str, Sequence[CategoryDescription]]) -> None:
+    self, data_sources: Mapping[str, Sequence[CategoryDescription]]
+  ) -> None:
     out = {
-        data_source_name: [cat.as_dict() for cat in cats]
-        for data_source_name, cats in data_sources.items()
+      data_source_name: [cat.as_dict() for cat in cats]
+      for data_source_name, cats in data_sources.items()
     }
     print(json.dumps(out, indent=2))
 
   def print_data_sources_table(
-      self, browser_name: str,
-      data_sources: Mapping[str, Sequence[CategoryDescription]]) -> None:
+    self,
+    browser_name: str,
+    data_sources: Mapping[str, Sequence[CategoryDescription]],
+  ) -> None:
     header = ["Data Source", "Categories Count", "Categories"]
     data: TableData = []
     for data_source, categories in sorted(data_sources.items()):
@@ -293,6 +315,7 @@ class PerfettoDataSourcesSubcommand(PerfettoBaseSubcommand):
       categories_str = ", ".join(category.name for category in categories)
       if count > 5:
         categories_str = "\n".join(
-            txt_helper.wrap_lines(categories_str, width=60))
+          txt_helper.wrap_lines(categories_str, width=60)
+        )
       data.append([data_source, str(count), categories_str or "-"])
     self.print_table(f"Data Sources for {browser_name}", header, data)

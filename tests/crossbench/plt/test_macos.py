@@ -19,12 +19,16 @@ from crossbench.plt.display_info import DisplayResolution
 from crossbench.plt.macos import MacOSPlatform, MacOsVersion
 from tests import test_helper
 from tests.crossbench.mock_helper import MacOsMockPlatform
-from tests.crossbench.plt.helper import BaseLocalMockPlatformTestMixin, \
-    BasePosixMockPlatformTestCase, PlatformClipboardTestCase
+from tests.crossbench.plt.helper import (
+  BaseLocalMockPlatformTestMixin,
+  BasePosixMockPlatformTestCase,
+  PlatformClipboardTestCase,
+)
 
 
-class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
-                                BasePosixMockPlatformTestCase):
+class MacOsMockPlatformTestCase(
+  BaseLocalMockPlatformTestMixin, BasePosixMockPlatformTestCase
+):
   __test__ = True
   platform: MacOsMockPlatform
 
@@ -50,19 +54,25 @@ class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
     self.expect_sh("sync")
     self.expect_sh("sudo", "purge")
     with mock.patch.object(
-        self.platform, "sh", wraps=self.platform.sh) as mock_sh:
+      self.platform, "sh", wraps=self.platform.sh
+    ) as mock_sh:
       self.platform.clear_memory_page_cache()
-    mock_sh.assert_has_calls([
+    mock_sh.assert_has_calls(
+      [
         mock.call("sync"),
         mock.call("sudo", "purge"),
-    ])
+      ]
+    )
 
   def test_clock_boottime_ns(self) -> None:
     # Both attributes are POSIX-only; create=True lets mock.patch add them on
     # hosts (e.g. Windows) where the time module lacks them.
-    with mock.patch.object(time, "CLOCK_MONOTONIC", 42, create=True), \
-         mock.patch.object(time, "clock_gettime_ns", create=True,
-                           return_value=123) as clock_gettime_ns:
+    with (
+      mock.patch.object(time, "CLOCK_MONOTONIC", 42, create=True),
+      mock.patch.object(
+        time, "clock_gettime_ns", create=True, return_value=123
+      ) as clock_gettime_ns,
+    ):
       self.assertEqual(self.platform.clock_boottime_ns(), 123)
     clock_gettime_ns.assert_called_once_with(42)
 
@@ -122,31 +132,38 @@ class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
 
     with info_plist.open("wb") as f:
       plistlib.dump(
-          {
-              "CFBundleShortVersionString": "129.9.6668.103",
-              "CFBundleDisplayName": "Google Chrome",
-          }, f)
+        {
+          "CFBundleShortVersionString": "129.9.6668.103",
+          "CFBundleDisplayName": "Google Chrome",
+        },
+        f,
+      )
     self.assertEqual(
-        self.platform.app_version(app_path), "Google Chrome 129.9.6668.103")
+      self.platform.app_version(app_path), "Google Chrome 129.9.6668.103"
+    )
 
     with info_plist.open("wb") as f:
       plistlib.dump(
-          {
-              "CFBundleShortVersionString": "129.9.6668.103",
-              # CFBundleDisplayName is missing but CFBundleName is there.
-              "CFBundleName": "Google Chrome",
-          },
-          f)
+        {
+          "CFBundleShortVersionString": "129.9.6668.103",
+          # CFBundleDisplayName is missing but CFBundleName is there.
+          "CFBundleName": "Google Chrome",
+        },
+        f,
+      )
     self.assertEqual(
-        self.platform.app_version(app_path), "Google Chrome 129.9.6668.103")
+      self.platform.app_version(app_path), "Google Chrome 129.9.6668.103"
+    )
 
   def test_app_version_binary_inside_app(self):
-    binary_path = pth.LocalPath("/Applications/Safari Technology Preview.app/"
-                                "Contents/MacOS/safaridriver")
+    binary_path = pth.LocalPath(
+      "/Applications/Safari Technology Preview.app/Contents/MacOS/safaridriver"
+    )
     self.fs.create_file(binary_path, st_size=100)
     self.expect_sh(binary_path, "--version", result="(Release 203, 19620.1.6)")
     self.assertEqual(
-        self.platform.app_version(binary_path), "(Release 203, 19620.1.6)")
+      self.platform.app_version(binary_path), "(Release 203, 19620.1.6)"
+    )
 
   def test_which_empty_path(self):
     with self.assertRaises(ValueError):
@@ -264,8 +281,8 @@ class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
     self.assertEqual(self.platform.search_app(app_path), app_path)
     self.assertEqual(self.platform.search_app(binary_path), app_path)
     self.assertIsNone(
-        self.platform.search_app(
-            pth.LocalPath("/Applications/NonExisting.app")))
+      self.platform.search_app(pth.LocalPath("/Applications/NonExisting.app"))
+    )
 
   def test_search_app_deep_binary(self):
     # App bundle with a deeply nested binary
@@ -348,29 +365,37 @@ class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
         ]
       }""")
     self.expect_sh(
-        "system_profiler",
-        "-json",
-        "SPDisplaysDataType",
-        result=system_profiler_output)
+      "system_profiler",
+      "-json",
+      "SPDisplaysDataType",
+      result=system_profiler_output,
+    )
     displays = self.platform.display_details()
     self.assertEqual(len(displays), 2)
-    self.assertDictEqual(displays[0], {
+    self.assertDictEqual(
+      displays[0],
+      {
         "resolution": DisplayResolution(1728, 1117),
         "refresh_rate": 60,
-    })
-    self.assertDictEqual(displays[1], {
+      },
+    )
+    self.assertDictEqual(
+      displays[1],
+      {
         "resolution": DisplayResolution(3360, 1890),
         "refresh_rate": 30,
-    })
+      },
+    )
     self.assertEqual(
-        self.platform.display_resolution(),
-        DisplayResolution(1728, 1117),
+      self.platform.display_resolution(),
+      DisplayResolution(1728, 1117),
     )
 
   def test_system_memory_bytes(self):
     with mock.patch(
-        "crossbench.plt.macos.MacOSPlatform.is_local",
-        new_callable=mock.PropertyMock) as is_local:
+      "crossbench.plt.macos.MacOSPlatform.is_local",
+      new_callable=mock.PropertyMock,
+    ) as is_local:
       is_local.return_value = False
       self.expect_sh("sysctl", "-n", "hw.memsize", result="17179869184\n")
       self.assertEqual(self.platform.system_memory_bytes, 17179869184)
@@ -387,27 +412,26 @@ class MacOsMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
     self.platform.killall("Google Chrome")
 
   def test_gpu_vram_used_ioreg(self):
-    sample_plist = plistlib.dumps([{
-        "PerformanceStatistics": {
+    sample_plist = plistlib.dumps(
+      [
+        {
+          "PerformanceStatistics": {
             "In use system memory": 1024 * 1024 * 1024,
             "In use video memory": 512 * 1024 * 1024,
-        },
-    }])
+          },
+        }
+      ]
+    )
     self.expect_sh(
-        "ioreg",
-        "-a",
-        "-r",
-        "-d",
-        "1",
-        "-c",
-        "IOAccelerator",
-        result=sample_plist)
+      "ioreg", "-a", "-r", "-d", "1", "-c", "IOAccelerator", result=sample_plist
+    )
     vram = self.platform.gpu_vram_used()
     self.assertEqual(vram, {"gpu_0": 1536.0})
 
   def test_gpu_vram_used_none(self):
     self.expect_sh(
-        "ioreg", "-a", "-r", "-d", "1", "-c", "IOAccelerator", result=b"")
+      "ioreg", "-a", "-r", "-d", "1", "-c", "IOAccelerator", result=b""
+    )
     vram = self.platform.gpu_vram_used()
     self.assertEqual(vram, {})
 
@@ -421,7 +445,8 @@ class MacOSPlatformClipboardTestCase(PlatformClipboardTestCase):
 
   @override
   def clipboard_tool_configs(
-      self) -> list[tuple[str, pth.LocalPath, list[str]]]:
+    self,
+  ) -> list[tuple[str, pth.LocalPath, list[str]]]:
     return [("pbcopy", pth.LocalPath("/usr/bin/pbcopy"), [])]
 
 

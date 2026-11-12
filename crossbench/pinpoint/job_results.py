@@ -26,10 +26,9 @@ if TYPE_CHECKING:
 
 
 class PinpointJobResults:
-
   def __init__(
-      self,
-      job_id: str,
+    self,
+    job_id: str,
   ) -> None:
     self.job_id: Final[str] = job_id
     self.data: Final[JsonDict] = fetch_job_config(job_id, full=True)
@@ -39,11 +38,12 @@ class PinpointJobResults:
 
       self.name: Final[str] = f"pinpoint_{self.benchmark}_{self.bot}"
       self.results_url: Final[str | None] = ObjectParser.optional_str(
-          self.data.get("results_url"), "results_url")
+        self.data.get("results_url"), "results_url"
+      )
       state = ObjectParser.sequence(self.data.get("state", ()), "state")
       self.variants: Final[list[PinpointVariantResults]] = [
-          PinpointVariantResults(ObjectParser.dict(v, f"state[{i}]"), i)
-          for i, v in enumerate(state)
+        PinpointVariantResults(ObjectParser.dict(v, f"state[{i}]"), i)
+        for i, v in enumerate(state)
       ]
 
       self.download_index = 0
@@ -57,12 +57,14 @@ class PinpointJobResults:
   @property
   def benchmark(self) -> str:
     return ObjectParser.any_str(
-        self.arguments.get("benchmark", ""), "benchmark")
+      self.arguments.get("benchmark", ""), "benchmark"
+    )
 
   @property
   def bot(self) -> str:
     return ObjectParser.any_str(
-        self.arguments.get("configuration", ""), "configuration")
+      self.arguments.get("configuration", ""), "configuration"
+    )
 
   @property
   def status(self) -> str:
@@ -100,22 +102,35 @@ class PinpointJobResults:
     if plt.PLATFORM.which("cipd"):
       with annotate("Installing cas via cipd"):
         plt.PLATFORM.sh("cipd", "init", "-force", cache_dir)
-        plt.PLATFORM.sh("cipd", "install", "infra/tools/luci/cas/${platform}",
-                        "latest", "-root", cache_dir)
+        plt.PLATFORM.sh(
+          "cipd",
+          "install",
+          "infra/tools/luci/cas/${platform}",
+          "latest",
+          "-root",
+          cache_dir,
+        )
         return cache_dir_cas
 
     raise FileNotFoundError(
-        "Missing binaries `cas`. Install `cas` from "
-        "https://chrome-infra-packages.appspot.com/p/infra/tools/luci/cas and "
-        "add it to your PATH.")
+      "Missing binaries `cas`. Install `cas` from "
+      "https://chrome-infra-packages.appspot.com/p/infra/tools/luci/cas and "
+      "add it to your PATH."
+    )
 
-  def _prepare_tasks(self, spinner: Spinner,
-                     out_dir: pth.LocalPath) -> list[Callable[[], None]]:
+  def _prepare_tasks(
+    self, spinner: Spinner, out_dir: pth.LocalPath
+  ) -> list[Callable[[], None]]:
     tasks: list[Callable[[], None]] = []
     if self.results_url:
       tasks.append(
-          partial(self._download_from_storage, spinner, self.results_url,
-                  out_dir / f"{self.job_id}.html"))
+        partial(
+          self._download_from_storage,
+          spinner,
+          self.results_url,
+          out_dir / f"{self.job_id}.html",
+        )
+      )
 
     for variant in self.variants:
       variant_dir = out_dir / variant.name
@@ -125,36 +140,48 @@ class PinpointJobResults:
 
         if attempt.cas_isolate:
           tasks.append(
-              partial(self._download_cas_isolate, spinner, attempt.cas_isolate,
-                      attempt_dir))
+            partial(
+              self._download_cas_isolate,
+              spinner,
+              attempt.cas_isolate,
+              attempt_dir,
+            )
+          )
 
         for trace_name, trace_url in attempt.perfetto_trace_url_by_name.items():
           tasks.append(
-              partial(self._download_from_storage, spinner, trace_url,
-                      attempt_dir / trace_name))
+            partial(
+              self._download_from_storage,
+              spinner,
+              trace_url,
+              attempt_dir / trace_name,
+            )
+          )
     return tasks
 
   def _next_progress_message(self) -> str:
     self.download_index += 1
     return f" {self.download_index}/{self.download_count}"
 
-  def _download_cas_isolate(self, spinner: Spinner, isolate: str,
-                            out_dir: pth.LocalPath) -> None:
+  def _download_cas_isolate(
+    self, spinner: Spinner, isolate: str, out_dir: pth.LocalPath
+  ) -> None:
     spinner.write(self._next_progress_message())
     cmd: list[pth.AnyPathLike] = [
-        self.cas_path,
-        "download",
-        "-cas-instance",
-        "projects/chrome-swarming/instances/default_instance",
-        "-digest",
-        isolate,
-        "-dir",
-        out_dir,
+      self.cas_path,
+      "download",
+      "-cas-instance",
+      "projects/chrome-swarming/instances/default_instance",
+      "-digest",
+      isolate,
+      "-dir",
+      out_dir,
     ]
     plt.PLATFORM.sh(*cmd)
 
-  def _download_from_storage(self, spinner: Spinner, url: str,
-                             output_file: pth.LocalPath) -> None:
+  def _download_from_storage(
+    self, spinner: Spinner, url: str, output_file: pth.LocalPath
+  ) -> None:
     spinner.write(self._next_progress_message())
     parsed_url = urlparse(url)
     path_segments = parsed_url.path.strip("/").split("/", 1)
@@ -172,19 +199,20 @@ class PinpointJobResults:
 
 
 class PinpointVariantResults:
-
   def __init__(self, data: JsonDict, index: int) -> None:
     self.data: Final[JsonDict] = data
     self.index: Final[int] = index
     self.name: Final[str] = self.form_variant_name()
     attempts = ObjectParser.sequence(data.get("attempts", ()), "attempts")
     self.attempts: Final[list[PinpointAttemptResults]] = [
-        PinpointAttemptResults(
-            ObjectParser.dict(attempt, f"attempts[{attempt_index}]"),
-            attempt_index) for attempt_index, attempt in enumerate(attempts)
+      PinpointAttemptResults(
+        ObjectParser.dict(attempt, f"attempts[{attempt_index}]"), attempt_index
+      )
+      for attempt_index, attempt in enumerate(attempts)
     ]
     self.download_count: Final[int] = sum(
-        a.download_count for a in self.attempts)
+      a.download_count for a in self.attempts
+    )
 
   @property
   def change(self) -> JsonDict:
@@ -209,13 +237,13 @@ class PinpointVariantResults:
 
 
 class PinpointAttemptResults:
-
   def __init__(self, data: JsonDict, index: int) -> None:
     self.data: Final[JsonDict] = data
     self.index: Final[int] = index
     self.cas_isolate: Final[str | None] = self.find_results_isolate()
-    self.perfetto_trace_url_by_name: Final[dict[
-        str, str]] = self.find_perfetto_traces()
+    self.perfetto_trace_url_by_name: Final[dict[str, str]] = (
+      self.find_perfetto_traces()
+    )
 
     self.download_count = len(self.perfetto_trace_url_by_name)
     if self.cas_isolate:
@@ -224,24 +252,27 @@ class PinpointAttemptResults:
   @property
   def executions(self) -> list[JsonDict]:
     raw_executions = ObjectParser.sequence(
-        self.data.get("executions", ()), "executions")
+      self.data.get("executions", ()), "executions"
+    )
     return [
-        ObjectParser.dict(e, f"executions[{i}]")
-        for i, e in enumerate(raw_executions)
+      ObjectParser.dict(e, f"executions[{i}]")
+      for i, e in enumerate(raw_executions)
     ]
 
   def find_results_isolate(self) -> str | None:
     if len(self.executions) < 2:
       return None
 
-    raw_details = ObjectParser.sequence(self.executions[1].get("details", ()),
-                                        "details")
+    raw_details = ObjectParser.sequence(
+      self.executions[1].get("details", ()), "details"
+    )
     for i, raw_detail in enumerate(raw_details):
       details = ObjectParser.dict(raw_detail, f"details[{i}]")
       if details.get("key") != "isolate":
         continue
       if value := ObjectParser.optional_str(
-          details.get("value"), "isolate value"):
+        details.get("value"), "isolate value"
+      ):
         return value
 
     return None
@@ -251,8 +282,9 @@ class PinpointAttemptResults:
     if len(self.executions) < 3:
       return url_by_name
 
-    raw_details = ObjectParser.sequence(self.executions[2].get("details", ()),
-                                        "details")
+    raw_details = ObjectParser.sequence(
+      self.executions[2].get("details", ()), "details"
+    )
     for index, raw_detail in enumerate(raw_details):
       details = ObjectParser.dict(raw_detail, f"details[{index}]")
       if details.get("key") != "trace":
@@ -265,18 +297,23 @@ class PinpointAttemptResults:
     return url_by_name
 
 
-def download_results(job_id: str,
-                     out_dir: pth.LocalPath | None = None,
-                     force: bool = False) -> None:
+def download_results(
+  job_id: str, out_dir: pth.LocalPath | None = None, force: bool = False
+) -> None:
   """Downloads results of a Pinpoint job."""
   job_results = PinpointJobResults(job_id)
 
-  out_dir = out_dir or pth.get_out_dir(pth.LocalPath.cwd(
-  )) / ".." / f"{job_results.created_date}_pinpoint_{job_results.job_id}"
+  out_dir = (
+    out_dir
+    or pth.get_out_dir(pth.LocalPath.cwd())
+    / ".."
+    / f"{job_results.created_date}_pinpoint_{job_results.job_id}"
+  )
   out_dir = out_dir.resolve()
   if out_dir.exists() and not force:
     raise FileExistsError(
-        f"Output directory {out_dir} already exists. Use --force to overwrite.")
+      f"Output directory {out_dir} already exists. Use --force to overwrite."
+    )
   out_dir.mkdir(parents=True, exist_ok=True)
 
   logging.info("RESULT DIR: %s", out_dir)

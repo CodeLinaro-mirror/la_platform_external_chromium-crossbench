@@ -33,7 +33,8 @@ class _PosixSignals(Signals):
 
 
 class PosixBaseSignal(_PosixSignals):
-  """ Signals names AND values supported on all posix platforms. """
+  """Signals names AND values supported on all posix platforms."""
+
   SIGABRT = signal.SIGABRT
   SIGFPE = signal.SIGFPE
   SIGILL = signal.SIGILL
@@ -56,8 +57,9 @@ class PosixBaseSignal(_PosixSignals):
 
 
 class PosixSignals(_PosixSignals):
-  """ Signal names (not values) support on all posix platforms.
+  """Signal names (not values) support on all posix platforms.
   See specific subclasses for platform-specific values."""
+
   SIGABRT = signal.SIGABRT
   SIGFPE = signal.SIGFPE
   SIGILL = signal.SIGILL
@@ -175,6 +177,8 @@ class MacOSSignals(_PosixSignals):
 
 # Type unions of concrete Signals implementations.
 AnySignals: TypeAlias = (
-    WinSignals | PosixBaseSignal | PosixSignals | LinuxSignals | MacOSSignals)
+  WinSignals | PosixBaseSignal | PosixSignals | LinuxSignals | MacOSSignals
+)
 AnyPosixSignals: TypeAlias = (
-    PosixBaseSignal | PosixSignals | LinuxSignals | MacOSSignals)
+  PosixBaseSignal | PosixSignals | LinuxSignals | MacOSSignals
+)

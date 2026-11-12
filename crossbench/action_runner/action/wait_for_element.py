@@ -33,16 +33,20 @@ class WaitForElementAction(Action):
   def config_parser(cls: type[Self]) -> ConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
-        "selector", type=ObjectParser.non_empty_str, required=True)
+      "selector", type=ObjectParser.non_empty_str, required=True
+    )
     parser.add_argument(
-        "expected_count",
-        type=NumberParser.positive_int,
-        required=False,
-        default=1)
+      "expected_count",
+      type=NumberParser.positive_int,
+      required=False,
+      default=1,
+    )
     parser.add_argument(
-        "check_rect", type=ObjectParser.bool, required=False, default=False)
+      "check_rect", type=ObjectParser.bool, required=False, default=False
+    )
     parser.add_argument(
-        "or_more", type=ObjectParser.bool, required=False, default=False)
+      "or_more", type=ObjectParser.bool, required=False, default=False
+    )
     return parser
 
   @override

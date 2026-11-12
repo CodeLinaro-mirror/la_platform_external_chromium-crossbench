@@ -24,8 +24,13 @@ if TYPE_CHECKING:
 class ValidationMode(StrEnumWithHelp):
   THROW = ("throw", "Strict mode, throw and abort on env issues")
   PROMPT = ("prompt", "Prompt to accept potential env issues (default)")
-  WARN = ("warn", ("Only display a warning for env issue "
-                   "(useful for automated testing/headless)"))
+  WARN = (
+    "warn",
+    (
+      "Only display a warning for env issue "
+      "(useful for automated testing/headless)"
+    ),
+  )
   SKIP = ("skip", "Don't perform any env validation")
 
 
@@ -35,13 +40,13 @@ def merge_bool(name: str, left: bool | None, right: bool | None) -> bool | None:
   if right is None:
     return left
   if left != right:
-    raise ValueError(f"Conflicting merge values for {name}: "
-                     f"{left} vs. {right}")
+    raise ValueError(f"Conflicting merge values for {name}: {left} vs. {right}")
   return left
 
 
-def merge_number_max(name: str, left: NumberT | None,
-                     right: NumberT | None) -> NumberT | None:
+def merge_number_max(
+  name: str, left: NumberT | None, right: NumberT | None
+) -> NumberT | None:
   del name
   if left is None:
     return right
@@ -50,8 +55,9 @@ def merge_number_max(name: str, left: NumberT | None,
   return max(left, right)
 
 
-def merge_number_min(name: str, left: NumberT | None,
-                     right: NumberT | None) -> NumberT | None:
+def merge_number_min(
+  name: str, left: NumberT | None, right: NumberT | None
+) -> NumberT | None:
   del name
   if left is None:
     return right
@@ -66,13 +72,13 @@ def merge_str(name: str, left: str | None, right: str | None) -> str | None:
   if right is None:
     return left
   if left != right:
-    raise ValueError(f"Conflicting merge values for {name}: "
-                     f"{left} vs. {right}")
+    raise ValueError(f"Conflicting merge values for {name}: {left} vs. {right}")
   return left
 
 
-def merge_str_list(name: str, left: list[str] | None,
-                   right: list[str] | None) -> list[str] | None:
+def merge_str_list(
+  name: str, left: list[str] | None, right: list[str] | None
+) -> list[str] | None:
   del name
   if left is None:
     return right
@@ -81,8 +87,9 @@ def merge_str_list(name: str, left: list[str] | None,
   return left + right
 
 
-def merge_duration_max(name: str, left: dt.timedelta | None,
-                       right: dt.timedelta | None) -> dt.timedelta | None:
+def merge_duration_max(
+  name: str, left: dt.timedelta | None, right: dt.timedelta | None
+) -> dt.timedelta | None:
   del name
   if not left:
     return right
@@ -92,9 +99,9 @@ def merge_duration_max(name: str, left: dt.timedelta | None,
 
 
 def merge_str_dict(
-    name: str,
-    left: Mapping[str, str] | None,
-    right: Mapping[str, str] | None,
+  name: str,
+  left: Mapping[str, str] | None,
+  right: Mapping[str, str] | None,
 ) -> immutabledict[str, str] | None:
   if left is None:
     return None if right is None else immutabledict(right)
@@ -104,8 +111,10 @@ def merge_str_dict(
   for key, right_val in right.items():
     left_val = merged.get(key)
     if left_val is not None and left_val != right_val:
-      raise ValueError(f"Conflicting merge values for {name}[{key!r}]: "
-                       f"{left_val!r} vs. {right_val!r}")
+      raise ValueError(
+        f"Conflicting merge values for {name}[{key!r}]: "
+        f"{left_val!r} vs. {right_val!r}"
+      )
     merged[key] = right_val
   return immutabledict(merged)
 
@@ -151,8 +160,9 @@ class EnvConfig(ConfigObject):
     if preset := ENV_CONFIG_PRESETS.get(value):
       return preset
     raise argparse.ArgumentTypeError(
-        f"Unknown host config preset {value!r}. "
-        f"Choices are {','.join(ENV_CONFIG_PRESETS.keys())}")
+      f"Unknown host config preset {value!r}. "
+      f"Choices are {','.join(ENV_CONFIG_PRESETS.keys())}"
+    )
 
   @classmethod
   @override
@@ -167,118 +177,156 @@ class EnvConfig(ConfigObject):
     parser = ConfigParser(cls)
     parser.add_argument("browser_allow_background", type=ObjectParser.bool)
     parser.add_argument(
-        "browser_allow_existing_process",
-        type=ObjectParser.bool,
-        default=cls.IGNORE)
+      "browser_allow_existing_process",
+      type=ObjectParser.bool,
+      default=cls.IGNORE,
+    )
     parser.add_argument("browser_is_headless", type=ObjectParser.bool)
     parser.add_argument(
-        "cpu_max_usage_percent",
-        type=NumberParser.int_range(0, 100),
-        default=cls.IGNORE)
+      "cpu_max_usage_percent",
+      type=NumberParser.int_range(0, 100),
+      default=cls.IGNORE,
+    )
     parser.add_argument(
-        "cpu_min_relative_speed",
-        type=NumberParser.int_range(0, 1),
-        default=cls.IGNORE)
+      "cpu_min_relative_speed",
+      type=NumberParser.int_range(0, 1),
+      default=cls.IGNORE,
+    )
     parser.add_argument(
-        "cpu_power_mode", type=ObjectParser.any_str, default=cls.IGNORE)
+      "cpu_power_mode", type=ObjectParser.any_str, default=cls.IGNORE
+    )
     parser.add_argument(
-        "disk_min_free_space_gib",
-        type=NumberParser.positive_float,
-        default=cls.IGNORE)
+      "disk_min_free_space_gib",
+      type=NumberParser.positive_float,
+      default=cls.IGNORE,
+    )
     parser.add_argument(
-        "env_vars", type=ObjectParser.env_dict, default=cls.IGNORE)
+      "env_vars", type=ObjectParser.env_dict, default=cls.IGNORE
+    )
     parser.add_argument("power_use_battery", type=ObjectParser.bool)
     parser.add_argument("require_probes", type=ObjectParser.bool)
     parser.add_argument(
-        "screen_allow_autobrightness",
-        type=ObjectParser.bool,
-        default=cls.IGNORE)
+      "screen_allow_autobrightness", type=ObjectParser.bool, default=cls.IGNORE
+    )
     parser.add_argument(
-        "screen_brightness_percent", type=NumberParser.int_range(0, 100))
+      "screen_brightness_percent", type=NumberParser.int_range(0, 100)
+    )
     parser.add_argument(
-        "screen_refresh_rate",
-        type=NumberParser.int_range(30, 240),
-        default=cls.IGNORE)
+      "screen_refresh_rate",
+      type=NumberParser.int_range(30, 240),
+      default=cls.IGNORE,
+    )
     parser.add_argument("system_allow_monitoring", type=ObjectParser.bool)
     parser.add_argument(
-        "system_forbidden_process_names", type=str, is_list=True)
+      "system_forbidden_process_names", type=str, is_list=True
+    )
     parser.add_argument(
-        "system_min_uptime", type=DurationParser.positive_or_zero_duration)
+      "system_min_uptime", type=DurationParser.positive_or_zero_duration
+    )
     return parser
 
   def merge(self, other: EnvConfig) -> EnvConfig:
     return EnvConfig(
-        browser_allow_background=merge_bool("browser_allow_background",
-                                            self.browser_allow_background,
-                                            other.browser_allow_background),
-        browser_allow_existing_process=merge_bool(
-            "browser_allow_existing_process",
-            self.browser_allow_existing_process,
-            other.browser_allow_existing_process),
-        browser_is_headless=merge_bool("browser_is_headless",
-                                       self.browser_is_headless,
-                                       other.browser_is_headless),
-        cpu_max_usage_percent=merge_number_min("cpu_max_usage_percent",
-                                               self.cpu_max_usage_percent,
-                                               other.cpu_max_usage_percent),
-        cpu_min_relative_speed=merge_number_max("cpu_min_relative_speed",
-                                                self.cpu_min_relative_speed,
-                                                other.cpu_min_relative_speed),
-        cpu_power_mode=merge_str("cpu_power_mode", self.cpu_power_mode,
-                                 other.cpu_power_mode),
-        disk_min_free_space_gib=merge_number_max("disk_min_free_space_gib",
-                                                 self.disk_min_free_space_gib,
-                                                 other.disk_min_free_space_gib),
-        env_vars=merge_str_dict("env_vars", self.env_vars, other.env_vars),
-        power_use_battery=merge_bool("power_use_battery",
-                                     self.power_use_battery,
-                                     other.power_use_battery),
-        require_probes=merge_bool("require_probes", self.require_probes,
-                                  other.require_probes),
-        screen_allow_autobrightness=merge_bool(
-            "screen_allow_autobrightness", self.screen_allow_autobrightness,
-            other.screen_allow_autobrightness),
-        screen_brightness_percent=merge_number_max(
-            "screen_brightness_percent", self.screen_brightness_percent,
-            other.screen_brightness_percent),
-        screen_refresh_rate=merge_number_max("screen_refresh_rate",
-                                             self.screen_refresh_rate,
-                                             other.screen_refresh_rate),
-        system_allow_monitoring=merge_bool("system_allow_monitoring",
-                                           self.system_allow_monitoring,
-                                           other.system_allow_monitoring),
-        system_forbidden_process_names=merge_str_list(
-            "system_forbidden_process_names",
-            self.system_forbidden_process_names,
-            other.system_forbidden_process_names),
-        system_min_uptime=merge_duration_max("system_min_uptime",
-                                             self.system_min_uptime,
-                                             other.system_min_uptime),
+      browser_allow_background=merge_bool(
+        "browser_allow_background",
+        self.browser_allow_background,
+        other.browser_allow_background,
+      ),
+      browser_allow_existing_process=merge_bool(
+        "browser_allow_existing_process",
+        self.browser_allow_existing_process,
+        other.browser_allow_existing_process,
+      ),
+      browser_is_headless=merge_bool(
+        "browser_is_headless",
+        self.browser_is_headless,
+        other.browser_is_headless,
+      ),
+      cpu_max_usage_percent=merge_number_min(
+        "cpu_max_usage_percent",
+        self.cpu_max_usage_percent,
+        other.cpu_max_usage_percent,
+      ),
+      cpu_min_relative_speed=merge_number_max(
+        "cpu_min_relative_speed",
+        self.cpu_min_relative_speed,
+        other.cpu_min_relative_speed,
+      ),
+      cpu_power_mode=merge_str(
+        "cpu_power_mode", self.cpu_power_mode, other.cpu_power_mode
+      ),
+      disk_min_free_space_gib=merge_number_max(
+        "disk_min_free_space_gib",
+        self.disk_min_free_space_gib,
+        other.disk_min_free_space_gib,
+      ),
+      env_vars=merge_str_dict("env_vars", self.env_vars, other.env_vars),
+      power_use_battery=merge_bool(
+        "power_use_battery", self.power_use_battery, other.power_use_battery
+      ),
+      require_probes=merge_bool(
+        "require_probes", self.require_probes, other.require_probes
+      ),
+      screen_allow_autobrightness=merge_bool(
+        "screen_allow_autobrightness",
+        self.screen_allow_autobrightness,
+        other.screen_allow_autobrightness,
+      ),
+      screen_brightness_percent=merge_number_max(
+        "screen_brightness_percent",
+        self.screen_brightness_percent,
+        other.screen_brightness_percent,
+      ),
+      screen_refresh_rate=merge_number_max(
+        "screen_refresh_rate",
+        self.screen_refresh_rate,
+        other.screen_refresh_rate,
+      ),
+      system_allow_monitoring=merge_bool(
+        "system_allow_monitoring",
+        self.system_allow_monitoring,
+        other.system_allow_monitoring,
+      ),
+      system_forbidden_process_names=merge_str_list(
+        "system_forbidden_process_names",
+        self.system_forbidden_process_names,
+        other.system_forbidden_process_names,
+      ),
+      system_min_uptime=merge_duration_max(
+        "system_min_uptime", self.system_min_uptime, other.system_min_uptime
+      ),
     )
 
 
 _config_default = EnvConfig()
 _config_strict = EnvConfig(
-    cpu_max_usage_percent=98,
-    cpu_min_relative_speed=1,
-    system_allow_monitoring=False,
-    browser_allow_existing_process=False,
-    require_probes=True,
-    system_min_uptime=dt.timedelta(minutes=5))
+  cpu_max_usage_percent=98,
+  cpu_min_relative_speed=1,
+  system_allow_monitoring=False,
+  browser_allow_existing_process=False,
+  require_probes=True,
+  system_min_uptime=dt.timedelta(minutes=5),
+)
 _config_battery: EnvConfig = _config_strict.merge(
-    EnvConfig(power_use_battery=True))
+  EnvConfig(power_use_battery=True)
+)
 _config_power: EnvConfig = _config_strict.merge(
-    EnvConfig(power_use_battery=False))
+  EnvConfig(power_use_battery=False)
+)
 _config_catan: EnvConfig = _config_strict.merge(
-    EnvConfig(
-        screen_brightness_percent=65,
-        system_forbidden_process_names=["terminal", "iterm2"],
-        screen_allow_autobrightness=False))
+  EnvConfig(
+    screen_brightness_percent=65,
+    system_forbidden_process_names=["terminal", "iterm2"],
+    screen_allow_autobrightness=False,
+  )
+)
 
-ENV_CONFIG_PRESETS.update({
+ENV_CONFIG_PRESETS.update(
+  {
     "default": _config_default,
     "strict": _config_strict,
     "battery": _config_battery,
     "power": _config_power,
     "catan": _config_catan,
-})
+  }
+)

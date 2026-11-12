@@ -32,10 +32,9 @@ class Flatten:
   }
   """
 
-  def __init__(self,
-               *args: Mapping,
-               key_fn: KeyFnType | None = None,
-               sort: bool = True) -> None:
+  def __init__(
+    self, *args: Mapping, key_fn: KeyFnType | None = None, sort: bool = True
+  ) -> None:
     """_summary_
 
     Args:
@@ -63,15 +62,20 @@ class Flatten:
   def _is_leaf_item(self, item: object) -> bool:
     if isinstance(item, (str, float, int, list)):
       return True
-    if isinstance(item, Mapping) and "values" in item and isinstance(
-        item["values"], list):
+    if (
+      isinstance(item, Mapping)
+      and "values" in item
+      and isinstance(item["values"], list)
+    ):
       return True
     return False
 
-  def _flatten(self,
-               parent_path: tuple[str, ...],
-               data: Mapping,
-               ignore_toplevel: bool = False) -> None:
+  def _flatten(
+    self,
+    parent_path: tuple[str, ...],
+    data: Mapping,
+    ignore_toplevel: bool = False,
+  ) -> None:
     for name, item in data.items():
       if item is None:
         continue
@@ -90,16 +94,18 @@ class Flatten:
         self._flatten(path, item)
 
 
-def _ljust_row(sequence: Sequence[str | None],
-               n: int,
-               fill_value: str | None = None) -> list[str | None]:
+def _ljust_row(
+  sequence: Sequence[str | None], n: int, fill_value: str | None = None
+) -> list[str | None]:
   return list(sequence) + ([fill_value] * (n - len(sequence)))
 
 
-def merge_csv(csv_list: Sequence[pth.LocalPath],
-              headers: list[str] | None = None,
-              row_header_len: int = 1,
-              delimiter: str = "\t") -> list[list[str | None]]:
+def merge_csv(
+  csv_list: Sequence[pth.LocalPath],
+  headers: list[str] | None = None,
+  row_header_len: int = 1,
+  delimiter: str = "\t",
+) -> list[list[str | None]]:
   """
   Merge multiple CSV files.
   File 1:
@@ -129,9 +135,9 @@ def merge_csv(csv_list: Sequence[pth.LocalPath],
   table: list[list[str | None]] = []
   # Initial row-headers from the first csv file.
   known_row_headers: set[tuple[str, ...]] = set()
-  row_header_len = _merge_csv_prepare_row_headers(table, known_row_headers,
-                                                  csv_list[0], row_header_len,
-                                                  delimiter)
+  row_header_len = _merge_csv_prepare_row_headers(
+    table, known_row_headers, csv_list[0], row_header_len, delimiter
+  )
 
   # Fill in the header column taken from the first file
   if headers:
@@ -143,19 +149,28 @@ def merge_csv(csv_list: Sequence[pth.LocalPath],
   for csv_file in csv_list:
     with csv_file.open(encoding="utf-8") as f:
       csv_data: TableData = list(csv.reader(f, delimiter=delimiter))
-    table_row_len = _merge_csv_append(csv_data, table, table_headers,
-                                      row_header_len, headers,
-                                      known_row_headers, table_row_len)
+    table_row_len = _merge_csv_append(
+      csv_data,
+      table,
+      table_headers,
+      row_header_len,
+      headers,
+      known_row_headers,
+      table_row_len,
+    )
 
   if table_headers:
     return [table_headers, *table]
   return table
 
 
-def _merge_csv_prepare_row_headers(table: list[list[str | None]],
-                                   known_row_headers: set[tuple[str, ...]],
-                                   csv_file: pth.LocalPath, row_header_len: int,
-                                   delimiter: str) -> int:
+def _merge_csv_prepare_row_headers(
+  table: list[list[str | None]],
+  known_row_headers: set[tuple[str, ...]],
+  csv_file: pth.LocalPath,
+  row_header_len: int,
+  delimiter: str,
+) -> int:
   with csv_file.open(encoding="utf-8") as first_file:
     for csv_row in csv.reader(first_file, delimiter=delimiter):
       if row_header_len == -1:
@@ -179,12 +194,15 @@ def _detect_row_header_len(row: list[str]) -> int:
   return 1
 
 
-def _merge_csv_append(csv_data: TableData,
-                      table: list[list[str | None]],
-                      table_headers: list[str | None], row_header_len: int,
-                      headers: list[str] | None,
-                      known_row_headers: set[tuple[str, ...]],
-                      table_row_len: int) -> int:
+def _merge_csv_append(
+  csv_data: TableData,
+  table: list[list[str | None]],
+  table_headers: list[str | None],
+  row_header_len: int,
+  headers: list[str] | None,
+  known_row_headers: set[tuple[str, ...]],
+  table_row_len: int,
+) -> int:
   # Find the max row width in added csv_data.
   max_csv_row_len = max(len(row) for row in csv_data) - row_header_len
   if table:
@@ -199,7 +217,8 @@ def _merge_csv_append(csv_data: TableData,
   # Pre-computed potential padding lists.
   skipped_table_row_padding: list[None] = [None] * max_csv_row_len
   new_row_padding: list[None] = [None] * (
-      table_row_len - row_header_len - max_csv_row_len)
+    table_row_len - row_header_len - max_csv_row_len
+  )
 
   table_index = 0
   for csv_row in csv_data:
@@ -209,17 +228,18 @@ def _merge_csv_append(csv_data: TableData,
     if table_index >= len(table):
       # Append all additional rows to the end of the table.
       new_row: list[str | None] = [
-          *csv_row_header,
-          *new_row_padding,
-          *csv_padded_row,
+        *csv_row_header,
+        *new_row_padding,
+        *csv_padded_row,
       ]
       table.append(new_row)
       table_index += 1
       continue
 
     table_row = table[table_index]
-    table_row_header = cast("tuple[str, ...]",
-                            tuple(table_row[:row_header_len]))
+    table_row_header = cast(
+      "tuple[str, ...]", tuple(table_row[:row_header_len])
+    )
 
     if table_row_header == csv_row_header:
       # Simple case, row-headers are matching the current table.
@@ -237,8 +257,9 @@ def _merge_csv_append(csv_data: TableData,
     try_insert_alpha_sorted = csv_row_header_key not in known_row_headers
     while True:
       table_row = table[table_index]
-      table_row_header = cast("tuple[str, ...]",
-                              tuple(table_row[:row_header_len]))
+      table_row_header = cast(
+        "tuple[str, ...]", tuple(table_row[:row_header_len])
+      )
       if table_row_header == csv_row_header:
         table_row.extend(csv_padded_row)
         break

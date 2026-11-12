@@ -19,8 +19,10 @@ from crossbench.benchmarks.loading.config.blocks import ActionBlock
 from crossbench.benchmarks.loading.input_source import InputSource
 from crossbench.benchmarks.loading.page.combined import CombinedPage
 from crossbench.benchmarks.loading.page.interactive import InteractivePage
-from crossbench.benchmarks.loadline.loadline import LoadLineBenchmark, \
-    LoadLineProbe
+from crossbench.benchmarks.loadline.loadline import (
+  LoadLineBenchmark,
+  LoadLineProbe,
+)
 from crossbench.flags.chrome import ChromeFlags
 from crossbench.probes.probe_context import ProbeContext
 
@@ -67,10 +69,10 @@ def _metric_stats(df: pd.DataFrame) -> dict[str, MetricStats]:
       delta = 0.0
       se = 0.0
     metric_stats[str(metric)] = {
-        "mean": mean,
-        "delta": delta,
-        "se": se,
-        "n": n,
+      "mean": mean,
+      "delta": delta,
+      "se": se,
+      "n": n,
     }
   return metric_stats
 
@@ -79,11 +81,12 @@ N_EXPECTED_METRICS: Final[int] = 10
 
 
 # `expected_metrics` is overridden in tests.
-def process_scores(df: pd.DataFrame,
-                   expected_metrics: int = N_EXPECTED_METRICS) -> pd.DataFrame:
+def process_scores(
+  df: pd.DataFrame, expected_metrics: int = N_EXPECTED_METRICS
+) -> pd.DataFrame:
   run_metrics = (
-      df.groupby(["cb_browser", "metric",
-                  "cb_run"])["value"].mean().reset_index())
+    df.groupby(["cb_browser", "metric", "cb_run"])["value"].mean().reset_index()
+  )
   results: dict[str, dict[str, str]] = {}
   for browser, browser_df in run_metrics.groupby("cb_browser"):
     if not (metric_stats := _metric_stats(browser_df)):
@@ -110,7 +113,7 @@ def process_scores(df: pd.DataFrame,
 
       assert metric_mean > 0
       log_means.append(float(np.log(metric_mean)))
-      rel_vars.append(float((stats["se"] / stats["mean"])**2))
+      rel_vars.append(float((stats["se"] / stats["mean"]) ** 2))
       n_values.append(stats["n"])
 
     metric_results = {m: metric_results[m] for m in sorted(metric_stats.keys())}
@@ -131,11 +134,11 @@ def process_scores(df: pd.DataFrame,
       total_df = int(np.round(np.mean([n - 1 for n in n_values])))
       if total_df > 0:
         total_se = (
-            total_mean * float(np.sqrt(np.sum(rel_vars))) / len(log_means))
+          total_mean * float(np.sqrt(np.sum(rel_vars))) / len(log_means)
+        )
         total_t = float(scipy_t.ppf(0.975, total_df))
         total_delta = total_t * total_se
-        metric_results["TOTAL_SCORE"] = (
-            f"{total_mean:.3f} ± {total_delta:.3f}")
+        metric_results["TOTAL_SCORE"] = f"{total_mean:.3f} ± {total_delta:.3f}"
       else:
         metric_results["TOTAL_SCORE"] = f"{total_mean:.3f}"
 
@@ -169,19 +172,20 @@ class LoadLine2Probe(LoadLineProbe):
   def _compute_breakdown(self, group: BrowsersRunGroup) -> pd.DataFrame:
     df = self._load_query_result(group, "loadline2_breakdown")
     df["os"] = df[["network", "process_launch"]].max(axis=1)
-    df = df.groupby(["cb_browser", "page"])[[
+    df = df.groupby(["cb_browser", "page"])[
+      [
         "os",
         "renderer_visual",
         "renderer_interactive",
         "gpu_visual",
         "gpu_interactive",
-    ]].mean()
+      ]
+    ].mean()
     df.index.names = ["browser", "story"]
     return df
 
 
 class LoadLine2ProbeContext(ProbeContext[LoadLine2Probe]):
-
   def start(self) -> None:
     pass
 
@@ -193,18 +197,21 @@ class LoadLine2ProbeContext(ProbeContext[LoadLine2Probe]):
 
 
 class LoadLine2CombinedPage(CombinedPage):
-
   ANDROID_VIEWPORT_TAP_POSITION: Final[PositionConfig] = (
-      PositionConfig.from_selector("html"))
+    PositionConfig.from_selector("html")
+  )
 
   def _tap_viewport_for_scheduling_boost(
-      self, action_runner: ActionRunner) -> None:
+    self, action_runner: ActionRunner
+  ) -> None:
     action = ClickAction.create(
-        source=InputSource.TOUCH, position=self.ANDROID_VIEWPORT_TAP_POSITION)
+      source=InputSource.TOUCH, position=self.ANDROID_VIEWPORT_TAP_POSITION
+    )
     action_runner.click_touch(action)
 
-  def _run_android_load_block(self, action_runner: ActionRunner,
-                              block: ActionBlock) -> None:
+  def _run_android_load_block(
+    self, action_runner: ActionRunner, block: ActionBlock
+  ) -> None:
     first_action = block.actions[0] if block.actions else None
     if not isinstance(first_action, JsAction):
       action_runner.run_blocks((block,))
@@ -229,7 +236,8 @@ class LoadLine2CombinedPage(CombinedPage):
       actions.js(setup_script)
     self._tap_viewport_for_scheduling_boost(action_runner)
     remaining_block = ActionBlock(
-        label=block.label, index=block.index, actions=block.actions[1:])
+      label=block.label, index=block.index, actions=block.actions[1:]
+    )
     action_runner.run_blocks((remaining_block,))
 
   @override
@@ -266,12 +274,16 @@ class LoadLine2Benchmark(LoadLineBenchmark):
   def add_cli_arguments(cls, parser: CBArgumentParser) -> CBArgumentParser:
     super().add_cli_arguments(parser)
     parser.add_argument(
-        "--deterministic",
-        action="store_true",
-        help=("Make Chrome behave more deterministically during loading. Note "
-              "that this can affect scores. For experimental use only."))
+      "--deterministic",
+      action="store_true",
+      help=(
+        "Make Chrome behave more deterministically during loading. Note "
+        "that this can affect scores. For experimental use only."
+      ),
+    )
     parser.add_argument(
-        "--benchmark-version", action="version", version=f"{VERSION_STRING}")
+      "--benchmark-version", action="version", version=f"{VERSION_STRING}"
+    )
     return parser
 
   @classmethod
@@ -298,8 +310,9 @@ class LoadLine2Benchmark(LoadLineBenchmark):
 
   @classmethod
   @override
-  def extra_flags(cls, browser_attributes: BrowserAttributes,
-                  story: Story) -> Flags:
+  def extra_flags(
+    cls, browser_attributes: BrowserAttributes, story: Story
+  ) -> Flags:
     flags: Flags = super().extra_flags(browser_attributes, story)
     if browser_attributes.is_chromium_based:
       chrome_flags = ChromeFlags(flags)
@@ -337,8 +350,8 @@ class LoadLine2Benchmark(LoadLineBenchmark):
 
 
 class LoadLine2PhoneBenchmark(LoadLine2Benchmark):
-  """LoadLine 2 benchmark for phones.
-  """
+  """LoadLine 2 benchmark for phones."""
+
   NAME: ClassVar = "loadline2-phone"
 
   @classmethod
@@ -358,8 +371,8 @@ class LoadLine2PhoneBenchmark(LoadLine2Benchmark):
 
 
 class LoadLine2TabletBenchmark(LoadLine2Benchmark):
-  """LoadLine 2 benchmark for tablets.
-  """
+  """LoadLine 2 benchmark for tablets."""
+
   NAME: ClassVar = "loadline2-tablet"
 
   @classmethod
@@ -379,8 +392,9 @@ class LoadLine2TabletBenchmark(LoadLine2Benchmark):
 
   @classmethod
   @override
-  def extra_flags(cls, browser_attributes: BrowserAttributes,
-                  story: Story) -> Flags:
+  def extra_flags(
+    cls, browser_attributes: BrowserAttributes, story: Story
+  ) -> Flags:
     flags: Flags = super().extra_flags(browser_attributes, story)
     if browser_attributes.is_chromium_based:
       flags.set("--request-desktop-sites")
@@ -391,6 +405,7 @@ class LoadLine2PhoneDebugBenchmark(LoadLine2PhoneBenchmark):
   """LoadLine 2 benchmark for phones, with more tracing categories, for easier
   performance analysis.
   """
+
   NAME: ClassVar = "loadline2-phone-debug"
   DEFAULT_REPETITIONS: ClassVar = 1
 
@@ -409,6 +424,7 @@ class LoadLine2TabletDebugBenchmark(LoadLine2TabletBenchmark):
   """LoadLine 2 benchmark for tablets, with more tracing categories, for easier
   performance analysis.
   """
+
   NAME: ClassVar = "loadline2-tablet-debug"
   DEFAULT_REPETITIONS: ClassVar = 1
 

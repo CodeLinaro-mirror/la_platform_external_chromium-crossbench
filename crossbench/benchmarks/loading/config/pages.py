@@ -8,8 +8,17 @@ import argparse
 import dataclasses
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, ClassVar, Mapping, Required, Self, \
-    Sequence, TypedDict, cast, override
+from typing import (
+  TYPE_CHECKING,
+  ClassVar,
+  Mapping,
+  Required,
+  Self,
+  Sequence,
+  TypedDict,
+  cast,
+  override,
+)
 
 from crossbench import exception
 from crossbench import path as pth
@@ -47,7 +56,8 @@ class PagesConfig(ConfigObject):
     super().validate()
     for index, page in enumerate(self.pages):
       assert isinstance(page, PageConfig), (
-          f"pages[{index}] is not a PageConfig but {type(page).__name__}")
+        f"pages[{index}] is not a PageConfig but {type(page).__name__}"
+      )
 
   @classmethod
   @override
@@ -67,8 +77,8 @@ class PagesConfig(ConfigObject):
         DurationParser.positive_duration(part)
         if not previous_part:
           raise argparse.ArgumentTypeError(
-              "Duration can only follow after url. "
-              f"Current value: {part!r}")
+            f"Duration can only follow after url. Current value: {part!r}"
+          )
         values[-1] = f"{previous_part},{part}"
         previous_part = None
       except DurationParseError:
@@ -106,7 +116,8 @@ class PagesConfig(ConfigObject):
     pages: list[PageConfig] = []
     for index, single_line_config in enumerate(values):
       with exception.annotate_argparsing(
-          f"Parsing pages[{index}]: {single_line_config!r}"):
+        f"Parsing pages[{index}]: {single_line_config!r}"
+      ):
         pages.append(PageConfig.parse_str(single_line_config))
     return cls(pages=tuple(pages))
 
@@ -120,7 +131,8 @@ class PagesConfig(ConfigObject):
     with exception.annotate_argparsing("Parsing stories"):
       if "pages" not in config:
         raise argparse.ArgumentTypeError(
-            "Config does not provide a 'pages' dict.")
+          "Config does not provide a 'pages' dict."
+        )
       secrets: Secrets | None = None
       if secrets_data := config.get("secrets"):
         secrets = Secrets.parse(secrets_data)
@@ -131,9 +143,9 @@ class PagesConfig(ConfigObject):
     raise exception.UnreachableError
 
   @classmethod
-  def _parse_pages(cls,
-                   data: Mapping[str, object],
-                   secrets: Secrets | None = None) -> tuple[PageConfig, ...]:
+  def _parse_pages(
+    cls, data: Mapping[str, object], secrets: Secrets | None = None
+  ) -> tuple[PageConfig, ...]:
     pages = []
     for name, page_config in data.items():
       with exception.annotate_argparsing(f"Parsing story ...[{name!r}]"):
@@ -152,7 +164,6 @@ class PagesConfig(ConfigObject):
 
 
 class DevToolsRecorderPagesConfig(PagesConfig):
-
   @classmethod
   @override
   def parse_str(cls, value: str) -> Self:
@@ -173,8 +184,9 @@ class DevToolsRecorderPagesConfig(PagesConfig):
     raise exception.UnreachableError
 
   @classmethod
-  def _parse_steps(cls,
-                   steps: Sequence[DevToolsRecorderStep]) -> tuple[Action, ...]:
+  def _parse_steps(
+    cls, steps: Sequence[DevToolsRecorderStep]
+  ) -> tuple[Action, ...]:
     actions: list[Action] = []
     for step in steps:
       if maybe_actions := cls.parse_step(step):
@@ -197,20 +209,24 @@ class DevToolsRecorderPagesConfig(PagesConfig):
     raise ValueError(f"Unsupported step: {step_type}")
 
   @classmethod
-  def _parse_navigate_step(cls, step: DevToolsRecorderStep,
-                           default_timeout: dt.timedelta) -> Action:
+  def _parse_navigate_step(
+    cls, step: DevToolsRecorderStep, default_timeout: dt.timedelta
+  ) -> Action:
     del default_timeout
     return GetAction.create(step["url"], ready_state=ReadyState.COMPLETE)
 
   @classmethod
-  def _parse_click_step(cls, step: DevToolsRecorderStep,
-                        default_timeout: dt.timedelta) -> Action:
+  def _parse_click_step(
+    cls, step: DevToolsRecorderStep, default_timeout: dt.timedelta
+  ) -> Action:
     selector = cls._parse_selectors(step["selectors"])
     return ClickAction.create(
-        InputSource.JS,
-        position=PositionConfig.from_selector(
-            selector=selector, scroll_into_view=True),
-        timeout=default_timeout)
+      InputSource.JS,
+      position=PositionConfig.from_selector(
+        selector=selector, scroll_into_view=True
+      ),
+      timeout=default_timeout,
+    )
 
   @classmethod
   def _parse_selectors(cls, selectors: list[list[str]]) -> str:
@@ -250,12 +266,12 @@ class DevToolsRecorderPagesConfig(PagesConfig):
       _, text = text.split("text/", maxsplit=1)
       return f"xpath///*[text()={text!r}]"
 
-    raise ValueError("Need at least one single element xpath or aria "
-                     "selector for click action")
+    raise ValueError(
+      "Need at least one single element xpath or aria selector for click action"
+    )
 
 
 class ListPagesConfig(PagesConfig):
-
   VALID_EXTENSIONS: ClassVar[tuple[str, ...]] = (".txt", ".list")
 
   @classmethod
@@ -269,7 +285,8 @@ class ListPagesConfig(PagesConfig):
     assert not kwargs, f"{cls.__name__} does not support extra kwargs"
     pages: list[PageConfig] = []
     with exception.annotate_argparsing(
-        f"Loading Pages list file: {path.name!r}"):
+      f"Loading Pages list file: {path.name!r}"
+    ):
       line: int = 0
       with path.open() as f:
         for single_line_config in f.readlines():
@@ -289,12 +306,14 @@ class ListPagesConfig(PagesConfig):
     with exception.annotate_argparsing("Parsing scenarios / pages"):
       if "pages" not in config:
         raise argparse.ArgumentTypeError(
-            "Config does not provide a 'pages' dict.")
+          "Config does not provide a 'pages' dict."
+        )
       pages = config["pages"]
       if isinstance(pages, str):
         pages = [pages]
       if not isinstance(pages, (list, tuple)):
         raise argparse.ArgumentTypeError(
-            f"Expected list/tuple for pages, but got {type(pages)}")
+          f"Expected list/tuple for pages, but got {type(pages)}"
+        )
       return cls.parse_sequence(pages)
     raise exception.UnreachableError

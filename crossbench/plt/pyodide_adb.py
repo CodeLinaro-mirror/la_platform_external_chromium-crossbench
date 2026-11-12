@@ -14,8 +14,12 @@ import time
 from typing import IO, TYPE_CHECKING, Final, Mapping, cast, override
 
 from crossbench.plt import android_adb
-from crossbench.plt.pyodide import JsBuffer, PyodideGcsBlob, PyodidePlatform, \
-    is_pyodide_env
+from crossbench.plt.pyodide import (
+  JsBuffer,
+  PyodideGcsBlob,
+  PyodidePlatform,
+  is_pyodide_env,
+)
 
 if TYPE_CHECKING:
   from collections.abc import Buffer
@@ -38,10 +42,10 @@ class PyodideAdb(android_adb.Adb):
   """ADB implementation that delegates to JavaScript js.webadb via Pyodide."""
 
   def __init__(
-      self,
-      host_platform: Platform | None = None,
-      device_identifier: str | None = None,
-      webadb: WebAdb | None = None,
+    self,
+    host_platform: Platform | None = None,
+    device_identifier: str | None = None,
+    webadb: WebAdb | None = None,
   ) -> None:
     if webadb is None and js is not None:
       webadb = js.webadb
@@ -54,7 +58,8 @@ class PyodideAdb(android_adb.Adb):
     # attributes instead of calling Adb.__init__.
     self._host_platform = host_platform  # pyrefly: ignore[bad-override]
     self._adb_bin = (  # pyrefly: ignore[bad-override]
-        host_platform.path("webadb"))
+      host_platform.path("webadb")
+    )
     self._bundletool = None  # pyrefly: ignore[bad-override]
     serial_id, device_info = self._start(device_identifier)
     self._serial_id = serial_id  # pyrefly: ignore[bad-override]
@@ -66,12 +71,13 @@ class PyodideAdb(android_adb.Adb):
 
   @override
   def _start(
-      self,
-      device_identifier: str | None = None,
+    self,
+    device_identifier: str | None = None,
   ) -> tuple[str, android_adb.AndroidDeviceInfo]:
     serial_id = device_identifier or str(self._webadb.serial)
     device_info = android_adb.AndroidDeviceInfo(
-        device_id=serial_id, name="device")
+      device_id=serial_id, name="device"
+    )
     return serial_id, device_info
 
   @override
@@ -100,9 +106,9 @@ class PyodideAdb(android_adb.Adb):
 
   @override
   def push(
-      self,
-      local_src_path: pth.LocalPath,
-      device_dest_path: pth.AnyPath,
+    self,
+    local_src_path: pth.LocalPath,
+    device_dest_path: pth.AnyPath,
   ) -> None:
     self._check_interrupted()
     local_src = self._host_platform.local_path(local_src_path)
@@ -111,17 +117,19 @@ class PyodideAdb(android_adb.Adb):
       self._webadb.push(str(local_src), remote_dest)
     except Exception as e:
       if "BenchmarkExecutionInterrupted" in str(e) or "Stopped by user" in str(
-          e):
+        e
+      ):
         self._webadb.acknowledgeInterrupt()
         raise KeyboardInterrupt(
-            "Benchmark execution interrupted by user") from None
+          "Benchmark execution interrupted by user"
+        ) from None
       raise
 
   @override
   def pull(
-      self,
-      device_src_path: pth.AnyPath,
-      local_dest_path: pth.LocalPath,
+    self,
+    device_src_path: pth.AnyPath,
+    local_dest_path: pth.LocalPath,
   ) -> None:
     self._check_interrupted()
     remote_src = str(device_src_path)
@@ -130,20 +138,22 @@ class PyodideAdb(android_adb.Adb):
       self._webadb.pull(remote_src, str(local_dest))
     except Exception as e:
       if "BenchmarkExecutionInterrupted" in str(e) or "Stopped by user" in str(
-          e):
+        e
+      ):
         self._webadb.acknowledgeInterrupt()
         raise KeyboardInterrupt(
-            "Benchmark execution interrupted by user") from None
+          "Benchmark execution interrupted by user"
+        ) from None
       raise
 
   @override
   def forward(
-      self,
-      local: int,
-      remote: int | str,
-      local_protocol: str = "tcp",
-      remote_protocol: str = "tcp",
-      flags_data: FlagsData = None,
+    self,
+    local: int,
+    remote: int | str,
+    local_protocol: str = "tcp",
+    remote_protocol: str = "tcp",
+    flags_data: FlagsData = None,
   ) -> int:
     del local, remote, local_protocol, remote_protocol, flags_data
     raise NotImplementedError("Port forwarding is not supported on Pyodide.")
@@ -157,13 +167,15 @@ class PyodideAdb(android_adb.Adb):
   def reverse(self, remote: int, local: int, protocol: str = "tcp") -> int:
     del remote, local, protocol
     raise NotImplementedError(
-        "Reverse port forwarding is not supported on Pyodide.")
+      "Reverse port forwarding is not supported on Pyodide."
+    )
 
   @override
   def reverse_remove(self, remote: int, protocol: str = "tcp") -> None:
     del remote, protocol
     raise NotImplementedError(
-        "Reverse port forwarding is not supported on Pyodide.")
+      "Reverse port forwarding is not supported on Pyodide."
+    )
 
   def _check_interrupted(self) -> None:
     if self._webadb and self._webadb.isInterrupted():
@@ -171,9 +183,9 @@ class PyodideAdb(android_adb.Adb):
       raise KeyboardInterrupt("Benchmark execution interrupted by user")
 
   def _run_shell(
-      self,
-      cmd_str: str,
-      input: bytes | None = None,  # pylint: disable=redefined-builtin
+    self,
+    cmd_str: str,
+    input: bytes | None = None,  # pylint: disable=redefined-builtin
   ) -> bytes:
     self._check_interrupted()
     try:
@@ -184,26 +196,28 @@ class PyodideAdb(android_adb.Adb):
       return self._to_bytes(raw)
     except Exception as e:
       if "BenchmarkExecutionInterrupted" in str(e) or "Stopped by user" in str(
-          e):
+        e
+      ):
         self._webadb.acknowledgeInterrupt()
         raise KeyboardInterrupt(
-            "Benchmark execution interrupted by user") from None
+          "Benchmark execution interrupted by user"
+        ) from None
       raise
 
   # Required to overcome the "emscripten does not support processes" error.
   @override
   def _adb(
-      self,
-      *args: CmdArg,
-      shell: bool = False,
-      capture_output: bool = False,
-      stdout: ProcessIo = None,
-      stderr: ProcessIo = None,
-      stdin: ProcessIo = None,
-      input: bytes | None = None,  # pylint: disable=redefined-builtin
-      quiet: bool = False,
-      check: bool = True,
-      use_serial_id: bool = True,
+    self,
+    *args: CmdArg,
+    shell: bool = False,
+    capture_output: bool = False,
+    stdout: ProcessIo = None,
+    stderr: ProcessIo = None,
+    stdin: ProcessIo = None,
+    input: bytes | None = None,  # pylint: disable=redefined-builtin
+    quiet: bool = False,
+    check: bool = True,
+    use_serial_id: bool = True,
   ) -> subprocess.CompletedProcess:
     del shell, capture_output, stdout, stderr, stdin, quiet, check
     del use_serial_id
@@ -214,18 +228,19 @@ class PyodideAdb(android_adb.Adb):
     sub_args = args[1:]
     if cmd != "shell":
       raise NotImplementedError(
-          f"ADB command '{cmd}' is not supported on Pyodide.")
+        f"ADB command '{cmd}' is not supported on Pyodide."
+      )
     return self.shell(*sub_args, input=input)
 
   @override
   def _adb_stdout_bytes(
-      self,
-      *args: CmdArg,
-      quiet: bool = False,
-      stdin: ProcessIo = None,
-      input: bytes | None = None,  # pylint: disable=redefined-builtin
-      use_serial_id: bool = True,
-      check: bool = True,
+    self,
+    *args: CmdArg,
+    quiet: bool = False,
+    stdin: ProcessIo = None,
+    input: bytes | None = None,  # pylint: disable=redefined-builtin
+    use_serial_id: bool = True,
+    check: bool = True,
   ) -> bytes:
     del quiet, stdin, use_serial_id, check
     res = self._adb(*args, input=input)
@@ -233,9 +248,9 @@ class PyodideAdb(android_adb.Adb):
     return res.stdout
 
   def _build_shell_cmd_str(
-      self,
-      *args: CmdArg,
-      shell: bool = False,
+    self,
+    *args: CmdArg,
+    shell: bool = False,
   ) -> str:
     if not shell:
       return shlex.join(map(str, args))
@@ -252,37 +267,38 @@ class PyodideAdb(android_adb.Adb):
 
   @override
   def shell(
-      self,
-      *args: CmdArg,
-      shell: bool = False,
-      capture_output: bool = False,
-      stdout: ProcessIo = None,
-      stderr: ProcessIo = None,
-      stdin: ProcessIo = None,
-      input: bytes | None = None,  # pylint: disable=redefined-builtin
-      env: Mapping[str, str] | None = None,
-      cwd: pth.AnyPath | None = None,
-      quiet: bool = False,
-      check: bool = True,
+    self,
+    *args: CmdArg,
+    shell: bool = False,
+    capture_output: bool = False,
+    stdout: ProcessIo = None,
+    stderr: ProcessIo = None,
+    stdin: ProcessIo = None,
+    input: bytes | None = None,  # pylint: disable=redefined-builtin
+    env: Mapping[str, str] | None = None,
+    cwd: pth.AnyPath | None = None,
+    quiet: bool = False,
+    check: bool = True,
   ) -> subprocess.CompletedProcess:
     del capture_output, stdout, stderr, stdin, env, cwd, quiet
     del check
     cmd_str = self._build_shell_cmd_str(*args, shell=shell)
     out = self._run_shell(cmd_str, input=input)
     return subprocess.CompletedProcess(
-        args=args, returncode=0, stdout=out, stderr=b"")
+      args=args, returncode=0, stdout=out, stderr=b""
+    )
 
   @override
   def shell_stdout_bytes(
-      self,
-      *args: CmdArg,
-      shell: bool = False,
-      quiet: bool = False,
-      stdin: ProcessIo = None,
-      input: bytes | None = None,  # pylint: disable=redefined-builtin
-      env: Mapping[str, str] | None = None,
-      cwd: pth.AnyPath | None = None,
-      check: bool = True,
+    self,
+    *args: CmdArg,
+    shell: bool = False,
+    quiet: bool = False,
+    stdin: ProcessIo = None,
+    input: bytes | None = None,  # pylint: disable=redefined-builtin
+    env: Mapping[str, str] | None = None,
+    cwd: pth.AnyPath | None = None,
+    check: bool = True,
   ) -> bytes:
     del quiet, stdin, env, cwd, check
     cmd_str = self._build_shell_cmd_str(*args, shell=shell)
@@ -293,25 +309,25 @@ class PyodideAndroidAdbPlatform(android_adb.AndroidAdbPlatform):
   """Android ADB Platform running in a Pyodide WebAssembly environment."""
 
   def __init__(
-      self,
-      host_platform: Platform | None = None,
-      device_identifier: str | None = None,
-      adb: android_adb.Adb | None = None,
-      webadb: WebAdb | None = None,
-      bypass_oobe: bool = True,
+    self,
+    host_platform: Platform | None = None,
+    device_identifier: str | None = None,
+    adb: android_adb.Adb | None = None,
+    webadb: WebAdb | None = None,
+    bypass_oobe: bool = True,
   ) -> None:
     if host_platform is None:
       host_platform = PyodidePlatform(webadb=webadb)
     adb = adb or PyodideAdb(
-        host_platform=host_platform,
-        device_identifier=device_identifier,
-        webadb=webadb,
+      host_platform=host_platform,
+      device_identifier=device_identifier,
+      webadb=webadb,
     )
     super().__init__(
-        host_platform=host_platform,
-        device_identifier=device_identifier,
-        adb=adb,
-        bypass_oobe=bypass_oobe,
+      host_platform=host_platform,
+      device_identifier=device_identifier,
+      adb=adb,
+      bypass_oobe=bypass_oobe,
     )
 
   @property
@@ -337,8 +353,10 @@ class PyodideAndroidAdbPlatform(android_adb.AndroidAdbPlatform):
   @override
   def sleep(self, seconds: float | dt.timedelta) -> None:
     total_secs = (
-        seconds.total_seconds()
-        if isinstance(seconds, dt.timedelta) else float(seconds))
+      seconds.total_seconds()
+      if isinstance(seconds, dt.timedelta)
+      else float(seconds)
+    )
     if total_secs <= 0:
       return
     start = time.time()
@@ -366,22 +384,25 @@ class PyodideAndroidAdbPlatform(android_adb.AndroidAdbPlatform):
     self.webadb.switchTab(url)
 
   @override
-  def send_cdp_command(self,
-                       method: str,
-                       params: JsonDict | None = None) -> JsonDict:
+  def send_cdp_command(
+    self, method: str, params: JsonDict | None = None
+  ) -> JsonDict:
     self._check_interrupted()
     try:
       res_str = self.webadb.sendCdpCommand(method, json.dumps(params or {}))
     except Exception as e:
       if "BenchmarkExecutionInterrupted" in str(e) or "Stopped by user" in str(
-          e):
+        e
+      ):
         self.webadb.acknowledgeInterrupt()
         raise KeyboardInterrupt(
-            "Benchmark execution interrupted by user") from None
+          "Benchmark execution interrupted by user"
+        ) from None
       raise
     if not res_str:
       raise RuntimeError(
-          f"Pyodide sendCdpCommand('{method}') returned empty response")
+        f"Pyodide sendCdpCommand('{method}') returned empty response"
+      )
     res = json.loads(str(res_str))
     if "error" in res:
       raise RuntimeError(f"CDP command '{method}' failed: {res['error']}")
@@ -390,7 +411,8 @@ class PyodideAndroidAdbPlatform(android_adb.AndroidAdbPlatform):
   def _check_path(self, flag: str, path: pth.AnyPathLike) -> bool:
     quoted_path = shlex.quote(str(self.path(path)))
     out = self.sh_stdout(  # noqa: S604
-        f"[ {flag} {quoted_path} ] && echo 1", shell=True)
+      f"[ {flag} {quoted_path} ] && echo 1", shell=True
+    )
     return out.strip() == "1"
 
   @override
@@ -407,32 +429,33 @@ class PyodideAndroidAdbPlatform(android_adb.AndroidAdbPlatform):
 
   @override
   def write_text(
-      self,
-      file: pth.AnyPathLike,
-      data: str,
-      encoding: str = "utf-8",
+    self,
+    file: pth.AnyPathLike,
+    data: str,
+    encoding: str = "utf-8",
   ) -> None:
     del encoding
     self._check_interrupted()
     dest_file = shlex.quote(str(self.path(file)))
     content = shlex.quote(data)
     self.adb.shell(  # noqa: S604
-        f"echo -n {content} > {dest_file}", shell=True)
+      f"echo -n {content} > {dest_file}", shell=True
+    )
 
   @override
   def _popen(
-      self,
-      *args: CmdArg,
-      bufsize: int = -1,
-      shell: bool = False,
-      stdout: ProcessIo = None,
-      stderr: ProcessIo = None,
-      stdin: ProcessIo = None,
-      env: Mapping[str, str] | None = None,
-      cwd: pth.AnyPath | None = None,
-      encoding: str | None = None,
-      quiet: bool = False,
-      auto_terminate: bool = True,
+    self,
+    *args: CmdArg,
+    bufsize: int = -1,
+    shell: bool = False,
+    stdout: ProcessIo = None,
+    stderr: ProcessIo = None,
+    stdin: ProcessIo = None,
+    env: Mapping[str, str] | None = None,
+    cwd: pth.AnyPath | None = None,
+    encoding: str | None = None,
+    quiet: bool = False,
+    auto_terminate: bool = True,
   ) -> subprocess.Popen:
     del shell, bufsize, quiet, encoding, auto_terminate
     assert not env, "ADB does not support env vars"
@@ -448,13 +471,13 @@ class PyodideAndroidAdbPlatform(android_adb.AndroidAdbPlatform):
     if isinstance(stdout, io.IOBase):
       local_file = cast(IO[str], stdout)
     popen_obj = PyodideStreamingPopen(
-        self,
-        proc_id=proc_id,
-        cmd=cmd_str,
-        stdout=stdout,
-        stderr=stderr,
-        stdin=stdin,
-        local_log_file=local_file,
+      self,
+      proc_id=proc_id,
+      cmd=cmd_str,
+      stdout=stdout,
+      stderr=stderr,
+      stdin=stdin,
+      local_log_file=local_file,
     )
     popen_obj.poll()
     return popen_obj
@@ -464,9 +487,9 @@ class PyodidePopenStdin(io.RawIOBase):
   """Writable stdin stream for a PyodideStreamingPopen process."""
 
   def __init__(
-      self,
-      platform: PyodideAndroidAdbPlatform,
-      proc_id: int,
+    self,
+    platform: PyodideAndroidAdbPlatform,
+    proc_id: int,
   ) -> None:
     super().__init__()
     self._platform: Final[PyodideAndroidAdbPlatform] = platform
@@ -506,14 +529,14 @@ class PyodideStreamingPopen(subprocess.Popen):
   """
 
   def __init__(
-      self,
-      platform: PyodideAndroidAdbPlatform,
-      proc_id: int,
-      cmd: str,
-      stdout: ProcessIo = None,
-      stderr: ProcessIo = None,
-      stdin: ProcessIo = None,
-      local_log_file: IO[str] | None = None,
+    self,
+    platform: PyodideAndroidAdbPlatform,
+    proc_id: int,
+    cmd: str,
+    stdout: ProcessIo = None,
+    stderr: ProcessIo = None,
+    stdin: ProcessIo = None,
+    local_log_file: IO[str] | None = None,
   ) -> None:
     self._platform: Final[PyodideAndroidAdbPlatform] = platform
     self._proc_id: Final[int] = proc_id
@@ -527,11 +550,13 @@ class PyodideStreamingPopen(subprocess.Popen):
     self.stderr = None
     self.stdin = None
     if stdin == subprocess.PIPE:
-      self.stdin = cast(IO[bytes],
-                        PyodidePopenStdin(self._platform, self._proc_id))
+      self.stdin = cast(
+        IO[bytes], PyodidePopenStdin(self._platform, self._proc_id)
+      )
     if stdout == subprocess.PIPE or stderr == subprocess.PIPE:
       raise ValueError(
-          "stdout/stderr PIPE is not supported in PyodideStreamingPopen")
+        "stdout/stderr PIPE is not supported in PyodideStreamingPopen"
+      )
 
   @property
   def proc_id(self) -> int:
@@ -596,11 +621,11 @@ class PyodideStreamingPopen(subprocess.Popen):
 
 
 __all__ = [
-    "PyodideAdb",
-    "PyodideAndroidAdbPlatform",
-    "PyodideGcsBlob",
-    "PyodidePlatform",
-    "PyodidePopenStdin",
-    "PyodideStreamingPopen",
-    "is_pyodide_env",
+  "PyodideAdb",
+  "PyodideAndroidAdbPlatform",
+  "PyodideGcsBlob",
+  "PyodidePlatform",
+  "PyodidePopenStdin",
+  "PyodideStreamingPopen",
+  "is_pyodide_env",
 ]

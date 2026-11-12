@@ -7,8 +7,10 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING, ClassVar, Self, override
 
-from crossbench.probes.internal.base import InternalJsonResultProbe, \
-    InternalJsonResultProbeContext
+from crossbench.probes.internal.base import (
+  InternalJsonResultProbe,
+  InternalJsonResultProbeContext,
+)
 from crossbench.probes.probe_context import ProbeSessionContext
 from crossbench.probes.results import EmptyProbeResult, LocalProbeResult
 
@@ -28,6 +30,7 @@ class ErrorsProbe(InternalJsonResultProbe):
   Runner-internal meta-probe: Collects all errors from running stories and/or
   from merging probe data.
   """
+
   NAME: ClassVar = "cb.errors"
 
   @override
@@ -48,7 +51,8 @@ class ErrorsProbe(InternalJsonResultProbe):
       return EmptyProbeResult()
 
     result = self.write_group_result(
-        group, all_exceptions.to_json(), csv_formatter=None)
+      group, all_exceptions.to_json(), csv_formatter=None
+    )
     txt_path = result.json.with_suffix(".txt")
     if all_exceptions.write_txt(txt_path):
       return result.merge(LocalProbeResult(txt=(txt_path,)))
@@ -60,12 +64,12 @@ class ErrorsProbe(InternalJsonResultProbe):
 
   @override
   def create_session_context(
-      self: Self, session: BrowserSessionRunGroup) -> ErrorProbeSessionContext:
+    self: Self, session: BrowserSessionRunGroup
+  ) -> ErrorProbeSessionContext:
     return ErrorProbeSessionContext(self, session)
 
 
 class ErrorsProbeContext(InternalJsonResultProbeContext):
-
   @override
   def to_json(self, actions: Actions) -> Json:
     return self.run.exceptions.to_json()
@@ -80,7 +84,6 @@ class ErrorsProbeContext(InternalJsonResultProbeContext):
 
 
 class ErrorProbeSessionContext(ProbeSessionContext):
-
   @override
   def start(self) -> None:
     # Only extract data in the late teardown phase.

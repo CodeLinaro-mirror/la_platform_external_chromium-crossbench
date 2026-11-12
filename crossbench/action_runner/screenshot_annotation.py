@@ -23,18 +23,24 @@ class ScreenshotAnnotation(abc.ABC):
     pass
 
 
-def annotate_screenshot_svg(screen_width: int, screen_height: int,
-                            screenshot_file: str,
-                            annotations: Sequence[ScreenshotAnnotation]) -> str:
+def annotate_screenshot_svg(
+  screen_width: int,
+  screen_height: int,
+  screenshot_file: str,
+  annotations: Sequence[ScreenshotAnnotation],
+) -> str:
   all_annotations = "".join(
-      [annotation.svg_annotation() for annotation in annotations])
-  return (f'<svg version="1.1"'
-          f' width="{screen_width}" height="{screen_height}"'
-          ' xmlns="http://www.w3.org/2000/svg">'
-          f'<image href="{screenshot_file}"'
-          f' width="{screen_width}" height="{screen_height}" />'
-          f'{all_annotations}'
-          '</svg>')
+    [annotation.svg_annotation() for annotation in annotations]
+  )
+  return (
+    f'<svg version="1.1"'
+    f' width="{screen_width}" height="{screen_height}"'
+    ' xmlns="http://www.w3.org/2000/svg">'
+    f'<image href="{screenshot_file}"'
+    f' width="{screen_width}" height="{screen_height}" />'
+    f'{all_annotations}'
+    '</svg>'
+  )
 
 
 @dataclasses.dataclass(frozen=True)
@@ -44,11 +50,13 @@ class ScreenshotRectAnnotation(ScreenshotAnnotation):
   @override
   def svg_annotation(self) -> str:
     rect = self.rect
-    return (f'<rect x="{rect.left}" y="{rect.top}"'
-            f' width="{rect.width}" height="{rect.height}"'
-            ' fill="rgb(255 255 0 / 0.5)">'
-            f'<title>{escape(self.label)}</title>'
-            '</rect>')
+    return (
+      f'<rect x="{rect.left}" y="{rect.top}"'
+      f' width="{rect.width}" height="{rect.height}"'
+      ' fill="rgb(255 255 0 / 0.5)">'
+      f'<title>{escape(self.label)}</title>'
+      '</rect>'
+    )
 
 
 @dataclasses.dataclass(frozen=True)
@@ -59,9 +67,11 @@ class ScreenshotPointAnnotation(ScreenshotAnnotation):
   def svg_annotation(self) -> str:
     x = self.point.x
     y = self.point.y
-    return (f'<g><title>{escape(self.label)}</title>'
-            f'<polygon points="{x},{y} {x-48},{y-24} {x-24},{y-48}"'
-            ' fill="rgb(0 0 255 / 0.33)" />'
-            f'<rect x="{x-0.5}" y="{y-0.5}"'
-            ' width="1" height="1" fill="rgb(0 0 255)" />'
-            '</g>')
+    return (
+      f'<g><title>{escape(self.label)}</title>'
+      f'<polygon points="{x},{y} {x - 48},{y - 24} {x - 24},{y - 48}"'
+      ' fill="rgb(0 0 255 / 0.33)" />'
+      f'<rect x="{x - 0.5}" y="{y - 0.5}"'
+      ' width="1" height="1" fill="rgb(0 0 255)" />'
+      '</g>'
+    )

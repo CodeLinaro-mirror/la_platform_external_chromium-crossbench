@@ -13,24 +13,27 @@ from unittest.mock import MagicMock
 from google.genai import types
 
 from crossbench.action_runner.action.wait import WaitAction
-from crossbench.action_runner.llm_client import AgentTurnResponse, \
-    LlmConversationClient
+from crossbench.action_runner.llm_client import (
+  AgentTurnResponse,
+  LlmConversationClient,
+)
 from crossbench.config import ConfigError
 from tests import test_helper
 
 
 class AgentTurnResponseTestCase(unittest.TestCase):
-
   def test_parse_valid_actions(self) -> None:
     payload = {
-        "observation": "Page loaded",
-        "thought": "Wait 10ms",
-        "done": False,
-        "anomaly": "UI stall",
-        "actions": [{
-            "action": "wait",
-            "duration": "10ms",
-        }],
+      "observation": "Page loaded",
+      "thought": "Wait 10ms",
+      "done": False,
+      "anomaly": "UI stall",
+      "actions": [
+        {
+          "action": "wait",
+          "duration": "10ms",
+        }
+      ],
     }
     turn = AgentTurnResponse.parse(payload)
     self.assertEqual(turn.observation, "Page loaded")
@@ -54,49 +57,52 @@ class AgentTurnResponseTestCase(unittest.TestCase):
 
   def test_parse_invalid_action_raises(self) -> None:
     with self.assertRaises(argparse.ArgumentTypeError):
-      AgentTurnResponse.parse({
+      AgentTurnResponse.parse(
+        {
           "observation": "Page loaded",
           "thought": "Invalid action",
-          "actions": [{
+          "actions": [
+            {
               "action": "non_existent_action",
-          }],
-      })
+            }
+          ],
+        }
+      )
 
 
 class LlmConversationClientTestCase(unittest.TestCase):
-
   def test_invalid_init_arguments_raise(self) -> None:
     with self.assertRaises(argparse.ArgumentTypeError):
       LlmConversationClient(
-          model="",
-          system_instruction="Test",
-          temperature=1.0,
+        model="",
+        system_instruction="Test",
+        temperature=1.0,
       )
     with self.assertRaises(argparse.ArgumentTypeError):
       LlmConversationClient(
-          model="gemini-2.5-flash",
-          system_instruction="",
-          temperature=1.0,
+        model="gemini-2.5-flash",
+        system_instruction="",
+        temperature=1.0,
       )
     with self.assertRaises(argparse.ArgumentTypeError):
       LlmConversationClient(
-          model="gemini-2.5-flash",
-          system_instruction="Test",
-          temperature=3.0,
+        model="gemini-2.5-flash",
+        system_instruction="Test",
+        temperature=3.0,
       )
     with self.assertRaises(argparse.ArgumentTypeError):
       LlmConversationClient(
-          model="gemini-2.5-flash",
-          system_instruction="Test",
-          temperature=1.0,
-          api_key="",
+        model="gemini-2.5-flash",
+        system_instruction="Test",
+        temperature=1.0,
+        api_key="",
       )
     with self.assertRaises(argparse.ArgumentTypeError):
       LlmConversationClient(
-          model="gemini-2.5-flash",
-          system_instruction="Test",
-          temperature=1.0,
-          max_history_screenshots=-1,
+        model="gemini-2.5-flash",
+        system_instruction="Test",
+        temperature=1.0,
+        max_history_screenshots=-1,
       )
 
   def test_send_turn_uses_chat_session_and_parses_response(self) -> None:
@@ -105,25 +111,29 @@ class LlmConversationClientTestCase(unittest.TestCase):
     mock_genai_client.chats.create.return_value = mock_chat
 
     resp = MagicMock()
-    resp.text = json.dumps({
+    resp.text = json.dumps(
+      {
         "observation": "Obs 1",
         "thought": "Thought 1",
         "done": False,
         "request_trace_snapshot": False,
         "anomaly_reason": "",
-        "actions": [{
+        "actions": [
+          {
             "action": "wait",
             "duration": "10ms",
-        }],
-    })
+          }
+        ],
+      }
+    )
     mock_chat.send_message.return_value = resp
 
     client = LlmConversationClient(
-        model="gemini-2.5-flash",
-        system_instruction="Test instruction",
-        temperature=1.2,
-        api_key="test-key",
-        genai_client=mock_genai_client,
+      model="gemini-2.5-flash",
+      system_instruction="Test instruction",
+      temperature=1.2,
+      api_key="test-key",
+      genai_client=mock_genai_client,
     )
 
     turn_1 = client.send_turn("Step 1", b"png_bytes_1")
@@ -147,10 +157,10 @@ class LlmConversationClientTestCase(unittest.TestCase):
     mock_chat.send_message.return_value = resp
 
     client = LlmConversationClient(
-        model="gemini-2.5-flash",
-        system_instruction="Test",
-        temperature=1.0,
-        genai_client=mock_genai_client,
+      model="gemini-2.5-flash",
+      system_instruction="Test",
+      temperature=1.0,
+      genai_client=mock_genai_client,
     )
     with self.assertRaisesRegex(RuntimeError, "empty response text"):
       client.send_turn("Step 1")
@@ -161,53 +171,55 @@ class LlmConversationClientTestCase(unittest.TestCase):
     mock_genai_client.chats.create.return_value = mock_chat
 
     history = [
-        types.Content(
-            role="user",
-            parts=[
-                types.Part.from_text(text="Step 1"),
-                types.Part.from_bytes(data=b"png_1", mime_type="image/png"),
-            ],
-        ),
-        types.Content(
-            role="model",
-            parts=[types.Part.from_text(text="{}")],
-        ),
-        types.Content(
-            role="user",
-            parts=[
-                types.Part.from_text(text="Step 2"),
-                types.Part.from_bytes(data=b"png_2", mime_type="image/png"),
-            ],
-        ),
-        types.Content(
-            role="model",
-            parts=[types.Part.from_text(text="{}")],
-        ),
-        types.Content(
-            role="user",
-            parts=[
-                types.Part.from_text(text="Step 3"),
-                types.Part.from_bytes(data=b"png_3", mime_type="image/png"),
-            ],
-        ),
+      types.Content(
+        role="user",
+        parts=[
+          types.Part.from_text(text="Step 1"),
+          types.Part.from_bytes(data=b"png_1", mime_type="image/png"),
+        ],
+      ),
+      types.Content(
+        role="model",
+        parts=[types.Part.from_text(text="{}")],
+      ),
+      types.Content(
+        role="user",
+        parts=[
+          types.Part.from_text(text="Step 2"),
+          types.Part.from_bytes(data=b"png_2", mime_type="image/png"),
+        ],
+      ),
+      types.Content(
+        role="model",
+        parts=[types.Part.from_text(text="{}")],
+      ),
+      types.Content(
+        role="user",
+        parts=[
+          types.Part.from_text(text="Step 3"),
+          types.Part.from_bytes(data=b"png_3", mime_type="image/png"),
+        ],
+      ),
     ]
     mock_chat.get_history.return_value = history
 
     resp = MagicMock()
-    resp.text = json.dumps({
+    resp.text = json.dumps(
+      {
         "observation": "Obs",
         "thought": "Thought",
         "done": True,
         "actions": [],
-    })
+      }
+    )
     mock_chat.send_message.return_value = resp
 
     client = LlmConversationClient(
-        model="gemini-3.8-flash",
-        system_instruction="Test",
-        temperature=1.0,
-        genai_client=mock_genai_client,
-        max_history_screenshots=2,
+      model="gemini-3.8-flash",
+      system_instruction="Test",
+      temperature=1.0,
+      genai_client=mock_genai_client,
+      max_history_screenshots=2,
     )
     client.send_turn("Step 4", b"png_4")
 

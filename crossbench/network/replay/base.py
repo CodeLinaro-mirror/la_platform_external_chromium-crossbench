@@ -22,23 +22,27 @@ if TYPE_CHECKING:
   from crossbench.env.runner_env import RunnerEnv
   from crossbench.network.traffic_shaping.base import TrafficShaper
   from crossbench.runner.groups.session import BrowserSessionRunGroup
+
   ReplayNetworkT = TypeVar("ReplayNetworkT", bound="ReplayNetwork")
 
 GS_PREFIX: Final[str] = "gs://"
 
 
 class ReplayNetwork(Network, metaclass=abc.ABCMeta):
-  """ A network implementation that can be used to replay requests
+  """A network implementation that can be used to replay requests
   from a an archive."""
 
-  def __init__(self,
-               archive: pth.LocalPath | str,
-               traffic_shaper: TrafficShaper | None = None,
-               browser_platform: plt.Platform | None = None,
-               expected_md5_hash: bytes | str = b"") -> None:
+  def __init__(
+    self,
+    archive: pth.LocalPath | str,
+    traffic_shaper: TrafficShaper | None = None,
+    browser_platform: plt.Platform | None = None,
+    expected_md5_hash: bytes | str = b"",
+  ) -> None:
     super().__init__(traffic_shaper, browser_platform)
     self._expected_md5_hash: Final[bytes] = ObjectParser.md5_hash(
-        expected_md5_hash)
+      expected_md5_hash
+    )
     self._cached_archive_md5_hash: bytes = b""
     self._archive_path: pth.LocalPath = self.ensure_archive(archive)
 
@@ -57,9 +61,11 @@ class ReplayNetwork(Network, metaclass=abc.ABCMeta):
     assert len(self._expected_md5_hash) == 16
     actual_hash = self._archive_md5_hash
     if actual_hash != self._expected_md5_hash:
-      env.handle_warning(f"WPR archive hash mismatch for {self._archive_path}: "
-                         f"expected '{self._expected_md5_hash.hex()}', "
-                         f"but actual archive MD5 was '{actual_hash.hex()}'.")
+      env.handle_warning(
+        f"WPR archive hash mismatch for {self._archive_path}: "
+        f"expected '{self._expected_md5_hash.hex()}', "
+        f"but actual archive MD5 was '{actual_hash.hex()}'."
+      )
 
   @property
   @override
@@ -85,8 +91,9 @@ class ReplayNetwork(Network, metaclass=abc.ABCMeta):
             yield self
 
   @contextlib.contextmanager
-  def _open_replay_server(self,
-                          session: BrowserSessionRunGroup) -> Iterator[None]:
+  def _open_replay_server(
+    self, session: BrowserSessionRunGroup
+  ) -> Iterator[None]:
     del session
     yield
 
@@ -101,16 +108,17 @@ class ReplayNetwork(Network, metaclass=abc.ABCMeta):
   def _download_gcloud_archive(self, url: str) -> pth.LocalPath:
     title: str = f"Downloading {url}"
     hint: str = (
-        f"Failed to download {url} from Google Cloud Storage. Make sure the "
-        "cloud SDK is installed and that you have the necessary permissions "
-        "(run `./cb.py `<your benchmark> --help` and check for mentions to "
-        "permission groups)")
+      f"Failed to download {url} from Google Cloud Storage. Make sure the "
+      "cloud SDK is installed and that you have the necessary permissions "
+      "(run `./cb.py `<your benchmark> --help` and check for mentions to "
+      "permission groups)"
+    )
     with exception.annotate(title), ui.spinner(title=title):
       # `title` + "\n" + `hint` yields the wrong formatting, so nest.
       with exception.annotate(hint):
-        local_path = (
-            self.host_platform.local_cache_dir("wpr") /
-            self._generate_filename(url))
+        local_path = self.host_platform.local_cache_dir(
+          "wpr"
+        ) / self._generate_filename(url)
         if local_path.is_file():
           logging.info("Found cached WPR archive: %s", local_path)
           return local_path

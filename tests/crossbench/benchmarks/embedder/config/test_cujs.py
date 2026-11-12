@@ -16,7 +16,6 @@ from tests.crossbench.base import CrossbenchFakeFsTestCase
 
 
 class CUJsConfigTestCase(CrossbenchFakeFsTestCase):
-
   def test_parse_unknown_type(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       CUJsConfig.parse(self)
@@ -24,32 +23,34 @@ class CUJsConfigTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse_empty_actions(self):
     config_data: dict[str, dict] = {"cujs": {"Google Story": []}}
-    with self.assertRaisesRegex(argparse.ArgumentTypeError,
-                                r"(?i)actions.*non-empty"):
+    with self.assertRaisesRegex(
+      argparse.ArgumentTypeError, r"(?i)actions.*non-empty"
+    ):
       CUJsConfig.parse(config_data)
 
     config_data = {"cujs": {"Google Story": {}}}
-    with self.assertRaisesRegex(argparse.ArgumentTypeError,
-                                r"(?i)blocks.*non-empty"):
+    with self.assertRaisesRegex(
+      argparse.ArgumentTypeError, r"(?i)blocks.*non-empty"
+    ):
       CUJsConfig.parse(config_data)
 
   def test_example(self):
     config_data = {
-        "cujs": {
-            "Google Story": [
-                {
-                    "action": "click",
-                    "source": "touch",
-                    "position": {
-                        "res": "com.package.name/resourceId",
-                    },
-                },
-                {
-                    "action": "wait",
-                    "duration": 5,
-                },
-            ],
-        },
+      "cujs": {
+        "Google Story": [
+          {
+            "action": "click",
+            "source": "touch",
+            "position": {
+              "res": "com.package.name/resourceId",
+            },
+          },
+          {
+            "action": "wait",
+            "duration": 5,
+          },
+        ],
+      },
     }
     config = CUJsConfig.parse(config_data)
     self.assert_single_google_story(config.cujs)
@@ -69,8 +70,9 @@ class CUJsConfigTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(cuj.label, "Google Story")
     self.assertEqual(len(cuj.blocks), 1)
     block = cuj.blocks[0]
-    self.assertSequenceEqual([str(action.TYPE) for action in block],
-                             ["click", "wait"])
+    self.assertSequenceEqual(
+      [str(action.TYPE) for action in block], ["click", "wait"]
+    )
 
   def test_no_scenarios(self):
     with self.assertRaises(argparse.ArgumentTypeError):
@@ -89,24 +91,31 @@ class CUJsConfigTestCase(CrossbenchFakeFsTestCase):
   def test_missing_action(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       CUJsConfig.parse_dict(
-          {"cujs": {
-              "TEST": [{
-                  "action___": "wait",
-                  "duration": 5.0,
-              }],
-          }})
+        {
+          "cujs": {
+            "TEST": [
+              {
+                "action___": "wait",
+                "duration": 5.0,
+              }
+            ],
+          }
+        }
+      )
     self.assertIn("Invalid data:", str(cm.exception))
 
   def test_invalid_action(self):
     invalid_actions: list[Any] = [None, "", [], {}, "unknown action name", 12]
     for invalid_action in invalid_actions:
       config_dict: dict[str, object] = {
-          "cujs": {
-              "TEST": [{
-                  "action": invalid_action,
-                  "duration": 5.0,
-              }],
-          },
+        "cujs": {
+          "TEST": [
+            {
+              "action": invalid_action,
+              "duration": 5.0,
+            }
+          ],
+        },
       }
       with self.subTest(invalid_action=invalid_action):
         with self.assertRaises(argparse.ArgumentTypeError):

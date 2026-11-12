@@ -37,13 +37,13 @@ JITTED_SUFFIX: Final[str] = ".jitted"
 
 class LinuxProfilingContext(PosixProfilingContext):
   TEMP_FILE_PATTERNS = (
-      "*.perf.data.jitted",
-      "jitted-*.so",
-      JIT_DUMP_PATTERN,
+    "*.perf.data.jitted",
+    "jitted-*.so",
+    JIT_DUMP_PATTERN,
   )
   TEMP_DIR_PATTERNS = (
-      "jitdump",
-      "debug",
+    "jitdump",
+    "debug",
   )
 
   def __init__(self, probe: ProfilingProbe, run: Run) -> None:
@@ -86,14 +86,15 @@ class LinuxProfilingContext(PosixProfilingContext):
     perf_data_file: pth.AnyPath = self.result_path / "browser.perf.data"
     # TODO: not fully working yet
     self._profiling_process = self.browser_platform.popen(
-        "perf",
-        "record",
-        f"--call-graph={self.probe.call_graph_mode or 'fp'}",
-        f"--freq={self.probe.frequency or 'max'}",
-        f"--clockid={self.probe.clockid or 'mono'}",
-        f"--output={perf_data_file}",
-        f"--pid={self.run.browser.pid}",
-        stdin=subprocess.PIPE)
+      "perf",
+      "record",
+      f"--call-graph={self.probe.call_graph_mode or 'fp'}",
+      f"--freq={self.probe.frequency or 'max'}",
+      f"--clockid={self.probe.clockid or 'mono'}",
+      f"--output={perf_data_file}",
+      f"--pid={self.run.browser.pid}",
+      stdin=subprocess.PIPE,
+    )
     if self._profiling_process.poll():
       raise ValueError("Could not start linux profiler")
 
@@ -117,13 +118,15 @@ class LinuxProfilingContext(PosixProfilingContext):
       logging.debug("Waiting for browser process to stop")
       time.sleep(3)
     if self.probe.sample_browser_process:
-      logging.info("Browser process did not stop after 3s. "
-                   "You might get partial profiles")
+      logging.info(
+        "Browser process did not stop after 3s. You might get partial profiles"
+      )
     time.sleep(2)
 
     perf_files: list[pth.AnyPath] = fs_helper.sort_by_file_size(
-        list(self.browser_platform.glob(self.result_path, PERF_DATA_PATTERN)),
-        self.browser_platform)
+      list(self.browser_platform.glob(self.result_path, PERF_DATA_PATTERN)),
+      self.browser_platform,
+    )
     perf_files = self._filter_perf_files(perf_files)
     raw_perf_files = perf_files
     urls: list[str] = []
@@ -137,25 +140,32 @@ class LinuxProfilingContext(PosixProfilingContext):
         urls = self._export_to_pprof(self.run, pprof_files or perf_files)
     finally:
       self._clean_up_temp_files(
-          self.run, has_exported_profile=bool(pprof_files or urls))
+        self.run, has_exported_profile=bool(pprof_files or urls)
+      )
     if urls:
       logging.debug("Profiling results: %s", urls)
       return self.browser_result(
-          url=urls, file=raw_perf_files, pprof=pprof_files)
+        url=urls, file=raw_perf_files, pprof=pprof_files
+      )
     if pprof_files:
       return self.browser_result(file=raw_perf_files, pprof=pprof_files)
     # Fall back to raw_perf_files if .jitted files were removed by cleanup.
-    perf_files = [f for f in perf_files if self.browser_platform.exists(f)
-                 ] or raw_perf_files
+    perf_files = [
+      f for f in perf_files if self.browser_platform.exists(f)
+    ] or raw_perf_files
     if Binaries.PPROF.exists(self.browser_platform):
-      logging.info("Run pprof over all (or single) perf data files "
-                   "for interactive analysis:")
-      logging.info("   pprof --http=localhost:1984 %s",
-                   " ".join(map(str, perf_files)))
+      logging.info(
+        "Run pprof over all (or single) perf data files "
+        "for interactive analysis:"
+      )
+      logging.info(
+        "   pprof --http=localhost:1984 %s", " ".join(map(str, perf_files))
+      )
     return self.browser_result(perfetto=perf_files)
 
-  def _filter_perf_files(self,
-                         perf_files: list[pth.AnyPath]) -> list[pth.AnyPath]:
+  def _filter_perf_files(
+    self, perf_files: list[pth.AnyPath]
+  ) -> list[pth.AnyPath]:
     if not self.start_profiling_after_setup():
       return perf_files
     renderer_pid = self._renderer_pid
@@ -166,8 +176,9 @@ class LinuxProfilingContext(PosixProfilingContext):
       if self._extract_perf_pid(perf_file) == str(renderer_pid):
         return [perf_file]
     logging.error(
-        "Found no matching profiling for renderer PID %s. "
-        "Using largest profile.", renderer_pid)
+      "Found no matching profiling for renderer PID %s. Using largest profile.",
+      renderer_pid,
+    )
     return [perf_files[-1]]
 
   def _extract_perf_pid(self, perf_file: pth.AnyPath) -> str:
@@ -175,46 +186,71 @@ class LinuxProfilingContext(PosixProfilingContext):
     # return a lot of data, thus let's filter it directly on the
     # browser platform.
     maybe_pid = self.browser_platform.sh_stdout(  # noqa: S604
-        shlex.join(
-            ("perf", "--buildid-dir", str(perf_file.parent / "debug"), "script",
-             "-i", str(perf_file), "-F", "pid")) + " | head -n1",
-        shell=True)
+      shlex.join(
+        (
+          "perf",
+          "--buildid-dir",
+          str(perf_file.parent / "debug"),
+          "script",
+          "-i",
+          str(perf_file),
+          "-F",
+          "pid",
+        )
+      )
+      + " | head -n1",
+      shell=True,
+    )
     return maybe_pid.strip()
 
-  def _inject_v8_symbols(self, run: Run,
-                         perf_files: list[pth.AnyPath]) -> list[pth.AnyPath]:
-    with run.actions(
+  def _inject_v8_symbols(
+    self, run: Run, perf_files: list[pth.AnyPath]
+  ) -> list[pth.AnyPath]:
+    with (
+      run.actions(
         f"Probe {self.probe.name}: "
         f"Injecting V8 symbols into {len(perf_files)} profiles",
-        verbose=True), ui.spinner():
+        verbose=True,
+      ),
+      ui.spinner(),
+    ):
       # Filter out empty files
       perf_files = [
-          file for file in perf_files
-          if self.browser_platform.file_size(file) > 0
+        file for file in perf_files if self.browser_platform.file_size(file) > 0
       ]
       if self.browser_platform.is_remote:
         # Use loop, as we cannot easily serialize the remote platform.
         perf_jitted_files = [
-            linux_perf_probe_inject_v8_symbols(file, self.browser_platform)
-            for file in perf_files
+          linux_perf_probe_inject_v8_symbols(file, self.browser_platform)
+          for file in perf_files
         ]
       else:
         assert self.browser_platform == plt.PLATFORM
         with multiprocessing.Pool() as pool:
           perf_jitted_files = list(
-              pool.imap(linux_perf_probe_inject_v8_symbols, perf_files))
+            pool.imap(linux_perf_probe_inject_v8_symbols, perf_files)
+          )
       return [file for file in perf_jitted_files if file is not None]
 
-  def _export_to_pprof(self, run: Run,
-                       perf_files: list[pth.AnyPath]) -> list[str]:
+  def _export_to_pprof(
+    self, run: Run, perf_files: list[pth.AnyPath]
+  ) -> list[str]:
     assert self.run_pprof
     run_details_json = json.dumps(run.get_browser_details_json())
-    with run.actions(
+    with (
+      run.actions(
         f"Probe {self.probe.name}: "
         f"exporting {len(perf_files)} profiles to pprof (slow)",
-        verbose=True), ui.spinner():
-      if self.browser_platform.sh(
-          "gcertstatus", check=False, quiet=True).returncode != 0:
+        verbose=True,
+      ),
+      ui.spinner(),
+    ):
+      if (
+        self.browser_platform.sh(
+          "gcertstatus", check=False, quiet=True
+        ).returncode
+        != 0
+      ):
         logging.info("Authenticating with gcert:")
         self.browser_platform.sh("gcert")
       size = len(perf_files)
@@ -223,15 +259,16 @@ class LinuxProfilingContext(PosixProfilingContext):
       if self.browser_platform.is_remote:
         # Use loop, as we cannot easily serialize the remote platform.
         for perf_data_file, run_details in items:
-          url = linux_perf_probe_pprof(perf_data_file, run_details,
-                                       self.browser_platform)
+          url = linux_perf_probe_pprof(
+            perf_data_file, run_details, self.browser_platform
+          )
           if url:
             urls.append(url)
       else:
         assert self.browser_platform == plt.PLATFORM
         with multiprocessing.Pool() as pool:
           urls = [
-              url for url in pool.starmap(linux_perf_probe_pprof, items) if url
+            url for url in pool.starmap(linux_perf_probe_pprof, items) if url
           ]
       try:
         if perf_files:
@@ -244,23 +281,24 @@ class LinuxProfilingContext(PosixProfilingContext):
   @override
   def _get_traceconv_symbol_dirs(self) -> tuple[pth.AnyPath, ...]:
     return (
-        self.browser.path.parent,
-        self.result_path,
-        self.result_path / "debug",
-        self.result_path / "jitdump",
+      self.browser.path.parent,
+      self.result_path,
+      self.result_path / "debug",
+      self.result_path / "jitdump",
     )
 
-  def _clean_up_temp_files(self,
-                           run: Run,
-                           has_exported_profile: bool = False) -> None:
+  def _clean_up_temp_files(
+    self, run: Run, has_exported_profile: bool = False
+  ) -> None:
     """Cleans up temporary profiling files and symbol directories."""
     if self.probe.cleanup_mode == CleanupMode.NEVER:
       logging.debug("%s: skipping cleanup", self.probe)
       return
     if self.probe.cleanup_mode == CleanupMode.AUTO:
       if not has_exported_profile:
-        logging.debug("%s: skipping auto cleanup without exported profile",
-                      self.probe)
+        logging.debug(
+          "%s: skipping auto cleanup without exported profile", self.probe
+        )
         return
     cleanup_dirs = {self.result_path, run.out_dir}
     for cleanup_dir in cleanup_dirs:
@@ -273,9 +311,9 @@ class LinuxProfilingContext(PosixProfilingContext):
           self.browser_platform.rm(directory, dir=True, missing_ok=True)
 
 
-def prepare_linux_perf_env(platform: plt.Platform,
-                           cwd: pth.AnyPath,
-                           env: dict[str, str] | None = None) -> dict[str, str]:
+def prepare_linux_perf_env(
+  platform: plt.Platform, cwd: pth.AnyPath, env: dict[str, str] | None = None
+) -> dict[str, str]:
   abs_cwd = platform.absolute(cwd)
   if env is None:
     env = dict(platform.environ)
@@ -292,8 +330,8 @@ KB = 1024
 
 
 def linux_perf_probe_inject_v8_symbols(
-    perf_data_file: pth.AnyPath,
-    platform: plt.Platform | None = None) -> pth.AnyPath | None:
+  perf_data_file: pth.AnyPath, platform: plt.Platform | None = None
+) -> pth.AnyPath | None:
   platform = platform or plt.PLATFORM
   assert platform.is_file(perf_data_file)
   output_file = perf_data_file.with_suffix(".data.jitted")
@@ -302,29 +340,35 @@ def linux_perf_probe_inject_v8_symbols(
   try:
     # TODO: use remote chdir
     platform.sh(
-        "perf",
-        "--buildid-dir",
-        str(perf_data_file.parent / "debug"),
-        "inject",
-        "--jit",
-        f"--input={perf_data_file}",
-        f"--output={output_file}",
-        env=env)
+      "perf",
+      "--buildid-dir",
+      str(perf_data_file.parent / "debug"),
+      "inject",
+      "--jit",
+      f"--input={perf_data_file}",
+      f"--output={output_file}",
+      env=env,
+    )
   except plt.SubprocessError as e:
     if platform.file_size(perf_data_file) > 200 * KB:
       logging.warning("Failed processing: %s\n%s", perf_data_file, e)
     else:
       # TODO: investigate why almost all small perf.data files fail
-      logging.debug("Failed processing small profile (likely empty): %s\n%s",
-                    perf_data_file, e)
+      logging.debug(
+        "Failed processing small profile (likely empty): %s\n%s",
+        perf_data_file,
+        e,
+      )
   if not platform.exists(output_file):
     return None
   return output_file
 
 
-def linux_perf_probe_pprof(perf_data_file: pth.AnyPath,
-                           run_details: str,
-                           platform: plt.Platform | None = None) -> str | None:
+def linux_perf_probe_pprof(
+  perf_data_file: pth.AnyPath,
+  run_details: str,
+  platform: plt.Platform | None = None,
+) -> str | None:
   platform = platform or plt.PLATFORM
   size = fs_helper.get_file_size(perf_data_file, platform=platform)
   env = prepare_linux_perf_env(platform, perf_data_file.parent)
@@ -342,7 +386,8 @@ def linux_perf_probe_pprof(perf_data_file: pth.AnyPath,
     # Occasionally small .jitted files fail, likely due perf inject silently
     # failing?
     perf_data_file, maybe_url = _linux_perf_probe_pprof_fallback(
-        perf_data_file, run_details, platform, e)
+      perf_data_file, run_details, platform, e
+    )
     if not maybe_url:
       logging.warning("Failed processing: %s\n%s", perf_data_file, e)
       return None
@@ -359,24 +404,32 @@ def linux_perf_probe_pprof(perf_data_file: pth.AnyPath,
 
 
 def _linux_perf_probe_pprof_fallback(
-    perf_data_file: pth.AnyPath, run_details: str, platform: plt.Platform,
-    e: Exception) -> tuple[pth.AnyPath, str | None]:
+  perf_data_file: pth.AnyPath,
+  run_details: str,
+  platform: plt.Platform,
+  e: Exception,
+) -> tuple[pth.AnyPath, str | None]:
   raw_perf_data_file = perf_data_file.with_suffix("")
   if perf_data_file.suffix != JITTED_SUFFIX or (
-      not platform.exists(raw_perf_data_file)):
+    not platform.exists(raw_perf_data_file)
+  ):
     return perf_data_file, None
   logging.debug(
-      "pprof best-effort: falling back to standard perf data "
-      "without js symbols: %s \n"
-      "Got failures for %s: %s", raw_perf_data_file, perf_data_file.name, e)
+    "pprof best-effort: falling back to standard perf data "
+    "without js symbols: %s \n"
+    "Got failures for %s: %s",
+    raw_perf_data_file,
+    perf_data_file.name,
+    e,
+  )
   url = None
   try:
     url = platform.sh_stdout(
-        Binaries.PPROF.resolve_cached(platform),
-        "-symbolize=force",
-        "-flame",
-        f"-add_comment={run_details}",
-        raw_perf_data_file,
+      Binaries.PPROF.resolve_cached(platform),
+      "-symbolize=force",
+      "-flame",
+      f"-add_comment={run_details}",
+      raw_perf_data_file,
     ).strip()
   except plt.SubprocessError as e2:
     logging.debug("pprof -flame failed: %s", e2)

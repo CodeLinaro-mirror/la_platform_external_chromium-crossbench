@@ -35,20 +35,23 @@ class TextInputAction(InputSourceAction):
     parser = super().config_parser()
     parser.add_argument("text", type=ObjectParser.non_empty_str, required=False)
     parser.add_argument(
-        "keyevent",
-        type=ObjectParser.non_empty_str,
-        required=False,
-        help="Keyevent code name to trigger on Android, instead of text. "
-        "See https://developer.android.com/reference/android/view/KeyEvent")
+      "keyevent",
+      type=ObjectParser.non_empty_str,
+      required=False,
+      help="Keyevent code name to trigger on Android, instead of text. "
+      "See https://developer.android.com/reference/android/view/KeyEvent",
+    )
     parser.add_argument(
-        "repeat",
-        type=NumberParser.positive_int,
-        default=1,
-        help="Number of times to repeat the text input or keyevent.")
+      "repeat",
+      type=NumberParser.positive_int,
+      default=1,
+      help="Number of times to repeat the text input or keyevent.",
+    )
     parser.add_argument(
-        "duration",
-        type=DurationParser.positive_or_zero_duration,
-        default=dt.timedelta())
+      "duration",
+      type=DurationParser.positive_or_zero_duration,
+      default=dt.timedelta(),
+    )
     return parser
 
   @override
@@ -60,7 +63,8 @@ class TextInputAction(InputSourceAction):
     super().validate()
     if bool(self.text) + bool(self.keyevent) != 1:
       raise ValueError(
-          f"Exactly one of {self}.text or {self}.keyevent can be specified.")
+        f"Exactly one of {self}.text or {self}.keyevent can be specified."
+      )
     if self.input_source is InputSource.JS:
       if self.keyevent:
         raise ValueError("keyevent cannot be used with JS text_input source.")

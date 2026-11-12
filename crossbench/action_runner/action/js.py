@@ -33,16 +33,19 @@ class JsAction(Action):
 
   @classmethod
   @override
-  def create(cls: type[Self],
-             script: str | None = None,
-             script_path: pth.LocalPath | None = None,
-             replacements: Replacements | None = None,
-             timeout: dt.timedelta = ACTION_TIMEOUT,
-             index: int = 0) -> Self:
+  def create(
+    cls: type[Self],
+    script: str | None = None,
+    script_path: pth.LocalPath | None = None,
+    replacements: Replacements | None = None,
+    timeout: dt.timedelta = ACTION_TIMEOUT,
+    index: int = 0,
+  ) -> Self:
     if bool(script) == bool(script_path):
       raise ValueError(
-          f"One of {cls.__name__}.script or {cls.__name__}.script_path, "
-          "but not both, have to be specified.")
+        f"One of {cls.__name__}.script or {cls.__name__}.script_path, "
+        "but not both, have to be specified."
+      )
     compiled: str = ""
     if script:
       compiled = script
@@ -52,11 +55,12 @@ class JsAction(Action):
     if replacements:
       compiled = replacements.apply(compiled)
     return cls(
-        script=compiled,
-        script_path=script_path,
-        replacements=replacements,
-        timeout=timeout,
-        index=index)
+      script=compiled,
+      script_path=script_path,
+      replacements=replacements,
+      timeout=timeout,
+      index=index,
+    )
 
   @classmethod
   @override
@@ -65,7 +69,8 @@ class JsAction(Action):
     parser = super().config_parser()
     parser.add_argument("script", type=ObjectParser.non_empty_str)
     parser.add_argument(
-        "script_path", aliases=("path",), type=PathParser.existing_file_path)
+      "script_path", aliases=("path",), type=PathParser.existing_file_path
+    )
     parser.add_argument("replacements", aliases=("replace",), type=Replacements)
     return parser
 
@@ -78,7 +83,8 @@ class JsAction(Action):
     super().validate()
     if not self.script:
       raise ValueError(
-          f"{self}.script is missing or the provided script file is empty.")
+        f"{self}.script is missing or the provided script file is empty."
+      )
 
   @override
   def to_json(self) -> JsonDict:

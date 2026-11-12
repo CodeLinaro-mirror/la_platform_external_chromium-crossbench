@@ -14,7 +14,6 @@ from tests import test_helper
 
 
 class CliLoggingTestCase(unittest.TestCase):
-
   def setUp(self):
     super().setUp()
     self.cli = CrossBenchCLI()

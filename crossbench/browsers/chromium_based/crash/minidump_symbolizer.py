@@ -19,8 +19,9 @@ from crossbench.browsers.chromium_based.crash import helper
 from crossbench.helper import path_finder
 
 if TYPE_CHECKING:
-  from crossbench.browsers.chromium_based.crash.minidump_finder import \
-      MinidumpFinder
+  from crossbench.browsers.chromium_based.crash.minidump_finder import (
+    MinidumpFinder,
+  )
   from crossbench.plt.base import Platform
   from crossbench.plt.types import ListCmdArgs
 
@@ -29,13 +30,14 @@ _MAX_PRINTED_BINARIES: Final[int] = 5
 
 
 class MinidumpSymbolizer(abc.ABC):
-
-  def __init__(self,
-               platform: Platform,
-               dump_finder: MinidumpFinder,
-               build_dir: pth.LocalPath,
-               symbols_dir: pth.LocalPath | None = None,
-               result_dir: pth.LocalPath | None = None) -> None:
+  def __init__(
+    self,
+    platform: Platform,
+    dump_finder: MinidumpFinder,
+    build_dir: pth.LocalPath,
+    symbols_dir: pth.LocalPath | None = None,
+    result_dir: pth.LocalPath | None = None,
+  ) -> None:
     """Abstract class for handling all minidump symbolizing code.
 
     Args:
@@ -70,9 +72,12 @@ class MinidumpSymbolizer(abc.ABC):
       None if the stack could not be retrieved for some reason, otherwise a
       string containing the stack trace.
     """
-    stackwalk = helper.find_crash_binary(self._platform, "minidump_stackwalk",
-                                         self._build_dir,
-                                         path_finder.MinidumpStackwalkFinder)
+    stackwalk = helper.find_crash_binary(
+      self._platform,
+      "minidump_stackwalk",
+      self._build_dir,
+      path_finder.MinidumpStackwalkFinder,
+    )
     if not stackwalk:
       logging.warning("minidump_stackwalk binary not found.")
       return None
@@ -114,8 +119,9 @@ class MinidumpSymbolizer(abc.ABC):
     """Returns the platform to be passed to generate_breakpad_symbols."""
     return None
 
-  def _generate_breakpad_symbols(self, symbols_dir: pth.LocalPath,
-                                 minidump: pth.LocalPath) -> None:
+  def _generate_breakpad_symbols(
+    self, symbols_dir: pth.LocalPath, minidump: pth.LocalPath
+  ) -> None:
     """Generates Breakpad symbols for use with stackwalking tools.
 
     Args:
@@ -128,38 +134,48 @@ class MinidumpSymbolizer(abc.ABC):
       return
     generate_breakpad_symbols_command, dump_syms_path = tools
     symbol_binaries = self.get_symbol_binaries(minidump)
-    cmds = self._collect_breakpad_cmds(symbols_dir, symbol_binaries,
-                                       generate_breakpad_symbols_command,
-                                       dump_syms_path)
+    cmds = self._collect_breakpad_cmds(
+      symbols_dir,
+      symbol_binaries,
+      generate_breakpad_symbols_command,
+      dump_syms_path,
+    )
     self._run_breakpad_dump_cmds(cmds)
 
   def _find_breakpad_tools(self) -> tuple[pth.LocalPath, pth.LocalPath] | None:
     generate_breakpad_symbols_command = helper.find_crash_binary(
-        self._platform, "generate_breakpad_symbols.py", self._build_dir,
-        path_finder.GenerateBreakpadSymbolsFinder)
+      self._platform,
+      "generate_breakpad_symbols.py",
+      self._build_dir,
+      path_finder.GenerateBreakpadSymbolsFinder,
+    )
     if not generate_breakpad_symbols_command:
       # Also try without .py extension
       generate_breakpad_symbols_command = helper.find_crash_binary(
-          self._platform, "generate_breakpad_symbols", self._build_dir)
+        self._platform, "generate_breakpad_symbols", self._build_dir
+      )
 
     if not generate_breakpad_symbols_command:
       logging.warning(
-          "generate_breakpad_symbols binary not found, cannot symbolize "
-          "minidumps")
+        "generate_breakpad_symbols binary not found, cannot symbolize minidumps"
+      )
       return None
 
-    dump_syms_path = helper.find_crash_binary(self._platform, "dump_syms",
-                                              self._build_dir,
-                                              path_finder.DumpSymsFinder)
+    dump_syms_path = helper.find_crash_binary(
+      self._platform, "dump_syms", self._build_dir, path_finder.DumpSymsFinder
+    )
     if not dump_syms_path:
       logging.warning("dump_syms binary not found, cannot symbolize minidumps")
       return None
     return generate_breakpad_symbols_command, dump_syms_path
 
   def _collect_breakpad_cmds(
-      self, symbols_dir: pth.LocalPath, symbol_binaries: list[pth.LocalPath],
-      generate_breakpad_symbols_command: pth.LocalPath,
-      dump_syms_path: pth.LocalPath) -> list[ListCmdArgs]:
+    self,
+    symbols_dir: pth.LocalPath,
+    symbol_binaries: list[pth.LocalPath],
+    generate_breakpad_symbols_command: pth.LocalPath,
+    dump_syms_path: pth.LocalPath,
+  ) -> list[ListCmdArgs]:
     cmds: list[ListCmdArgs] = []
     cached_binaries: list[pth.LocalPath] = []
     missing_binaries: list[pth.LocalPath] = []
@@ -176,9 +192,13 @@ class MinidumpSymbolizer(abc.ABC):
         cached_binaries.append(binary_path)
         continue
       cmds.append(
-          self._format_breakpad_cmd(binary_path, symbols_dir,
-                                    generate_breakpad_symbols_command,
-                                    dump_syms_path))
+        self._format_breakpad_cmd(
+          binary_path,
+          symbols_dir,
+          generate_breakpad_symbols_command,
+          dump_syms_path,
+        )
+      )
     total_count: int = len(symbol_binaries)
     if missing_binaries:
       self._log_missing_binaries(missing_binaries, total_count)
@@ -186,49 +206,63 @@ class MinidumpSymbolizer(abc.ABC):
       self._log_cached_binaries(cached_binaries, total_count)
     return cmds
 
-  def _format_breakpad_cmd(self, binary_path: pth.LocalPath,
-                           symbols_dir: pth.LocalPath,
-                           generate_breakpad_symbols_command: pth.LocalPath,
-                           dump_syms_path: pth.LocalPath) -> ListCmdArgs:
+  def _format_breakpad_cmd(
+    self,
+    binary_path: pth.LocalPath,
+    symbols_dir: pth.LocalPath,
+    generate_breakpad_symbols_command: pth.LocalPath,
+    dump_syms_path: pth.LocalPath,
+  ) -> ListCmdArgs:
     cmd: ListCmdArgs = []
     if generate_breakpad_symbols_command.suffix == ".py":
       cmd.append(sys.executable)
-    cmd.extend([
+    cmd.extend(
+      [
         generate_breakpad_symbols_command,
         f"--binary={binary_path}",
         f"--symbols-dir={symbols_dir}",
         f"--build-dir={self._build_dir}",
         f"--dump-syms-path={dump_syms_path}",
-    ])
+      ]
+    )
     if platform_override := self.get_breakpad_platform_override():
       cmd.append(f"--platform={platform_override}")
     return cmd
 
-  def _log_missing_binaries(self, missing_binaries: list[pth.LocalPath],
-                            total_count: int) -> None:
+  def _log_missing_binaries(
+    self, missing_binaries: list[pth.LocalPath], total_count: int
+  ) -> None:
     logging.warning(
-        "Unable to find %d of %d binaries for minidump symbolization. This "
-        "is likely not an actual issue, but is worth investigating if the "
-        "minidump fails to symbolize properly.", len(missing_binaries),
-        total_count)
+      "Unable to find %d of %d binaries for minidump symbolization. This "
+      "is likely not an actual issue, but is worth investigating if the "
+      "minidump fails to symbolize properly.",
+      len(missing_binaries),
+      total_count,
+    )
     if len(missing_binaries) < _MAX_PRINTED_BINARIES:
       logging.warning("Missing binaries: %s", missing_binaries)
     else:
       logging.warning(
-          "Run test with high verbosity to get the list of missing binaries.")
+        "Run test with high verbosity to get the list of missing binaries."
+      )
       logging.debug("Missing binaries: %s", missing_binaries)
 
-  def _log_cached_binaries(self, cached_binaries: list[pth.LocalPath],
-                           total_count: int) -> None:
+  def _log_cached_binaries(
+    self, cached_binaries: list[pth.LocalPath], total_count: int
+  ) -> None:
     logging.info(
-        "Skipping symbol dumping for %d of %d binaries due to cached symbols "
-        "being present.", len(cached_binaries), total_count)
+      "Skipping symbol dumping for %d of %d binaries due to cached symbols "
+      "being present.",
+      len(cached_binaries),
+      total_count,
+    )
     if len(cached_binaries) < _MAX_PRINTED_BINARIES:
       logging.info("Skipped binaries: %s", cached_binaries)
     else:
       logging.info(
-          "Run test with high verbosity to get the list of binaries with "
-          "cached symbols.")
+        "Run test with high verbosity to get the list of binaries with "
+        "cached symbols."
+      )
       logging.debug("Skipped binaries: %s", cached_binaries)
 
   def _run_breakpad_dump_cmds(self, cmds: list[ListCmdArgs]) -> None:
@@ -257,13 +291,15 @@ class MinidumpSymbolizer(abc.ABC):
       while len(processes) < process_limit and cmds:
         cmd = cmds.pop(-1)
         p = self._platform.popen(
-            *cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+          *cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+        )
         processes[p] = cmd
       # 1 second is fairly arbitrary.
       time.sleep(1)
 
   def _clear_finished_processes(
-      self, processes: dict[subprocess.Popen, ListCmdArgs]) -> None:
+    self, processes: dict[subprocess.Popen, ListCmdArgs]
+  ) -> None:
     processes_to_delete = []
     for p, cmd in processes.items():
       if p.poll() is not None:

@@ -11,53 +11,75 @@ import logging
 import math
 import sys
 import time
-from typing import TYPE_CHECKING, Callable, Final, Iterable, Iterator, \
-    Sequence, TypedDict, cast
+from typing import (
+  TYPE_CHECKING,
+  Callable,
+  Final,
+  Iterable,
+  Iterator,
+  Sequence,
+  TypedDict,
+  cast,
+)
 
 import numpy as np
 
 from crossbench import exception
 from crossbench import path as pth
 from crossbench.action_runner.action.enums import ButtonClick, ScrollMode
-from crossbench.action_runner.action_runner_listener import \
-    ActionRunnerListener
+from crossbench.action_runner.action_runner_listener import ActionRunnerListener
 from crossbench.action_runner.agent_driver import AgentDriver
 from crossbench.action_runner.bond_action_runner import BondActionRunner
 from crossbench.action_runner.display_rectangle import DisplayRectangle
-from crossbench.action_runner.element_not_found_error import \
-    ElementNotFoundError
-from crossbench.action_runner.input_events import DEFAULT_CLICK_DURATION, \
-    InputEvent, KeyEvent, MouseButtonEvent, MouseMoveEvent, TouchEvent, \
-    WaitEvent
+from crossbench.action_runner.element_not_found_error import (
+  ElementNotFoundError,
+)
+from crossbench.action_runner.input_events import (
+  DEFAULT_CLICK_DURATION,
+  InputEvent,
+  KeyEvent,
+  MouseButtonEvent,
+  MouseMoveEvent,
+  TouchEvent,
+  WaitEvent,
+)
 from crossbench.action_runner.keyboard_layout import US_KEYBOARD_LAYOUT
-from crossbench.action_runner.screenshot_annotation import \
-    ScreenshotPointAnnotation, ScreenshotRectAnnotation
+from crossbench.action_runner.screenshot_annotation import (
+  ScreenshotPointAnnotation,
+  ScreenshotRectAnnotation,
+)
 from crossbench.action_runner.viewport_info import ViewportInfo
-from crossbench.action_runner.virtual_device.mouse import \
-    DEFAULT_MOUSE_POLLING_RATE_HZ
-from crossbench.action_runner.virtual_device.pointing import \
-    PointingVirtualDeviceConfig
-from crossbench.action_runner.virtual_device.touchscreen import \
-    DEFAULT_TOUCH_POLLING_RATE_HZ
+from crossbench.action_runner.virtual_device.mouse import (
+  DEFAULT_MOUSE_POLLING_RATE_HZ,
+)
+from crossbench.action_runner.virtual_device.pointing import (
+  PointingVirtualDeviceConfig,
+)
+from crossbench.action_runner.virtual_device.touchscreen import (
+  DEFAULT_TOUCH_POLLING_RATE_HZ,
+)
 from crossbench.benchmarks.loading.input_source import InputSource
 from crossbench.benchmarks.loading.point import Point
-from crossbench.browsers.chromium.devtools import \
-    DevToolsInBrowserClient as DevToolsClient
+from crossbench.browsers.chromium.devtools import (
+  DevToolsInBrowserClient as DevToolsClient,
+)
 from crossbench.cli.ui import ui
-from crossbench.probes.screenshot import ScreenshotProbe, \
-    ScreenshotProbeContext
-from crossbench.runner.probe_context_lookup_error import \
-    ProbeContextLookupError
+from crossbench.probes.screenshot import ScreenshotProbe, ScreenshotProbeContext
+from crossbench.runner.probe_context_lookup_error import ProbeContextLookupError
 
 if TYPE_CHECKING:
   from crossbench.action_runner.action import all as i_action
   from crossbench.action_runner.action.base_probe import BaseProbeAction
-  from crossbench.action_runner.action.position import SelectorConfig, \
-      UiSelectorConfig
-  from crossbench.action_runner.screenshot_annotation import \
-      ScreenshotAnnotation
-  from crossbench.action_runner.virtual_device.virtual_device_config import \
-      VirtualDeviceConfig
+  from crossbench.action_runner.action.position import (
+    SelectorConfig,
+    UiSelectorConfig,
+  )
+  from crossbench.action_runner.screenshot_annotation import (
+    ScreenshotAnnotation,
+  )
+  from crossbench.action_runner.virtual_device.virtual_device_config import (
+    VirtualDeviceConfig,
+  )
   from crossbench.benchmarks.loading.config.pages import ActionBlock
   from crossbench.benchmarks.loading.page.base import Page
   from crossbench.benchmarks.loading.page.combined import CombinedPage
@@ -69,7 +91,8 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
 
 SCRIPTS_DIR: Final[pth.LocalPath] = (
-    pth.ROOT_DIR / "crossbench" / "action_runner" / "scripts")
+  pth.ROOT_DIR / "crossbench" / "action_runner" / "scripts"
+)
 
 
 class ElementRectResult(TypedDict):
@@ -97,21 +120,22 @@ class SelectElementResult(TypedDict):
 
 
 class InputSourceNotImplementedError(NotImplementedError):
-
   def __init__(
-      self,
-      runner: ActionRunner,
-      action: i_action.Action,
-      input_source: InputSource,
-      msg_context: str = "",
+    self,
+    runner: ActionRunner,
+    action: i_action.Action,
+    input_source: InputSource,
+    msg_context: str = "",
   ) -> None:
     self.runner: Final[ActionRunner] = runner
     self.action: Final[i_action.Action] = action
     if msg_context:
       msg_context = f", context: {msg_context}"
-    message = (f"{action.TYPE!s}-action "
-               f"not implemented in {type(runner).__name__}: "
-               f"Source {input_source!r} not implemented{msg_context}")
+    message = (
+      f"{action.TYPE!s}-action "
+      f"not implemented in {type(runner).__name__}: "
+      f"Source {input_source!r} not implemented{msg_context}"
+    )
     super().__init__(message)
 
 
@@ -142,10 +166,12 @@ class ActionRunner:
 
   _bond: BondActionRunner | None = None
 
-  def __init__(self,
-               run: Run,
-               virtual_devices: tuple[VirtualDeviceConfig, ...] = (),
-               step_by_step_mode: bool = False) -> None:
+  def __init__(
+    self,
+    run: Run,
+    virtual_devices: tuple[VirtualDeviceConfig, ...] = (),
+    step_by_step_mode: bool = False,
+  ) -> None:
     self._run: Final[Run] = run
     self._listener = ActionRunnerListener()
     self._info_stack: exception.TInfoStack | None = None
@@ -159,12 +185,12 @@ class ActionRunner:
     return (SCRIPTS_DIR / "select_element.js").read_text()
 
   def _select_element(
-      self,
-      actions: Actions,
-      selector: str | None,
-      scroll_into_view: bool | None = None,
-      click: bool = False,
-      scroll_to: float | None = None,
+    self,
+    actions: Actions,
+    selector: str | None,
+    scroll_into_view: bool | None = None,
+    click: bool = False,
+    scroll_to: float | None = None,
   ) -> SelectElementResult:
     args: dict[str, object] = {"selector": selector}
     if scroll_into_view is not None:
@@ -193,10 +219,9 @@ class ActionRunner:
   def browser_platform(self) -> Platform:
     return self.run.browser_platform
 
-  def actions(self,
-              name: str,
-              verbose: bool = False,
-              measure: bool = True) -> Actions:
+  def actions(
+    self, name: str, verbose: bool = False, measure: bool = True
+  ) -> Actions:
     return self.run.actions(name, verbose=verbose, measure=measure)
 
   def set_listener(self, listener: ActionRunnerListener) -> None:
@@ -283,8 +308,9 @@ class ActionRunner:
         return
       except Exception as e:
         if i + 1 < action.attempts:
-          logging.warning("Click failed with %d attempts left: %s",
-                          action.attempts - i, e)
+          logging.warning(
+            "Click failed with %d attempts left: %s", action.attempts - i, e
+          )
           continue
         raise e
 
@@ -300,8 +326,9 @@ class ActionRunner:
   def get(self, action: i_action.GetAction) -> None:
     with self.actions(f"Get {action.url}", measure=False) as actions:
       with actions.wait_until(action.duration):
-        actions.show_url(action.url, action.target, action.ready_state,
-                         action.timeout)
+        actions.show_url(
+          action.url, action.target, action.ready_state, action.timeout
+        )
 
   def clear_cache(self, action: i_action.ClearCacheAction) -> None:
     del action
@@ -320,10 +347,10 @@ class ActionRunner:
   def click_js(self, action: i_action.ClickAction) -> None:
     if action.duration > dt.timedelta():
       raise InputSourceNotImplementedError(
-          self,
-          action,
-          action.input_source,
-          "Non-zero duration not implemented",
+        self,
+        action,
+        action.input_source,
+        "Non-zero duration not implemented",
       )
     selector_config = action.position.selector
     if not selector_config:
@@ -332,23 +359,24 @@ class ActionRunner:
     with self.actions("ClickAction", measure=False) as actions:
       if selector_config.wait:
         self.wait_for_element_impl(
-            actions,
-            selector=selector_config.selector,
-            timeout=action.timeout,
-            required=selector_config.required,
-        )
-      res: SelectElementResult = self._select_element(
           actions,
           selector=selector_config.selector,
-          scroll_into_view=selector_config.scroll_into_view,
-          click=True,
+          timeout=action.timeout,
+          required=selector_config.required,
+        )
+      res: SelectElementResult = self._select_element(
+        actions,
+        selector=selector_config.selector,
+        scroll_into_view=selector_config.scroll_into_view,
+        click=True,
       )
       if not res["count"] and selector_config.required:
         raise ElementNotFoundError(selector_config.selector)
 
       if action.verify:
         self.wait_for_element_impl(
-            actions, selector=action.verify, timeout=action.timeout)
+          actions, selector=action.verify, timeout=action.timeout
+        )
 
   def click_touch(self, action: i_action.ClickAction) -> None:
     self._inject_click(action, self._get_touch_click_events)
@@ -356,26 +384,30 @@ class ActionRunner:
   def click_mouse(self, action: i_action.ClickAction) -> None:
     self._inject_click(action, self._get_mouse_click_events)
 
-  def _get_touch_click_events(self, click_location: Point,
-                              duration: dt.timedelta) -> tuple[InputEvent, ...]:
+  def _get_touch_click_events(
+    self, click_location: Point, duration: dt.timedelta
+  ) -> tuple[InputEvent, ...]:
     return (
-        TouchEvent(position=click_location, is_down=True),
-        WaitEvent(duration=duration),
-        TouchEvent(position=click_location, is_down=False),
+      TouchEvent(position=click_location, is_down=True),
+      WaitEvent(duration=duration),
+      TouchEvent(position=click_location, is_down=False),
     )
 
-  def _get_mouse_click_events(self, click_location: Point,
-                              duration: dt.timedelta) -> tuple[InputEvent, ...]:
+  def _get_mouse_click_events(
+    self, click_location: Point, duration: dt.timedelta
+  ) -> tuple[InputEvent, ...]:
     return (
-        MouseMoveEvent(position=click_location),
-        MouseButtonEvent(button=ButtonClick.LEFT, is_down=True),
-        WaitEvent(duration=duration),
-        MouseButtonEvent(button=ButtonClick.LEFT, is_down=False),
+      MouseMoveEvent(position=click_location),
+      MouseButtonEvent(button=ButtonClick.LEFT, is_down=True),
+      WaitEvent(duration=duration),
+      MouseButtonEvent(button=ButtonClick.LEFT, is_down=False),
     )
 
   def _inject_click(
-      self, action: i_action.ClickAction,
-      events_fn: Callable[[Point, dt.timedelta], Sequence[InputEvent]]) -> None:
+    self,
+    action: i_action.ClickAction,
+    events_fn: Callable[[Point, dt.timedelta], Sequence[InputEvent]],
+  ) -> None:
     with self.actions("ClickAction", measure=False) as actions:
       click_location = self._get_click_location(actions, action)
       if not click_location:
@@ -389,16 +421,19 @@ class ActionRunner:
 
       if action.verify:
         self.wait_for_element_impl(
-            actions,
-            selector=action.verify,
-            timeout=action.timeout,
-            check_element_rect=True)
+          actions,
+          selector=action.verify,
+          timeout=action.timeout,
+          check_element_rect=True,
+        )
 
-  def _get_click_location(self, actions: Actions,
-                          action: i_action.ClickAction) -> Point | None:
+  def _get_click_location(
+    self, actions: Actions, action: i_action.ClickAction
+  ) -> Point | None:
     if selector_config := action.position.selector:
       click_location = self._get_selector_click_location(
-          actions, action, selector_config)
+        actions, action, selector_config
+      )
     elif coordinates_config := action.position.coordinates:
       click_location = coordinates_config.point()
     elif ui_selector := action.position.ui_selector:
@@ -408,80 +443,92 @@ class ActionRunner:
 
     if click_location:
       self.add_failure_screenshot_annotation(
-          ScreenshotPointAnnotation(label="click", point=click_location))
+        ScreenshotPointAnnotation(label="click", point=click_location)
+      )
     return click_location
 
   def _get_selector_click_location(
-      self, actions: Actions, action: i_action.ClickAction,
-      selector_config: SelectorConfig) -> Point | None:
+    self,
+    actions: Actions,
+    action: i_action.ClickAction,
+    selector_config: SelectorConfig,
+  ) -> Point | None:
     if selector_config.wait:
       self.wait_for_element_impl(
-          actions,
-          selector=selector_config.selector,
-          timeout=action.timeout,
-          scroll_into_view=selector_config.scroll_into_view,
-          check_element_rect=True,
-          required=selector_config.required)
+        actions,
+        selector=selector_config.selector,
+        timeout=action.timeout,
+        scroll_into_view=selector_config.scroll_into_view,
+        check_element_rect=True,
+        required=selector_config.required,
+      )
 
-    viewport_info = self._get_viewport_info(actions, selector_config.selector,
-                                            selector_config.scroll_into_view)
+    viewport_info = self._get_viewport_info(
+      actions, selector_config.selector, selector_config.scroll_into_view
+    )
     element_rect = viewport_info.element_rect
     if not element_rect:
       if selector_config.required:
         raise ElementNotFoundError(selector_config.selector)
       return None
     self.add_failure_screenshot_annotation(
-        ScreenshotRectAnnotation(
-            label=selector_config.selector, rect=element_rect))
+      ScreenshotRectAnnotation(
+        label=selector_config.selector, rect=element_rect
+      )
+    )
     return element_rect.middle
 
   def _get_ui_selector_click_location(
-      self, action: i_action.ClickAction,
-      ui_selector: UiSelectorConfig) -> Point | None:
+    self, action: i_action.ClickAction, ui_selector: UiSelectorConfig
+  ) -> Point | None:
     try:
       element_rect = self.browser_platform.get_ui_element_rect(
-          ui_selector, action.timeout)
+        ui_selector, action.timeout
+      )
     except ElementNotFoundError:
       if ui_selector.required:
         raise
       return None
     self.add_failure_screenshot_annotation(
-        ScreenshotRectAnnotation(
-            label=str(ui_selector.to_json()), rect=element_rect))
+      ScreenshotRectAnnotation(
+        label=str(ui_selector.to_json()), rect=element_rect
+      )
+    )
     return element_rect.middle
 
-  def _get_viewport_info(self,
-                         actions: Actions,
-                         selector: str | None,
-                         scroll_into_view: bool = False) -> ViewportInfo:
+  def _get_viewport_info(
+    self, actions: Actions, selector: str | None, scroll_into_view: bool = False
+  ) -> ViewportInfo:
     res: SelectElementResult = self._select_element(
-        actions,
-        selector=selector,
-        scroll_into_view=scroll_into_view,
+      actions,
+      selector=selector,
+      scroll_into_view=scroll_into_view,
     )
     element_rect: DisplayRectangle | None = None
     if rect := res["element_rect"]:
       element_rect = DisplayRectangle(
-          Point(rect["left"], rect["top"]), rect["width"], rect["height"])
+        Point(rect["left"], rect["top"]), rect["width"], rect["height"]
+      )
     return ViewportInfo(
-        device_pixel_ratio=res["device_pixel_ratio"],
-        window_outer_width=res["window_outer_width"],
-        window_outer_height=res["window_outer_height"],
-        window_inner_width=res["window_inner_width"],
-        window_inner_height=res["window_inner_height"],
-        screen_width=res["screen_width"],
-        screen_height=res["screen_height"],
-        screen_avail_width=res["screen_avail_width"],
-        screen_avail_height=res["screen_avail_height"],
-        window_offset_x=res["window_offset_x"],
-        window_offset_y=res["window_offset_y"],
-        element_rect=element_rect,
+      device_pixel_ratio=res["device_pixel_ratio"],
+      window_outer_width=res["window_outer_width"],
+      window_outer_height=res["window_outer_height"],
+      window_inner_width=res["window_inner_width"],
+      window_inner_height=res["window_inner_height"],
+      screen_width=res["screen_width"],
+      screen_height=res["screen_height"],
+      screen_avail_width=res["screen_avail_width"],
+      screen_avail_height=res["screen_avail_height"],
+      window_offset_x=res["window_offset_x"],
+      window_offset_y=res["window_offset_y"],
+      element_rect=element_rect,
     )
 
   def click_driver(self, action: i_action.ClickAction) -> None:
     if action.duration > dt.timedelta():
-      raise InputSourceNotImplementedError(self, action, action.input_source,
-                                           "Non-zero duration not implemented")
+      raise InputSourceNotImplementedError(
+        self, action, action.input_source, "Non-zero duration not implemented"
+      )
     selector_config = action.position.selector
     if not selector_config:
       raise RuntimeError("Missing selector")
@@ -489,21 +536,24 @@ class ActionRunner:
     with self.actions("ClickAction (Driver)", measure=False) as actions:
       if selector_config.wait:
         self.wait_for_element_impl(
-            actions,
-            selector=selector_config.selector,
-            timeout=action.timeout,
-            required=selector_config.required)
+          actions,
+          selector=selector_config.selector,
+          timeout=action.timeout,
+          required=selector_config.required,
+        )
 
       self.browser.trusted_click(selector_config.selector)
 
       if action.verify:
         self.wait_for_element_impl(
-            actions, selector=action.verify, timeout=action.timeout)
+          actions, selector=action.verify, timeout=action.timeout
+        )
 
   def scroll_js(self, action: i_action.ScrollAction) -> None:
     with self.actions("ScrollAction", measure=False) as actions:
       res: SelectElementResult = self._select_element(
-          actions, selector=action.selector)
+        actions, selector=action.selector
+      )
 
       if not res["count"]:
         if action.required:
@@ -524,11 +574,13 @@ class ActionRunner:
           break
         scroll_y = initial_scroll_y + time_delta / duration_s * distance
         self._select_element(
-            actions, selector=action.selector, scroll_to=scroll_y)
+          actions, selector=action.selector, scroll_to=scroll_y
+        )
         actions.wait(0.2)
       scroll_y = initial_scroll_y + distance
       self._select_element(
-          actions, selector=action.selector, scroll_to=scroll_y)
+        actions, selector=action.selector, scroll_to=scroll_y
+      )
 
   def scroll_touch(self, action: i_action.ScrollAction) -> None:
     with self.actions("ScrollAction", measure=False) as actions:
@@ -539,28 +591,31 @@ class ActionRunner:
 
       assert action.source_device
       total_scroll_distance = viewport_info.css_to_native_distance(
-          action.distance)
+        action.distance
+      )
       self._inject_scroll_swipes(
-          scroll_area,
-          total_scroll_distance,
-          action.duration,
-          action.source_device,
-          settle_duration=action.settle_duration,
-          scroll_mode=action.scroll_mode)
+        scroll_area,
+        total_scroll_distance,
+        action.duration,
+        action.source_device,
+        settle_duration=action.settle_duration,
+        scroll_mode=action.scroll_mode,
+      )
 
   def _inject_scroll_swipes(
-      self,
-      scroll_area: DisplayRectangle,
-      total_scroll_distance: float,
-      total_duration: dt.timedelta,
-      source_device: str,
-      settle_duration: dt.timedelta = dt.timedelta(),
-      scroll_mode: ScrollMode = ScrollMode.LINEAR,
+    self,
+    scroll_area: DisplayRectangle,
+    total_scroll_distance: float,
+    total_duration: dt.timedelta,
+    source_device: str,
+    settle_duration: dt.timedelta = dt.timedelta(),
+    scroll_mode: ScrollMode = ScrollMode.LINEAR,
   ) -> None:
     # get_scrollable_area will apply a non-scrollable border around the
     # rectangle to avoid issues with swiping on the very edge of windows.
-    (scrollable_top, scrollable_bottom,
-     max_swipe_distance) = scroll_area.get_scrollable_area()
+    (scrollable_top, scrollable_bottom, max_swipe_distance) = (
+      scroll_area.get_scrollable_area()
+    )
     mid_x = scroll_area.mid_x
     total_distance = abs(total_scroll_distance)
     remaining_distance = total_distance
@@ -570,34 +625,42 @@ class ActionRunner:
     while remaining_distance > 0:
       current_distance = min(max_swipe_distance, remaining_distance)
       current_duration = (current_distance / total_distance) * total_duration
-      y_start, y_end = self._get_scroll_swipe_y_range(total_scroll_distance,
-                                                      current_distance,
-                                                      scrollable_top,
-                                                      scrollable_bottom)
+      y_start, y_end = self._get_scroll_swipe_y_range(
+        total_scroll_distance,
+        current_distance,
+        scrollable_top,
+        scrollable_bottom,
+      )
       events.extend(
-          self._get_swipe_events(
-              start_x=mid_x,
-              start_y=y_start,
-              end_x=mid_x,
-              end_y=y_end,
-              duration=current_duration,
-              polling_rate_hz=polling_rate_hz,
-              settle_duration=settle_duration,
-              scroll_mode=scroll_mode))
+        self._get_swipe_events(
+          start_x=mid_x,
+          start_y=y_start,
+          end_x=mid_x,
+          end_y=y_end,
+          duration=current_duration,
+          polling_rate_hz=polling_rate_hz,
+          settle_duration=settle_duration,
+          scroll_mode=scroll_mode,
+        )
+      )
       remaining_distance -= current_distance
 
     self.browser_platform.inject_input_events(source_device, events)
 
-  def _get_scroll_swipe_y_range(self, total_scroll_distance: float,
-                                current_distance: float, scrollable_top: int,
-                                scrollable_bottom: int) -> tuple[int, int]:
+  def _get_scroll_swipe_y_range(
+    self,
+    total_scroll_distance: float,
+    current_distance: float,
+    scrollable_top: int,
+    scrollable_bottom: int,
+  ) -> tuple[int, int]:
     if total_scroll_distance < 0:
       return scrollable_top, round(scrollable_top + current_distance)
     return scrollable_bottom, round(scrollable_bottom - current_distance)
 
   def _get_scroll_area(
-      self, viewport_info: ViewportInfo,
-      action: i_action.ScrollAction) -> DisplayRectangle | None:
+    self, viewport_info: ViewportInfo, action: i_action.ScrollAction
+  ) -> DisplayRectangle | None:
     if not action.selector:
       return viewport_info.browser_viewable
     if element_rect := viewport_info.element_rect:
@@ -610,16 +673,19 @@ class ActionRunner:
     assert action.text is not None
     with self.actions("TextInput", measure=False) as actions:
       actions.js(
-          "document.activeElement.value = arguments[0]",
-          arguments=[action.text * action.repeat])
+        "document.activeElement.value = arguments[0]",
+        arguments=[action.text * action.repeat],
+      )
 
   def _text_to_weighted_events(self, text: str) -> list[KeyEvent | int]:
     events: list[KeyEvent | int] = []
     for char in text:
       mapping = US_KEYBOARD_LAYOUT.get(char)
       if not mapping:
-        raise ValueError(f"Character {char!r} is not supported "
-                         "in the standard US keyboard layout.")
+        raise ValueError(
+          f"Character {char!r} is not supported "
+          "in the standard US keyboard layout."
+        )
 
       if mapping.has_shift:
         events.append(KeyEvent("ShiftLeft", is_down=True))
@@ -643,14 +709,18 @@ class ActionRunner:
       events_with_weights: list[KeyEvent | int] = []
       if text := action.text:
         events_with_weights.extend(
-            self._text_to_weighted_events(text * action.repeat))
+          self._text_to_weighted_events(text * action.repeat)
+        )
       elif keyevent := action.keyevent:
-        events_with_weights.extend([
+        events_with_weights.extend(
+          [
             KeyEvent(key_code=keyevent, is_down=True),
             self.KEY_HOLD_WEIGHT,
             KeyEvent(key_code=keyevent, is_down=False),
             self.KEY_GAP_WEIGHT,
-        ] * action.repeat)
+          ]
+          * action.repeat
+        )
 
       if not events_with_weights:
         return
@@ -660,7 +730,7 @@ class ActionRunner:
 
       if not action.duration:
         input_events = [
-            e for e in events_with_weights if isinstance(e, KeyEvent)
+          e for e in events_with_weights if isinstance(e, KeyEvent)
         ]
         self.browser_platform.inject_input_events(source_device, input_events)
         return
@@ -676,56 +746,71 @@ class ActionRunner:
           timed_events.append(item)
         else:
           cumulative_weight += item
-          target_cumulative_us = (total_duration_us *
-                                  cumulative_weight) // total_weight
+          target_cumulative_us = (
+            total_duration_us * cumulative_weight
+          ) // total_weight
           wait_us = target_cumulative_us - previous_cumulative_us
           previous_cumulative_us = target_cumulative_us
           if wait_us > 0:
             timed_events.append(
-                WaitEvent(duration=dt.timedelta(microseconds=wait_us)))
+              WaitEvent(duration=dt.timedelta(microseconds=wait_us))
+            )
 
       self.browser_platform.inject_input_events(source_device, timed_events)
 
   def swipe(self, action: i_action.SwipeAction) -> None:
     with self.actions("SwipeAction", measure=False):
       self._inject_swipe(
-          start_x=action.start_x,
-          start_y=action.start_y,
-          end_x=action.end_x,
-          end_y=action.end_y,
-          duration=action.duration,
-          source_device=action.source_device)
+        start_x=action.start_x,
+        start_y=action.start_y,
+        end_x=action.end_x,
+        end_y=action.end_y,
+        duration=action.duration,
+        source_device=action.source_device,
+      )
 
   def mouse_move(self, action: i_action.MouseMoveAction) -> None:
     with self.actions("MouseMoveAction", measure=False):
       self._inject_mouse_move(
-          waypoints=action.waypoints,
-          duration=action.duration,
-          source_device=action.source_device)
+        waypoints=action.waypoints,
+        duration=action.duration,
+        source_device=action.source_device,
+      )
 
   def raw_input(self, action: i_action.RawInputAction) -> None:
     with self.actions("RawInputAction", measure=False):
-      self.browser_platform.inject_input_events(action.source_device,
-                                                action.events)
+      self.browser_platform.inject_input_events(
+        action.source_device, action.events
+      )
 
-  def _inject_swipe(self, start_x: int, start_y: int, end_x: int, end_y: int,
-                    duration: dt.timedelta, source_device: str) -> None:
+  def _inject_swipe(
+    self,
+    start_x: int,
+    start_y: int,
+    end_x: int,
+    end_y: int,
+    duration: dt.timedelta,
+    source_device: str,
+  ) -> None:
     polling_rate_hz = self._get_polling_rate_hz(source_device)
-    events = self._get_swipe_events(start_x, start_y, end_x, end_y, duration,
-                                    polling_rate_hz)
+    events = self._get_swipe_events(
+      start_x, start_y, end_x, end_y, duration, polling_rate_hz
+    )
     self.browser_platform.inject_input_events(source_device, events)
 
-  def _inject_mouse_move(self, waypoints: Sequence[Point],
-                         duration: dt.timedelta, source_device: str) -> None:
+  def _inject_mouse_move(
+    self, waypoints: Sequence[Point], duration: dt.timedelta, source_device: str
+  ) -> None:
     polling_rate_hz = self._get_polling_rate_hz(
-        source_device, default_rate_hz=DEFAULT_MOUSE_POLLING_RATE_HZ)
+      source_device, default_rate_hz=DEFAULT_MOUSE_POLLING_RATE_HZ
+    )
     events = self._get_mouse_move_events(waypoints, duration, polling_rate_hz)
     self.browser_platform.inject_input_events(source_device, events)
 
   def _get_polling_rate_hz(
-      self,
-      source_device: str,
-      default_rate_hz: int = DEFAULT_TOUCH_POLLING_RATE_HZ,
+    self,
+    source_device: str,
+    default_rate_hz: int = DEFAULT_TOUCH_POLLING_RATE_HZ,
   ) -> int:
     device = self.browser_platform.virtual_devices.get(source_device)
     if isinstance(device, PointingVirtualDeviceConfig):
@@ -733,10 +818,10 @@ class ActionRunner:
     return default_rate_hz
 
   def _get_mouse_move_events(
-      self,
-      waypoints: Sequence[Point],
-      duration: dt.timedelta,
-      polling_rate_hz: int,
+    self,
+    waypoints: Sequence[Point],
+    duration: dt.timedelta,
+    polling_rate_hz: int,
   ) -> list[InputEvent]:
     assert len(waypoints) >= 2
     points = np.array([(p.x, p.y) for p in waypoints], dtype=float)
@@ -747,11 +832,11 @@ class ActionRunner:
     num_steps = max(1, round(duration.total_seconds() * polling_rate_hz))
     sample_distances = np.linspace(0.0, cumulative_distances[-1], num_steps + 1)
     xs = np.round(
-        np.interp(sample_distances, cumulative_distances,
-                  points[:, 0])).astype(int)
+      np.interp(sample_distances, cumulative_distances, points[:, 0])
+    ).astype(int)
     ys = np.round(
-        np.interp(sample_distances, cumulative_distances,
-                  points[:, 1])).astype(int)
+      np.interp(sample_distances, cumulative_distances, points[:, 1])
+    ).astype(int)
 
     prev_time = dt.timedelta()
     events: list[InputEvent] = [MouseMoveEvent(position=waypoints[0])]
@@ -761,20 +846,21 @@ class ActionRunner:
         events.append(WaitEvent(duration=wait))
       prev_time = target_time
       events.append(
-          MouseMoveEvent(position=Point(int(xs[step]), int(ys[step]))))
+        MouseMoveEvent(position=Point(int(xs[step]), int(ys[step])))
+      )
 
     return events
 
   def _get_swipe_events(
-      self,
-      start_x: int,
-      start_y: int,
-      end_x: int,
-      end_y: int,
-      duration: dt.timedelta,
-      polling_rate_hz: int,
-      settle_duration: dt.timedelta = dt.timedelta(),
-      scroll_mode: ScrollMode = ScrollMode.LINEAR,
+    self,
+    start_x: int,
+    start_y: int,
+    end_x: int,
+    end_y: int,
+    duration: dt.timedelta,
+    polling_rate_hz: int,
+    settle_duration: dt.timedelta = dt.timedelta(),
+    scroll_mode: ScrollMode = ScrollMode.LINEAR,
   ) -> list[InputEvent]:
     start_point = Point(start_x, start_y)
     end_point = Point(end_x, end_y)
@@ -791,9 +877,11 @@ class ActionRunner:
 
       fraction = step / num_steps
       cur_x = self._interpolate(
-          start_x, end_x, fraction, scroll_mode=scroll_mode)
+        start_x, end_x, fraction, scroll_mode=scroll_mode
+      )
       cur_y = self._interpolate(
-          start_y, end_y, fraction, scroll_mode=scroll_mode)
+        start_y, end_y, fraction, scroll_mode=scroll_mode
+      )
       events.append(TouchEvent(position=Point(cur_x, cur_y), is_down=True))
 
     if settle_duration:
@@ -802,11 +890,11 @@ class ActionRunner:
     return events
 
   def _interpolate(
-      self,
-      start: int,
-      end: int,
-      fraction: float,
-      scroll_mode: ScrollMode = ScrollMode.LINEAR,
+    self,
+    start: int,
+    end: int,
+    fraction: float,
+    scroll_mode: ScrollMode = ScrollMode.LINEAR,
   ) -> int:
     if scroll_mode is ScrollMode.COSINE_EASING:
       fraction = (1 - math.cos(math.pi * fraction)) / 2
@@ -815,24 +903,27 @@ class ActionRunner:
   def wait_for_condition(self, action: i_action.WaitForConditionAction) -> None:
     with self.actions("WaitForConditionAction", measure=False) as actions:
       actions.wait_js_condition(
-          action.condition, min_interval=0.1, timeout=action.timeout)
+        action.condition, min_interval=0.1, timeout=action.timeout
+      )
 
-  def wait_for_url_matches(self,
-                           action: i_action.WaitForUrlMatchesAction) -> None:
+  def wait_for_url_matches(
+    self, action: i_action.WaitForUrlMatchesAction
+  ) -> None:
     with self.actions("WaitForUrlMatchesAction", measure=False) as actions:
       actions.wait_for_url_matches(
-          action.url_pattern, min_interval=0.1, timeout=action.timeout)
+        action.url_pattern, min_interval=0.1, timeout=action.timeout
+      )
 
   def wait_for_element_impl(
-      self,
-      actions: Actions,
-      selector: str,
-      timeout: dt.timedelta,
-      expected_count: int = 1,
-      or_more: bool = False,
-      scroll_into_view: bool = False,
-      check_element_rect: bool = False,
-      required: bool = True,
+    self,
+    actions: Actions,
+    selector: str,
+    timeout: dt.timedelta,
+    expected_count: int = 1,
+    or_more: bool = False,
+    scroll_into_view: bool = False,
+    check_element_rect: bool = False,
+    required: bool = True,
   ) -> None:
     # TODO: if check_element_rect, we should wait for the position to be the
     # same
@@ -850,15 +941,17 @@ class ActionRunner:
 
     try:
       actions.wait_js_condition(
-          self._select_element_script,
-          min_interval=0.2,
-          timeout=timeout,
-          arguments=({
-              "selector": selector,
-              "scrollIntoView": scroll_into_view,
-              "checkRect": check_element_rect,
-          },),
-          success_condition=success_condition,
+        self._select_element_script,
+        min_interval=0.2,
+        timeout=timeout,
+        arguments=(
+          {
+            "selector": selector,
+            "scrollIntoView": scroll_into_view,
+            "checkRect": check_element_rect,
+          },
+        ),
+        success_condition=success_condition,
       )
     except (TimeoutError, ValueError) as e:
       if required:
@@ -868,22 +961,25 @@ class ActionRunner:
   def wait_for_element(self, action: i_action.WaitForElementAction) -> None:
     with self.actions("WaitForElementAction", measure=False) as actions:
       self.wait_for_element_impl(
-          actions=actions,
-          selector=action.selector,
-          expected_count=action.expected_count,
-          or_more=action.or_more,
-          timeout=action.timeout,
-          check_element_rect=action.check_rect,
+        actions=actions,
+        selector=action.selector,
+        expected_count=action.expected_count,
+        or_more=action.or_more,
+        timeout=action.timeout,
+        check_element_rect=action.check_rect,
       )
 
-  def wait_for_ready_state(self,
-                           action: i_action.WaitForReadyStateAction) -> None:
+  def wait_for_ready_state(
+    self, action: i_action.WaitForReadyStateAction
+  ) -> None:
     with self.actions(
-        f"Wait for ready state {action.ready_state}", measure=False) as actions:
+      f"Wait for ready state {action.ready_state}", measure=False
+    ) as actions:
       actions.wait_for_ready_state(action.ready_state, action.timeout)
 
   def inject_new_document_script(
-      self, action: i_action.InjectNewDocumentScriptAction) -> None:
+    self, action: i_action.InjectNewDocumentScriptAction
+  ) -> None:
     self.browser.run_script_on_new_document(action.script)
 
   def invoke_probe(self, action: BaseProbeAction) -> None:
@@ -893,7 +989,8 @@ class ActionRunner:
 
     with self.actions(f"Invoke Probe ({action.probe_cls.NAME})", measure=False):
       ctx.invoke(
-          info_stack=self.info_stack, timeout=action.timeout, **action.kwargs)
+        info_stack=self.info_stack, timeout=action.timeout, **action.kwargs
+      )
 
   def open_devtools(self, action: i_action.OpenDevToolsAction) -> None:
     logging.info("Opening DevTools panel '%s'...", action.panel_name)
@@ -905,20 +1002,22 @@ class ActionRunner:
       driver.execute()
 
   def screenshot_impl(
-      self,
-      suffix: str,
-      annotations: Sequence[ScreenshotAnnotation] | None = None,
+    self,
+    suffix: str,
+    annotations: Sequence[ScreenshotAnnotation] | None = None,
   ) -> None:
     ctx = self.run.get_probe_context(ScreenshotProbe)
     if not ctx:
-      logging.debug("No screenshot probe for screenshot on %s",
-                    repr(self.info_stack))
+      logging.debug(
+        "No screenshot probe for screenshot on %s", repr(self.info_stack)
+      )
       return
     assert isinstance(ctx, ScreenshotProbeContext)
     ctx.screenshot("_".join(self.info_stack) + f"_{suffix}", annotations)
 
   def add_failure_screenshot_annotation(
-      self, annotation: ScreenshotAnnotation) -> None:
+    self, annotation: ScreenshotAnnotation
+  ) -> None:
     self._failure_screenshot_annotations.append(annotation)
 
   def failure_screenshot(self, suffix: str) -> None:
@@ -929,8 +1028,9 @@ class ActionRunner:
       self.browser.show_url("about:blank")
       self.run.runner.wait(duration)
 
-  def run_page_multiple_tabs(self, tabs: TabController,
-                             pages: Iterable[Page]) -> None:
+  def run_page_multiple_tabs(
+    self, tabs: TabController, pages: Iterable[Page]
+  ) -> None:
     # TODO: refactor possible logics to TabController.
     for _ in tabs:
       try:
@@ -963,8 +1063,9 @@ class ActionRunner:
         page.create_failure_artifacts(self.run)
       raise
 
-  def run_interactive_page(self, page: InteractivePage,
-                           multiple_tabs: bool) -> None:
+  def run_interactive_page(
+    self, page: InteractivePage, multiple_tabs: bool
+  ) -> None:
     if multiple_tabs:
       self.run_page_multiple_tabs(page.tabs, [page])
     else:
@@ -986,7 +1087,8 @@ class ActionRunner:
   @contextlib.contextmanager
   def playback_iteration(self, i: int) -> Iterator[None]:
     assert self._info_stack is None, (
-        f"Got unexpected info stack {self._info_stack}")
+      f"Got unexpected info stack {self._info_stack}"
+    )
     with self._info_stack_annotate(f"playback_{i}"):
       yield
 
@@ -1008,8 +1110,9 @@ class ActionRunner:
       self._info_stack = parent_info_stack
 
   @contextlib.contextmanager
-  def _management_block_scope(self, page: InteractivePage,
-                              name: str) -> Iterator[None]:
+  def _management_block_scope(
+    self, page: InteractivePage, name: str
+  ) -> Iterator[None]:
     try:
       with exception.annotate(name):
         with self._info_stack_annotate(name):
@@ -1022,11 +1125,11 @@ class ActionRunner:
   def switch_tab(self, action: i_action.SwitchTabAction) -> None:
     with self.actions("SwitchTabAction", measure=False):
       self.browser.switch_tab(
-          action.title,
-          action.url,
-          action.tab_index,
-          action.relative_tab_index,
-          action.timeout,
+        action.title,
+        action.url,
+        action.tab_index,
+        action.relative_tab_index,
+        action.timeout,
       )
 
   def switch_frame(self, action: i_action.SwitchFrameAction) -> None:
@@ -1036,11 +1139,11 @@ class ActionRunner:
   def close_tab(self, action: i_action.CloseTabAction) -> None:
     with self.actions("CloseTabAction", measure=False):
       self.browser.close_tab(
-          action.title,
-          action.url,
-          action.tab_index,
-          action.relative_tab_index,
-          action.timeout,
+        action.title,
+        action.url,
+        action.tab_index,
+        action.relative_tab_index,
+        action.timeout,
       )
 
   def launch_app(self, action: i_action.LaunchAppAction) -> None:

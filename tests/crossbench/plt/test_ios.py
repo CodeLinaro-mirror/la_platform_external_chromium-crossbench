@@ -23,116 +23,134 @@ from pyfakefs.fake_filesystem import OSType
 from crossbench import path as pth
 from crossbench.plt.bin import Binaries
 from crossbench.plt.display_info import DisplayResolution
-from crossbench.plt.ios import IOSDeviceInfo, IOSPlatform, IOSPortManager, \
-    IOSSimulatorPortManager, ios_devices
+from crossbench.plt.ios import (
+  IOSDeviceInfo,
+  IOSPlatform,
+  IOSPortManager,
+  IOSSimulatorPortManager,
+  ios_devices,
+)
 from crossbench.plt.version import PlatformVersion
-from crossbench.plt.wda import LEGACY_ELEMENT_KEY, W3C_ELEMENT_KEY, \
-    WDAClient, WDAError
+from crossbench.plt.wda import (
+  LEGACY_ELEMENT_KEY,
+  W3C_ELEMENT_KEY,
+  WDAClient,
+  WDAError,
+)
 from tests import test_helper
 from tests.crossbench.mock_helper import MacOsMockPlatform
 from tests.crossbench.plt.helper import BaseMockPlatformTestCase
 
 DEVICES_SINGLE = {
-    "result": {
-        "devices": [{
-            "hardwareProperties": {
-                "udid": "00001111-11AA22BB33DD",
-            },
-            "deviceProperties": {
-                "name": "An iPhone",
-                "osVersionNumber": "17.1.2",
-            },
-            "connectionProperties": {
-                "tunnelState": "connected",
-            },
-        }, {
-            "hardwareProperties": {
-                "udid": "00002222-11AA22BB33DD",
-            },
-            "deviceProperties": {
-                "name": "An iPhone Pro",
-                "osVersionNumber": "17.1.1",
-            },
-            "connectionProperties": {
-                "tunnelState": "unavailable",
-            },
-        }],
-    },
+  "result": {
+    "devices": [
+      {
+        "hardwareProperties": {
+          "udid": "00001111-11AA22BB33DD",
+        },
+        "deviceProperties": {
+          "name": "An iPhone",
+          "osVersionNumber": "17.1.2",
+        },
+        "connectionProperties": {
+          "tunnelState": "connected",
+        },
+      },
+      {
+        "hardwareProperties": {
+          "udid": "00002222-11AA22BB33DD",
+        },
+        "deviceProperties": {
+          "name": "An iPhone Pro",
+          "osVersionNumber": "17.1.1",
+        },
+        "connectionProperties": {
+          "tunnelState": "unavailable",
+        },
+      },
+    ],
+  },
 }
 
 DEVICES_MULTIPLE = {
-    "result": {
-        "devices": [{
-            "hardwareProperties": {
-                "udid": "00001111-11AA22BB33DD",
-            },
-            "deviceProperties": {
-                "name": "An iPhone",
-                "osVersionNumber": "17.1.2",
-            },
-            "connectionProperties": {
-                "tunnelState": "connected",
-            },
-        }, {
-            "hardwareProperties": {
-                "udid": "00002222-11AA22BB33DD",
-            },
-            "deviceProperties": {
-                "name": "An iPhone Pro",
-                "osVersionNumber": "17.1.1",
-            },
-            "connectionProperties": {
-                "tunnelState": "connected",
-            },
-        }, {
-            "hardwareProperties": {
-                "udid": "00003333-11AA22BB33DD",
-            },
-            "deviceProperties": {
-                "name": "An iPhone Pro Max",
-                "osVersionNumber": "17.1.0",
-            },
-            "connectionProperties": {
-                "tunnelState": "unavailable",
-            },
-        }],
-    },
+  "result": {
+    "devices": [
+      {
+        "hardwareProperties": {
+          "udid": "00001111-11AA22BB33DD",
+        },
+        "deviceProperties": {
+          "name": "An iPhone",
+          "osVersionNumber": "17.1.2",
+        },
+        "connectionProperties": {
+          "tunnelState": "connected",
+        },
+      },
+      {
+        "hardwareProperties": {
+          "udid": "00002222-11AA22BB33DD",
+        },
+        "deviceProperties": {
+          "name": "An iPhone Pro",
+          "osVersionNumber": "17.1.1",
+        },
+        "connectionProperties": {
+          "tunnelState": "connected",
+        },
+      },
+      {
+        "hardwareProperties": {
+          "udid": "00003333-11AA22BB33DD",
+        },
+        "deviceProperties": {
+          "name": "An iPhone Pro Max",
+          "osVersionNumber": "17.1.0",
+        },
+        "connectionProperties": {
+          "tunnelState": "unavailable",
+        },
+      },
+    ],
+  },
 }
 
 DEVICES_NONE = {
-    "result": {
-        "devices": [{
-            "hardwareProperties": {
-                "udid": "00002222-11AA22BB33DD",
-            },
-            "deviceProperties": {
-                "name": "An iPhone Pro",
-                "osVersionNumber": "17.1.1",
-            },
-            "connectionProperties": {
-                "tunnelState": "unavailable",
-            },
-        }],
-    },
+  "result": {
+    "devices": [
+      {
+        "hardwareProperties": {
+          "udid": "00002222-11AA22BB33DD",
+        },
+        "deviceProperties": {
+          "name": "An iPhone Pro",
+          "osVersionNumber": "17.1.1",
+        },
+        "connectionProperties": {
+          "tunnelState": "unavailable",
+        },
+      }
+    ],
+  },
 }
 
 IPHONE_SIMULATOR = {
-    "udid": "SIM-UDID-1111",
-    "name": "iPhone 15 Simulator",
-    "state": "Booted",
+  "udid": "SIM-UDID-1111",
+  "name": "iPhone 15 Simulator",
+  "state": "Booted",
 }
 
 WATCH_SIMULATOR = {
-    "udid": "SIM-UDID-2222",
-    "name": "Apple Watch Simulator",
-    "state": "Booted",
+  "udid": "SIM-UDID-2222",
+  "name": "Apple Watch Simulator",
+  "state": "Booted",
 }
 
 SIMULATORS_SAMPLE = {
-    "devices": {
-        "com.apple.CoreSimulator.SimRuntime.iOS-17-5": [IPHONE_SIMULATOR],
-        "com.apple.CoreSimulator.SimRuntime.watchOS-10-0": [WATCH_SIMULATOR],
-    },
+  "devices": {
+    "com.apple.CoreSimulator.SimRuntime.iOS-17-5": [IPHONE_SIMULATOR],
+    "com.apple.CoreSimulator.SimRuntime.watchOS-10-0": [WATCH_SIMULATOR],
+  },
 }
 
 
@@ -171,20 +189,22 @@ class BaseIOsMockPlatformTestCase(BaseMockPlatformTestCase):
       self.fs.remove_object("/devicectl_output.json")
     self.fs.create_file("/devicectl_output.json", contents=json.dumps(devices))
     self.host_platform.expect_sh(
-        "xcrun",
-        "devicectl",
-        "list",
-        "devices",
-        "--json-output=/devicectl_output.json",
-        result="")
+      "xcrun",
+      "devicectl",
+      "list",
+      "devices",
+      "--json-output=/devicectl_output.json",
+      result="",
+    )
     self.host_platform.expect_sh(
-        "xcrun",
-        "simctl",
-        "list",
-        "devices",
-        "booted",
-        "--json",
-        result=json.dumps(simulators))
+      "xcrun",
+      "simctl",
+      "list",
+      "devices",
+      "booted",
+      "--json",
+      result=json.dumps(simulators),
+    )
 
   def test_name(self):
     self.assertEqual(self.platform.name, "ios")
@@ -201,18 +221,18 @@ class BaseIOsMockPlatformTestCase(BaseMockPlatformTestCase):
   def test_open_url_in_app(self):
     platform = self.setup_platform()
     self.host_platform.expect_sh(
-        "xcrun",
-        "devicectl",
-        "device",
-        "process",
-        "launch",
-        "--device",
-        platform.udid,
-        "--terminate-existing",
-        "--payload-url",
-        "https://example.com",
-        "com.example.browser",
-        result="",
+      "xcrun",
+      "devicectl",
+      "device",
+      "process",
+      "launch",
+      "--device",
+      platform.udid,
+      "--terminate-existing",
+      "--payload-url",
+      "https://example.com",
+      "com.example.browser",
+      result="",
     )
     platform.open_url_in_app("com.example.browser", "https://example.com")
 
@@ -289,8 +309,9 @@ class IOsMockPlatformTestCase(BaseIOsMockPlatformTestCase):
     self.expect_startup_devices(DEVICES_MULTIPLE)
     platform = IOSPlatform(self.host_platform, "iPhone Pro")
     self.assertEqual(
-        str(platform.search_binary(self.SAFARI_PATH)),
-        str(pth.AnyPath(self.SAFARI_PATH)))
+      str(platform.search_binary(self.SAFARI_PATH)),
+      str(pth.AnyPath(self.SAFARI_PATH)),
+    )
 
   def test_search_binary_not_safari(self):
     self.expect_startup_devices(DEVICES_MULTIPLE)
@@ -329,12 +350,14 @@ class IOsMockPlatformTestCase(BaseIOsMockPlatformTestCase):
     self.expect_startup_devices(DEVICES_MULTIPLE)
     platform_a = IOSPlatform(self.host_platform, "iPhone Pro")
     self.assertEqual(
-        platform_a.os_details(), {
-            "system": "ios",
-            "platform": "ios 17.1.1",
-            "version": "17.1.1",
-            "release": "17.1.1",
-        })
+      platform_a.os_details(),
+      {
+        "system": "ios",
+        "platform": "ios 17.1.1",
+        "version": "17.1.1",
+        "release": "17.1.1",
+      },
+    )
 
   def test_version(self):
     self.expect_startup_devices(DEVICES_MULTIPLE)
@@ -343,12 +366,14 @@ class IOsMockPlatformTestCase(BaseIOsMockPlatformTestCase):
 
   def test_simulator_device_discovery(self):
     self.expect_startup_devices(
-        devices=DEVICES_NONE, simulators=SIMULATORS_SAMPLE)
+      devices=DEVICES_NONE, simulators=SIMULATORS_SAMPLE
+    )
     expected_device = IOSDeviceInfo(
-        device_id=IPHONE_SIMULATOR["udid"],
-        name=IPHONE_SIMULATOR["name"],
-        version="17.5",
-        is_simulator=True)
+      device_id=IPHONE_SIMULATOR["udid"],
+      name=IPHONE_SIMULATOR["name"],
+      version="17.5",
+      is_simulator=True,
+    )
     devices = ios_devices(self.host_platform)
     self.assertEqual(devices, {IPHONE_SIMULATOR["udid"]: expected_device})
     # Implied, but for clarity's sake.
@@ -356,67 +381,77 @@ class IOsMockPlatformTestCase(BaseIOsMockPlatformTestCase):
 
   def test_simulator_and_physical_devices_combined(self):
     self.expect_startup_devices(
-        devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE)
+      devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE
+    )
     expected_physical = IOSDeviceInfo(
-        device_id="00001111-11AA22BB33DD",
-        name="An iPhone",
-        version="17.1.2",
-        is_simulator=False)
+      device_id="00001111-11AA22BB33DD",
+      name="An iPhone",
+      version="17.1.2",
+      is_simulator=False,
+    )
     expected_sim = IOSDeviceInfo(
-        device_id=IPHONE_SIMULATOR["udid"],
-        name=IPHONE_SIMULATOR["name"],
-        version="17.5",
-        is_simulator=True)
+      device_id=IPHONE_SIMULATOR["udid"],
+      name=IPHONE_SIMULATOR["name"],
+      version="17.5",
+      is_simulator=True,
+    )
     devices = ios_devices(self.host_platform)
     self.assertEqual(
-        devices, {
-            "00001111-11AA22BB33DD": expected_physical,
-            IPHONE_SIMULATOR["udid"]: expected_sim,
-        })
+      devices,
+      {
+        "00001111-11AA22BB33DD": expected_physical,
+        IPHONE_SIMULATOR["udid"]: expected_sim,
+      },
+    )
     # Implied, but for clarity's sake.
     self.assertNotIn(WATCH_SIMULATOR["udid"], devices)
 
   def test_is_simulator(self):
     self.expect_startup_devices(
-        devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE)
+      devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE
+    )
     platform_physical = IOSPlatform(self.host_platform, "00001111-11AA22BB33DD")
     self.assertFalse(platform_physical.is_simulator)
 
     self.expect_startup_devices(
-        devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE)
+      devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE
+    )
     platform_sim = IOSPlatform(self.host_platform, IPHONE_SIMULATOR["udid"])
     self.assertTrue(platform_sim.is_simulator)
 
   def test_devicectl_skips_simulated_devices(self):
     devicectl_with_simulators = {
-        "result": {
-            "devices": [{
-                "hardwareProperties": {
-                    "udid": "00001111-11AA22BB33DD",
-                },
-                "deviceProperties": {
-                    "name": "An iPhone",
-                    "osVersionNumber": "17.1.2",
-                },
-                "connectionProperties": {
-                    "tunnelState": "connected",
-                },
-            }, {
-                "hardwareProperties": {
-                    "udid": "7600EAC9-72DA-4538-86F6-DA1DC29419E8",
-                    "reality": "simulated",
-                },
-                "deviceProperties": {
-                    "bootState": "shutdown",
-                    "name": "iPhone 17",
-                    "osVersionNumber": "26.5",
-                },
-                "connectionProperties": {
-                    "tunnelState": "disconnected",
-                },
-                "visibilityClass": "simulators",
-            }],
-        },
+      "result": {
+        "devices": [
+          {
+            "hardwareProperties": {
+              "udid": "00001111-11AA22BB33DD",
+            },
+            "deviceProperties": {
+              "name": "An iPhone",
+              "osVersionNumber": "17.1.2",
+            },
+            "connectionProperties": {
+              "tunnelState": "connected",
+            },
+          },
+          {
+            "hardwareProperties": {
+              "udid": "7600EAC9-72DA-4538-86F6-DA1DC29419E8",
+              "reality": "simulated",
+            },
+            "deviceProperties": {
+              "bootState": "shutdown",
+              "name": "iPhone 17",
+              "osVersionNumber": "26.5",
+            },
+            "connectionProperties": {
+              "tunnelState": "disconnected",
+            },
+            "visibilityClass": "simulators",
+          },
+        ],
+      },
     }
     self.expect_startup_devices(devices=devicectl_with_simulators)
     devices = ios_devices(self.host_platform)
@@ -424,24 +459,28 @@ class IOsMockPlatformTestCase(BaseIOsMockPlatformTestCase):
 
   def test_simulator_port_forward(self):
     self.expect_startup_devices(
-        devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE)
+      devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE
+    )
     platform_sim = IOSPlatform(self.host_platform, IPHONE_SIMULATOR["udid"])
-    self.assertIsInstance(platform_sim._default_port_manager,
-                          IOSSimulatorPortManager)
+    self.assertIsInstance(
+      platform_sim._default_port_manager, IOSSimulatorPortManager
+    )
     port = platform_sim.ports.forward(8100, 8100)
     self.assertEqual(port, 8100)
     platform_sim.ports.stop_forward(8100)
 
   def test_simulator_port_forward_mismatch(self):
     self.expect_startup_devices(
-        devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE)
+      devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE
+    )
     platform_sim = IOSPlatform(self.host_platform, IPHONE_SIMULATOR["udid"])
     with self.assertRaises(ValueError):
       platform_sim.ports.forward(8200, 8100)
 
   def test_simulator_reverse_port_forward(self):
     self.expect_startup_devices(
-        devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE)
+      devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE
+    )
     platform_sim = IOSPlatform(self.host_platform, IPHONE_SIMULATOR["udid"])
     self.assertTrue(platform_sim.supports_reverse_port_forwarding)
     port = platform_sim.ports.reverse_forward(8100, 8100)
@@ -452,13 +491,16 @@ class IOsMockPlatformTestCase(BaseIOsMockPlatformTestCase):
 
   def test_physical_port_forward(self):
     self.expect_startup_devices(
-        devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE)
+      devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE
+    )
     platform_physical = IOSPlatform(self.host_platform, "00001111-11AA22BB33DD")
-    self.assertIsInstance(platform_physical._default_port_manager,
-                          IOSPortManager)
+    self.assertIsInstance(
+      platform_physical._default_port_manager, IOSPortManager
+    )
     self.fs.create_file("/usr/local/bin/iproxy")
     self.host_platform.which = mock.MagicMock(
-        return_value=pth.LocalPath("/usr/local/bin/iproxy"))
+      return_value=pth.LocalPath("/usr/local/bin/iproxy")
+    )
     self.host_platform.is_port_used = mock.MagicMock(return_value=True)
     mock_proc = mock.MagicMock()
     self.host_platform.popen = mock.MagicMock(return_value=mock_proc)
@@ -466,55 +508,64 @@ class IOsMockPlatformTestCase(BaseIOsMockPlatformTestCase):
     port = platform_physical.ports.forward(8100, 8100)
     self.assertEqual(port, 8100)
     self.host_platform.popen.assert_called_once_with(
-        pth.LocalPath("/usr/local/bin/iproxy"),
-        "8100",
-        "8100",
-        "-u",
-        "00001111-11AA22BB33DD",
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
+      pth.LocalPath("/usr/local/bin/iproxy"),
+      "8100",
+      "8100",
+      "-u",
+      "00001111-11AA22BB33DD",
+      stdout=subprocess.DEVNULL,
+      stderr=subprocess.DEVNULL,
     )
     platform_physical.ports.stop_forward(8100)
     mock_proc.terminate.assert_called_once()
 
   def test_physical_port_forward_wait_failure_cleanup(self):
     self.expect_startup_devices(
-        devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE)
+      devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE
+    )
     platform_physical = IOSPlatform(self.host_platform, "00001111-11AA22BB33DD")
     self.fs.create_file("/usr/local/bin/iproxy")
     self.host_platform.which = mock.MagicMock(
-        return_value=pth.LocalPath("/usr/local/bin/iproxy"))
+      return_value=pth.LocalPath("/usr/local/bin/iproxy")
+    )
     self.host_platform.wait_for_port = mock.MagicMock(
-        side_effect=TimeoutError("Port not bound"))
+      side_effect=TimeoutError("Port not bound")
+    )
     mock_proc = mock.MagicMock()
     self.host_platform.popen = mock.MagicMock(return_value=mock_proc)
 
     with self.assertRaises(TimeoutError):
       platform_physical.ports.forward(8100, 8100)
     mock_proc.terminate.assert_called_once()
-    self.assertIsInstance(platform_physical._default_port_manager,
-                          IOSPortManager)
-    self.assertNotIn(8100,
-                     platform_physical._default_port_manager._forward_popens)
+    self.assertIsInstance(
+      platform_physical._default_port_manager, IOSPortManager
+    )
+    self.assertNotIn(
+      8100, platform_physical._default_port_manager._forward_popens
+    )
 
   def test_physical_port_forward_reverse_not_supported(self):
     self.expect_startup_devices(
-        devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE)
+      devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE
+    )
     platform_physical = IOSPlatform(self.host_platform, "00001111-11AA22BB33DD")
     with self.assertRaises(NotImplementedError):
       platform_physical.ports.reverse_forward(8100, 8100)
     self.assertFalse(
-        platform_physical.ports.is_reverse_forwarded_port_used(8100))
+      platform_physical.ports.is_reverse_forwarded_port_used(8100)
+    )
 
   def test_display_details(self):
     self.expect_startup_devices(
-        devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE)
+      devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE
+    )
     platform_physical = IOSPlatform(self.host_platform, "00001111-11AA22BB33DD")
     self.assertEqual(platform_physical.display_details(), ())
 
   def test_display_resolution(self):
     self.expect_startup_devices(
-        devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE)
+      devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE
+    )
     platform_physical = IOSPlatform(self.host_platform, "00001111-11AA22BB33DD")
     mock_wda = mock.MagicMock()
     mock_wda.window_size.return_value = DisplayResolution(440, 956)
@@ -528,71 +579,74 @@ class IOsMockPlatformTestCase(BaseIOsMockPlatformTestCase):
     self.expect_startup_devices(DEVICES_MULTIPLE)
     platform_a = IOSPlatform(self.host_platform, "iPhone Pro")
     self.host_platform.expect_sh(
-        "xcrun",
-        "devicectl",
-        "device",
-        "process",
-        "launch",
-        "--device",
-        "00002222-11AA22BB33DD",
-        "--terminate-existing",
-        "com.apple.mobilesafari",
-        result="")
+      "xcrun",
+      "devicectl",
+      "device",
+      "process",
+      "launch",
+      "--device",
+      "00002222-11AA22BB33DD",
+      "--terminate-existing",
+      "com.apple.mobilesafari",
+      result="",
+    )
     platform_a.launch_app("com.apple.mobilesafari")
 
   def test_launch_app_with_env_vars_and_payload_url(self):
     self.expect_startup_devices(DEVICES_MULTIPLE)
     platform_a = IOSPlatform(self.host_platform, "iPhone Pro")
     env_vars = {
-        "JSC_useBaselineJIT": "false",
-        "__XPC_JSC_useBaselineJIT": "false",
+      "JSC_useBaselineJIT": "false",
+      "__XPC_JSC_useBaselineJIT": "false",
     }
     self.host_platform.expect_sh(
-        "xcrun",
-        "devicectl",
-        "device",
-        "process",
-        "launch",
-        "--device",
-        "00002222-11AA22BB33DD",
-        "--environment-variables",
-        json.dumps(env_vars),
-        "--payload-url",
-        "https://example.com",
-        "com.apple.mobilesafari",
-        result="")
+      "xcrun",
+      "devicectl",
+      "device",
+      "process",
+      "launch",
+      "--device",
+      "00002222-11AA22BB33DD",
+      "--environment-variables",
+      json.dumps(env_vars),
+      "--payload-url",
+      "https://example.com",
+      "com.apple.mobilesafari",
+      result="",
+    )
     platform_a.launch_app(
-        "com.apple.mobilesafari",
-        env_vars=env_vars,
-        terminate_existing=False,
-        payload_url="https://example.com",
+      "com.apple.mobilesafari",
+      env_vars=env_vars,
+      terminate_existing=False,
+      payload_url="https://example.com",
     )
 
   def test_launch_app_simulator(self):
     self.expect_startup_devices(
-        devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE)
+      devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE
+    )
     platform_sim = IOSPlatform(self.host_platform, IPHONE_SIMULATOR["udid"])
     self.host_platform.expect_sh(
-        "xcrun",
-        "simctl",
-        "launch",
-        "--terminate-running-process",
-        IPHONE_SIMULATOR["udid"],
-        "com.apple.mobilesafari",
-        result="com.apple.mobilesafari: 5555\n",
+      "xcrun",
+      "simctl",
+      "launch",
+      "--terminate-running-process",
+      IPHONE_SIMULATOR["udid"],
+      "com.apple.mobilesafari",
+      result="com.apple.mobilesafari: 5555\n",
     )
     self.host_platform.expect_sh(
-        "xcrun",
-        "simctl",
-        "openurl",
-        IPHONE_SIMULATOR["udid"],
-        "https://example.com",
-        result="",
+      "xcrun",
+      "simctl",
+      "openurl",
+      IPHONE_SIMULATOR["udid"],
+      "https://example.com",
+      result="",
     )
     platform_sim.launch_app(
-        "com.apple.mobilesafari",
-        env_vars={"JSC_useBaselineJIT": "false"},
-        payload_url="https://example.com",
+      "com.apple.mobilesafari",
+      env_vars={"JSC_useBaselineJIT": "false"},
+      payload_url="https://example.com",
     )
 
 
@@ -605,9 +659,11 @@ class IOsWdaTestCase(BaseIOsMockPlatformTestCase):
     self.fs.create_file("/usr/bin/iproxy", st_mode=0o755)
     self.host_platform.is_port_used = mock.MagicMock(return_value=True)
     self.host_platform.get_free_port = mock.MagicMock(
-        side_effect=range(54321, 54400))
+      side_effect=range(54321, 54400)
+    )
     self.host_platform.popen = mock.MagicMock(
-        side_effect=lambda *args, **kwargs: mock.MagicMock())
+      side_effect=lambda *args, **kwargs: mock.MagicMock()
+    )
 
   @contextlib.contextmanager
   def mock_wda_server(self, platform: IOSPlatform | None = None):
@@ -617,7 +673,8 @@ class IOsWdaTestCase(BaseIOsMockPlatformTestCase):
       del timeout
       parsed = urllib.parse.urlparse(req.full_url)
       self.assertTrue(
-          target_platform.ports.is_forwarded_port_used(parsed.port or 0))
+        target_platform.ports.is_forwarded_port_used(parsed.port or 0)
+      )
       payload = {"value": {"ready": True, "sessionId": "session-1"}}
       return io.BytesIO(json.dumps(payload).encode("utf-8"))
 
@@ -626,24 +683,25 @@ class IOsWdaTestCase(BaseIOsMockPlatformTestCase):
 
   def test_wda_window_size(self):
     self.expect_startup_devices(
-        devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE)
+      devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE
+    )
     platform = IOSPlatform(self.host_platform, "00001111-11AA22BB33DD")
     wda = WDAClient(platform)
     wda._session_id = "test-session-123"
 
     with mock.patch.object(wda, "_request") as mock_request:
       mock_request.return_value = {
-          "value": {
-              "width": 440,
-              "height": 956,
-          },
+        "value": {
+          "width": 440,
+          "height": 956,
+        },
       }
       res = wda.window_size()
       self.assertEqual(res, DisplayResolution(440, 956))
       mock_request.assert_called_once_with(
-          "GET",
-          "/session/test-session-123/window/size",
-          timeout=mock.ANY,
+        "GET",
+        "/session/test-session-123/window/size",
+        timeout=mock.ANY,
       )
 
     with mock.patch.object(wda, "_request") as mock_request:
@@ -653,145 +711,150 @@ class IOsWdaTestCase(BaseIOsMockPlatformTestCase):
 
   def test_wda_gestures(self):
     self.expect_startup_devices(
-        devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE)
+      devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE
+    )
     platform = IOSPlatform(self.host_platform, "00001111-11AA22BB33DD")
     wda = WDAClient(platform)
     wda._session_id = "test-session-123"
 
     with mock.patch.object(wda, "_request") as mock_request:
       wda.swipe(
-          100,
-          200,
-          300,
-          400,
-          dt.timedelta(milliseconds=500),
-          settle_duration=dt.timedelta(milliseconds=150),
+        100,
+        200,
+        300,
+        400,
+        dt.timedelta(milliseconds=500),
+        settle_duration=dt.timedelta(milliseconds=150),
       )
       mock_request.assert_called_once_with(
-          "POST",
-          "/session/test-session-123/actions",
-          mock.ANY,
-          timeout=mock.ANY,
+        "POST",
+        "/session/test-session-123/actions",
+        mock.ANY,
+        timeout=mock.ANY,
       )
       payload = mock_request.call_args[0][2]
       actions = payload["actions"][0]["actions"]
       self.assertEqual(len(actions), 7)
       self.assertEqual(
-          actions[-3],
-          {
-              "type": "pointerMove",
-              "duration": 140,
-              "x": 0,
-              "y": 4,
-              "origin": "pointer",
-          },
+        actions[-3],
+        {
+          "type": "pointerMove",
+          "duration": 140,
+          "x": 0,
+          "y": 4,
+          "origin": "pointer",
+        },
       )
       self.assertEqual(actions[-2], {"type": "pause", "duration": 10})
       self.assertEqual(actions[-1], {"type": "pointerUp", "button": 0})
 
     with mock.patch.object(wda, "_request") as mock_request:
       wda.swipe_sequence(
-          [(100, 400, 100, 200), (100, 200, 100, 400)],
-          duration=dt.timedelta(milliseconds=750),
-          settle_duration=dt.timedelta(milliseconds=150),
-          lift_duration=dt.timedelta(milliseconds=100),
+        [(100, 400, 100, 200), (100, 200, 100, 400)],
+        duration=dt.timedelta(milliseconds=750),
+        settle_duration=dt.timedelta(milliseconds=150),
+        lift_duration=dt.timedelta(milliseconds=100),
       )
       mock_request.assert_called_once()
       batch = mock_request.call_args[0][2]["actions"]
       self.assertEqual(len(batch), 2)
       self.assertEqual(
-          batch[1]["actions"][0],
-          {
-              "type": "pause",
-              "duration": 1000,
-          },
+        batch[1]["actions"][0],
+        {
+          "type": "pause",
+          "duration": 1000,
+        },
       )
 
     with mock.patch.object(wda, "_request") as mock_request:
       wda.scroll("down")
       mock_request.assert_called_once_with(
-          "POST",
-          "/session/test-session-123/wda/scroll",
-          {"direction": "down"},
-          timeout=mock.ANY,
+        "POST",
+        "/session/test-session-123/wda/scroll",
+        {"direction": "down"},
+        timeout=mock.ANY,
       )
 
     with mock.patch.object(wda, "_request") as mock_request:
       wda.drag(100, 200, 300, 400, dt.timedelta(milliseconds=500))
       mock_request.assert_called_once_with(
-          "POST",
-          "/session/test-session-123/wda/dragfromtoforduration",
-          {
-              "fromX": 100,
-              "fromY": 200,
-              "toX": 300,
-              "toY": 400,
-              "duration": 0.5,
-          },
-          timeout=mock.ANY,
+        "POST",
+        "/session/test-session-123/wda/dragfromtoforduration",
+        {
+          "fromX": 100,
+          "fromY": 200,
+          "toX": 300,
+          "toY": 400,
+          "duration": 0.5,
+        },
+        timeout=mock.ANY,
       )
 
   def test_wda_app_management_and_navigation(self):
     self.expect_startup_devices(
-        devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE)
+      devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE
+    )
     platform = IOSPlatform(self.host_platform, "00001111-11AA22BB33DD")
     wda = WDAClient(platform)
     wda._session_id = "test-session-123"
 
     with mock.patch.object(wda, "_request") as mock_request:
       wda.launch_app(
-          "com.apple.mobilesafari",
-          arguments=["-u", "https://example.com"],
-          env_vars={"JSC_useBaselineJIT": "false"},
+        "com.apple.mobilesafari",
+        arguments=["-u", "https://example.com"],
+        env_vars={"JSC_useBaselineJIT": "false"},
       )
-      mock_request.assert_has_calls([
+      mock_request.assert_has_calls(
+        [
           mock.call(
-              "POST",
-              "/session/test-session-123/wda/apps/launch",
-              {
-                  "bundleId": "com.apple.mobilesafari",
-                  "arguments": ["-u", "https://example.com"],
-                  "environment": {
-                      "JSC_useBaselineJIT": "false",
-                  },
+            "POST",
+            "/session/test-session-123/wda/apps/launch",
+            {
+              "bundleId": "com.apple.mobilesafari",
+              "arguments": ["-u", "https://example.com"],
+              "environment": {
+                "JSC_useBaselineJIT": "false",
               },
-              timeout=mock.ANY,
+            },
+            timeout=mock.ANY,
           ),
           # The launched app is registered as WDA's default active app.
           mock.call(
-              "POST",
-              "/session/test-session-123/appium/settings",
-              {
-                  "settings": {
-                      "defaultActiveApplication": "com.apple.mobilesafari",
-                  },
+            "POST",
+            "/session/test-session-123/appium/settings",
+            {
+              "settings": {
+                "defaultActiveApplication": "com.apple.mobilesafari",
               },
-              timeout=mock.ANY,
+            },
+            timeout=mock.ANY,
           ),
-      ])
+        ]
+      )
       self.assertEqual(mock_request.call_count, 2)
 
     with mock.patch.object(wda, "_request") as mock_request:
       wda.terminate_app("com.apple.mobilesafari")
       mock_request.assert_called_once_with(
-          "POST",
-          "/session/test-session-123/wda/apps/terminate",
-          {"bundleId": "com.apple.mobilesafari"},
-          timeout=mock.ANY,
+        "POST",
+        "/session/test-session-123/wda/apps/terminate",
+        {"bundleId": "com.apple.mobilesafari"},
+        timeout=mock.ANY,
       )
 
     with mock.patch.object(wda, "_request") as mock_request:
       wda.open_url("https://example.com")
       mock_request.assert_called_once_with(
-          "POST",
-          "/session/test-session-123/url",
-          {"url": "https://example.com"},
-          timeout=mock.ANY,
+        "POST",
+        "/session/test-session-123/url",
+        {"url": "https://example.com"},
+        timeout=mock.ANY,
       )
 
   def _wda_with_session(self) -> WDAClient:
     self.expect_startup_devices(
-        devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE)
+      devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE
+    )
     platform = IOSPlatform(self.host_platform, "00001111-11AA22BB33DD")
     wda = WDAClient(platform)
     wda._session_id = "test-session-123"
@@ -812,31 +875,35 @@ class IOsWdaTestCase(BaseIOsMockPlatformTestCase):
     responses = [self._element("web-1"), self._value({"x": 0, "y": 140})]
     with mock.patch.object(wda, "_request", side_effect=responses) as request:
       self.assertEqual(wda.webview_offset(), (0, 140))
-    request.assert_has_calls([
+    request.assert_has_calls(
+      [
         mock.call(
-            "POST",
-            "/session/test-session-123/element",
-            {
-                "using": "class name",
-                "value": "XCUIElementTypeWebView",
-            },
-            timeout=mock.ANY,
+          "POST",
+          "/session/test-session-123/element",
+          {
+            "using": "class name",
+            "value": "XCUIElementTypeWebView",
+          },
+          timeout=mock.ANY,
         ),
         mock.call(
-            "GET",
-            "/session/test-session-123/element/web-1/rect",
-            timeout=mock.ANY,
+          "GET",
+          "/session/test-session-123/element/web-1/rect",
+          timeout=mock.ANY,
         ),
-    ])
+      ]
+    )
 
   def test_wda_webview_offset_legacy_element_key(self):
     wda = self._wda_with_session()
     responses = [
-        self._element("web-2", key=LEGACY_ELEMENT_KEY),
-        self._value({
-            "x": 10,
-            "y": 20,
-        }),
+      self._element("web-2", key=LEGACY_ELEMENT_KEY),
+      self._value(
+        {
+          "x": 10,
+          "y": 20,
+        }
+      ),
     ]
     with mock.patch.object(wda, "_request", side_effect=responses):
       self.assertEqual(wda.webview_offset(), (10, 20))
@@ -863,24 +930,28 @@ class IOsWdaTestCase(BaseIOsMockPlatformTestCase):
     with mock.patch.object(wda, "_request", side_effect=responses) as request:
       self.assertEqual(wda.find_element_text_with_prefix("cb:"), "12345")
     find, label = request.call_args_list
-    self.assertEqual(find.args[:2],
-                     ("POST", "/session/test-session-123/element"))
+    self.assertEqual(
+      find.args[:2], ("POST", "/session/test-session-123/element")
+    )
     self.assertEqual(find.args[2]["using"], "predicate string")
     self.assertIn("BEGINSWITH 'cb:'", find.args[2]["value"])
-    self.assertEqual(label.args[1],
-                     "/session/test-session-123/element/el-1/attribute/label")
+    self.assertEqual(
+      label.args[1], "/session/test-session-123/element/el-1/attribute/label"
+    )
 
   def test_wda_find_element_text_with_prefix_falls_back_to_name(self):
     wda = self._wda_with_session()
     responses = [
-        self._element("el-1"),
-        self._value("something else"),  # label
-        self._value("cb:12345"),  # name
+      self._element("el-1"),
+      self._value("something else"),  # label
+      self._value("cb:12345"),  # name
     ]
     with mock.patch.object(wda, "_request", side_effect=responses) as request:
       self.assertEqual(wda.find_element_text_with_prefix("cb:"), "12345")
-    self.assertEqual(request.call_args_list[-1].args[1],
-                     "/session/test-session-123/element/el-1/attribute/name")
+    self.assertEqual(
+      request.call_args_list[-1].args[1],
+      "/session/test-session-123/element/el-1/attribute/name",
+    )
 
   def test_wda_find_element_text_with_prefix_without_element(self):
     wda = self._wda_with_session()
@@ -904,19 +975,21 @@ class IOsWdaTestCase(BaseIOsMockPlatformTestCase):
     with mock.patch.object(wda, "_request") as mock_request:
       wda.perform_pointer_chains(chains, dt.timedelta(seconds=2))
       mock_request.assert_called_once_with(
-          "POST",
-          "/session/test-session-123/actions",
-          {"actions": chains},
-          timeout=WDAClient.REQUEST_TIMEOUT + dt.timedelta(seconds=2),
+        "POST",
+        "/session/test-session-123/actions",
+        {"actions": chains},
+        timeout=WDAClient.REQUEST_TIMEOUT + dt.timedelta(seconds=2),
       )
     # Nothing to do without chains.
     with mock.patch.object(wda, "_request") as mock_request:
       wda.perform_pointer_chains([], dt.timedelta(seconds=2))
       mock_request.assert_not_called()
     # A failed batch stops the runner so that no gesture keeps running.
-    with mock.patch.object(wda, "_request") as mock_request, \
-         mock.patch.object(wda, "stop") as mock_stop, \
-         mock.patch.object(wda, "_abort_device_actions") as mock_abort:
+    with (
+      mock.patch.object(wda, "_request") as mock_request,
+      mock.patch.object(wda, "stop") as mock_stop,
+      mock.patch.object(wda, "_abort_device_actions") as mock_abort,
+    ):
       mock_request.side_effect = WDAError("boom")
       with self.assertRaises(WDAError):
         wda.perform_pointer_chains(chains, dt.timedelta(seconds=2))
@@ -925,8 +998,10 @@ class IOsWdaTestCase(BaseIOsMockPlatformTestCase):
 
   def test_wda_stop_device_runner(self):
     wda = self._wda_with_session()
-    with mock.patch.object(wda, "stop") as mock_stop, \
-         mock.patch.object(wda, "_abort_device_actions") as mock_abort:
+    with (
+      mock.patch.object(wda, "stop") as mock_stop,
+      mock.patch.object(wda, "_abort_device_actions") as mock_abort,
+    ):
       wda.stop_device_runner()
       mock_stop.assert_called_once_with()
       mock_abort.assert_called_once_with()
@@ -944,7 +1019,8 @@ class IOsWdaTestCase(BaseIOsMockPlatformTestCase):
 
   def test_wda_settings_and_session_configuration(self):
     self.expect_startup_devices(
-        devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE)
+      devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE
+    )
     platform = IOSPlatform(self.host_platform, "00001111-11AA22BB33DD")
     wda = WDAClient(platform)
     wda._session_id = "test-session-123"
@@ -952,70 +1028,79 @@ class IOsWdaTestCase(BaseIOsMockPlatformTestCase):
     with mock.patch.object(wda, "_request") as mock_request:
       wda.set_settings({"animationCoolOffTimeout": 0})
       mock_request.assert_called_once_with(
-          "POST",
-          "/session/test-session-123/appium/settings",
-          {
-              "settings": {
-                  "animationCoolOffTimeout": 0,
-              },
+        "POST",
+        "/session/test-session-123/appium/settings",
+        {
+          "settings": {
+            "animationCoolOffTimeout": 0,
           },
-          timeout=mock.ANY,
+        },
+        timeout=mock.ANY,
       )
 
     wda._session_id = None
-    with mock.patch.object(wda, "start"), \
-         mock.patch.object(wda, "_request") as mock_request:
+    with (
+      mock.patch.object(wda, "start"),
+      mock.patch.object(wda, "_request") as mock_request,
+    ):
       mock_request.side_effect = [
-          {
-              "value": {
-                  "sessionId": "new-session-456",
-              },
+        {
+          "value": {
+            "sessionId": "new-session-456",
           },
-          {},
+        },
+        {},
       ]
       session_id = wda.ensure_session()
       self.assertEqual(session_id, "new-session-456")
       self.assertEqual(mock_request.call_count, 2)
-      mock_request.assert_has_calls([
+      mock_request.assert_has_calls(
+        [
           mock.call("GET", "/status", timeout=mock.ANY),
           mock.call(
-              "POST",
-              "/session/new-session-456/appium/settings",
-              {
-                  "settings": {
-                      "animationCoolOffTimeout": 0,
-                      "snapshotMaxChildren": 1,
-                      "snapshotMaxDepth": 1,
-                      "waitForIdleTimeout": 0,
-                  },
+            "POST",
+            "/session/new-session-456/appium/settings",
+            {
+              "settings": {
+                "animationCoolOffTimeout": 0,
+                "snapshotMaxChildren": 1,
+                "snapshotMaxDepth": 1,
+                "waitForIdleTimeout": 0,
               },
-              timeout=mock.ANY,
+            },
+            timeout=mock.ANY,
           ),
-      ])
+        ]
+      )
 
   def test_wda_find_xctestrun_bin_override(self):
     self.expect_startup_devices(
-        devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE)
+      devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE
+    )
     platform = IOSPlatform(self.host_platform, "00001111-11AA22BB33DD")
     wda = WDAClient(platform)
     custom_path = pth.LocalPath("/custom/test.xctestrun")
     self.fs.create_file(str(custom_path))
-    with self.host_platform.override_binary(Binaries.WDA_XCTESTRUN,
-                                            custom_path):
+    with self.host_platform.override_binary(
+      Binaries.WDA_XCTESTRUN, custom_path
+    ):
       self.assertEqual(wda._find_xctestrun(), custom_path)
 
   def test_wda_find_xctestrun_derived_data(self):
     self.expect_startup_devices(
-        devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE)
+      devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE
+    )
     platform = IOSPlatform(self.host_platform, "00001111-11AA22BB33DD")
     wda = WDAClient(platform)
     home = self.host_platform.home()
     older = (
-        home / "Library/Developer/Xcode/DerivedData/WebDriverAgent-old"
-        "/Build/Products/WebDriverAgentRunner_iphoneos26.5-arm64.xctestrun")
+      home / "Library/Developer/Xcode/DerivedData/WebDriverAgent-old"
+      "/Build/Products/WebDriverAgentRunner_iphoneos26.5-arm64.xctestrun"
+    )
     newer = (
-        home / "Library/Developer/Xcode/DerivedData/WebDriverAgent-new"
-        "/Build/Products/WebDriverAgentRunner_iphoneos27.0-arm64.xctestrun")
+      home / "Library/Developer/Xcode/DerivedData/WebDriverAgent-new"
+      "/Build/Products/WebDriverAgentRunner_iphoneos27.0-arm64.xctestrun"
+    )
     self.fs.create_file(str(older))
     self.fs.create_file(str(newer))
     os.utime(str(older), (100, 100))
@@ -1025,19 +1110,24 @@ class IOsWdaTestCase(BaseIOsMockPlatformTestCase):
   def test_wda_find_xctestrun_bin_override_missing_file_raises(self):
     missing = pth.LocalPath("/custom/missing.xctestrun")
     with self.assertRaisesRegex(ValueError, "does not exist"):
-      self.host_platform.set_binary_lookup_override(Binaries.WDA_XCTESTRUN.name,
-                                                    missing)
+      self.host_platform.set_binary_lookup_override(
+        Binaries.WDA_XCTESTRUN.name, missing
+      )
 
   def test_wda_find_xctestrun_prefers_matching_sdk(self):
     self.expect_startup_devices(
-        devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE)
+      devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE
+    )
     products = (
-        self.host_platform.home() /
-        "Library/Developer/Xcode/DerivedData/WebDriverAgent-x/Build/Products")
+      self.host_platform.home()
+      / "Library/Developer/Xcode/DerivedData/WebDriverAgent-x/Build/Products"
+    )
     device_build = (
-        products / "WebDriverAgentRunner_iphoneos26.5-arm64.xctestrun")
+      products / "WebDriverAgentRunner_iphoneos26.5-arm64.xctestrun"
+    )
     sim_build = (
-        products / "WebDriverAgentRunner_iphonesimulator26.5-arm64.xctestrun")
+      products / "WebDriverAgentRunner_iphonesimulator26.5-arm64.xctestrun"
+    )
     self.fs.create_file(str(device_build))
     self.fs.create_file(str(sim_build))
     # The simulator build is newer, but must not be picked for a real device.
@@ -1045,31 +1135,37 @@ class IOsWdaTestCase(BaseIOsMockPlatformTestCase):
     os.utime(str(sim_build), (200, 200))
 
     wda_device = WDAClient(
-        IOSPlatform(self.host_platform, "00001111-11AA22BB33DD"))
+      IOSPlatform(self.host_platform, "00001111-11AA22BB33DD")
+    )
     self.assertEqual(wda_device._find_xctestrun(), device_build)
 
     self.expect_startup_devices(
-        devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE)
+      devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE
+    )
     wda_sim = WDAClient(
-        IOSPlatform(self.host_platform, IPHONE_SIMULATOR["udid"]))
+      IOSPlatform(self.host_platform, IPHONE_SIMULATOR["udid"])
+    )
     self.assertEqual(wda_sim._find_xctestrun(), sim_build)
 
   def test_wda_request_http_error_includes_body(self):
     self.expect_startup_devices(
-        devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE)
+      devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE
+    )
     platform = IOSPlatform(self.host_platform, "00001111-11AA22BB33DD")
     wda = WDAClient(platform)
     body = io.BytesIO(
-        b'{"value": {"error": "invalid argument", "message": "bad actions"}}')
+      b'{"value": {"error": "invalid argument", "message": "bad actions"}}'
+    )
     http_error = urllib.error.HTTPError(
-        wda.base_url + "/session/x/actions",
-        500,
-        "Internal Server Error",
-        # HTTPError accepts None for hdrs and BytesIO for fp at runtime.
-        # pyrefly: ignore[bad-argument-type]
-        hdrs=None,
-        # pyrefly: ignore[bad-argument-type]
-        fp=body)
+      wda.base_url + "/session/x/actions",
+      500,
+      "Internal Server Error",
+      # HTTPError accepts None for hdrs and BytesIO for fp at runtime.
+      # pyrefly: ignore[bad-argument-type]
+      hdrs=None,
+      # pyrefly: ignore[bad-argument-type]
+      fp=body,
+    )
     with mock.patch("urllib.request.urlopen", side_effect=http_error):
       with self.assertRaisesRegex(WDAError, "HTTP 500.*bad actions") as cm:
         wda._request("POST", "/session/x/actions", {"actions": []})
@@ -1077,13 +1173,15 @@ class IOsWdaTestCase(BaseIOsMockPlatformTestCase):
 
   def test_wda_start_runner_missing_error(self):
     self.expect_startup_devices(
-        devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE)
+      devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE
+    )
     platform = IOSPlatform(self.host_platform, "00001111-11AA22BB33DD")
     wda = WDAClient(platform)
     self.host_platform.expect_sh(
-        "DevToolsSecurity",
-        "-status",
-        result="Developer mode is currently enabled.")
+      "DevToolsSecurity",
+      "-status",
+      result="Developer mode is currently enabled.",
+    )
     with self.assertRaises(WDAError) as cm:
       wda._start_runner()
     self.assertIn("WebDriverAgent is not running", str(cm.exception))
@@ -1092,46 +1190,56 @@ class IOsWdaTestCase(BaseIOsMockPlatformTestCase):
 
   def test_wda_devtools_security_disabled_error(self):
     self.expect_startup_devices(
-        devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE)
+      devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE
+    )
     platform = IOSPlatform(self.host_platform, "00001111-11AA22BB33DD")
     wda = WDAClient(platform)
     self.host_platform.expect_sh(
-        "DevToolsSecurity",
-        "-status",
-        result="Developer mode is currently disabled.")
+      "DevToolsSecurity",
+      "-status",
+      result="Developer mode is currently disabled.",
+    )
     with self.assertRaises(WDAError) as cm:
       wda._start_runner()
     self.assertIn("sudo DevToolsSecurity -enable", str(cm.exception))
 
   def test_wda_provisioning_profile_device_error(self):
     self.expect_startup_devices(
-        devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE)
+      devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE
+    )
     platform = IOSPlatform(self.host_platform, "00001111-11AA22BB33DD")
     wda = WDAClient(platform)
     self.host_platform.expect_sh(
-        "mdfind",
-        "kMDItemFSName == 'WebDriverAgent.xcodeproj'",
-        result="/Users/test/WebDriverAgent/WebDriverAgent.xcodeproj\n")
-    output = ("Failed to install embedded profile for "
-              "com.facebook.WebDriverAgentRunner.xctrunner : 0xe8008012 "
-              "(This provisioning profile cannot be installed on this device.)")
+      "mdfind",
+      "kMDItemFSName == 'WebDriverAgent.xcodeproj'",
+      result="/Users/test/WebDriverAgent/WebDriverAgent.xcodeproj\n",
+    )
+    output = (
+      "Failed to install embedded profile for "
+      "com.facebook.WebDriverAgentRunner.xctrunner : 0xe8008012 "
+      "(This provisioning profile cannot be installed on this device.)"
+    )
     with self.assertRaises(WDAError) as cm:
       wda._handle_runner_error(65, output)
-    self.assertIn("open /Users/test/WebDriverAgent/WebDriverAgent.xcodeproj",
-                  str(cm.exception))
+    self.assertIn(
+      "open /Users/test/WebDriverAgent/WebDriverAgent.xcodeproj",
+      str(cm.exception),
+    )
     self.assertIn("00001111-11AA22BB33DD", str(cm.exception))
 
   def test_wda_untrusted_developer_certificate_error(self):
     self.expect_startup_devices(
-        devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE)
+      devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE
+    )
     platform = IOSPlatform(self.host_platform, "00001111-11AA22BB33DD")
     wda = WDAClient(platform)
     output = (
-        "The application could not be launched because the Developer App "
-        "Certificate is not trusted.\n"
-        "Domain: IDELaunchCoreDevice\nCode: 0\n"
-        "Recovery Suggestion: Verify that the Developer App certificate for "
-        "your account is trusted on your device.")
+      "The application could not be launched because the Developer App "
+      "Certificate is not trusted.\n"
+      "Domain: IDELaunchCoreDevice\nCode: 0\n"
+      "Recovery Suggestion: Verify that the Developer App certificate for "
+      "your account is trusted on your device."
+    )
     with self.assertRaises(WDAError) as cm:
       wda._handle_runner_error(65, output)
     self.assertIn("Developer App Certificate is not trusted", str(cm.exception))
@@ -1139,20 +1247,24 @@ class IOsWdaTestCase(BaseIOsMockPlatformTestCase):
 
   def test_wda_guided_access_error(self):
     self.expect_startup_devices(
-        devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE)
+      devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE
+    )
     platform = IOSPlatform(self.host_platform, "00001111-11AA22BB33DD")
     wda = WDAClient(platform)
-    output = ('Error Domain=FBSOpenApplicationErrorDomain Code=1 '
-              '"Guided Access active"')
+    output = (
+      'Error Domain=FBSOpenApplicationErrorDomain Code=1 "Guided Access active"'
+    )
     with self.assertRaises(WDAError) as cm:
       wda._handle_runner_error(65, output)
     self.assertIn("Guided Access is active", str(cm.exception))
-    self.assertIn("Settings -> Accessibility -> Guided Access",
-                  str(cm.exception))
+    self.assertIn(
+      "Settings -> Accessibility -> Guided Access", str(cm.exception)
+    )
 
   def test_wda_license_error(self):
     self.expect_startup_devices(
-        devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE)
+      devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE
+    )
     platform = IOSPlatform(self.host_platform, "00001111-11AA22BB33DD")
     wda = WDAClient(platform)
     output = "You have not agreed to the Xcode license agreements."
@@ -1162,7 +1274,8 @@ class IOsWdaTestCase(BaseIOsMockPlatformTestCase):
 
   def test_wda_developer_mode_error(self):
     self.expect_startup_devices(
-        devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE)
+      devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE
+    )
     platform = IOSPlatform(self.host_platform, "00001111-11AA22BB33DD")
     wda = WDAClient(platform)
     output = "Developer Mode is disabled on device."
@@ -1172,13 +1285,13 @@ class IOsWdaTestCase(BaseIOsMockPlatformTestCase):
 
   def test_wda_device_locked_error(self):
     self.expect_startup_devices(
-        devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE)
+      devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE
+    )
     platform = IOSPlatform(self.host_platform, "00001111-11AA22BB33DD")
     wda = WDAClient(platform)
     for output in (
-        "Device is locked. Please unlock the device.",
-        "Xcode cannot launch WebDriverAgentRunner because the device is "
-        "locked.",
+      "Device is locked. Please unlock the device.",
+      "Xcode cannot launch WebDriverAgentRunner because the device is locked.",
     ):
       with self.assertRaises(WDAError) as cm:
         wda._handle_runner_error(65, output)
@@ -1186,12 +1299,13 @@ class IOsWdaTestCase(BaseIOsMockPlatformTestCase):
 
   def test_wda_password_auth_error(self):
     self.expect_startup_devices(
-        devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE)
+      devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE
+    )
     platform = IOSPlatform(self.host_platform, "00001111-11AA22BB33DD")
     wda = WDAClient(platform)
     for output in (
-        "Password: ",
-        "sudo: a terminal is required to read the password",
+      "Password: ",
+      "sudo: a terminal is required to read the password",
     ):
       with self.assertRaises(WDAError) as cm:
         wda._handle_runner_error(65, output)
@@ -1199,7 +1313,8 @@ class IOsWdaTestCase(BaseIOsMockPlatformTestCase):
 
   def test_wda_generic_error(self):
     self.expect_startup_devices(
-        devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE)
+      devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE
+    )
     platform = IOSPlatform(self.host_platform, "00001111-11AA22BB33DD")
     wda = WDAClient(platform)
     output = "Unknown failure occurred during test run."
@@ -1210,7 +1325,8 @@ class IOsWdaTestCase(BaseIOsMockPlatformTestCase):
 
   def test_wda_swipe_sequence_interrupt_stops_runner(self):
     self.expect_startup_devices(
-        devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE)
+      devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE
+    )
     platform = IOSPlatform(self.host_platform, "00001111-11AA22BB33DD")
     wda = WDAClient(platform)
     wda._session_id = "test-session-123"
@@ -1219,65 +1335,68 @@ class IOsWdaTestCase(BaseIOsMockPlatformTestCase):
 
     self.fs.remove_object("/devicectl_output.json")
     self.fs.create_file(
-        "/devicectl_output.json",
-        contents=json.dumps({
-            "result": {
-                "runningProcesses": [
-                    {
-                        "executable": "file:///System/Developer/usr/libexec"
-                                      "/testmanagerd",
-                        "processIdentifier": 823,
-                    },
-                    {
-                        "executable": "file:///private/var/containers/Bundle"
-                                      "/WebDriverAgentRunner-Runner.app"
-                                      "/WebDriverAgentRunner-Runner",
-                        "processIdentifier": 827,
-                    },
-                ],
-            },
-        }),
+      "/devicectl_output.json",
+      contents=json.dumps(
+        {
+          "result": {
+            "runningProcesses": [
+              {
+                "executable": "file:///System/Developer/usr/libexec"
+                "/testmanagerd",
+                "processIdentifier": 823,
+              },
+              {
+                "executable": "file:///private/var/containers/Bundle"
+                "/WebDriverAgentRunner-Runner.app"
+                "/WebDriverAgentRunner-Runner",
+                "processIdentifier": 827,
+              },
+            ],
+          },
+        }
+      ),
     )
     self.host_platform.expect_sh(
-        "xcrun",
-        "devicectl",
-        "device",
-        "info",
-        "processes",
-        "--device",
-        "00001111-11AA22BB33DD",
-        "--json-output=/devicectl_output.json",
-        result="",
+      "xcrun",
+      "devicectl",
+      "device",
+      "info",
+      "processes",
+      "--device",
+      "00001111-11AA22BB33DD",
+      "--json-output=/devicectl_output.json",
+      result="",
     )
     self.host_platform.expect_sh(
-        "xcrun",
-        "devicectl",
-        "device",
-        "process",
-        "terminate",
-        "--device",
-        "00001111-11AA22BB33DD",
-        "--pid",
-        "827",
-        "--kill",
-        result="",
+      "xcrun",
+      "devicectl",
+      "device",
+      "process",
+      "terminate",
+      "--device",
+      "00001111-11AA22BB33DD",
+      "--pid",
+      "827",
+      "--kill",
+      result="",
     )
     self.host_platform.expect_sh(
-        "xcrun",
-        "devicectl",
-        "device",
-        "process",
-        "terminate",
-        "--device",
-        "00001111-11AA22BB33DD",
-        "--pid",
-        "823",
-        "--kill",
-        result="",
+      "xcrun",
+      "devicectl",
+      "device",
+      "process",
+      "terminate",
+      "--device",
+      "00001111-11AA22BB33DD",
+      "--pid",
+      "823",
+      "--kill",
+      result="",
     )
 
     with mock.patch.object(
-        wda, "_request", side_effect=KeyboardInterrupt) as mock_request:
+      wda, "_request", side_effect=KeyboardInterrupt
+    ) as mock_request:
       with self.assertRaises(KeyboardInterrupt):
         wda.swipe_sequence([(100, 500, 100, 200)])
       mock_proc.terminate.assert_called_once_with()
@@ -1352,7 +1471,8 @@ class IOsWdaTestCase(BaseIOsMockPlatformTestCase):
 
   def test_wda_simulator_start_forwards_without_iproxy(self):
     self.expect_startup_devices(
-        devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE)
+      devices=DEVICES_SINGLE, simulators=SIMULATORS_SAMPLE
+    )
     platform = IOSPlatform(self.host_platform, IPHONE_SIMULATOR["udid"])
     wda = WDAClient(platform)
     with self.mock_wda_server(platform):
@@ -1371,14 +1491,17 @@ class IOsWdaTestCase(BaseIOsMockPlatformTestCase):
       self.assertFalse(wda.is_connected())
     for invalid_value in ("not-a-mapping", 123, ["ready"], None):
       bad_resp: dict[str, object] = {"value": invalid_value}
-      with self.subTest(value=invalid_value), mock.patch.object(
-          wda, "_request", return_value=bad_resp):
+      with (
+        self.subTest(value=invalid_value),
+        mock.patch.object(wda, "_request", return_value=bad_resp),
+      ):
         with self.assertRaisesRegex(AssertionError, "Invalid WDA status value"):
           wda.is_connected()
 
   def test_wda_extract_session_id_malformed_asserts(self) -> None:
     self.assertEqual(
-        WDAClient._extract_session_id({"sessionId": "top-1"}), "top-1")
+      WDAClient._extract_session_id({"sessionId": "top-1"}), "top-1"
+    )
     nested_resp: dict[str, object] = {"value": {"sessionId": "nested-1"}}
     self.assertEqual(WDAClient._extract_session_id(nested_resp), "nested-1")
     self.assertIsNone(WDAClient._extract_session_id({}))
@@ -1390,9 +1513,9 @@ class IOsWdaTestCase(BaseIOsMockPlatformTestCase):
           WDAClient._extract_session_id({"sessionId": invalid_session_id})
       with self.subTest(nested_session_id=invalid_session_id):
         bad_nested: dict[str, object] = {
-            "value": {
-                "sessionId": invalid_session_id,
-            },
+          "value": {
+            "sessionId": invalid_session_id,
+          },
         }
         with self.assertRaisesRegex(AssertionError, "Invalid WDA sessionId"):
           WDAClient._extract_session_id(bad_nested)

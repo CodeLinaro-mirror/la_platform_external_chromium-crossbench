@@ -22,7 +22,6 @@ def post(url: str, **kwargs) -> requests.Response:
 
 
 class ServerError(requests.exceptions.HTTPError):
-
   def __init__(self, error: requests.exceptions.HTTPError) -> None:
     error_message = ""
     if response := error.response:

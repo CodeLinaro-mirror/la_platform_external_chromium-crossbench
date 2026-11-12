@@ -15,18 +15,24 @@ from crossbench.str_enum_with_help import StrEnumWithHelp
 class BrowserDriverType(StrEnumWithHelp):
   WEB_DRIVER = ("WebDriver", "Use Selenium with webdriver, for local runs.")
   APPLE_SCRIPT = ("AppleScript", "Use AppleScript, for local macOS runs only")
-  ANDROID = ("Android",
-             "Use Webdriver for android. Allows to specify additional settings")
+  ANDROID = (
+    "Android",
+    "Use Webdriver for android. Allows to specify additional settings",
+  )
   ANDROID_CDP = (
-      "Android CDP",
-      "Use Chrome DevTools Protocol over ADB directly without ChromeDriver",
+    "Android CDP",
+    "Use Chrome DevTools Protocol over ADB directly without ChromeDriver",
   )
   IOS = ("iOS", "Use safaridriver on iOS")
   IOS_WDA = ("iOS WDA", "Use WebDriverAgent on iOS")
-  LINUX_SSH = ("Remote Linux",
-               "Use remote webdriver and execute commands via SSH")
-  CHROMEOS_SSH = ("Remote ChromeOS",
-                  "Use remote ChromeDriver and execute commands via SSH")
+  LINUX_SSH = (
+    "Remote Linux",
+    "Use remote webdriver and execute commands via SSH",
+  )
+  CHROMEOS_SSH = (
+    "Remote ChromeOS",
+    "Use remote ChromeDriver and execute commands via SSH",
+  )
 
   @classmethod
   def default(cls) -> BrowserDriverType:
@@ -77,11 +83,11 @@ class BrowserDriverType(StrEnumWithHelp):
   @property
   def is_remote_browser(self) -> bool:
     return self in (
-        BrowserDriverType.ANDROID,
-        BrowserDriverType.ANDROID_CDP,
-        BrowserDriverType.CHROMEOS_SSH,
-        BrowserDriverType.IOS,
-        BrowserDriverType.LINUX_SSH,
+      BrowserDriverType.ANDROID,
+      BrowserDriverType.ANDROID_CDP,
+      BrowserDriverType.CHROMEOS_SSH,
+      BrowserDriverType.IOS,
+      BrowserDriverType.LINUX_SSH,
     )
 
   @property

@@ -35,6 +35,7 @@ class BlinkAIProbe(BenchmarkProbeMixin, JsonResultProbe):
   Custom probe for Blink AI benchmark.
   Extracts window.metrics from the browser tab and monitors GPU VRAM usage.
   """
+
   NAME: ClassVar[str] = "blink_ai"
 
   @classmethod
@@ -42,23 +43,24 @@ class BlinkAIProbe(BenchmarkProbeMixin, JsonResultProbe):
   def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
-        "vram_interval",
-        type=DurationParser.duration_range(min=MIN_VRAM_INTERVAL),
-        default=DEFAULT_VRAM_INTERVAL,
-        help="Polling interval for VRAM / GPU memory usage.",
+      "vram_interval",
+      type=DurationParser.duration_range(min=MIN_VRAM_INTERVAL),
+      default=DEFAULT_VRAM_INTERVAL,
+      help="Polling interval for VRAM / GPU memory usage.",
     )
     return parser
 
   def __init__(
-      self,
-      benchmark: Benchmark | None = None,
-      vram_interval: dt.timedelta = DEFAULT_VRAM_INTERVAL,
+    self,
+    benchmark: Benchmark | None = None,
+    vram_interval: dt.timedelta = DEFAULT_VRAM_INTERVAL,
   ) -> None:
     super().__init__(benchmark=benchmark)
     if vram_interval < MIN_VRAM_INTERVAL:
       raise ValueError(
-          f"Polling interval must be >= {MIN_VRAM_INTERVAL.total_seconds()}s, "
-          f"but got: {vram_interval}")
+        f"Polling interval must be >= {MIN_VRAM_INTERVAL.total_seconds()}s, "
+        f"but got: {vram_interval}"
+      )
     self._vram_interval: Final[dt.timedelta] = vram_interval
 
   @property
@@ -69,8 +71,8 @@ class BlinkAIProbe(BenchmarkProbeMixin, JsonResultProbe):
   def attach(self, browser: Browser) -> None:
     super().attach(browser)
     for flag in (
-        "--disable-component-update",
-        "--disable-optimization-guide-model-downloads-for-benchmarking",
+      "--disable-component-update",
+      "--disable-optimization-guide-model-downloads-for-benchmarking",
     ):
       browser.flags.pop(flag, None)
 
@@ -87,14 +89,16 @@ class BlinkAIProbe(BenchmarkProbeMixin, JsonResultProbe):
   @override
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
     merged = MetricsMerger.merge_json_list(
-        repetitions_group.results[self].json
-        for repetitions_group in group.repetitions_groups)
+      repetitions_group.results[self].json
+      for repetitions_group in group.repetitions_groups
+    )
     return self.write_group_result(group, merged)
 
   @override
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
     return self.merge_browsers_json_list(group).merge(
-        self.merge_browsers_csv_list(group))
+      self.merge_browsers_csv_list(group)
+    )
 
 
 class BlinkAIProbeContext(JsonResultProbeContext[BlinkAIProbe]):
@@ -102,8 +106,9 @@ class BlinkAIProbeContext(JsonResultProbeContext[BlinkAIProbe]):
 
   def __init__(self, probe: BlinkAIProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._vram_poller: Final[VramPoller] = VramPoller(self.browser_platform,
-                                                      self.probe.vram_interval)
+    self._vram_poller: Final[VramPoller] = VramPoller(
+      self.browser_platform, self.probe.vram_interval
+    )
 
   @override
   def start(self) -> None:
@@ -125,16 +130,16 @@ class BlinkAIProbeContext(JsonResultProbeContext[BlinkAIProbe]):
     return metrics
 
   def _record_vram_stats(
-      self,
-      metrics: JsonDict,
-      prefix: str,
-      peak_mb: float,
-      baseline_mb: float,
+    self,
+    metrics: JsonDict,
+    prefix: str,
+    peak_mb: float,
+    baseline_mb: float,
   ) -> dict[str, float]:
     stats = {
-        "peak": peak_mb,
-        "baseline": baseline_mb,
-        "delta": max(0.0, peak_mb - baseline_mb),
+      "peak": peak_mb,
+      "baseline": baseline_mb,
+      "delta": max(0.0, peak_mb - baseline_mb),
     }
     for key, val_mb in stats.items():
       metrics[f"{prefix}_{key}_mb"] = val_mb
@@ -149,12 +154,14 @@ class BlinkAIProbeContext(JsonResultProbeContext[BlinkAIProbe]):
     total_peak = sum(peak.values())
     total_baseline = sum(baseline.get(gpu_id, 0.0) for gpu_id in peak)
     vram_dict: JsonDict = dict(
-        self._record_vram_stats(metrics, "vram", total_peak, total_baseline))
+      self._record_vram_stats(metrics, "vram", total_peak, total_baseline)
+    )
     for gpu_id, gpu_peak in peak.items():
       gpu_base = baseline.get(gpu_id, 0.0)
       if len(peak) > 1:
-        vram_dict[gpu_id] = self._record_vram_stats(metrics, f"vram_{gpu_id}",
-                                                    gpu_peak, gpu_base)
+        vram_dict[gpu_id] = self._record_vram_stats(
+          metrics, f"vram_{gpu_id}", gpu_peak, gpu_base
+        )
       else:
         vram_dict[gpu_id] = dict(vram_dict)
     metrics["vram"] = vram_dict

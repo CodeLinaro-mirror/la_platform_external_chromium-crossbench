@@ -10,7 +10,6 @@ dependencies = [
   'psutil==7.2.1',
   'websockets==15.0.1',
   'pyfakefs==6.3.0',
-  'isort==6.0.1',
   'colorama==0.4.6',
   'pytest-xdist==3.8.0',
   'immutabledict==4.3.1',

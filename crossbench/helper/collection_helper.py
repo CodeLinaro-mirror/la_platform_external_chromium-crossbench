@@ -21,14 +21,12 @@ if TYPE_CHECKING:
   PathT = TypeVar("PathT", bound=pth.AnyPath)
 
   class ComparableProtocol(Protocol):
-
     def __lt__(self, other: Self, /) -> bool:
       pass
 
   ComparableT = TypeVar("ComparableT", bound=ComparableProtocol)
 
   class GroupTProtocol(Protocol[GroupItemT_contra]):
-
     def append(self, item: GroupItemT_contra, /) -> None:
       pass
 
@@ -40,11 +38,11 @@ def default_value(value: InputT) -> InputT:
 
 
 def group_by(
-    collection: Iterable[InputT],
-    *,
-    key: Callable[[InputT], KeyT],
-    value: Callable[[InputT], ValueT] | None = None,
-    sort_key: Callable[[tuple[KeyT, list[ValueT]]], ComparableT] | None = str,
+  collection: Iterable[InputT],
+  *,
+  key: Callable[[InputT], KeyT],
+  value: Callable[[InputT], ValueT] | None = None,
+  sort_key: Callable[[tuple[KeyT, list[ValueT]]], ComparableT] | None = str,
 ) -> dict[KeyT, list[ValueT]]:
   """
   Works similar to itertools.groupby but does a global, SQL-style grouping
@@ -57,20 +55,21 @@ def group_by(
             for sorting the groups.
   """
   return _group_by(
-      collection,
-      key_fn=key,
-      value_fn=value or default_value,
-      group_fn=lambda key: [],
-      sort_key_fn=sort_key)
+    collection,
+    key_fn=key,
+    value_fn=value or default_value,
+    group_fn=lambda key: [],
+    sort_key_fn=sort_key,
+  )
 
 
 def group_by_custom(
-    collection: Iterable[InputT],
-    *,
-    key: Callable[[InputT], KeyT],
-    group: Callable[[KeyT], GroupT],
-    value: Callable[[InputT], ValueT] | None = None,
-    sort_key: Callable[[tuple[KeyT, GroupT]], ComparableT] | None = str,
+  collection: Iterable[InputT],
+  *,
+  key: Callable[[InputT], KeyT],
+  group: Callable[[KeyT], GroupT],
+  value: Callable[[InputT], ValueT] | None = None,
+  sort_key: Callable[[tuple[KeyT, GroupT]], ComparableT] | None = str,
 ) -> dict[KeyT, GroupT]:
   """
   Works similar to itertools.groupby but does a global, SQL-style grouping
@@ -86,19 +85,20 @@ def group_by_custom(
   Note group_by_custom is only required to make the type system happy.
   """
   return _group_by(
-      collection,
-      key_fn=key,
-      group_fn=group,
-      value_fn=value or default_value,
-      sort_key_fn=sort_key)
+    collection,
+    key_fn=key,
+    group_fn=group,
+    value_fn=value or default_value,
+    sort_key_fn=sort_key,
+  )
 
 
 def _group_by(
-    collection: Iterable[InputT],
-    key_fn: Callable[[InputT], KeyT],
-    group_fn: Callable[[KeyT], GroupT],
-    value_fn: Callable[[InputT], ValueT],
-    sort_key_fn: Callable[[tuple[KeyT, GroupT]], ComparableT] | None = str,
+  collection: Iterable[InputT],
+  key_fn: Callable[[InputT], KeyT],
+  group_fn: Callable[[KeyT], GroupT],
+  value_fn: Callable[[InputT], ValueT],
+  sort_key_fn: Callable[[tuple[KeyT, GroupT]], ComparableT] | None = str,
 ) -> dict[KeyT, GroupT]:
   if not key_fn:
     raise ValueError("No key function provided")
@@ -120,10 +120,9 @@ def _group_by(
   return dict(groups.items())
 
 
-def close_matches_message(choice: str,
-                          choices: Iterable[str],
-                          name: str = "",
-                          limit: int = 10) -> tuple[str, str | None]:
+def close_matches_message(
+  choice: str, choices: Iterable[str], name: str = "", limit: int = 10
+) -> tuple[str, str | None]:
   choices = tuple(choices)
   if not choices:
     raise ValueError("Expected non-empty choices.")
@@ -143,5 +142,6 @@ def close_matches_message(choice: str,
     error_message += f" Choices are {','.join(choices)}"
   else:
     error_message += (
-        f" Choices are {','.join(choices[:limit])}... ({len(choices)} total)")
+      f" Choices are {','.join(choices[:limit])}... ({len(choices)} total)"
+    )
   return error_message, alternative

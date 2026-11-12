@@ -7,8 +7,15 @@ from __future__ import annotations
 import dataclasses
 import json
 from collections import defaultdict
-from typing import TYPE_CHECKING, ClassVar, Mapping, NamedTuple, Sequence, \
-    TypedDict, override
+from typing import (
+  TYPE_CHECKING,
+  ClassVar,
+  Mapping,
+  NamedTuple,
+  Sequence,
+  TypedDict,
+  override,
+)
 
 import tabulate as tbl
 
@@ -49,7 +56,7 @@ class HelpData(TypedDict):
 def get_all_config_classes() -> list[type[ConfigObject]]:
   config_classes = list(get_all_subclasses(ConfigObject))
   filtered_classes = [
-      cls for cls in config_classes if not cls.__name__.startswith("_")
+    cls for cls in config_classes if not cls.__name__.startswith("_")
   ]
   filtered_classes.sort(key=lambda cls: cls.__name__)
   return filtered_classes
@@ -64,14 +71,20 @@ class DescribeSubcommand(CrossbenchSubcommand):
   CONFIG_OBJECT_ALIAS = ("config", "configs", "config-object", "config-objects")
   ENV_ALIAS = ("env", "envs", "environment", "environments")
   CATEGORIES = ("all",) + (
-      PROBE_ALIAS + BENCHMARK_ALIAS + NETWORK_ALIAS + CONFIG_OBJECT_ALIAS +
-      ENV_ALIAS)
+    PROBE_ALIAS
+    + BENCHMARK_ALIAS
+    + NETWORK_ALIAS
+    + CONFIG_OBJECT_ALIAS
+    + ENV_ALIAS
+  )
 
   @override
-  def register_subcommand(self,
-                          subparsers: Subparsers) -> argparse.ArgumentParser:
+  def register_subcommand(
+    self, subparsers: Subparsers
+  ) -> argparse.ArgumentParser:
     self._parser = subparsers.add_parser(
-        self.NAME, aliases=["desc"], help="Print all benchmarks and stories")
+      self.NAME, aliases=["desc"], help="Print all benchmarks and stories"
+    )
     self._parser.set_defaults(crossbench_subcommand=self)
     return self.parser
 
@@ -79,23 +92,30 @@ class DescribeSubcommand(CrossbenchSubcommand):
   def add_cli_arguments(self, parser: CBArgumentParser) -> CBArgumentParser:
     describe_parser = parser
     describe_parser.add_argument(
-        "category",
-        nargs="?",
-        default="all",
-        help=("Limit output to the given category, defaults to 'all'. "
-              f"Choices: {self.CATEGORIES,}"))
+      "category",
+      nargs="?",
+      default="all",
+      help=(
+        "Limit output to the given category, defaults to 'all'. "
+        f"Choices: {(self.CATEGORIES,)}"
+      ),
+    )
     describe_parser.add_argument(
-        "filter",
-        nargs="?",
-        default=None,
-        help=("Only display the given item from the provided category. "
-              "By default all items are displayed. "
-              "Example: describe probes v8.log"))
+      "filter",
+      nargs="?",
+      default=None,
+      help=(
+        "Only display the given item from the provided category. "
+        "By default all items are displayed. "
+        "Example: describe probes v8.log"
+      ),
+    )
     describe_parser.add_argument(
-        "--json",
-        default=False,
-        action="store_true",
-        help="Print the data as json data")
+      "--json",
+      default=False,
+      action="store_true",
+      help="Print the data as json data",
+    )
     self.cli.add_debugging_arguments(describe_parser)
     return describe_parser
 
@@ -148,10 +168,9 @@ class DescribeSubcommand(CrossbenchSubcommand):
       self.error(f"Invalid help args: {search_terms}")
     self.describe(category, search_str)
 
-  def describe(self,
-               category: str,
-               search_str: str | None,
-               print_json: bool = False) -> None:
+  def describe(
+    self, category: str, search_str: str | None, print_json: bool = False
+  ) -> None:
     category, search_str = self._process_search_str(category, search_str)
 
     data: HelpData = self.help_data(category, search_str)
@@ -175,11 +194,11 @@ class DescribeSubcommand(CrossbenchSubcommand):
 
   def help_data(self, category: str, search_str: str | None) -> HelpData:
     data: HelpData = {
-        "benchmarks": {},
-        "probes": {},
-        "networks": {},
-        "config_objects": {},
-        "envs": {},
+      "benchmarks": {},
+      "probes": {},
+      "networks": {},
+      "config_objects": {},
+      "envs": {},
     }
     if category == "all" or category in self.BENCHMARK_ALIAS:
       data["benchmarks"] = self._benchmark_help_data(search_str)
@@ -193,11 +212,13 @@ class DescribeSubcommand(CrossbenchSubcommand):
       data["envs"] = self._env_help_data(search_str)
     return data
 
-  def _process_search_str(self, category: str,
-                          search_str: str | None) -> DescribeTarget:
+  def _process_search_str(
+    self, category: str, search_str: str | None
+  ) -> DescribeTarget:
     if category not in self.CATEGORIES:
-      message, alternative = close_matches_message(category, self.CATEGORIES,
-                                                   "help category")
+      message, alternative = close_matches_message(
+        category, self.CATEGORIES, "help category"
+      )
       if not alternative:
         self.error(message)
       else:
@@ -219,43 +240,58 @@ class DescribeSubcommand(CrossbenchSubcommand):
       search_str = None
     return DescribeTarget(category, search_str)
 
-  def print_json(self, category: str, search_str: str | None,
-                 data: HelpData) -> None:
+  def print_json(
+    self, category: str, search_str: str | None, data: HelpData
+  ) -> None:
     output_data: Mapping[str, object] = data
     if category in self.PROBE_ALIAS:
       if not (output_data := data["probes"]):
-        self.choice_error("No matching probe found:", search_str,
-                          self.probe_names())
+        self.choice_error(
+          "No matching probe found:", search_str, self.probe_names()
+        )
     elif category in self.BENCHMARK_ALIAS:
       if not (output_data := data["benchmarks"]):
-        self.choice_error("No matching benchmark found:", search_str,
-                          self.benchmark_names())
+        self.choice_error(
+          "No matching benchmark found:", search_str, self.benchmark_names()
+        )
     elif category in self.NETWORK_ALIAS:
       if not (output_data := data["networks"]):
-        self.choice_error("No matching network found:", search_str,
-                          self.network_names())
+        self.choice_error(
+          "No matching network found:", search_str, self.network_names()
+        )
     elif category in self.CONFIG_OBJECT_ALIAS:
       if not (output_data := data["config_objects"]):
-        self.choice_error("No matching config object found:", search_str,
-                          self.config_object_names())
+        self.choice_error(
+          "No matching config object found:",
+          search_str,
+          self.config_object_names(),
+        )
     elif category in self.ENV_ALIAS:
       if not (output_data := data["envs"]):
-        self.choice_error("No matching env found:", search_str,
-                          self.env_names())
+        self.choice_error(
+          "No matching env found:", search_str, self.env_names()
+        )
     else:
       assert category == "all", f"Got unknown category {category}"
-      if not data["benchmarks"] and not data["probes"] and not data[
-          "networks"] and not data["config_objects"] and not data["envs"]:
+      if (
+        not data["benchmarks"]
+        and not data["probes"]
+        and not data["networks"]
+        and not data["config_objects"]
+        and not data["envs"]
+      ):
         self.no_match_error(search_str)
     print(json.dumps(output_data, indent=2))
 
   def no_match_error(self, search_str: str | None) -> None:
-    base_message = ("No matching benchmarks, probes, networks, envs "
-                    "or config objects found")
+    base_message = (
+      "No matching benchmarks, probes, networks, envs or config objects found"
+    )
     self.choice_error(base_message, search_str, self.CATEGORIES)
 
-  def choice_error(self, message: str, search_str: str | None,
-                   choices: Sequence[str]) -> None:
+  def choice_error(
+    self, message: str, search_str: str | None, choices: Sequence[str]
+  ) -> None:
     if search_str:
       choices_message, alternative = close_matches_message(search_str, choices)
       if alternative:
@@ -264,47 +300,57 @@ class DescribeSubcommand(CrossbenchSubcommand):
     choices_str = ", ".join(choices)
     self.error(f"{message}: '{search_str}'. Choices are {choices_str}")
 
-  def print_probes(self, category: str, search_str: str | None,
-                   help_data: HelpData) -> bool:
+  def print_probes(
+    self, category: str, search_str: str | None, help_data: HelpData
+  ) -> bool:
     table: TableData = [["Probe", "Help"]]
     self.format_property_table(help_data["probes"], table)
-    return self.print_property_table("Probe", category, search_str, table,
-                                     self.probe_names())
+    return self.print_property_table(
+      "Probe", category, search_str, table, self.probe_names()
+    )
 
-  def print_benchmarks(self, category: str, search_str: str | None,
-                       data: HelpData) -> bool:
+  def print_benchmarks(
+    self, category: str, search_str: str | None, data: HelpData
+  ) -> bool:
     table: TableData = [["Benchmark", "Property", "Value"]]
     self.format_property_table(data["benchmarks"], table)
-    return self.print_property_table("Benchmark", category, search_str, table,
-                                     self.benchmark_names())
+    return self.print_property_table(
+      "Benchmark", category, search_str, table, self.benchmark_names()
+    )
 
-  def print_networks(self, category: str, search_str: str | None,
-                     help_data: HelpData) -> bool:
+  def print_networks(
+    self, category: str, search_str: str | None, help_data: HelpData
+  ) -> bool:
     table: TableData = [["Network", "Help"]]
     for network_name, network_desc in help_data["networks"].items():
       table.append([network_name, network_desc])
-    return self.print_property_table("Network", category, search_str, table,
-                                     self.network_names())
+    return self.print_property_table(
+      "Network", category, search_str, table, self.network_names()
+    )
 
-  def print_config_objects(self, category: str, search_str: str | None,
-                           help_data: HelpData) -> bool:
+  def print_config_objects(
+    self, category: str, search_str: str | None, help_data: HelpData
+  ) -> bool:
     table: TableData = [["Config Object", "Property", "Value"]]
     self.format_property_table(help_data["config_objects"], table)
-    return self.print_property_table("Config Objects", category, search_str,
-                                     table, self.config_object_names())
+    return self.print_property_table(
+      "Config Objects", category, search_str, table, self.config_object_names()
+    )
 
-  def print_envs(self, category: str, search_str: str | None,
-                 help_data: HelpData) -> bool:
+  def print_envs(
+    self, category: str, search_str: str | None, help_data: HelpData
+  ) -> bool:
     table: TableData = [["Env", "Property", "Value"]]
     self.format_property_table(help_data["envs"], table)
-    return self.print_property_table("Env", category, search_str, table,
-                                     self.env_names())
+    return self.print_property_table(
+      "Env", category, search_str, table, self.env_names()
+    )
 
   def format_property_table(
-      self,
-      data: Mapping[str, Mapping[str, object]],
-      table: TableData,
-      exclude_keys: tuple[str, ...] = ("flags",),
+    self,
+    data: Mapping[str, Mapping[str, object]],
+    table: TableData,
+    exclude_keys: tuple[str, ...] = ("flags",),
   ) -> None:
     max_width: int = 50
     for section_name, values in data.items():
@@ -326,15 +372,21 @@ class DescribeSubcommand(CrossbenchSubcommand):
       if not value:
         return "[]"
       return tbl.tabulate(
-          value.items(), tablefmt="plain", maxcolwidths=max_width)
+        value.items(), tablefmt="plain", maxcolwidths=max_width
+      )
     return str(value)
 
   def _format_sequence_property(self, items: Sequence[object]) -> str:
     return "\n".join(map(str, items))
 
-  def print_property_table(self, name: str, category: str,
-                           search_str: str | None, table: TableData,
-                           choices: Sequence[str]) -> bool:
+  def print_property_table(
+    self,
+    name: str,
+    category: str,
+    search_str: str | None,
+    table: TableData,
+    choices: Sequence[str],
+  ) -> bool:
     if len(table) <= 1:
       if category != "all":
         self.choice_error(f"No matching {name} found:", search_str, choices)
@@ -343,8 +395,8 @@ class DescribeSubcommand(CrossbenchSubcommand):
     return True
 
   def _benchmark_help_data(
-      self,
-      search_str: str | None = None,
+    self,
+    search_str: str | None = None,
   ) -> dict[str, BenchmarkDescription]:
     benchmarks_data: dict[str, BenchmarkDescription] = {}
     for benchmark_cls in self.cli.BENCHMARKS:
@@ -357,25 +409,27 @@ class DescribeSubcommand(CrossbenchSubcommand):
       subcommand = self.cli.benchmark_subcommands[benchmark_cls]
       subcommand.init_cli_parser()
       groups = ArgumentGroupHelp.from_parser(
-          subcommand.parser, default_title="Benchmark Options")
+        subcommand.parser, default_title="Benchmark Options"
+      )
       benchmark_info["flags"] = [g.to_json() for g in groups]
       benchmarks_data[benchmark_cls.NAME] = benchmark_info
     return benchmarks_data
 
-  def _probe_help_data(self,
-                       search_str: str | None) -> dict[str, dict[str, str]]:
+  def _probe_help_data(
+    self, search_str: str | None
+  ) -> dict[str, dict[str, str]]:
     config_parsers: list[ConfigParser] = [
-        probe_cls.config_parser()
-        for probe_cls in GENERAL_PURPOSE_PROBES
-        if not search_str or probe_cls.NAME == search_str
+      probe_cls.config_parser()
+      for probe_cls in GENERAL_PURPOSE_PROBES
+      if not search_str or probe_cls.NAME == search_str
     ]
     return self._config_parser_help_data(config_parsers)
 
   def _network_help_data(self, search_str: str | None) -> dict[str, str]:
     network_data: dict[str, str] = {
-        network_type.name: network_type.help
-        for network_type in NetworkType
-        if not search_str or network_type.name.lower() == search_str
+      network_type.name: network_type.help
+      for network_type in NetworkType
+      if not search_str or network_type.name.lower() == search_str
     }
     # Print config details if any network info is returned.
     if network_data:
@@ -397,7 +451,8 @@ class DescribeSubcommand(CrossbenchSubcommand):
     return env_data
 
   def _config_object_help_data(
-      self, search_str: str | None) -> dict[str, dict[str, str]]:
+    self, search_str: str | None
+  ) -> dict[str, dict[str, str]]:
     usage_lookup: dict[str, list[str]] = defaultdict(list)
     config_parsers: list[ConfigParser] = []
     for config_object_cls in self.config_classes():
@@ -405,17 +460,19 @@ class DescribeSubcommand(CrossbenchSubcommand):
       config_parsers.append(config_parser)
       for arg_config_object_cls in config_parser.config_arg_types():
         usage_lookup[arg_config_object_cls.__name__].append(
-            config_parser.cls_name)
+          config_parser.cls_name
+        )
     config_parsers = [
-        parser for parser in config_parsers
-        if not search_str or search_str == parser.cls_name.lower()
+      parser
+      for parser in config_parsers
+      if not search_str or search_str == parser.cls_name.lower()
     ]
     return self._config_parser_help_data(config_parsers, usage_lookup)
 
   def _config_parser_help_data(
-      self,
-      config_parsers: list[ConfigParser],
-      usage_lookup: Mapping[str, list[str]] | None = None,
+    self,
+    config_parsers: list[ConfigParser],
+    usage_lookup: Mapping[str, list[str]] | None = None,
   ) -> dict[str, dict[str, str]]:
     config_data: dict[str, dict[str, str]] = {}
     for config_parser in config_parsers:

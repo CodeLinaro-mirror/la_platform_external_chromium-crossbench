@@ -7,16 +7,20 @@ from __future__ import annotations
 import re
 from typing import override
 
-from crossbench.browsers.version import BrowserVersion, \
-    BrowserVersionChannel, VersionParseResult
+from crossbench.browsers.version import (
+  BrowserVersion,
+  BrowserVersionChannel,
+  VersionParseResult,
+)
 
 _SIMPLE_VERSION_RE = re.compile(
-    r"webkit(?:[ -]nightly)?[ -]?"
-    r"(?P<parts>\d+)(?:@main)?", re.I)
+  r"webkit(?:[ -]nightly)?[ -]?"
+  r"(?P<parts>\d+)(?:@main)?",
+  re.I,
+)
 
 
 class WebKitVersion(BrowserVersion):
-
   @classmethod
   @override
   def default_channel(cls) -> BrowserVersionChannel:
@@ -30,8 +34,9 @@ class WebKitVersion(BrowserVersion):
     full_version = full_version.strip()
     if matches := _SIMPLE_VERSION_RE.fullmatch(full_version):
       part = int(matches["parts"])
-      return VersionParseResult((part,), BrowserVersionChannel.PRE_ALPHA,
-                                f"WebKit Nightly {part}")
+      return VersionParseResult(
+        (part,), BrowserVersionChannel.PRE_ALPHA, f"WebKit Nightly {part}"
+      )
     raise cls.parse_error("Invalid version", full_version)
 
   @property

@@ -8,13 +8,14 @@ import dataclasses
 from typing import override
 
 from crossbench.benchmarks.loading.config.login.base import BaseLoginBlock
-from crossbench.benchmarks.loading.config.login.login_type import \
-    LOGIN_LOOKUP, LoginType
+from crossbench.benchmarks.loading.config.login.login_type import (
+  LOGIN_LOOKUP,
+  LoginType,
+)
 
 
 @dataclasses.dataclass(frozen=True)
 class LoginBlock(BaseLoginBlock):
-
   @classmethod
   @override
   # Returns BaseLoginBlock (PresetLoginBlock) instead of Self.

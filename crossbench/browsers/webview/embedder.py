@@ -9,8 +9,15 @@ import collections
 import logging
 import os
 import shlex
-from typing import TYPE_CHECKING, Final, MutableMapping, MutableSet, \
-    Sequence, cast, override
+from typing import (
+  TYPE_CHECKING,
+  Final,
+  MutableMapping,
+  MutableSet,
+  Sequence,
+  cast,
+  override,
+)
 
 from immutabledict import immutabledict
 from selenium import webdriver
@@ -23,47 +30,47 @@ from crossbench.cli.ui import ui
 
 if TYPE_CHECKING:
   from crossbench import path as pth
-  from crossbench.benchmarks.embedder.embedder_benchmark import \
-      EmbedderBenchmark
+  from crossbench.benchmarks.embedder.embedder_benchmark import (
+    EmbedderBenchmark,
+  )
   from crossbench.browsers.settings import Settings
   from crossbench.runner.groups.session import BrowserSessionRunGroup
   from crossbench.types import Json
 
-EMBEDDER_SHORT_NAME_TO_PACKAGE: Final[immutabledict[str, str]] = immutabledict({
-    "googlequicksearchbox":
-        "com.google.android.googlequicksearchbox",
-    "velvet":
-        "com.google.android.googlequicksearchbox",
-    "maitier":
-        "com.google.android.libraries.ads.mobile.maitier.testapps.webview",
-    "webview_test_app":
-        "com.google.android.libraries.ads.mobile.maitier.testapps.webview",
-    "webview_embedder":
-        "org.chromium.webview_shell",
-})
+EMBEDDER_SHORT_NAME_TO_PACKAGE: Final[immutabledict[str, str]] = immutabledict(
+  {
+    "googlequicksearchbox": "com.google.android.googlequicksearchbox",
+    "velvet": "com.google.android.googlequicksearchbox",
+    "maitier": "com.google.android.libraries.ads.mobile.maitier.testapps.webview",
+    "webview_test_app": "com.google.android.libraries.ads.mobile.maitier.testapps.webview",
+    "webview_embedder": "org.chromium.webview_shell",
+  }
+)
 
 
 class WebviewEmbedder(Webview):
-
   _INSTALLED_APK_PATHS: Final[MutableMapping[str, MutableSet[pth.AnyPath]]] = (
-      collections.defaultdict(set))
+    collections.defaultdict(set)
+  )
 
   @classmethod
   @override
   def attributes(cls) -> BrowserAttributes:
     return super().attributes() | BrowserAttributes.WEBVIEW_EMBEDDER
 
-  def __init__(self,
-               label: str,
-               path: pth.AnyPath | None = None,
-               settings: Settings | None = None) -> None:
+  def __init__(
+    self,
+    label: str,
+    path: pth.AnyPath | None = None,
+    settings: Settings | None = None,
+  ) -> None:
     super().__init__(label, path, settings)
     self._session: BrowserSessionRunGroup | None = None
 
   @override
-  def start(self,
-            session: BrowserSessionRunGroup,
-            startup_urls: Sequence[str] = ()) -> None:
+  def start(
+    self, session: BrowserSessionRunGroup, startup_urls: Sequence[str] = ()
+  ) -> None:
     self._validate_startup_urls(startup_urls)
     assert not startup_urls
     # Start is a no-op. Embedder activity will be started by the Benchmark.
@@ -74,7 +81,7 @@ class WebviewEmbedder(Webview):
     # Benchmark.
     session_benchmark = cast("EmbedderBenchmark", session.benchmark)
     # Push files from host to device before device setup.
-    for (source, destination) in session_benchmark.embedder_push_files:
+    for source, destination in session_benchmark.embedder_push_files:
       self.platform.push(source, destination)
     if setup_command_config := session_benchmark.embedder_setup_command_config:
       for command in setup_command_config.commands:
@@ -83,10 +90,14 @@ class WebviewEmbedder(Webview):
     atexit.register(self._teardown)
     self._backup_chrome_flags()
     args = self._get_browser_flags_for_session(session)
-    logging.debug("%s: setting flags file contents in %s", self,
-                  self._chrome_command_line_path)
-    self.platform.write_text(self._chrome_command_line_path,
-                             shlex.join(("webview", *args)))
+    logging.debug(
+      "%s: setting flags file contents in %s",
+      self,
+      self._chrome_command_line_path,
+    )
+    self.platform.write_text(
+      self._chrome_command_line_path, shlex.join(("webview", *args))
+    )
     self.adb_force_stop()
     self._log_browser_start(args)
     self._is_running = True
@@ -109,10 +120,12 @@ class WebviewEmbedder(Webview):
       self._session = None
 
   @override
-  def _start_driver(self,
-                    session: BrowserSessionRunGroup,
-                    driver_path: pth.AnyPath,
-                    startup_urls: Sequence[str] = ()) -> ChromiumDriver:
+  def _start_driver(
+    self,
+    session: BrowserSessionRunGroup,
+    driver_path: pth.AnyPath,
+    startup_urls: Sequence[str] = (),
+  ) -> ChromiumDriver:
     assert not startup_urls
     options = self._create_options(session, [])
     service = webdriver.ChromeService(executable_path=os.fspath(driver_path))
@@ -145,28 +158,33 @@ class WebviewEmbedder(Webview):
     raise RuntimeError("Failed to attach driver")
 
   @override
-  def _create_options(self,
-                      session: BrowserSessionRunGroup,
-                      args: Sequence[str],
-                      startup_urls: Sequence[str] = ()) -> ChromeOptions:
+  def _create_options(
+    self,
+    session: BrowserSessionRunGroup,
+    args: Sequence[str],
+    startup_urls: Sequence[str] = (),
+  ) -> ChromeOptions:
     del args
     assert not startup_urls
     options = ChromeOptions()
     options.add_experimental_option("androidPackage", self.android_package)
     session_benchmark = cast("EmbedderBenchmark", session.benchmark)
     if process_name := session_benchmark.embedder_process_name:
-      options.add_experimental_option("androidProcess",
-                                      f"{self.android_package}:{process_name}")
+      options.add_experimental_option(
+        "androidProcess", f"{self.android_package}:{process_name}"
+      )
     options.add_experimental_option("androidUseRunningApp", True)
     return options
 
   @override
-  def _log_browser_start(self,
-                         args: tuple[str, ...],
-                         driver_path: pth.AnyPath | None = None) -> None:
+  def _log_browser_start(
+    self, args: tuple[str, ...], driver_path: pth.AnyPath | None = None
+  ) -> None:
     super()._log_browser_start(args, driver_path)
-    logging.info("📱 STARTING BROWSER Embedder: %s",
-                 self.platform.app_version(self.android_package))
+    logging.info(
+      "📱 STARTING BROWSER Embedder: %s",
+      self.platform.app_version(self.android_package),
+    )
 
   @override
   def _lookup_android_package(self, path: pth.AnyPath) -> str:
@@ -193,10 +211,9 @@ class WebviewEmbedder(Webview):
     super()._setup_binary()
 
   @override
-  def performance_mark(self,
-                       name: str,
-                       detail: Json = None,
-                       prefix: str = "crossbench-") -> None:
+  def performance_mark(
+    self, name: str, detail: Json = None, prefix: str = "crossbench-"
+  ) -> None:
     # The driver, and Webview instance might not exist when this is called
     # See also comments above on .start()
     logging.debug("%s: skipping performance_mark: %s%s", self, prefix, name)

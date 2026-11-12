@@ -24,13 +24,14 @@ if TYPE_CHECKING:
 @dataclasses.dataclass(frozen=True)
 class ProbeListConfig(ConfigObject):
   _probes: immutabledict[str, Probe] = dataclasses.field(
-      compare=True, hash=True)
+    compare=True, hash=True
+  )
 
   @classmethod
   def from_probes(
-      cls,
-      probe_configs: Iterable[ProbeConfig] = (),
-      probes: Iterable[Probe] = (),
+    cls,
+    probe_configs: Iterable[ProbeConfig] = (),
+    probes: Iterable[Probe] = (),
   ) -> Self:
     accumulator: dict[str, Probe] = {}
     for probe_config in probe_configs:
@@ -60,7 +61,8 @@ class ProbeListConfig(ConfigObject):
         cls._verify_no_conflicts(no_probes, config_from_args)
         config_from_file = cls._exclude(config_from_file, no_probes)
       with exception.annotate(
-          f"Merging probe config ({probe_config_path.name}) with cli --probe:"):
+        f"Merging probe config ({probe_config_path.name}) with cli --probe:"
+      ):
         return config_from_file.merge(config_from_args, should_override=True)
     raise exception.UnreachableError
 
@@ -96,7 +98,8 @@ class ProbeListConfig(ConfigObject):
       with exception.annotate(f"Parsing probe config probes['{probe_name}']"):
         probe_dict = ObjectParser.dict(config_data, f"probes[{probe_name!r}]")
         probe_configs.append(
-            ProbeConfig.parse_probe_dict(probe_name, probe_dict))
+          ProbeConfig.parse_probe_dict(probe_name, probe_dict)
+        )
     return cls.from_probes(probe_configs)
 
   @classmethod
@@ -110,12 +113,15 @@ class ProbeListConfig(ConfigObject):
     return cls.from_probes(probes=filtered_probes)
 
   @classmethod
-  def _verify_no_conflicts(cls, no_probes: frozenset[str],
-                           config_from_args: Self) -> None:
+  def _verify_no_conflicts(
+    cls, no_probes: frozenset[str], config_from_args: Self
+  ) -> None:
     explicit_probes = {p.name for p in config_from_args.probes}
     if conflicting := (no_probes & explicit_probes):
-      raise argparse.ArgumentTypeError("Cannot both enable and disable probes: "
-                                       f"{', '.join(sorted(conflicting))}")
+      raise argparse.ArgumentTypeError(
+        "Cannot both enable and disable probes: "
+        f"{', '.join(sorted(conflicting))}"
+      )
 
   @property
   def probes(self) -> tuple[Probe, ...]:

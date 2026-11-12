@@ -9,8 +9,11 @@ import os
 import shutil
 from typing import TYPE_CHECKING, ClassVar, Final, Iterable, override
 
-from crossbench.browsers.downloader import ArchiveUrlCandidate, \
-    DMGArchiveHelper, Downloader
+from crossbench.browsers.downloader import (
+  ArchiveUrlCandidate,
+  DMGArchiveHelper,
+  Downloader,
+)
 from crossbench.browsers.firefox.version import FirefoxVersion
 from crossbench.helper import url_helper
 
@@ -20,13 +23,13 @@ if TYPE_CHECKING:
   from crossbench.plt.base import Platform
 
 _PLATFORM_NAME_LOOKUP: Final[dict[tuple[str, str], str]] = {
-    ("win", "ia32"): "win32",
-    ("win", "x64"): "win64",
-    ("win", "arm64"): "win-aarch64",
-    ("linux", "x64"): "linux-x86-64",
-    ("linux", "ia32"): "linux-i686",
-    ("macos", "x64"): "mac",
-    ("macos", "arm64"): "mac",
+  ("win", "ia32"): "win32",
+  ("win", "x64"): "win64",
+  ("win", "arm64"): "win-aarch64",
+  ("linux", "x64"): "linux-x86-64",
+  ("linux", "ia32"): "linux-i686",
+  ("macos", "x64"): "mac",
+  ("macos", "arm64"): "mac",
 }
 
 
@@ -42,7 +45,8 @@ class FirefoxDownloader(Downloader):
   @classmethod
   @override
   def _get_loader_cls(
-      cls, browser_platform: Platform) -> type[FirefoxDownloader] | None:
+    cls, browser_platform: Platform
+  ) -> type[FirefoxDownloader] | None:
     if browser_platform.is_macos:
       return FirefoxDownloaderMacOS
     if browser_platform.is_linux:
@@ -57,29 +61,39 @@ class FirefoxDownloader(Downloader):
     return FirefoxVersion.is_valid_unique(path_or_identifier)
 
   @classmethod
-  def _is_valid(cls, path_or_identifier: pth.AnyPathLike,
-                browser_platform: Platform) -> bool:
+  def _is_valid(
+    cls, path_or_identifier: pth.AnyPathLike, browser_platform: Platform
+  ) -> bool:
     if cls.is_valid_version(str(path_or_identifier)):
       return True
     path = browser_platform.path(path_or_identifier)
-    return (browser_platform.exists(path) and
-            path.name.endswith(cls.ARCHIVE_SUFFIX))
+    return browser_platform.exists(path) and path.name.endswith(
+      cls.ARCHIVE_SUFFIX
+    )
 
-  def __init__(self,
-               version_identifier: str | pth.LocalPath,
-               browser_type: str,
-               platform_name: str,
-               browser_platform: Platform,
-               reinstall: bool = False) -> None:
+  def __init__(
+    self,
+    version_identifier: str | pth.LocalPath,
+    browser_type: str,
+    platform_name: str,
+    browser_platform: Platform,
+    reinstall: bool = False,
+  ) -> None:
     assert not browser_type, f"Unexpected browser_type: {browser_type}"
     assert not platform_name, f"Unexpected platform_name: {platform_name}"
     firefox_platform_name = _PLATFORM_NAME_LOOKUP.get(browser_platform.type_key)
     if not firefox_platform_name:
       raise ValueError(
-          "Unsupported macOS architecture for downloading Firefox: "
-          f"got={browser_platform.machine}")
-    super().__init__(version_identifier, "firefox", firefox_platform_name,
-                     browser_platform, reinstall)
+        "Unsupported macOS architecture for downloading Firefox: "
+        f"got={browser_platform.machine}"
+      )
+    super().__init__(
+      version_identifier,
+      "firefox",
+      firefox_platform_name,
+      browser_platform,
+      reinstall,
+    )
 
   @override
   def _parse_version(self, version_identifier: str) -> BrowserVersion:
@@ -98,20 +112,24 @@ class FirefoxDownloader(Downloader):
 
   def _find_exact_archive_url(self) -> ArchiveUrlCandidate:
     folder_url = (
-        f"{self.STORAGE_URL}{self.requested_version.parts_str}/mac/en-GB")
+      f"{self.STORAGE_URL}{self.requested_version.parts_str}/mac/en-GB"
+    )
     return next(iter(self._archive_urls(folder_url, self.requested_version)))
 
   @override
   def _download_archive(self, archive_url: str, tmp_dir: pth.LocalPath) -> None:
     self._browser_platform.download_to(
-        archive_url, tmp_dir / f"archive.{self.ARCHIVE_SUFFIX}")
+      archive_url, tmp_dir / f"archive.{self.ARCHIVE_SUFFIX}"
+    )
     archive_candidates = list(tmp_dir.glob("*"))
     assert len(archive_candidates) == 1, (
-        f"Download tmp dir contains more than one file: {tmp_dir}"
-        f"{archive_candidates}")
+      f"Download tmp dir contains more than one file: {tmp_dir}"
+      f"{archive_candidates}"
+    )
     candidate = archive_candidates[0]
     assert not self._archive_path.exists(), (
-        f"Archive was already downloaded: {self._archive_path}")
+      f"Archive was already downloaded: {self._archive_path}"
+    )
     shutil.move(os.fspath(candidate), os.fspath(self._archive_path))
 
   @abc.abstractmethod
@@ -125,8 +143,9 @@ class FirefoxDownloaderLinux(FirefoxDownloader):
 
   @classmethod
   @override
-  def is_valid(cls, path_or_identifier: pth.AnyPathLike,
-               browser_platform: Platform) -> bool:
+  def is_valid(
+    cls, path_or_identifier: pth.AnyPathLike, browser_platform: Platform
+  ) -> bool:
     return cls._is_valid(path_or_identifier, browser_platform)
 
   @override
@@ -135,10 +154,14 @@ class FirefoxDownloaderLinux(FirefoxDownloader):
     return self._extracted_path() / "firefox-bin"
 
   @override
-  def _archive_urls(self, folder_url: str,
-                    version: BrowserVersion) -> Iterable[ArchiveUrlCandidate]:
-    return (ArchiveUrlCandidate(
-        version, f"{folder_url}/firefox-{version.parts_str}.tar.bz2"),)
+  def _archive_urls(
+    self, folder_url: str, version: BrowserVersion
+  ) -> Iterable[ArchiveUrlCandidate]:
+    return (
+      ArchiveUrlCandidate(
+        version, f"{folder_url}/firefox-{version.parts_str}.tar.bz2"
+      ),
+    )
 
   @override
   def _install_archive(self, archive_path: pth.LocalPath) -> None:
@@ -151,33 +174,41 @@ class FirefoxDownloaderMacOS(FirefoxDownloader):
 
   @classmethod
   @override
-  def is_valid(cls, path_or_identifier: pth.AnyPathLike,
-               browser_platform: Platform) -> bool:
+  def is_valid(
+    cls, path_or_identifier: pth.AnyPathLike, browser_platform: Platform
+  ) -> bool:
     return cls._is_valid(path_or_identifier, browser_platform)
 
   @override
   def _requested_version_validation(self) -> None:
     major_version: int = self.requested_version.major
-    if (self._browser_platform.is_macos and self._browser_platform.is_arm64 and
-        major_version < self.MIN_MAC_ARM64_MILESTONE):
+    if (
+      self._browser_platform.is_macos
+      and self._browser_platform.is_arm64
+      and major_version < self.MIN_MAC_ARM64_MILESTONE
+    ):
       raise ValueError(
-          "Native Mac arm64/m1 Firefox version is available with v84, "
-          f"but requested {major_version}.")
+        "Native Mac arm64/m1 Firefox version is available with v84, "
+        f"but requested {major_version}."
+      )
 
   @override
   def _download_archive(self, archive_url: str, tmp_dir: pth.LocalPath) -> None:
     assert self._browser_platform.is_macos
-    if self._browser_platform.is_arm64 and (self.requested_version.major
-                                            < self.MIN_MAC_ARM64_MILESTONE):
+    if self._browser_platform.is_arm64 and (
+      self.requested_version.major < self.MIN_MAC_ARM64_MILESTONE
+    ):
       raise ValueError(
-          "Firefox Arm64 Apple Silicon is only available starting with "
-          f"{self.MIN_MAC_ARM64_MILESTONE}, "
-          f"but requested {self.requested_version} is too old.")
+        "Firefox Arm64 Apple Silicon is only available starting with "
+        f"{self.MIN_MAC_ARM64_MILESTONE}, "
+        f"but requested {self.requested_version} is too old."
+      )
     super()._download_archive(archive_url, tmp_dir)
 
   @override
-  def _archive_urls(self, folder_url: str,
-                    version: BrowserVersion) -> Iterable[ArchiveUrlCandidate]:
+  def _archive_urls(
+    self, folder_url: str, version: BrowserVersion
+  ) -> Iterable[ArchiveUrlCandidate]:
     archive_name = url_helper.quote(f"firefox {version.parts_str}.dmg")
     return (ArchiveUrlCandidate(version, f"{folder_url}/{archive_name}"),)
 
@@ -195,15 +226,16 @@ class FirefoxDownloaderMacOS(FirefoxDownloader):
     extracted_path = self._extracted_path()
     DMGArchiveHelper.extract(self.host_platform, archive_path, extracted_path)
     assert extracted_path.exists(), (
-        f"Could not extract {archive_path} into {extracted_path}")
+      f"Could not extract {archive_path} into {extracted_path}"
+    )
 
 
 class FirefoxDownloaderWin(FirefoxDownloader):
-
   @classmethod
   @override
-  def is_valid(cls, path_or_identifier: pth.AnyPathLike,
-               browser_platform: Platform) -> bool:
+  def is_valid(
+    cls, path_or_identifier: pth.AnyPathLike, browser_platform: Platform
+  ) -> bool:
     return False
 
   @override

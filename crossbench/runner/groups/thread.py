@@ -26,10 +26,9 @@ class RunThreadGroup(threading.Thread):
   - If runs are executed in parallel, multiple RunThreadGroup are used
   """
 
-  def __init__(self,
-               runs: Iterable[Run],
-               index: int = 0,
-               throw: bool = False) -> None:
+  def __init__(
+    self, runs: Iterable[Run], index: int = 0, throw: bool = False
+  ) -> None:
     super().__init__()
     self._index: Final[int] = index
     self._exceptions: Final[exception.Annotator] = exception.Annotator(throw)
@@ -37,9 +36,9 @@ class RunThreadGroup(threading.Thread):
     assert self._runs, "Got unexpected empty runs list"
     self._runner: Final[Runner] = self._runs[0].runner
     self._total_run_count: Final[int] = len(self._runner.runs)
-    self._browser_sessions: Final[
-        OrderedSet[BrowserSessionRunGroup]] = OrderedSet(
-            run.browser_session for run in self._runs)
+    self._browser_sessions: Final[OrderedSet[BrowserSessionRunGroup]] = (
+      OrderedSet(run.browser_session for run in self._runs)
+    )
     self.is_dry_run: bool = False
     self._verify_contains_all_browser_session_runs()
     self._verify_same_runner()
@@ -51,8 +50,9 @@ class RunThreadGroup(threading.Thread):
     for browser_session in self._browser_sessions:
       for session_run in browser_session.runs:
         assert session_run in runs_set, (
-            f"BrowserSession {browser_session} is not allowed to have "
-            f"{session_run} in another RunThreadGroup.")
+          f"BrowserSession {browser_session} is not allowed to have "
+          f"{session_run} in another RunThreadGroup."
+        )
 
   def _verify_same_runner(self) -> None:
     for run in self._runs:
@@ -106,8 +106,8 @@ class RunThreadGroup(threading.Thread):
     self.runner.exceptions.extend(self._exceptions)
 
   def _run_browser_session(
-      self,
-      browser_session: BrowserSessionRunGroup,
+    self,
+    browser_session: BrowserSessionRunGroup,
   ) -> ResumeMode:
     if browser_session.is_single_run:
       self._log_run(browser_session.first_run)
@@ -116,8 +116,8 @@ class RunThreadGroup(threading.Thread):
     with browser_session.open(self.is_dry_run) as is_success:
       if not is_success:
         logging.warning(
-            "Browser failed to start for %s, continuing with the next run.",
-            browser_session,
+          "Browser failed to start for %s, continuing with the next run.",
+          browser_session,
         )
         browser_session.handle_startup_failure()
         return ResumeMode.CONTINUE
@@ -129,9 +129,9 @@ class RunThreadGroup(threading.Thread):
     return ResumeMode.CONTINUE
 
   def _run_browser_session_run(
-      self,
-      browser_session: BrowserSessionRunGroup,
-      run: Run,
+    self,
+    browser_session: BrowserSessionRunGroup,
+    run: Run,
   ) -> ResumeMode:
     if not browser_session.is_single_run:
       self._log_run(run)
@@ -157,7 +157,7 @@ class RunThreadGroup(threading.Thread):
 
 
 class RunMainGroup(RunThreadGroup):
-  """ Renamed subclass for single-threaded runs"""
+  """Renamed subclass for single-threaded runs"""
 
   def start(self) -> None:
     raise RuntimeError("RunMainGroup cannot run on a background thread")

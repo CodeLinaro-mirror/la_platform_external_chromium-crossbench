@@ -10,14 +10,16 @@ from typing import cast
 import crossbench.path as pth
 from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.probes.all import TracingProbe
-from crossbench.probes.cb_perfetto.tracing import MINIMAL_CONFIG, \
-    RecordFormat, RecordMode
+from crossbench.probes.cb_perfetto.tracing import (
+  MINIMAL_CONFIG,
+  RecordFormat,
+  RecordMode,
+)
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 
 
 class TracingProbeTestCase(CrossbenchFakeFsTestCase):
-
   def test_parse_empty_config(self):
     probe: TracingProbe = TracingProbe.parse_dict({})
     self.assertEqual(probe.categories, MINIMAL_CONFIG)
@@ -27,7 +29,8 @@ class TracingProbeTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse_config(self):
     probe: TracingProbe = TracingProbe.parse_dict(
-        {"categories": ["one", "two"]})
+      {"categories": ["one", "two"]}
+    )
     self.assertEqual(probe.categories, {"one", "two"} | MINIMAL_CONFIG)
     self.assertEqual(probe.record_mode, RecordMode.CONTINUOUSLY)
     self.assertEqual(probe.record_format, RecordFormat.PROTO)
@@ -35,14 +38,17 @@ class TracingProbeTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse_config_proto_json(self):
     probe: TracingProbe = TracingProbe.parse_dict(
-        {"record_format": "proto-json"})
+      {"record_format": "proto-json"}
+    )
     self.assertEqual(probe.record_format, RecordFormat.PROTO_JSON)
 
   def test_parse_config_empty(self):
-    probe: TracingProbe = TracingProbe.parse_dict({
+    probe: TracingProbe = TracingProbe.parse_dict(
+      {
         "preset": "empty",
         "categories": ["one", "two"],
-    })
+      }
+    )
     self.assertEqual(probe.categories, {"one", "two"})
 
   def test_parse_trace_config_file_invalid(self):
@@ -67,17 +73,20 @@ class TracingProbeTestCase(CrossbenchFakeFsTestCase):
 
     with trace_config_file.open("w", encoding="utf-8") as f:
       json.dump({"startup_duration": 10, "trace_config": {}}, f)
-    with self.assertRaisesRegex(argparse.ArgumentTypeError,
-                                "no trace categories"):
+    with self.assertRaisesRegex(
+      argparse.ArgumentTypeError, "no trace categories"
+    ):
       TracingProbe.parse_dict({"trace_config": str(trace_config_file)})
 
     with trace_config_file.open("w", encoding="utf-8") as f:
       json.dump(
-          {
-              "startup_duration": 10,
-              "trace_config": {},
-              "result_file": "path/to/result",
-          }, f)
+        {
+          "startup_duration": 10,
+          "trace_config": {},
+          "result_file": "path/to/result",
+        },
+        f,
+      )
     with self.assertRaisesRegex(argparse.ArgumentTypeError, "result_file"):
       TracingProbe.parse_dict({"trace_config": str(trace_config_file)})
 
@@ -85,14 +94,17 @@ class TracingProbeTestCase(CrossbenchFakeFsTestCase):
     trace_config_file = pth.LocalPath("trace_config_file.json")
     with trace_config_file.open("w", encoding="utf-8") as f:
       json.dump(
-          {
-              "startup_duration": 10,
-              "trace_config": {
-                  "included_categories": ["one", "two"],
-              },
-          }, f)
+        {
+          "startup_duration": 10,
+          "trace_config": {
+            "included_categories": ["one", "two"],
+          },
+        },
+        f,
+      )
     probe: TracingProbe = TracingProbe.parse_dict(
-        {"trace_config": str(trace_config_file)})
+      {"trace_config": str(trace_config_file)}
+    )
     self.assertFalse(probe.categories)
     trace_config_file = probe.trace_config_file
     self.assertIsNotNone(trace_config_file)
@@ -103,24 +115,32 @@ class TracingProbeTestCase(CrossbenchFakeFsTestCase):
     trace_config_file = pth.LocalPath("trace_config_file.json")
     with trace_config_file.open("w", encoding="utf-8") as f:
       json.dump(
-          {
-              "startup_duration": 10,
-              "trace_config": {
-                  "included_categories": ["one", "two"],
-              },
-          }, f)
-    with self.assertRaisesRegex(argparse.ArgumentTypeError,
-                                "trace categories or a trace_config"):
-      TracingProbe.parse_dict({
+        {
+          "startup_duration": 10,
+          "trace_config": {
+            "included_categories": ["one", "two"],
+          },
+        },
+        f,
+      )
+    with self.assertRaisesRegex(
+      argparse.ArgumentTypeError, "trace categories or a trace_config"
+    ):
+      TracingProbe.parse_dict(
+        {
           "preset": "v8",
           "trace_config": str(trace_config_file),
-      })
-    with self.assertRaisesRegex(argparse.ArgumentTypeError,
-                                "trace categories or a trace_config"):
-      TracingProbe.parse_dict({
+        }
+      )
+    with self.assertRaisesRegex(
+      argparse.ArgumentTypeError, "trace categories or a trace_config"
+    ):
+      TracingProbe.parse_dict(
+        {
           "categories": ["one", "two"],
           "trace_config": str(trace_config_file),
-      })
+        }
+      )
 
   def test_parse_example_config(self):
     config_file = test_helper.config_dir() / "doc/probe/tracing.config.hjson"

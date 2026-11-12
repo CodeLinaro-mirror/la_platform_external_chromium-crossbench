@@ -24,10 +24,12 @@ from crossbench.plt import PLATFORM, Platform
 if TYPE_CHECKING:
   from crossbench.plt.types import TupleCmdArgs
 
-_WPR_PORT_RE: re.Pattern[str] = re.compile(r".*Starting server on "
-                                           r"(?P<protocol>http|https)://"
-                                           r"(?P<host>[^:]+|\[.+\]):"
-                                           r"(?P<port>\d+)")
+_WPR_PORT_RE: re.Pattern[str] = re.compile(
+  r".*Starting server on "
+  r"(?P<protocol>http|https)://"
+  r"(?P<host>[^:]+|\[.+\]):"
+  r"(?P<port>\d+)"
+)
 
 
 class WprStartupError(RuntimeError):
@@ -37,22 +39,25 @@ class WprStartupError(RuntimeError):
 class WprBase(abc.ABC):
   NAME: ClassVar[str] = ""
 
-  def __init__(self,
-               archive_path: pth.AnyPath,
-               bin_path: pth.AnyPath,
-               http_port: int = 0,
-               https_port: int = 0,
-               host: str = "127.0.0.1",
-               inject_scripts: Iterable[pth.AnyPath] | None = None,
-               key_file: pth.AnyPath | None = None,
-               cert_file: pth.AnyPath | None = None,
-               log_path: pth.LocalPath | None = None,
-               run_as_root: bool = False,
-               platform: Platform = PLATFORM) -> None:
+  def __init__(
+    self,
+    archive_path: pth.AnyPath,
+    bin_path: pth.AnyPath,
+    http_port: int = 0,
+    https_port: int = 0,
+    host: str = "127.0.0.1",
+    inject_scripts: Iterable[pth.AnyPath] | None = None,
+    key_file: pth.AnyPath | None = None,
+    cert_file: pth.AnyPath | None = None,
+    log_path: pth.LocalPath | None = None,
+    run_as_root: bool = False,
+    platform: Platform = PLATFORM,
+  ) -> None:
     self._platform: Final[Platform] = platform
     self._process: subprocess.Popen | None = None
-    self._log_path: Final[pth.LocalPath
-                          | None] = self._validate_log_path(log_path)
+    self._log_path: Final[pth.LocalPath | None] = self._validate_log_path(
+      log_path
+    )
     self._log_file: TextIO | None = None
     self._bin_path: Final[pth.AnyPath] = bin_path
     self._run_as_root: Final[bool] = run_as_root
@@ -72,21 +77,26 @@ class WprBase(abc.ABC):
       wpr_root = local_path
 
     self._archive_path: Final[pth.AnyPath] = self._validate_archive_path(
-        archive_path)
-    (self._device_http_port,
-     self._device_https_port) = self._validate_ports(http_port, https_port)
+      archive_path
+    )
+    (self._device_http_port, self._device_https_port) = self._validate_ports(
+      http_port, https_port
+    )
 
     self._host: str = self._validate_host(host)
     self._key_file: Final[pth.AnyPath] = self._validate_key_file(
-        wpr_root, key_file)
+      wpr_root, key_file
+    )
     self._cert_file: Final[pth.AnyPath] = self._validate_cert_file(
-        wpr_root, cert_file)
-    self._inject_scripts: Final[tuple[pth.AnyPath,
-                                      ...]] = self._validate_injected_scripts(
-                                          wpr_root, inject_scripts)
+      wpr_root, cert_file
+    )
+    self._inject_scripts: Final[tuple[pth.AnyPath, ...]] = (
+      self._validate_injected_scripts(wpr_root, inject_scripts)
+    )
 
   def _validate_log_path(
-      self, log_path: pth.LocalPath | None) -> pth.LocalPath | None:
+    self, log_path: pth.LocalPath | None
+  ) -> pth.LocalPath | None:
     if log_path:
       return PathParser.not_existing_path(log_path)
     return log_path
@@ -101,8 +111,10 @@ class WprBase(abc.ABC):
     else:
       https_port = NumberParser.port_number(https_port, "wpr https port")
     if http_port and http_port == https_port:
-      raise ValueError("http_port must be different from https_port, "
-                       f"but got twice: {http_port}")
+      raise ValueError(
+        "http_port must be different from https_port, "
+        f"but got twice: {http_port}"
+      )
     return (http_port, https_port)
 
   def _validate_host(self, host: str) -> str:
@@ -110,36 +122,42 @@ class WprBase(abc.ABC):
       assert host == "127.0.0.1", f"Unsupported local host: {host}"
     return host
 
-  def _validate_key_file(self, wpr_root: pth.LocalPath,
-                         key_file: pth.AnyPath | None) -> pth.AnyPath:
+  def _validate_key_file(
+    self, wpr_root: pth.LocalPath, key_file: pth.AnyPath | None
+  ) -> pth.AnyPath:
     if not key_file:
       key_file = wpr_root / "ecdsa_key.pem"
       if self._platform.is_remote:
         raise ValueError(
-            f"Missing key file for remote platform {self._platform}")
+          f"Missing key file for remote platform {self._platform}"
+        )
     if not self._platform.is_file(key_file):
       raise ValueError(f"Could not find ecdsa_key.pem file: {key_file}")
     return key_file
 
-  def _validate_cert_file(self, wpr_root: pth.LocalPath,
-                          cert_file: pth.AnyPath | None) -> pth.AnyPath:
+  def _validate_cert_file(
+    self, wpr_root: pth.LocalPath, cert_file: pth.AnyPath | None
+  ) -> pth.AnyPath:
     if not cert_file:
       cert_file = wpr_root / "ecdsa_cert.pem"
       if self._platform.is_remote:
         raise ValueError(
-            f"Missing cert file for remote platform {self._platform}")
+          f"Missing cert file for remote platform {self._platform}"
+        )
     if not self._platform.is_file(cert_file):
       raise ValueError(f"Could not find ecdsa_cert.pem file: {cert_file}")
     return cert_file
 
   def _validate_injected_scripts(
-      self, wpr_root: pth.LocalPath,
-      inject_scripts: Iterable[pth.AnyPath] | None) -> tuple[pth.AnyPath, ...]:
+    self, wpr_root: pth.LocalPath, inject_scripts: Iterable[pth.AnyPath] | None
+  ) -> tuple[pth.AnyPath, ...]:
     if inject_scripts is None:
       default_script = wpr_root / "deterministic.js"
       if self._platform.is_remote:
-        raise ValueError("Missing deterministic.js script "
-                         f"for remote platform {self._platform}")
+        raise ValueError(
+          "Missing deterministic.js script "
+          f"for remote platform {self._platform}"
+        )
       inject_scripts = [default_script]
     scripts = tuple(inject_scripts)
     for script in scripts:
@@ -177,15 +195,16 @@ class WprBase(abc.ABC):
   @property
   def base_cmd_flags(self) -> TupleCmdArgs:
     cmd: TupleCmdArgs = (
-        f"--host={self._host}",
-        f"--http_port={self._device_http_port}",
-        f"--https_port={self._device_https_port}",
-        f"--https_key_file={self._key_file}",
-        f"--https_cert_file={self._cert_file}",
+      f"--host={self._host}",
+      f"--http_port={self._device_http_port}",
+      f"--https_port={self._device_https_port}",
+      f"--https_key_file={self._key_file}",
+      f"--https_cert_file={self._cert_file}",
     )
     if self._inject_scripts is not None:
       injected_scripts = ",".join(
-          os.fspath(path) for path in self._inject_scripts)
+        os.fspath(path) for path in self._inject_scripts
+      )
       cmd += (f"--inject_scripts={injected_scripts}",)
     return cmd
 
@@ -195,9 +214,16 @@ class WprBase(abc.ABC):
         self._start_wpr()
         logging.info("WPR: waiting for startup...")
         self._wait_for_startup()
-      logging.info(("WPR: Started webpagereplay %s: "
-                    "DONE (platform=%s, http_port=%s, http_port=%s)"),
-                   self.NAME, self._platform, self.http_port, self.https_port)
+      logging.info(
+        (
+          "WPR: Started webpagereplay %s: "
+          "DONE (platform=%s, http_port=%s, http_port=%s)"
+        ),
+        self.NAME,
+        self._platform,
+        self.http_port,
+        self.https_port,
+      )
     except BaseException as e:
       if isinstance(e, Exception):
         logging.debug("WPR got startup errors: %s %s", type(e), e)
@@ -212,8 +238,9 @@ class WprBase(abc.ABC):
       cmd += ("sudo",)
     cmd += (self._bin_path,)
     cmd += self.cmd
-    logging.info("STARTING WPR on %s: %s", self._platform,
-                 shlex.join(map(str, cmd)))
+    logging.info(
+      "STARTING WPR on %s: %s", self._platform, shlex.join(map(str, cmd))
+    )
     self._num_parsed_ports = 0
     if self._log_path:
       self._log_file = self._log_path.open("w", encoding="utf-8")
@@ -223,10 +250,11 @@ class WprBase(abc.ABC):
     with change_cwd(work_dir):
       logging.debug("Logging to %s", self._log_path)
       self._process = self._platform.popen(
-          *cmd,
-          stdout=self._log_file,
-          stderr=self._log_file,
-          stdin=subprocess.DEVNULL)
+        *cmd,
+        stdout=self._log_file,
+        stderr=self._log_file,
+        stdin=subprocess.DEVNULL,
+      )
     if not self._process:
       raise WprStartupError(f"Could not start {type(self).__name__}")
 
@@ -278,14 +306,17 @@ class WprBase(abc.ABC):
     raise self._startup_failure()
 
   def _startup_failure(self) -> WprStartupError:
-    return WprStartupError("Could not start webpagereplay.\n"
-                           f"See log for more details: {self._log_path}")
+    return WprStartupError(
+      "Could not start webpagereplay.\n"
+      f"See log for more details: {self._log_path}"
+    )
 
   def _parse_wpr_log_line(self, line: str) -> bool:
     if "Failed to start server on" in line:
       logging.error(line)
       raise WprStartupError(
-          f"Could not start webpagereplay server, address in use: {line}")
+        f"Could not start webpagereplay server, address in use: {line}"
+      )
     line = line.strip()
     if match := _WPR_PORT_RE.match(line):
       protocol = match["protocol"].lower()
@@ -302,18 +333,23 @@ class WprBase(abc.ABC):
       if not self._host:
         raise WprStartupError(f"WPR: could not parse host from: {line}")
 
-    if self._num_parsed_ports == 2 and (self._device_http_port and
-                                        self._device_https_port):
-      logging.debug("WPR: https_port=%s http_port=%s", self._device_https_port,
-                    self._device_http_port)
+    if self._num_parsed_ports == 2 and (
+      self._device_http_port and self._device_https_port
+    ):
+      logging.debug(
+        "WPR: https_port=%s http_port=%s",
+        self._device_https_port,
+        self._device_http_port,
+      )
       return True
     return False
 
-  def _open_wpr_cmd_url(self,
-                        cmd: str,
-                        verbose: bool = True) -> url_helper.Response:
+  def _open_wpr_cmd_url(
+    self, cmd: str, verbose: bool = True
+  ) -> url_helper.Response:
     test_url = (
-        f"http://{self._host}:{self._host_http_port}/web-page-replay-{cmd}")
+      f"http://{self._host}:{self._host_http_port}/web-page-replay-{cmd}"
+    )
     return url_helper.get(test_url, timeout=1, verbose=verbose)
 
   def stop(self, force_shutdown: bool = False) -> None:
@@ -366,25 +402,37 @@ class WprRecorder(WprBase):
 class WprReplayServer(WprBase):
   NAME: ClassVar[str] = "replay"
 
-  def __init__(self,
-               archive_path: pth.AnyPath,
-               bin_path: pth.AnyPath,
-               http_port: int = 0,
-               https_port: int = 0,
-               host: str = "127.0.0.1",
-               inject_scripts: Iterable[pth.AnyPath] | None = None,
-               key_file: pth.AnyPath | None = None,
-               cert_file: pth.AnyPath | None = None,
-               no_archive_certificates: bool = False,
-               rules_file: pth.AnyPath | None = None,
-               log_path: pth.LocalPath | None = None,
-               fuzzy_url_matching: bool = True,
-               serve_chronologically: bool = True,
-               run_as_root: bool = False,
-               platform: Platform = PLATFORM) -> None:
-    super().__init__(archive_path, bin_path, http_port, https_port, host,
-                     inject_scripts, key_file, cert_file, log_path, run_as_root,
-                     platform)
+  def __init__(
+    self,
+    archive_path: pth.AnyPath,
+    bin_path: pth.AnyPath,
+    http_port: int = 0,
+    https_port: int = 0,
+    host: str = "127.0.0.1",
+    inject_scripts: Iterable[pth.AnyPath] | None = None,
+    key_file: pth.AnyPath | None = None,
+    cert_file: pth.AnyPath | None = None,
+    no_archive_certificates: bool = False,
+    rules_file: pth.AnyPath | None = None,
+    log_path: pth.LocalPath | None = None,
+    fuzzy_url_matching: bool = True,
+    serve_chronologically: bool = True,
+    run_as_root: bool = False,
+    platform: Platform = PLATFORM,
+  ) -> None:
+    super().__init__(
+      archive_path,
+      bin_path,
+      http_port,
+      https_port,
+      host,
+      inject_scripts,
+      key_file,
+      cert_file,
+      log_path,
+      run_as_root,
+      platform,
+    )
     self._no_archive_certificates: Final[bool] = no_archive_certificates
     self._rules_file: Final[pth.AnyPath | None] = rules_file
     self._fuzzy_url_matching: Final[bool] = fuzzy_url_matching
@@ -402,7 +450,7 @@ class WprReplayServer(WprBase):
     if self._no_archive_certificates:
       cmd += ("--no_archive_certificates",)
     if self._rules_file:
-      cmd += (f"--rules_file={self._rules_file }",)
+      cmd += (f"--rules_file={self._rules_file}",)
     if not self._fuzzy_url_matching:
       cmd += ("--disable_fuzzy_url_matching",)
     if self._serve_chronologically:

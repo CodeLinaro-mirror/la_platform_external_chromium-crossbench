@@ -10,14 +10,15 @@ from typing import Any, Sequence
 
 import hjson
 
-from crossbench.benchmarks.embedder.config.setup_commands import \
-    SetupCommandConfig, SetupCommandsConfig
+from crossbench.benchmarks.embedder.config.setup_commands import (
+  SetupCommandConfig,
+  SetupCommandsConfig,
+)
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 
 
 class SetupCommandsConfigTestCase(CrossbenchFakeFsTestCase):
-
   def test_parse_unknown_type(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       SetupCommandsConfig.parse(self)
@@ -31,16 +32,17 @@ class SetupCommandsConfigTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(len(config.commands[0].command), 0)
 
     config_data = {"setup_commands": {}}
-    with self.assertRaisesRegex(argparse.ArgumentTypeError,
-                                r"(?i)setup_commands.*non-empty"):
+    with self.assertRaisesRegex(
+      argparse.ArgumentTypeError, r"(?i)setup_commands.*non-empty"
+    ):
       SetupCommandsConfig.parse(config_data)
 
   def test_example(self):
     config_data = {
-        "setup_commands": {
-            "echo hello": ["echo", "hello"],
-            "list files": ["ls", "-l"],
-        },
+      "setup_commands": {
+        "echo hello": ["echo", "hello"],
+        "list files": ["ls", "-l"],
+      },
     }
     config = SetupCommandsConfig.parse(config_data)
     self.assert_example_commands(config.commands)
@@ -73,9 +75,9 @@ class SetupCommandsConfigTestCase(CrossbenchFakeFsTestCase):
     invalid_commands: list[Any] = [None, "", {}, "invalid string", 12]
     for invalid_command in invalid_commands:
       config_dict: dict[str, Any] = {
-          "setup_commands": {
-              "name": invalid_command,
-          },
+        "setup_commands": {
+          "name": invalid_command,
+        },
       }
       with self.subTest(invalid_command=invalid_command):
         with self.assertRaises(argparse.ArgumentTypeError):

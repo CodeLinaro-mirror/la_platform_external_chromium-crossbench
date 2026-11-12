@@ -6,8 +6,18 @@ from __future__ import annotations
 
 import collections
 import re
-from typing import ClassVar, Final, ItemsView, Iterable, Iterator, Self, \
-    TypeAlias, TypeVar, Union, override
+from typing import (
+  ClassVar,
+  Final,
+  ItemsView,
+  Iterable,
+  Iterator,
+  Self,
+  TypeAlias,
+  TypeVar,
+  Union,
+  override,
+)
 
 
 class FrozenFlagsError(RuntimeError):
@@ -15,7 +25,6 @@ class FrozenFlagsError(RuntimeError):
 
 
 class Freezable:
-
   def __init__(self, *args, **kwargs) -> None:
     self._frozen = False
     super().__init__(*args, **kwargs)
@@ -40,8 +49,9 @@ class Freezable:
     raise FrozenFlagsError(msg)
 
 
-FlagsData: TypeAlias = Union[None, dict[str, str], "BasicFlags",
-                             Iterable[str | tuple[str, str | None]]]
+FlagsData: TypeAlias = Union[
+  None, dict[str, str], "BasicFlags", Iterable[str | tuple[str, str | None]]
+]
 
 
 class BasicFlags(Freezable, collections.UserDict):
@@ -54,14 +64,17 @@ class BasicFlags(Freezable, collections.UserDict):
   _WHITE_SPACE_RE: Final[re.Pattern] = re.compile(r"\s+")
   _BASIC_FLAG_NAME_RE: Final[re.Pattern] = re.compile(r"(--?)[^\s=-][^\s=]*")
   # Handles space-separated flags: --foo="1" --bar  --baz='2'  --boo=3
-  VALUE_PATTERN: ClassVar[str] = (r"('(?P<value_single_quotes>[^']*)')|"
-                                  r"(\"(?P<value_double_quotes>[^\"]*)\")|"
-                                  r"(?P<value_no_quotes>[^'\" ]+)")
+  VALUE_PATTERN: ClassVar[str] = (
+    r"('(?P<value_single_quotes>[^']*)')|"
+    r"(\"(?P<value_double_quotes>[^\"]*)\")|"
+    r"(?P<value_no_quotes>[^'\" ]+)"
+  )
   END_OR_SEPARATOR_PATTERN: ClassVar[str] = r"(\s*\s\s*|$)"
   _PARSE_RE: ClassVar[re.Pattern] = re.compile(
-      fr"(?P<name>{_BASIC_FLAG_NAME_RE.pattern})"
-      fr"((?P<equal>=)({VALUE_PATTERN})?)?"
-      fr"{END_OR_SEPARATOR_PATTERN}")
+    rf"(?P<name>{_BASIC_FLAG_NAME_RE.pattern})"
+    rf"((?P<equal>=)({VALUE_PATTERN})?)?"
+    rf"{END_OR_SEPARATOR_PATTERN}"
+  )
 
   @classmethod
   def split(cls, flag_str: str) -> tuple[str, str | None]:
@@ -92,7 +105,7 @@ class BasicFlags(Freezable, collections.UserDict):
     for match in cls._PARSE_RE.finditer(raw_flags):
       if current_end is None:
         if match.start() != 0:
-          part = raw_flags[:match.start()]
+          part = raw_flags[: match.start()]
           raise ValueError(f"Invalid {msg} part at pos=0: {part!r}")
       elif current_end != match.start():
         raise ValueError(f"Invalid {msg}: could not consume all data")
@@ -104,8 +117,10 @@ class BasicFlags(Freezable, collections.UserDict):
         raise ValueError(f"Invalid {msg}: {raw_flags!r}")
       flag_name: str = maybe_flag_name
       flag_value: str | None = (
-          groups.get("value_single_quotes") or
-          groups.get("value_double_quotes") or groups.get("value_no_quotes"))
+        groups.get("value_single_quotes")
+        or groups.get("value_double_quotes")
+        or groups.get("value_no_quotes")
+      )
       if groups.get("equal") and not flag_value:
         raise ValueError(f"Invalid {msg}: missing value for {flag_name!r}")
       assert flag_name, "Missing flag name"
@@ -114,7 +129,8 @@ class BasicFlags(Freezable, collections.UserDict):
     if current_end != len(raw_flags):
       part = raw_flags[current_end:]
       raise ValueError(
-          f"Invalid {msg} part at pos={current_end or 0}: {part!r}")
+        f"Invalid {msg} part at pos={current_end or 0}: {part!r}"
+      )
     return cls(flag_parts)
 
   def __init__(self, initial_data: FlagsData = None) -> None:
@@ -123,16 +139,20 @@ class BasicFlags(Freezable, collections.UserDict):
   def __setitem__(self, key: str, item: str | None) -> None:
     return self.set(key, item)
 
-  def set(self,
-          flag_name: str,
-          flag_value: str | None = None,
-          should_override: bool = False) -> None:
+  def set(
+    self,
+    flag_name: str,
+    flag_value: str | None = None,
+    should_override: bool = False,
+  ) -> None:
     self._set(flag_name, flag_value, should_override)
 
-  def _set(self,
-           flag_name: str,
-           flag_value: str | None = None,
-           should_override: bool = False) -> None:
+  def _set(
+    self,
+    flag_name: str,
+    flag_value: str | None = None,
+    should_override: bool = False,
+  ) -> None:
     self.assert_not_frozen()
     self._validate_flag_name(flag_name)
     if flag_value:
@@ -149,7 +169,8 @@ class BasicFlags(Freezable, collections.UserDict):
       raise ValueError(f"Flag name contains '=': {flag_name!r}, please split")
     if flag_name[0] != "-":
       raise ValueError(
-          f"Flag name must begin with a '-', but got {flag_name!r}")
+        f"Flag name must begin with a '-', but got {flag_name!r}"
+      )
     if not self._BASIC_FLAG_NAME_RE.fullmatch(flag_name):
       raise ValueError(f"Flag name contains invalid characters: {flag_name!r}")
 
@@ -157,23 +178,26 @@ class BasicFlags(Freezable, collections.UserDict):
     assert flag_value, "Got invalid empty flag_value."
     if not isinstance(flag_value, str):
       raise TypeError(
-          f"Expected None or string flag-value for flag {flag_name}, "
-          f"but got: {flag_value!r}")
+        f"Expected None or string flag-value for flag {flag_name}, "
+        f"but got: {flag_value!r}"
+      )
 
-  def _validate_override(self, flag_name: str, flag_value: str | None,
-                         should_override: bool) -> None:
+  def _validate_override(
+    self, flag_name: str, flag_value: str | None, should_override: bool
+  ) -> None:
     if should_override or flag_name not in self:
       return
     old_value = self[flag_name]
     if flag_value != old_value:
-      raise ValueError(f"Flag {flag_name}={flag_value!r} was already set "
-                       f"with a different previous value: {old_value!r}")
+      raise ValueError(
+        f"Flag {flag_name}={flag_value!r} was already set "
+        f"with a different previous value: {old_value!r}"
+      )
 
   # Custom FlagsData signature incompatible with UserDict.update.
   def update(  # pyrefly: ignore[bad-override]
-      self,
-      initial_data: FlagsData = None,
-      should_override: bool = False) -> None:
+    self, initial_data: FlagsData = None, should_override: bool = False
+  ) -> None:
 
     if initial_data is None:
       return
@@ -259,10 +283,13 @@ class Flags(BasicFlags):
   Subclass with slightly stricter flag name checking.
   Most command-line programs adhere to this.
   """
+
   _FLAG_NAME_RE = re.compile(r"(--?)[a-zA-Z0-9][a-zA-Z0-9_-]*")
-  _PARSE_RE = re.compile(fr"(?P<name>{_FLAG_NAME_RE.pattern})"
-                         fr"((?P<equal>=)({BasicFlags.VALUE_PATTERN})?)?"
-                         fr"{BasicFlags.END_OR_SEPARATOR_PATTERN}")
+  _PARSE_RE = re.compile(
+    rf"(?P<name>{_FLAG_NAME_RE.pattern})"
+    rf"((?P<equal>=)({BasicFlags.VALUE_PATTERN})?)?"
+    rf"{BasicFlags.END_OR_SEPARATOR_PATTERN}"
+  )
 
   @override
   def _validate_flag_name(self, flag_name: str) -> None:

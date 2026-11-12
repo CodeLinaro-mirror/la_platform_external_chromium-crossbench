@@ -35,9 +35,9 @@ class MinidumpFinder:
   BrowserBackend.GetRecentMinidumpPathWithTimeout().
   """
 
-  def __init__(self,
-               platform: Platform,
-               build_dir: pth.LocalPath | None = None) -> None:
+  def __init__(
+    self, platform: Platform, build_dir: pth.LocalPath | None = None
+  ) -> None:
     self._platform: Final[Platform] = platform
     self._build_dir: Final[pth.LocalPath | None] = build_dir
     self._os: Final[str] = platform.name
@@ -58,8 +58,8 @@ class MinidumpFinder:
     return self._minidump_path_crashpad_retrieval.get(minidump, True)
 
   def get_all_crashpad_minidumps(
-      self,
-      minidump_dir: pth.AnyPath,
+    self,
+    minidump_dir: pth.AnyPath,
   ) -> tuple[list[tuple[datetime.datetime, pth.AnyPath]] | None, list[str]]:
     """Returns all minidumps in the given directory findable by Crashpad.
 
@@ -73,14 +73,15 @@ class MinidumpFinder:
       the minidumps.
     """
     self._explanation = [
-        "Attempting to find all Crashpad minidump files for a "
-        "suspected Chrome crash.",
+      "Attempting to find all Crashpad minidump files for a "
+      "suspected Chrome crash.",
     ]
     return self._get_all_crashpad_minidumps(minidump_dir), self._explanation
 
   # TODO: find better name, since this does not return all paths
   def get_all_minidump_paths(
-      self, minidump_dir: pth.AnyPath) -> tuple[list[pth.AnyPath], list[str]]:
+    self, minidump_dir: pth.AnyPath
+  ) -> tuple[list[pth.AnyPath], list[str]]:
     """Finds all minidumps for either Crashpad or Breakpad.
 
     If any Crashpad minidumps are found, only they will be returned. Otherwise,
@@ -96,15 +97,16 @@ class MinidumpFinder:
       minidumps.
     """
     self._explanation = [
-        "Attempting to find all minidump files for a "
-        "suspected Chrome crash. Crashpad minidumps will be "
-        "searched for first, falling back to Breakpad "
-        "minidumps if none are found.",
+      "Attempting to find all minidump files for a "
+      "suspected Chrome crash. Crashpad minidumps will be "
+      "searched for first, falling back to Breakpad "
+      "minidumps if none are found.",
     ]
     return self._get_all_minidump_paths(minidump_dir), self._explanation
 
   def get_most_recent_minidump(
-      self, minidump_dir: pth.AnyPath) -> tuple[pth.AnyPath | None, list[str]]:
+    self, minidump_dir: pth.AnyPath
+  ) -> tuple[pth.AnyPath | None, list[str]]:
     """Finds the most recently created Crashpad or Breakpad minidump.
 
     Args:
@@ -117,39 +119,49 @@ class MinidumpFinder:
       minidumps.
     """
     self._explanation = [
-        "Attempting to find the most recent minidump file for "
-        "a suspected Chrome crash. Crashpad minidumps will be "
-        "searched for first, falling back to Breakpad "
-        "minidumps if none are found.",
+      "Attempting to find the most recent minidump file for "
+      "a suspected Chrome crash. Crashpad minidumps will be "
+      "searched for first, falling back to Breakpad "
+      "minidumps if none are found.",
     ]
     return self._get_most_recent_minidump(minidump_dir), self._explanation
 
   def _get_all_crashpad_minidumps(
-      self,
-      minidump_dir: pth.AnyPath) -> list[tuple[datetime.datetime, pth.AnyPath]]:
+    self, minidump_dir: pth.AnyPath
+  ) -> list[tuple[datetime.datetime, pth.AnyPath]]:
     if not minidump_dir:
-      self._explanation.append("No minidump directory provided. Likely "
-                               "attempted to retrieve the Crashpad minidumps "
-                               "after the browser was already closed.")
+      self._explanation.append(
+        "No minidump directory provided. Likely "
+        "attempted to retrieve the Crashpad minidumps "
+        "after the browser was already closed."
+      )
       return []
 
     crashpad_database_util = helper.find_crash_binary(
-        self._platform, "crashpad_database_util", self._build_dir,
-        path_finder.CrashpadDatabaseUtilFinder)
+      self._platform,
+      "crashpad_database_util",
+      self._build_dir,
+      path_finder.CrashpadDatabaseUtilFinder,
+    )
     if not crashpad_database_util:
-      self._explanation.append("Unable to find crashpad_database_util. This "
-                               "is likely due to running on a platform that "
-                               "does not support Crashpad.")
+      self._explanation.append(
+        "Unable to find crashpad_database_util. This "
+        "is likely due to running on a platform that "
+        "does not support Crashpad."
+      )
       return []
 
     self._explanation.append(
-        f"Found crashpad_database_util at {crashpad_database_util}")
+      f"Found crashpad_database_util at {crashpad_database_util}"
+    )
 
-    report_output = self._platform.sh_stdout(crashpad_database_util,
-                                             f"--database={minidump_dir}",
-                                             "--show-pending-reports",
-                                             "--show-completed-reports",
-                                             "--show-all-report-info")
+    report_output = self._platform.sh_stdout(
+      crashpad_database_util,
+      f"--database={minidump_dir}",
+      "--show-pending-reports",
+      "--show-completed-reports",
+      "--show-all-report-info",
+    )
 
     last_indentation = -1
     reports_list: list[tuple[datetime.datetime, pth.AnyPath]] = []
@@ -174,9 +186,11 @@ class MinidumpFinder:
           report_path = self._platform.path(report_dict["Path"].strip())
           reports_list.append((report_time, report_path))
         except (ValueError, KeyError) as e:
-          self._explanation.append("Expected to find keys 'Path' and 'Creation "
-                                   "time' in Crashpad report, but one or both "
-                                   f"don't exist: {e}")
+          self._explanation.append(
+            "Expected to find keys 'Path' and 'Creation "
+            "time' in Crashpad report, but one or both "
+            f"don't exist: {e}"
+          )
         finally:
           report_dict = {}
 
@@ -189,32 +203,39 @@ class MinidumpFinder:
         report_path = self._platform.path(report_dict["Path"].strip())
         reports_list.append((report_time, report_path))
       except (ValueError, KeyError) as e:
-        self._explanation.append("Expected to find keys 'Path' and 'Creation "
-                                 "time' in Crashpad report, but one or both "
-                                 f"don't exist: {e}")
+        self._explanation.append(
+          "Expected to find keys 'Path' and 'Creation "
+          "time' in Crashpad report, but one or both "
+          f"don't exist: {e}"
+        )
 
     return reports_list
 
-  def _get_all_minidump_paths(self,
-                              minidump_dir: pth.AnyPath) -> list[pth.AnyPath]:
+  def _get_all_minidump_paths(
+    self, minidump_dir: pth.AnyPath
+  ) -> list[pth.AnyPath]:
     if reports_list := self._get_all_crashpad_minidumps(minidump_dir):
       for _, path in reports_list:
         self._minidump_path_crashpad_retrieval[path] = True
       return [report[1] for report in reports_list]
-    self._explanation.append("No minidumps found via crashpad_database_util, "
-                             "falling back to globbing for Breakpad "
-                             "minidumps.")
+    self._explanation.append(
+      "No minidumps found via crashpad_database_util, "
+      "falling back to globbing for Breakpad "
+      "minidumps."
+    )
     if dumps := self._get_breakpad_minidump_paths(minidump_dir):
       self._explanation.append("Found Breakpad minidump via globbing.")
       for dump in dumps:
         self._minidump_path_crashpad_retrieval[dump] = False
       return dumps
     self._explanation.append(
-        "Failed to find any Breakpad minidumps via globbing.")
+      "Failed to find any Breakpad minidumps via globbing."
+    )
     return []
 
   def _get_most_recent_crashpad_minidump(
-      self, minidump_dir: pth.AnyPath) -> pth.AnyPath | None:
+    self, minidump_dir: pth.AnyPath
+  ) -> pth.AnyPath | None:
     if reports_list := self._get_all_crashpad_minidumps(minidump_dir):
       _, most_recent_report_path = max(reports_list)
       return most_recent_report_path
@@ -222,16 +243,20 @@ class MinidumpFinder:
     return None
 
   def _get_breakpad_minidump_paths(
-      self, minidump_dir: pth.AnyPath) -> list[pth.AnyPath]:
+    self, minidump_dir: pth.AnyPath
+  ) -> list[pth.AnyPath]:
     if not minidump_dir:
-      self._explanation.append("Attempted to fetch Breakpad minidump paths "
-                               "without a minidump directory. The browser was "
-                               "likely closed before attempting to fetch.")
+      self._explanation.append(
+        "Attempted to fetch Breakpad minidump paths "
+        "without a minidump directory. The browser was "
+        "likely closed before attempting to fetch."
+      )
       return []
     return list(self._platform.glob(minidump_dir, "*.dmp"))
 
   def _get_most_recent_minidump(
-      self, minidump_dir: pth.AnyPath) -> pth.AnyPath | None:
+    self, minidump_dir: pth.AnyPath
+  ) -> pth.AnyPath | None:
     # Crashpad dump layout will be the standard eventually, check it first.
     crashpad_dump = True
     most_recent_dump = self._get_most_recent_crashpad_minidump(minidump_dir)
@@ -239,9 +264,11 @@ class MinidumpFinder:
     # Typical breakpad format is simply dump files in a folder.
     if not most_recent_dump:
       crashpad_dump = False
-      self._explanation.append("No minidump found via crashpad_database_util, "
-                               "falling back to globbing for Breakpad "
-                               "minidump.")
+      self._explanation.append(
+        "No minidump found via crashpad_database_util, "
+        "falling back to globbing for Breakpad "
+        "minidump."
+      )
       dumps = self._get_breakpad_minidump_paths(minidump_dir)
       if dumps:
         most_recent_dump = max(dumps, key=self._platform.last_modified)
@@ -253,7 +280,8 @@ class MinidumpFinder:
       mtime = self._platform.last_modified(most_recent_dump)
       if mtime < (time.time() - (5 * 60)):
         self._explanation.append(
-            "Crash dump is older than 5 minutes. May not be correct.")
+          "Crash dump is older than 5 minutes. May not be correct."
+        )
 
     if most_recent_dump:
       self._minidump_path_crashpad_retrieval[most_recent_dump] = crashpad_dump

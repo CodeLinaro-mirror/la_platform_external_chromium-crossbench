@@ -18,7 +18,8 @@ from crossbench.parse import DurationParser, NumberParser
 
 class PlaybackController(abc.ABC):
   _PERIODIC_RE: Final[re.Pattern] = re.compile(
-      r"(?P<count>\d+)x every (?P<period>.+)")
+    r"(?P<count>\d+)x every (?P<period>.+)"
+  )
 
   @classmethod
   def parse(cls, value: str) -> PlaybackController:
@@ -32,8 +33,9 @@ class PlaybackController(abc.ABC):
       return cls.periodic(count, period)
     if value[-1].isnumeric():
       raise argparse.ArgumentTypeError(
-          f"Missing unit suffix: '{value}'\n"
-          "Use 'x' for repetitions or time unit 's', 'm', 'h'")
+        f"Missing unit suffix: '{value}'\n"
+        "Use 'x' for repetitions or time unit 's', 'm', 'h'"
+      )
     if value[-1] == "x":
       loops = NumberParser.positive_int(value[:-1], "Repeat-count")
       return cls.repeat(loops)
@@ -61,8 +63,9 @@ class PlaybackController(abc.ABC):
     return TimeoutPlaybackController(duration)
 
   @classmethod
-  def periodic(cls, count: int,
-               period: dt.timedelta) -> PeriodicPlaybackController:
+  def periodic(
+    cls, count: int, period: dt.timedelta
+  ) -> PeriodicPlaybackController:
     return PeriodicPlaybackController(count, period)
 
   @abc.abstractmethod
@@ -72,7 +75,6 @@ class PlaybackController(abc.ABC):
 
 @dataclasses.dataclass(frozen=True)
 class ForeverPlaybackController(PlaybackController):
-
   def __iter__(self) -> Iterator[int]:
     i = 0
     while True:

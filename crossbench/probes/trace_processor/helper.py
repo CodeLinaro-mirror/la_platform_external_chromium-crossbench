@@ -23,42 +23,41 @@ if TYPE_CHECKING:
 
 
 def CBTraceProcessorConfig(  # noqa: N802
-    bin_path: pth.LocalPath | str | None = None,
-    module_paths: Iterable[pth.LocalPath | str] | None = None,
-    extra_flags: Sequence[str] | None = None,
-    verbose: bool = False,
-    enable_dev_features: bool = False,
-    resolver_registry: ResolverRegistry | None = None,
-    load_timeout: int = 10,
-    ingest_ftrace_in_raw: bool = True,
+  bin_path: pth.LocalPath | str | None = None,
+  module_paths: Iterable[pth.LocalPath | str] | None = None,
+  extra_flags: Sequence[str] | None = None,
+  verbose: bool = False,
+  enable_dev_features: bool = False,
+  resolver_registry: ResolverRegistry | None = None,
+  load_timeout: int = 10,
+  ingest_ftrace_in_raw: bool = True,
 ) -> TraceProcessorConfig:
   """TraceProcessorConfig preconfigured with Crossbench SQL modules."""
   # Perfetto's trace_processor requires forward-slash package paths on Windows.
-  packages: OrderedSet[str | SqlPackage] = OrderedSet(
-      (MODULES_DIR.as_posix(),))
+  packages: OrderedSet[str | SqlPackage] = OrderedSet((MODULES_DIR.as_posix(),))
   for path in module_paths or ():
     packages.add(plt.PLATFORM.path(path).as_posix())
 
   return TraceProcessorConfig(
-      bin_path=os.fspath(bin_path) if bin_path else None,
-      verbose=verbose,
-      enable_dev_features=enable_dev_features,
-      resolver_registry=resolver_registry,
-      load_timeout=load_timeout,
-      ingest_ftrace_in_raw=ingest_ftrace_in_raw,
-      extra_flags=list(extra_flags) if extra_flags else None,
-      add_sql_packages=list(packages),
+    bin_path=os.fspath(bin_path) if bin_path else None,
+    verbose=verbose,
+    enable_dev_features=enable_dev_features,
+    resolver_registry=resolver_registry,
+    load_timeout=load_timeout,
+    ingest_ftrace_in_raw=ingest_ftrace_in_raw,
+    extra_flags=list(extra_flags) if extra_flags else None,
+    add_sql_packages=list(packages),
   )
 
 
 def CBBatchTraceProcessorConfig(  # noqa: N802
-    tp_config: TraceProcessorConfig | None = None,
-    bin_path: pth.LocalPath | str | None = None,
-    module_paths: Iterable[pth.LocalPath | str] | None = None,
-    extra_flags: Sequence[str] | None = None,
-    load_failure_handling: FailureHandling | None = None,
-    execute_failure_handling: FailureHandling | None = None,
-    **kwargs,
+  tp_config: TraceProcessorConfig | None = None,
+  bin_path: pth.LocalPath | str | None = None,
+  module_paths: Iterable[pth.LocalPath | str] | None = None,
+  extra_flags: Sequence[str] | None = None,
+  load_failure_handling: FailureHandling | None = None,
+  execute_failure_handling: FailureHandling | None = None,
+  **kwargs,
 ) -> BatchTraceProcessorConfig:
   """BatchTraceProcessorConfig preconfigured with Crossbench SQL modules."""
   if tp_config is not None:
@@ -76,10 +75,11 @@ def CBBatchTraceProcessorConfig(  # noqa: N802
       raise ValueError(f"Cannot specify {names} when tp_config is provided")
   else:
     tp_config = CBTraceProcessorConfig(
-        bin_path=bin_path,
-        module_paths=module_paths,
-        extra_flags=extra_flags,
-        **kwargs)
+      bin_path=bin_path,
+      module_paths=module_paths,
+      extra_flags=extra_flags,
+      **kwargs,
+    )
   btp_kwargs = {}
   if load_failure_handling is not None:
     btp_kwargs["load_failure_handling"] = load_failure_handling

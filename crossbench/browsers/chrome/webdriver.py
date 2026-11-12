@@ -13,9 +13,13 @@ from selenium.webdriver.chrome.service import Service as ChromeService
 
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.chrome.base import ChromeBaseMixin
-from crossbench.browsers.chromium.webdriver import ChromiumBasedWebDriver, \
-    ChromiumWebDriverAndroid, ChromiumWebDriverChromeOsSsh, \
-    ChromiumWebDriverSsh, LocalChromiumWebDriverAndroid
+from crossbench.browsers.chromium.webdriver import (
+  ChromiumBasedWebDriver,
+  ChromiumWebDriverAndroid,
+  ChromiumWebDriverChromeOsSsh,
+  ChromiumWebDriverSsh,
+  LocalChromiumWebDriverAndroid,
+)
 
 if TYPE_CHECKING:
   from selenium.webdriver.chromium.options import ChromiumOptions
@@ -24,19 +28,20 @@ if TYPE_CHECKING:
 
 
 class ChromeWebDriver(ChromeBaseMixin, ChromiumBasedWebDriver):
-
   WEB_DRIVER_OPTIONS = ChromeOptions
   WEB_DRIVER_SERVICE = ChromeService
 
   @classmethod
   @override
   def attributes(cls) -> BrowserAttributes:
-    return ((super().attributes() & ~BrowserAttributes.CHROMIUM)
-            | BrowserAttributes.CHROME)
+    return (
+      super().attributes() & ~BrowserAttributes.CHROMIUM
+    ) | BrowserAttributes.CHROME
 
   @override
-  def _create_driver(self, options: ChromiumOptions,
-                     service: ChromiumService) -> ChromiumDriver:
+  def _create_driver(
+    self, options: ChromiumOptions, service: ChromiumService
+  ) -> ChromiumDriver:
     assert isinstance(options, ChromeOptions)
     assert isinstance(service, ChromeService)
     try:
@@ -49,8 +54,9 @@ class ChromeWebDriverAndroid(ChromiumWebDriverAndroid, ChromeWebDriver):
   pass
 
 
-class LocalChromeWebDriverAndroid(LocalChromiumWebDriverAndroid,
-                                  ChromeWebDriver):
+class LocalChromeWebDriverAndroid(
+  LocalChromiumWebDriverAndroid, ChromeWebDriver
+):
   pass
 
 

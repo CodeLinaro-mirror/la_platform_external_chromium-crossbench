@@ -12,7 +12,6 @@ from tests import test_helper
 
 
 class WprBannerDismisserTestCase(unittest.TestCase):
-
   def test_create_rules_with_role(self) -> None:
     metadata = 'Dismisser target: a,button,"Agree",https://www.cnn.com/'
     res = WprBannerDismisser.create_rules(metadata)
@@ -26,9 +25,9 @@ class WprBannerDismisserTestCase(unittest.TestCase):
 
   def test_create_rules_without_role(self) -> None:
     metadata = (
-        "Main URL: https://www.allrecipes.com\n"
-        "Recording date: 2026-08-20\n"
-        'Dismisser target: button,,"Accept All",https://www.allrecipes.com/\n'
+      "Main URL: https://www.allrecipes.com\n"
+      "Recording date: 2026-08-20\n"
+      'Dismisser target: button,,"Accept All",https://www.allrecipes.com/\n'
     )
     res = WprBannerDismisser.create_rules(metadata)
     self.assertIsNotNone(res)
@@ -40,7 +39,9 @@ class WprBannerDismisserTestCase(unittest.TestCase):
     self.assertIn('const ELEMENT_TEXT = "Accept All";', js_payload)
 
   def test_create_rules_none(self) -> None:
-    metadata = "Main URL: https://www.allrecipes.com\nRecording date: 2026-08-20\n"
+    metadata = (
+      "Main URL: https://www.allrecipes.com\nRecording date: 2026-08-20\n"
+    )
     self.assertIsNone(WprBannerDismisser.create_rules(metadata))
     self.assertIsNone(WprBannerDismisser.create_rules(""))
 

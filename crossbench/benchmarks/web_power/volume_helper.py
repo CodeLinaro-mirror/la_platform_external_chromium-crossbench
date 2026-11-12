@@ -34,7 +34,7 @@ class AndroidVolumeController:
       logging.info("Keeping volume unchanged.")
       return
 
-    target_volume_on = (target_volume == VolumeMode.ON)
+    target_volume_on = target_volume == VolumeMode.ON
     if CmdAudioController(self._platform).set_volume(target_volume_on):
       logging.info("Volume successfully adjusted using adb's cmd audio.")
     elif LegacyAudioController(self._platform).set_volume(target_volume_on):
@@ -56,14 +56,17 @@ class CmdAudioController:
   def _cmd_audio(self, *args: str) -> str:
     """Executes 'cmd audio' and returns the decoded stdout."""
     return self._platform.sh(
-        "cmd", "audio", *args, capture_output=True).stdout.decode()
+      "cmd", "audio", *args, capture_output=True
+    ).stdout.decode()
 
   def _get_volume(self) -> int:
     """Retrieves current volume level."""
     output = self._cmd_audio("get-stream-volume", self._STREAM_MUSIC)
     # Expected output format: "AudioManager.getStreamVolume(3) -> 15"
-    pattern = (rf"AudioManager\.getStreamVolume\({self._STREAM_MUSIC}\)\s*->\s*"
-               r"(?P<volume>\d+)")
+    pattern = (
+      rf"AudioManager\.getStreamVolume\({self._STREAM_MUSIC}\)\s*->\s*"
+      r"(?P<volume>\d+)"
+    )
     if m := re.search(pattern, output):
       return int(m.group("volume"))
     raise ValueError(f"Unexpected get-stream-volume output format: {output}")
@@ -92,7 +95,7 @@ class CmdAudioController:
 
       self._cmd_audio("set-volume", self._STREAM_MUSIC, volume_level)
 
-      return (self._is_music_audible() == target_volume_on)
+      return self._is_music_audible() == target_volume_on
     except Exception as e:  # noqa: BLE001
       logging.warning("Failed to set volume via 'cmd audio': %s", e)
       return False
@@ -115,9 +118,10 @@ class LegacyAudioController:
 
   def _is_music_audible(self) -> bool:
     music_info = self._get_music_stream_info()
-    return not (re.search(r"Muted:\s*true", music_info, re.IGNORECASE) or
-                re.search(r"streamVolume:\s*0(?!\d)", music_info,
-                          re.IGNORECASE))
+    return not (
+      re.search(r"Muted:\s*true", music_info, re.IGNORECASE)
+      or re.search(r"streamVolume:\s*0(?!\d)", music_info, re.IGNORECASE)
+    )
 
   def _get_music_stream_info(self) -> str:
     """Extracts the STREAM_MUSIC block from dumpsys audio."""

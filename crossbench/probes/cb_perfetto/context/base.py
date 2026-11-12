@@ -15,10 +15,13 @@ import google.protobuf.text_format as proto_text_format
 
 from crossbench import path as pth
 from crossbench.parse import NumberParser, ObjectParser
-from crossbench.probes.cb_perfetto.constants import PERFETTO_CONFIG_NAME, \
-    PERFETTO_TRACE_NAME
-from crossbench.probes.cb_perfetto.start_tracing_sequence import \
-    StartTracingSequence
+from crossbench.probes.cb_perfetto.constants import (
+  PERFETTO_CONFIG_NAME,
+  PERFETTO_TRACE_NAME,
+)
+from crossbench.probes.cb_perfetto.start_tracing_sequence import (
+  StartTracingSequence,
+)
 from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.results import LocalProbeResult, ProbeResult
 
@@ -32,14 +35,16 @@ PERFETTO_STOP_TIMEOUT: Final[dt.timedelta] = dt.timedelta(seconds=30)
 
 
 class PerfettoProbeContext(
-    ProbeContext["PerfettoProbe"], metaclass=abc.ABCMeta):
-
+  ProbeContext["PerfettoProbe"], metaclass=abc.ABCMeta
+):
   def __init__(self, probe: PerfettoProbe, run: Run) -> None:
     self._file_prefix: Final[str] = dt.datetime.now().strftime(
-        "%Y-%m-%d_%H%M%S")
+      "%Y-%m-%d_%H%M%S"
+    )
     super().__init__(probe, run)
     self._host_config_file: Final[pth.LocalPath] = (
-        run.out_dir / PERFETTO_CONFIG_NAME)
+      run.out_dir / PERFETTO_CONFIG_NAME
+    )
     self._perfetto_pid: int | None = None
     self._snapshots: Final[list[pth.LocalPath]] = []
 
@@ -61,11 +66,13 @@ class PerfettoProbeContext(
 
   def _setup_push_perfetto_config(self) -> None:
     self.host_platform.write_text(
-        self._host_config_file,
-        proto_text_format.MessageToString(self.probe.trace_config))
+      self._host_config_file,
+      proto_text_format.MessageToString(self.probe.trace_config),
+    )
     if not self.probe.config_via_stdin:
-      self.browser_platform.push(self._host_config_file,
-                                 self.get_browser_config_path())
+      self.browser_platform.push(
+        self._host_config_file, self.get_browser_config_path()
+      )
 
   @abc.abstractmethod
   def get_browser_config_path(self) -> pth.AnyPath:
@@ -89,8 +96,7 @@ class PerfettoProbeContext(
 
   @override
   def start_story_setup(self) -> None:
-    if self.probe.start_tracing_sequence == \
-      StartTracingSequence.STORY_SETUP:
+    if self.probe.start_tracing_sequence == StartTracingSequence.STORY_SETUP:
       self._try_start_perfetto()
 
   @override
@@ -101,11 +107,11 @@ class PerfettoProbeContext(
 
   @override
   def invoke(
-      self,
-      info_stack: exception.TInfoStack,
-      timeout: dt.timedelta | None = None,
-      label: str | None = None,
-      **kwargs,
+    self,
+    info_stack: exception.TInfoStack,
+    timeout: dt.timedelta | None = None,
+    label: str | None = None,
+    **kwargs,
   ) -> None:
     del timeout
     self.expect_no_extra_kwargs(kwargs)
@@ -118,21 +124,25 @@ class PerfettoProbeContext(
 
   def clone_snapshot(self, label: str = "snapshot") -> None:
     safe_label: str = pth.safe_filename(label)
-    local_name: str = (f"perfetto_snapshot_{len(self._snapshots):03d}_"
-                       f"{safe_label}.trace.pb")
+    local_name: str = (
+      f"perfetto_snapshot_{len(self._snapshots):03d}_{safe_label}.trace.pb"
+    )
 
     if not self._perfetto_pid:
-      logging.warning("PERFETTO: cannot clone snapshot %s, session not active",
-                      local_name)
+      logging.warning(
+        "PERFETTO: cannot clone snapshot %s, session not active", local_name
+      )
       return
 
     try:
       with self.browser_platform.TemporaryDirectory(
-          dir=self.result_path.parent) as tmp_dir:
+        dir=self.result_path.parent
+      ) as tmp_dir:
         snapshot_path: pth.AnyPath = tmp_dir / local_name
         self._clone(snapshot_path)
         compressed_snapshot: pth.LocalPath = self._fetch_and_compress_snapshot(
-            snapshot_path, local_name)
+          snapshot_path, local_name
+        )
       self._snapshots.append(compressed_snapshot)
       logging.info("PERFETTO: cloned snapshot to %s", compressed_snapshot)
     except (subprocess.SubprocessError, OSError, ValueError) as e:
@@ -147,8 +157,9 @@ class PerfettoProbeContext(
     cmd: TupleCmdArgs = (*self.perfetto_cmd, *clone_args, "--out", out_path)
     self.browser_platform.sh(*cmd, capture_output=True)
 
-  def _fetch_and_compress_snapshot(self, snapshot_path: pth.AnyPath,
-                                   local_name: str) -> pth.LocalPath:
+  def _fetch_and_compress_snapshot(
+    self, snapshot_path: pth.AnyPath, local_name: str
+  ) -> pth.LocalPath:
     local_snapshot: pth.LocalPath = self.run.out_dir / local_name
     self.browser_platform.pull(snapshot_path, local_snapshot)
     try:
@@ -159,7 +170,8 @@ class PerfettoProbeContext(
 
   def _compress_trace_file(self, trace_file: pth.LocalPath) -> pth.LocalPath:
     compressed_file = self.host_platform.local_path(
-        self.host_platform.gzip(trace_file))
+      self.host_platform.gzip(trace_file)
+    )
     assert compressed_file.is_file(), f"Could not compress {compressed_file}"
     return compressed_file
 
@@ -178,10 +190,15 @@ class PerfettoProbeContext(
 
   def _start_perfetto(self) -> None:
     logging.info("PERFETTO: starting")
-    cmd: TupleCmdArgs = (*self.perfetto_cmd, "--background", "--config",
-                         "-" if self.probe.config_via_stdin else
-                         self.get_browser_config_path(), "--txt", "--out",
-                         self.result_path)
+    cmd: TupleCmdArgs = (
+      *self.perfetto_cmd,
+      "--background",
+      "--config",
+      "-" if self.probe.config_via_stdin else self.get_browser_config_path(),
+      "--txt",
+      "--out",
+      self.result_path,
+    )
     try:
       if self.probe.config_via_stdin:
         with self._host_config_file.open() as f:
@@ -189,12 +206,15 @@ class PerfettoProbeContext(
       else:
         proc = self.browser_platform.sh(*cmd, capture_output=True)
     except subprocess.CalledProcessError as e:
-      logging.error("perfetto command failed with stderr: %s",
-                    e.stderr.decode(encoding="utf-8"))
+      logging.error(
+        "perfetto command failed with stderr: %s",
+        e.stderr.decode(encoding="utf-8"),
+      )
       raise
 
     self._perfetto_pid = NumberParser.positive_int(
-        proc.stdout.decode("utf-8").rstrip(), "perfetto pid")
+      proc.stdout.decode("utf-8").rstrip(), "perfetto pid"
+    )
     atexit.register(self._stop_perfetto)
 
   def _stop_perfetto(self) -> None:
@@ -204,14 +224,16 @@ class PerfettoProbeContext(
     # TODO(cbruni): replace with terminate_gracefully
     self.browser_platform.terminate(self._perfetto_pid)
     try:
-      for _ in self.run.wait_range(1,
-                                   PERFETTO_STOP_TIMEOUT).wait_with_backoff():
+      for _ in self.run.wait_range(
+        1, PERFETTO_STOP_TIMEOUT
+      ).wait_with_backoff():
         if not self.browser_platform.process_info(self._perfetto_pid):
           break
     except TimeoutError:
       logging.error(
-          "perfetto process did not stop after %s"
-          "The trace might be incomplete.", PERFETTO_STOP_TIMEOUT)
+        "perfetto process did not stop after %sThe trace might be incomplete.",
+        PERFETTO_STOP_TIMEOUT,
+      )
     self._perfetto_pid = None
 
   def teardown(self) -> ProbeResult:
@@ -225,7 +247,8 @@ class PerfettoProbeContext(
     browser_result = self.browser_result(file=[self.result_path])
     local_result_file = browser_result.file
     assert local_result_file.is_file(), (
-        f"Could not copy perfetto results: {local_result_file}")
+      f"Could not copy perfetto results: {local_result_file}"
+    )
     renamed_result_file = local_result_file.with_name(PERFETTO_TRACE_NAME)
     self.host_platform.rename(local_result_file, renamed_result_file)
 
@@ -233,8 +256,8 @@ class PerfettoProbeContext(
     logging.info("Perfetto trace compressed: %s", compressed_result_file)
 
     return LocalProbeResult(
-        perfetto=(compressed_result_file,),
-        file=tuple(self._snapshots),
+      perfetto=(compressed_result_file,),
+      file=tuple(self._snapshots),
     )
 
   def _cleanup_remote_perfetto_files(self) -> None:

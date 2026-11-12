@@ -37,8 +37,9 @@ class ChromeBaseFeatures(Freezable, abc.ABC):
     if not feature:
       raise ValueError("Cannot parse empty feature")
     if "," in feature:
-      raise ValueError(f"{feature!r} contains multiple features. "
-                       "Please split them first.")
+      raise ValueError(
+        f"{feature!r} contains multiple features. Please split them first."
+      )
     return self._parse_feature_parts(feature)
 
   @abc.abstractmethod
@@ -56,9 +57,11 @@ class ChromeBaseFeatures(Freezable, abc.ABC):
     if name in self._enabled:
       prev_value = self._enabled[name]
       if value != prev_value:
-        raise ValueError("Cannot set conflicting values "
-                         f"({prev_value!r}, vs. {value!r}) "
-                         f"for the same feature={name!r}")
+        raise ValueError(
+          "Cannot set conflicting values "
+          f"({prev_value!r}, vs. {value!r}) "
+          f"for the same feature={name!r}"
+        )
     else:
       self._enabled[name] = value
 
@@ -113,7 +116,8 @@ class ChromeBaseFeatures(Freezable, abc.ABC):
 
   def enabled_str(self) -> str:
     return ",".join(
-        k if v is None else f"{k}{v}" for k, v in self._enabled.items())
+      k if v is None else f"{k}{v}" for k, v in self._enabled.items()
+    )
 
   def disabled_str(self) -> str:
     return ",".join(self._disabled)
@@ -176,6 +180,8 @@ class ChromeBlinkFeatures(ChromeBaseFeatures):
   @override
   def _parse_feature_parts(self, feature: str) -> tuple[str, str | None]:
     if "<" in feature or ":" in feature:
-      raise ValueError("blink features do not have params, "
-                       f"but found param separator in {feature!r}")
+      raise ValueError(
+        "blink features do not have params, "
+        f"but found param separator in {feature!r}"
+      )
     return (feature, None)

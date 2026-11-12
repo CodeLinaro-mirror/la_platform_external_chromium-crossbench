@@ -8,9 +8,11 @@ import unittest
 from xml.etree import ElementTree
 
 from crossbench.action_runner.display_rectangle import DisplayRectangle
-from crossbench.action_runner.screenshot_annotation import \
-    ScreenshotPointAnnotation, ScreenshotRectAnnotation, \
-    annotate_screenshot_svg
+from crossbench.action_runner.screenshot_annotation import (
+  ScreenshotPointAnnotation,
+  ScreenshotRectAnnotation,
+  annotate_screenshot_svg,
+)
 from crossbench.benchmarks.loading.point import Point
 from tests import test_helper
 
@@ -20,19 +22,25 @@ class ScreenshotAnnotationTestCase(unittest.TestCase):
 
   def test_empty(self):
     svg = ElementTree.fromstring(
-        annotate_screenshot_svg(1366, 768, "screenshot.png", []))
+      annotate_screenshot_svg(1366, 768, "screenshot.png", [])
+    )
     self.assertEqual(svg.attrib["width"], "1366")
     self.assertEqual(svg.attrib["height"], "768")
     image = svg.find(
-        ".//image[@href='screenshot.png'][@width='1366'][@height='768']",
-        self.SVG_NAMESPACE)
+      ".//image[@href='screenshot.png'][@width='1366'][@height='768']",
+      self.SVG_NAMESPACE,
+    )
     self.assertIsNotNone(image)
 
   def test_point(self):
     svg = ElementTree.fromstring(
-        annotate_screenshot_svg(
-            1366, 768, "screenshot.png",
-            [ScreenshotPointAnnotation("point", Point(123, 456))]))
+      annotate_screenshot_svg(
+        1366,
+        768,
+        "screenshot.png",
+        [ScreenshotPointAnnotation("point", Point(123, 456))],
+      )
+    )
     g = svg.find(".//g[title='point']", self.SVG_NAMESPACE)
     self.assertIsNotNone(g)
     rect = g.find("./rect[@x='122.5'][@y='455.5']", self.SVG_NAMESPACE)
@@ -40,13 +48,21 @@ class ScreenshotAnnotationTestCase(unittest.TestCase):
 
   def test_rect(self):
     svg = ElementTree.fromstring(
-        annotate_screenshot_svg(1366, 768, "screenshot.png", [
-            ScreenshotRectAnnotation("rect",
-                                     DisplayRectangle(Point(123, 456), 89, 97)),
-        ]))
+      annotate_screenshot_svg(
+        1366,
+        768,
+        "screenshot.png",
+        [
+          ScreenshotRectAnnotation(
+            "rect", DisplayRectangle(Point(123, 456), 89, 97)
+          ),
+        ],
+      )
+    )
     rect = svg.find(
-        ".//rect[title='rect'][@x='123'][@y='456'][@width='89'][@height='97']",
-        self.SVG_NAMESPACE)
+      ".//rect[title='rect'][@x='123'][@y='456'][@width='89'][@height='97']",
+      self.SVG_NAMESPACE,
+    )
     self.assertIsNotNone(rect)
 
 

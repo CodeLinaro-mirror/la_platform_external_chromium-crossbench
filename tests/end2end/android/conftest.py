@@ -25,12 +25,14 @@ def adb_root(device_id, adb_path):
 
 @pytest.fixture
 def browser_config(device_id, adb_path, bundletool) -> str:
-  return json.dumps({
+  return json.dumps(
+    {
       "browser": "chrome",
       "driver": {
-          "type": "adb",
-          "device_id": device_id,
-          "adb_bin": adb_path,
-          "bundletool": bundletool,
+        "type": "adb",
+        "device_id": device_id,
+        "adb_bin": adb_path,
+        "bundletool": bundletool,
       },
-  })
+    }
+  )

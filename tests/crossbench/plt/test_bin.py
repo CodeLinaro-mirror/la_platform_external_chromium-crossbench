@@ -14,20 +14,39 @@ from pyfakefs.fake_filesystem import OSType
 import crossbench.path as pth
 from crossbench import plt
 from crossbench.plt import PLATFORM
-from crossbench.plt.bin import AndroidBinary, AndroidBuildToolPath, Binaries, \
-    Binary, BinaryNotFoundError, BinaryPath, ChromeBuildPath, ChromeOSBinary, \
-    ChromePath, EnvVarPath, LinuxBinary, MacOsBinary, PerfettoChromePath, \
-    PosixBinary, SystemPath, WinBinary, XcodeXctestrunPath, \
-    _find_chromium_checkout
+from crossbench.plt.bin import (
+  AndroidBinary,
+  AndroidBuildToolPath,
+  Binaries,
+  Binary,
+  BinaryNotFoundError,
+  BinaryPath,
+  ChromeBuildPath,
+  ChromeOSBinary,
+  ChromePath,
+  EnvVarPath,
+  LinuxBinary,
+  MacOsBinary,
+  PerfettoChromePath,
+  PosixBinary,
+  SystemPath,
+  WinBinary,
+  XcodeXctestrunPath,
+  _find_chromium_checkout,
+)
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
-from tests.crossbench.mock_helper import AndroidAdbMockPlatform, \
-    ChromeOsSshMockPlatform, LinuxMockPlatform, MacOsMockPlatform, MockAdb, \
-    WinMockPlatform
+from tests.crossbench.mock_helper import (
+  AndroidAdbMockPlatform,
+  ChromeOsSshMockPlatform,
+  LinuxMockPlatform,
+  MacOsMockPlatform,
+  MockAdb,
+  WinMockPlatform,
+)
 
 
 class BinaryTestCase(CrossbenchFakeFsTestCase):
-
   def all_mock_platforms(self):
     yield LinuxMockPlatform()
     yield MacOsMockPlatform()
@@ -63,8 +82,10 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
   def test_new_windows_binary_override_resolution(self):
     binary = WinBinary("crossbench_mock_binary.exe")
     platform = WinMockPlatform()
-    path = platform.local_path("C:/Users/user-name/AppData/Local/Programs/"
-                               "crossbench/crossbench_mock_binary.exe")
+    path = platform.local_path(
+      "C:/Users/user-name/AppData/Local/Programs/"
+      "crossbench/crossbench_mock_binary.exe"
+    )
     self.fs.create_file(path, st_size=100)
 
     # Validates resolution behaviors inside the active override_binary context.
@@ -77,8 +98,10 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
   def test_new_windows_binary_resolve_cached(self):
     binary = WinBinary("crossbench_mock_binary.exe")
     platform = WinMockPlatform()
-    path = platform.local_path("C:/Users/user-name/AppData/Local/Programs/"
-                               "crossbench/crossbench_mock_binary.exe")
+    path = platform.local_path(
+      "C:/Users/user-name/AppData/Local/Programs/"
+      "crossbench/crossbench_mock_binary.exe"
+    )
     self.fs.create_file(path, st_size=100)
 
     with mock.patch("shutil.which", return_value=path):
@@ -139,11 +162,13 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
         binary = Binary("crossbench_mock_binary", default=default)
         self.validate_known_binary_default(platform, default, binary)
 
-  def validate_known_binary_default(self, platform: plt.Platform,
-                                    result: pth.AnyPath, binary: Binary):
+  def validate_known_binary_default(
+    self, platform: plt.Platform, result: pth.AnyPath, binary: Binary
+  ):
     self.assertSequenceEqual(
-        [path_entry.path for path_entry in binary.platform_path(platform)],
-        [result])
+      [path_entry.path for path_entry in binary.platform_path(platform)],
+      [result],
+    )
     self.assertFalse(binary.exists(platform))
     with self.assertRaises(BinaryNotFoundError):
       binary.resolve(platform)
@@ -169,17 +194,23 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
           default_miss = pth.AnyPath("foo/bar/default/fake.exe")
           result = pth.AnyPath("foo/bar/default/crossbench_mock_binary.exe")
         binary = Binary(
-            "crossbench_mock_binary", default=(default_miss, default))
-        self.validate_known_binary_default_multiple(platform, default_miss,
-                                                    result, binary)
+          "crossbench_mock_binary", default=(default_miss, default)
+        )
+        self.validate_known_binary_default_multiple(
+          platform, default_miss, result, binary
+        )
 
-  def validate_known_binary_default_multiple(self, platform: plt.Platform,
-                                             default_miss: pth.AnyPath,
-                                             result: pth.AnyPath,
-                                             binary: Binary):
+  def validate_known_binary_default_multiple(
+    self,
+    platform: plt.Platform,
+    default_miss: pth.AnyPath,
+    result: pth.AnyPath,
+    binary: Binary,
+  ):
     self.assertSequenceEqual(
-        [path_entry.path for path_entry in binary.platform_path(platform)],
-        [default_miss, result])
+      [path_entry.path for path_entry in binary.platform_path(platform)],
+      [default_miss, result],
+    )
     with self.assertRaises(BinaryNotFoundError):
       binary.resolve(platform)
     with self.assertRaises(BinaryNotFoundError):
@@ -202,16 +233,19 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
   def validate_known_binary_chromeos(self, result, binary):
     result = pth.AnyPosixPath(result)
     platform = ChromeOsSshMockPlatform(
-        host_platform=LinuxMockPlatform(),
-        host="dut",
-        port=0,
-        ssh_port=22,
-        ssh_user="root")
+      host_platform=LinuxMockPlatform(),
+      host="dut",
+      port=0,
+      ssh_port=22,
+      ssh_user="root",
+    )
 
     with mock.patch.object(
-        platform, "which", return_value=result) as mock_which:
+      platform, "which", return_value=result
+    ) as mock_which:
       with mock.patch.object(
-          platform, "exists", return_value=True) as mock_exists:
+        platform, "exists", return_value=True
+      ) as mock_exists:
         self.assertEqual(str(binary.resolve(platform)), str(result))
         self.assertEqual(str(binary.resolve_cached(platform)), str(result))
         mock_which.assert_called_with(result)
@@ -229,7 +263,8 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
   @unittest.skipUnless(plt.PLATFORM.is_posix, "Only supported on posix")
   def test_known_binary_linux(self):
     result = self.create_binary_path(
-        pth.AnyPosixPath("foo/bar/default/crossbench_mock_binary"))
+      pth.AnyPosixPath("foo/bar/default/crossbench_mock_binary")
+    )
     binary = Binary("crossbench_mock_binary", linux=result)
     self.validate_known_binary_linux(result, binary)
     binary = LinuxBinary(result)
@@ -299,7 +334,8 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
   def test_known_binary_win(self):
     self.fs.os = OSType.WINDOWS
     result = self.create_binary_path(
-        "foo/bar/default/crossbench_mock_binary.exe")
+      "foo/bar/default/crossbench_mock_binary.exe"
+    )
     result = pathlib.PureWindowsPath(result)
     binary = Binary("crossbench_mock_binary", win=result)
     self.validate_known_binary_win(result, binary)
@@ -330,11 +366,13 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
     # The AndroidAdbPlatform base constructor executes an 'adb devices -l'
     # subprocess query on the host system to extract device/serial identity.
     host_platform.expect_sh(
-        adb_bin,
-        "devices",
-        "-l",
-        result=("List of attached devices\n"
-                "1.1.1.1 device product:mock model:mock"))
+      adb_bin,
+      "devices",
+      "-l",
+      result=(
+        "List of attached devices\n1.1.1.1 device product:mock model:mock"
+      ),
+    )
 
     platform = AndroidAdbMockPlatform(host_platform, adb=MockAdb(host_platform))
 
@@ -343,12 +381,14 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
     binary = AndroidBinary(path)
     self.validate_known_binary_android(platform, path, binary)
 
-  def validate_known_binary_android(self, platform: plt.Platform,
-                                    result: pth.AnyPath, binary: Binary):
+  def validate_known_binary_android(
+    self, platform: plt.Platform, result: pth.AnyPath, binary: Binary
+  ):
     result = pth.AnyPosixPath(result)
 
     with mock.patch.object(
-        platform, "which", return_value=result) as mock_which:
+      platform, "which", return_value=result
+    ) as mock_which:
       self.assertEqual(str(binary.resolve(platform)), str(result))
       self.assertEqual(str(binary.resolve_cached(platform)), str(result))
       mock_which.assert_called_with(result)
@@ -362,7 +402,6 @@ class BinaryTestCase(CrossbenchFakeFsTestCase):
 
 
 class BinariesTestCase(CrossbenchFakeFsTestCase):
-
   def setUp(self) -> None:
     super().setUp()
     _find_chromium_checkout.cache_clear()
@@ -387,8 +426,8 @@ class BinariesTestCase(CrossbenchFakeFsTestCase):
     _find_chromium_checkout.cache_clear()
 
     llvm_path = (
-        chrome_src /
-        "third_party/llvm-build/Release+Asserts/bin/llvm-symbolizer")
+      chrome_src / "third_party/llvm-build/Release+Asserts/bin/llvm-symbolizer"
+    )
     self.fs.create_file(llvm_path, st_size=100)
 
     self.assertEqual(Binaries.LLVM_SYMBOLIZER.resolve(linux_plt), llvm_path)
@@ -397,9 +436,11 @@ class BinariesTestCase(CrossbenchFakeFsTestCase):
     win_paths = Binaries.LLVM_SYMBOLIZER.platform_path(win_plt)
     self.assertIsInstance(win_paths[0], ChromePath)
     self.assertEqual(
-        win_paths[0].relative_path,
-        pth.AnyPath(
-            "third_party/llvm-build/Release+Asserts/bin/llvm-symbolizer.exe"))
+      win_paths[0].relative_path,
+      pth.AnyPath(
+        "third_party/llvm-build/Release+Asserts/bin/llvm-symbolizer.exe"
+      ),
+    )
     self.assertIsInstance(win_paths[1], SystemPath)
     self.assertEqual(win_paths[1].binary, pth.AnyPath("llvm-symbolizer.exe"))
 
@@ -426,22 +467,22 @@ class BinariesTestCase(CrossbenchFakeFsTestCase):
     tp_build_path = chrome_src / "out/Default/trace_processor_shell"
     self.fs.create_file(tp_build_path, st_size=100)
     self.assertEqual(
-        Binaries.TRACE_PROCESSOR_SHELL.resolve(linux_plt), tp_build_path)
+      Binaries.TRACE_PROCESSOR_SHELL.resolve(linux_plt), tp_build_path
+    )
 
     # 2. Falls back to tools/trace_processor via PerfettoChromePath
     linux_plt.rm(tp_build_path)
     tp_tools_path = chrome_src / "third_party/perfetto/tools/trace_processor"
     self.fs.create_file(tp_tools_path, st_size=100)
     self.assertEqual(
-        Binaries.TRACE_PROCESSOR_SHELL.resolve(linux_plt), tp_tools_path)
+      Binaries.TRACE_PROCESSOR_SHELL.resolve(linux_plt), tp_tools_path
+    )
 
 
 class BinaryPathTestCase(CrossbenchFakeFsTestCase):
-
   def test_base_binary_path_defaults(self) -> None:
 
     class CustomBinaryPath(BinaryPath):
-
       def resolve(self, platform: plt.Platform) -> pth.AnyPath | None:
         return None
 
@@ -455,7 +496,8 @@ class BinaryPathTestCase(CrossbenchFakeFsTestCase):
     sys_path = SystemPath("my_binary")
     self.fs.create_file(linux_plt.local_path("/usr/bin/my_binary"))
     self.assertEqual(
-        sys_path.resolve(linux_plt), linux_plt.local_path("/usr/bin/my_binary"))
+      sys_path.resolve(linux_plt), linux_plt.local_path("/usr/bin/my_binary")
+    )
 
   def test_system_path_for_windows(self):
     sys_path = SystemPath("adb")
@@ -474,8 +516,9 @@ class BinaryPathTestCase(CrossbenchFakeFsTestCase):
 
     sys_path_nested_exe = SystemPath("my_tools/adb.exe")
     self.assertIs(sys_path_nested_exe.for_windows(), sys_path_nested_exe)
-    self.assertEqual(sys_path_nested_exe.binary,
-                     pth.AnyPath("my_tools/adb.exe"))
+    self.assertEqual(
+      sys_path_nested_exe.binary, pth.AnyPath("my_tools/adb.exe")
+    )
 
     sys_path_bat = SystemPath("adb.bat")
     self.assertIs(sys_path_bat.for_windows(), sys_path_bat)
@@ -483,8 +526,9 @@ class BinaryPathTestCase(CrossbenchFakeFsTestCase):
 
     sys_path_nested_bat = SystemPath("my_tools/adb.bat")
     self.assertIs(sys_path_nested_bat.for_windows(), sys_path_nested_bat)
-    self.assertEqual(sys_path_nested_bat.binary,
-                     pth.AnyPath("my_tools/adb.bat"))
+    self.assertEqual(
+      sys_path_nested_bat.binary, pth.AnyPath("my_tools/adb.bat")
+    )
 
     sys_path_upper_exe = SystemPath("adb.EXE")
     self.assertIs(sys_path_upper_exe.for_windows(), sys_path_upper_exe)
@@ -517,7 +561,8 @@ class BinaryPathTestCase(CrossbenchFakeFsTestCase):
     # Assert that ~/ paths gracefully resolve to platform.home()
     with mock.patch.object(linux_plt, "which", return_value=adb_path) as cm:
       self.assertEqual(
-          SystemPath("~/my_tools/adb").resolve(linux_plt), adb_path)
+        SystemPath("~/my_tools/adb").resolve(linux_plt), adb_path
+      )
     cm.assert_called_once_with(linux_plt.path("~/my_tools/adb"))
 
   def test_system_path_validation(self):
@@ -561,18 +606,21 @@ class BinaryPathTestCase(CrossbenchFakeFsTestCase):
     chrome_path = ChromePath("third_party/hello/adb")
     win_path = chrome_path.for_windows()
     self.assertIsInstance(win_path, ChromePath)
-    self.assertEqual(win_path.relative_path,
-                     pth.AnyPath("third_party/hello/adb.exe"))
+    self.assertEqual(
+      win_path.relative_path, pth.AnyPath("third_party/hello/adb.exe")
+    )
 
     chrome_path_exe = ChromePath("third_party/hello/adb.exe")
     self.assertIs(chrome_path_exe.for_windows(), chrome_path_exe)
-    self.assertEqual(chrome_path_exe.relative_path,
-                     pth.AnyPath("third_party/hello/adb.exe"))
+    self.assertEqual(
+      chrome_path_exe.relative_path, pth.AnyPath("third_party/hello/adb.exe")
+    )
 
     chrome_path_bat = ChromePath("third_party/hello/adb.bat")
     self.assertIs(chrome_path_bat.for_windows(), chrome_path_bat)
-    self.assertEqual(chrome_path_bat.relative_path,
-                     pth.AnyPath("third_party/hello/adb.bat"))
+    self.assertEqual(
+      chrome_path_bat.relative_path, pth.AnyPath("third_party/hello/adb.bat")
+    )
 
     chrome_path_upper_exe = ChromePath("third_party/hello/adb.EXE")
     self.assertIs(chrome_path_upper_exe.for_windows(), chrome_path_upper_exe)
@@ -641,8 +689,9 @@ class BinaryPathTestCase(CrossbenchFakeFsTestCase):
     win_path = perfetto_path.for_windows()
     self.assertIsInstance(win_path, PerfettoChromePath)
     self.assertEqual(
-        win_path.relative_path,
-        pth.AnyPath("third_party/perfetto/tools/trace_processor.exe"))
+      win_path.relative_path,
+      pth.AnyPath("third_party/perfetto/tools/trace_processor.exe"),
+    )
     self.assertEqual(win_path.binary, pth.AnyPath("trace_processor.exe"))
     perfetto_path_exe = PerfettoChromePath("trace_processor.exe")
     self.assertIs(perfetto_path_exe.for_windows(), perfetto_path_exe)
@@ -750,8 +799,9 @@ class BinaryPathTestCase(CrossbenchFakeFsTestCase):
     sim_path = XcodeXctestrunPath("iphonesimulator")
 
     products = (
-        macos_plt.home() /
-        "Library/Developer/Xcode/DerivedData/WebDriverAgent-x/Build/Products")
+      macos_plt.home()
+      / "Library/Developer/Xcode/DerivedData/WebDriverAgent-x/Build/Products"
+    )
     stale = products / "WebDriverAgentRunner_iphoneos26.5-arm64.xctestrun"
     fresh = products / "WebDriverAgentRunner_iphoneos26.0-arm64.xctestrun"
     sim = products / "WebDriverAgentRunner_iphonesimulator26.5-arm64.xctestrun"
@@ -782,8 +832,9 @@ class BinaryPathTestCase(CrossbenchFakeFsTestCase):
   def test_wda_xctestrun_paths(self) -> None:
     macos_plt = MacOsMockPlatform()
     products = (
-        macos_plt.home() /
-        "Library/Developer/Xcode/DerivedData/WebDriverAgent-x/Build/Products")
+      macos_plt.home()
+      / "Library/Developer/Xcode/DerivedData/WebDriverAgent-x/Build/Products"
+    )
     fresh = products / "WebDriverAgentRunner_iphoneos26.0-arm64.xctestrun"
     sim = products / "WebDriverAgentRunner_iphonesimulator26.5-arm64.xctestrun"
     self.fs.create_file(fresh)
@@ -803,8 +854,9 @@ class BinaryPathTestCase(CrossbenchFakeFsTestCase):
       if prop_name.startswith("__"):
         continue
       self.assertIsInstance(binary_instance, Binary, prop_name)
-      self.assertEqual(prop_name.lower(),
-                       binary_instance.name.replace("-", "_"))
+      self.assertEqual(
+        prop_name.lower(), binary_instance.name.replace("-", "_")
+      )
 
 
 if __name__ == "__main__":

@@ -56,23 +56,30 @@ class CrossbenchDevToolsRecorderProxy:
   @classmethod
   def add_cli_arguments(cls, subparsers: Subparsers) -> argparse.ArgumentParser:
     parser = subparsers.add_parser(
-        "devtools-recorder-proxy",
-        aliases=["devtools"],
-        help=("Starts a local server to communicate with the "
-              "DevTools Recorder extension."))
+      "devtools-recorder-proxy",
+      aliases=["devtools"],
+      help=(
+        "Starts a local server to communicate with the "
+        "DevTools Recorder extension."
+      ),
+    )
     parser.add_argument(
-        "--disable-token-authentication",
-        dest="use_auth_token",
-        default=True,
-        action="store_false",
-        help=("Disable token-based authentication. "
-              "Unsafe, only use for local development."))
+      "--disable-token-authentication",
+      dest="use_auth_token",
+      default=True,
+      action="store_false",
+      help=(
+        "Disable token-based authentication. "
+        "Unsafe, only use for local development."
+      ),
+    )
     return parser
 
   @classmethod
   def run_subcommand(cls, args: argparse.Namespace) -> None:
     instance: CrossbenchDevToolsRecorderProxy = cls(
-        use_auth_token=args.use_auth_token)
+      use_auth_token=args.use_auth_token
+    )
     instance.run()
 
   _websocket: ws_server.ServerConnection
@@ -85,8 +92,10 @@ class CrossbenchDevToolsRecorderProxy:
     self._state: Final[StateMachine[State]] = StateMachine(State.CONNECTED)
     self._crossbench_task: asyncio.Task | None = None
     self._crossbench_process: Process | None = None
-    self._tmp_json: Final[pth.LocalPath] = pth.LocalPath(
-        tempfile.mkdtemp("crossbench_proxy")) / "devtools_recorder.json"
+    self._tmp_json: Final[pth.LocalPath] = (
+      pth.LocalPath(tempfile.mkdtemp("crossbench_proxy"))
+      / "devtools_recorder.json"
+    )
 
   def run(self) -> None:
     asyncio.run(self.run_server())
@@ -120,7 +129,8 @@ class CrossbenchDevToolsRecorderProxy:
       await self._send_message(self._handle_message(message))
 
   async def _send_message(
-      self, coroutine: Awaitable[tuple[Response, Json] | None]) -> None:
+    self, coroutine: Awaitable[tuple[Response, Json] | None]
+  ) -> None:
     response: JsonDict = {"success": False, "payload": None, "error": None}
     try:
       result: tuple[Response, Json] | None = await coroutine
@@ -144,7 +154,8 @@ class CrossbenchDevToolsRecorderProxy:
     await self._websocket.send(response_json)
 
   async def _handle_message(
-      self, message: bytearray | bytes | str) -> tuple[Response, str] | None:
+    self, message: bytearray | bytes | str
+  ) -> tuple[Response, str] | None:
     logging.debug("RECEIVE Message: %s", message)
     try:
       payload: JsonDict = json.loads(message)
@@ -196,48 +207,52 @@ class CrossbenchDevToolsRecorderProxy:
       raw_cmd = args.get("cmd")
       assert isinstance(raw_cmd, str)
       cmd = [
-          "load",
-          "--env-validation=warn",
-          "--verbose",
-          f"--devtools-recorder={self._tmp_json.absolute()}",
-          *shlex.split(raw_cmd),
+        "load",
+        "--env-validation=warn",
+        "--verbose",
+        f"--devtools-recorder={self._tmp_json.absolute()}",
+        *shlex.split(raw_cmd),
       ]
     logging.info("CROSSBENCH COMMAND: %s", cmd)
     self._crossbench_process = await asyncio.create_subprocess_exec(
-        cb_path.absolute(),
-        *cmd,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE)
+      cb_path.absolute(),
+      *cmd,
+      stdout=asyncio.subprocess.PIPE,
+      stderr=asyncio.subprocess.PIPE,
+    )
     self._crossbench_task = asyncio.create_task(self._wait_for_crossbench())
     return await self._status_command()
 
   async def _send_output(
-      self, stdout_str: str | None,
-      stderr_str: str | None) -> tuple[Response, dict[str, str]] | None:
+    self, stdout_str: str | None, stderr_str: str | None
+  ) -> tuple[Response, dict[str, str]] | None:
     if self._state != State.RUNNING:
       return None
     if self._print_cmd_output:
       sys.stdout.write(stdout_str or "")
       sys.stderr.write(stderr_str or "")
     return Response.OUTPUT, {
-        "stdout": stdout_str or "",
-        "stderr": stderr_str or "",
+      "stdout": stdout_str or "",
+      "stderr": stderr_str or "",
     }
 
   async def _wait_for_crossbench(self) -> None:
     assert self._crossbench_process
     assert self._crossbench_process.stdout
     stdout_sender = asyncio.create_task(
-        self._send_stdout_incrementally(self._crossbench_process.stdout))
+      self._send_stdout_incrementally(self._crossbench_process.stdout)
+    )
     assert self._crossbench_process.stderr
     stderr_sender = asyncio.create_task(
-        self._send_stderr_incrementally(self._crossbench_process.stderr))
+      self._send_stderr_incrementally(self._crossbench_process.stderr)
+    )
     # TODO: Figure out why waiting on sending the output hangs when the
     # crossbench subprocess ends with exit!=0
     await asyncio.wait([stdout_sender, stderr_sender])
     stdout, stderr = await self._crossbench_process.communicate()
     await self._send_message(
-        self._send_output(stdout.decode("utf-8"), stderr.decode("utf-8")))
+      self._send_output(stdout.decode("utf-8"), stderr.decode("utf-8"))
+    )
     returncode = self._crossbench_process.returncode
     self._state.transition(State.RUNNING, to=State.CONNECTED)
     self._crossbench_task = None
@@ -247,8 +262,9 @@ class CrossbenchDevToolsRecorderProxy:
 
   _OUTPUT_BUFFER_SIZE = 128
 
-  async def _send_stdout_incrementally(self,
-                                       stdout: asyncio.StreamReader) -> None:
+  async def _send_stdout_incrementally(
+    self, stdout: asyncio.StreamReader
+  ) -> None:
     while self._crossbench_process:
       stdout_data = await stdout.read(self._OUTPUT_BUFFER_SIZE)
       if not stdout_data:
@@ -256,8 +272,9 @@ class CrossbenchDevToolsRecorderProxy:
       stdout_str = stdout_data.decode("utf-8")
       await self._send_message(self._send_output(stdout_str, None))
 
-  async def _send_stderr_incrementally(self,
-                                       stderr: asyncio.StreamReader) -> None:
+  async def _send_stderr_incrementally(
+    self, stderr: asyncio.StreamReader
+  ) -> None:
     while self._crossbench_process:
       stderr_data = await stderr.read(self._OUTPUT_BUFFER_SIZE)
       if not stderr_data:

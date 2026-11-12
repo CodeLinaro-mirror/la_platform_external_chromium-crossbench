@@ -14,15 +14,26 @@ from unittest import mock
 
 from immutabledict import immutabledict
 
-from crossbench.benchmarks.blink_ai.blink_ai import BlinkAIBenchmark, \
-    BlinkAIStory, BlinkAIStoryFilter
-from crossbench.benchmarks.blink_ai.config.base import BlinkAIApiConfig, \
-    BlinkAIModelConfig, BlinkAISubstoryConfig
-from crossbench.benchmarks.blink_ai.config.language_model import \
-    LANGUAGE_MODEL_API
+from crossbench.benchmarks.blink_ai.blink_ai import (
+  BlinkAIBenchmark,
+  BlinkAIStory,
+  BlinkAIStoryFilter,
+)
+from crossbench.benchmarks.blink_ai.config.base import (
+  BlinkAIApiConfig,
+  BlinkAIModelConfig,
+  BlinkAISubstoryConfig,
+)
+from crossbench.benchmarks.blink_ai.config.language_model import (
+  LANGUAGE_MODEL_API,
+)
 from crossbench.benchmarks.blink_ai.config.registry import API_CONFIGS
-from crossbench.benchmarks.blink_ai.probe import BYTES_PER_MB, \
-    MIN_VRAM_INTERVAL, BlinkAIProbe, BlinkAIProbeContext
+from crossbench.benchmarks.blink_ai.probe import (
+  BYTES_PER_MB,
+  MIN_VRAM_INTERVAL,
+  BlinkAIProbe,
+  BlinkAIProbeContext,
+)
 from crossbench.env.runner_env import EnvConfig, ValidationMode
 from crossbench.runner.runner import Runner
 from crossbench.stories.press_benchmark import MAX_STORY_NAME_LEN
@@ -32,7 +43,8 @@ from tests.crossbench.benchmarks import helper
 if TYPE_CHECKING:
   from tests.crossbench.mock_browser import MockBrowser
 
-SAMPLE_STORY_METRICS: Final[immutabledict[str, Any]] = immutabledict({
+SAMPLE_STORY_METRICS: Final[immutabledict[str, Any]] = immutabledict(
+  {
     "sessionCreationTimeMs": 120.5,
     "coldTimeToFirstTokenMs": 45.2,
     "coldTotalPromptTimeMs": 250.0,
@@ -40,12 +52,12 @@ SAMPLE_STORY_METRICS: Final[immutabledict[str, Any]] = immutabledict({
     "warmTimeToFirstTokenMs": [12.5, 10.2, 9.8],
     "warmTotalPromptTimeMs": [110.0, 95.0, 92.0],
     "warmChunksPerSecond": [50.2, 55.1, 56.3],
-})
+  }
+)
 VRAM_STAT_NAMES: Final[tuple[str, ...]] = ("peak", "baseline", "delta")
 
 
 class BlinkAITestCase(helper.SubStoryTestCase):
-
   @override
   def setUp(self) -> None:
     super().setUp()
@@ -74,14 +86,15 @@ class BlinkAITestCase(helper.SubStoryTestCase):
     with self.assertRaises(ValueError):
       self.story_filter(self.story_cls.all_story_names(), separate=False)
     stories = self.story_filter(
-        self.story_cls.all_story_names(), separate=True).stories
+      self.story_cls.all_story_names(), separate=True
+    ).stories
     self.benchmark_cls(stories)
 
   def _setup_run_js_expect(
-      self,
-      browser: MockBrowser,
-      probe_results: dict[str, Any],
-      status: str = "success",
+    self,
+    browser: MockBrowser,
+    probe_results: dict[str, Any],
+    status: str = "success",
   ) -> None:
     # wait_js_condition for window.LanguageModel
     browser.expect_js(result=True)
@@ -98,9 +111,9 @@ class BlinkAITestCase(helper.SubStoryTestCase):
     browser.expect_js(result=json.dumps(probe_results))
 
   def _run_vram_probe_context(
-      self,
-      samples: list[dict[str, float]],
-      js_metrics: dict[str, Any],
+    self,
+    samples: list[dict[str, float]],
+    js_metrics: dict[str, Any],
   ) -> dict[str, Any]:
     all_sampled = threading.Event()
     call_count = 0
@@ -122,7 +135,8 @@ class BlinkAITestCase(helper.SubStoryTestCase):
     mock_run = mock.Mock()
     mock_run.browser = mock_browser
     mock_run.get_default_probe_result_path = mock.Mock(
-        return_value=self.out_dir / "blink_ai.json")
+      return_value=self.out_dir / "blink_ai.json"
+    )
     mock_run.results = mock.Mock()
 
     mock_actions = mock.MagicMock()
@@ -132,7 +146,8 @@ class BlinkAITestCase(helper.SubStoryTestCase):
 
     context = BlinkAIProbeContext(probe, mock_run)
     with mock.patch.object(
-        self.platform, "gpu_vram_used", side_effect=side_effect):
+      self.platform, "gpu_vram_used", side_effect=side_effect
+    ):
       context.setup()
       context.start()
       self.assertTrue(all_sampled.wait(timeout=5.0))
@@ -143,37 +158,37 @@ class BlinkAITestCase(helper.SubStoryTestCase):
     return data
 
   def _assert_vram_stats(
-      self,
-      data: dict[str, Any],
-      peak_mb: float,
-      baseline_mb: float,
-      gpu_id: str | None = None,
-      check_flat_gpu: bool = False,
+    self,
+    data: dict[str, Any],
+    peak_mb: float,
+    baseline_mb: float,
+    gpu_id: str | None = None,
+    check_flat_gpu: bool = False,
   ) -> None:
     expected = {
-        "peak": peak_mb,
-        "baseline": baseline_mb,
-        "delta": peak_mb - baseline_mb,
+      "peak": peak_mb,
+      "baseline": baseline_mb,
+      "delta": peak_mb - baseline_mb,
     }
     if gpu_id is None:
       for stat, val_mb in expected.items():
         self.assertEqual(data["vram"][f"{stat}_mb"], val_mb)
         self.assertEqual(data[f"vram_{stat}_mb"], val_mb)
-        self.assertEqual(data[f"vram_{stat}_bytes"],
-                         round(val_mb * BYTES_PER_MB))
+        self.assertEqual(
+          data[f"vram_{stat}_bytes"], round(val_mb * BYTES_PER_MB)
+        )
       return
 
     self.assertDictEqual(
-        data["vram"][gpu_id],
-        {
-            f"{stat}_mb": val_mb for stat, val_mb in expected.items()
-        },
+      data["vram"][gpu_id],
+      {f"{stat}_mb": val_mb for stat, val_mb in expected.items()},
     )
     if check_flat_gpu:
       for stat, val_mb in expected.items():
         self.assertEqual(data[f"vram_{gpu_id}_{stat}_mb"], val_mb)
-        self.assertEqual(data[f"vram_{gpu_id}_{stat}_bytes"],
-                         round(val_mb * BYTES_PER_MB))
+        self.assertEqual(
+          data[f"vram_{gpu_id}_{stat}_bytes"], round(val_mb * BYTES_PER_MB)
+        )
 
   def test_run_default(self):
     stories = self.story_cls.default()
@@ -181,8 +196,8 @@ class BlinkAITestCase(helper.SubStoryTestCase):
     self.assertTrue(len(benchmark.describe()) > 0)
 
     probe_results: dict[str, Any] = {
-        "downloadTimeMs": 500.5,
-        **SAMPLE_STORY_METRICS,
+      "downloadTimeMs": 500.5,
+      **SAMPLE_STORY_METRICS,
     }
     for substory in self.story_cls.default_story_names():
       probe_results[substory] = dict(SAMPLE_STORY_METRICS)
@@ -196,24 +211,26 @@ class BlinkAITestCase(helper.SubStoryTestCase):
       browser.expected_js = copy.deepcopy(browser.expected_js)
 
     runner = Runner(
-        self.out_dir,
-        self.browsers,
-        benchmark,
-        env_config=EnvConfig(),
-        env_validation_mode=ValidationMode.SKIP,
-        platform=self.platform,
-        repetitions=repetitions,
-        throw=True,
-        in_memory_result_db=True,
+      self.out_dir,
+      self.browsers,
+      benchmark,
+      env_config=EnvConfig(),
+      env_validation_mode=ValidationMode.SKIP,
+      platform=self.platform,
+      repetitions=repetitions,
+      throw=True,
+      in_memory_result_db=True,
     )
 
     with mock.patch.object(self.benchmark_cls, "validate_url") as cm:
       runner.run()
     cm.assert_called_once()
 
-    expected_query = ("?api=language_model&stories=language_model"
-                      "%2Cmultimodal_image%2Cmultimodal_images"
-                      "%2Cmultimodal_audio")
+    expected_query = (
+      "?api=language_model&stories=language_model"
+      "%2Cmultimodal_image%2Cmultimodal_images"
+      "%2Cmultimodal_audio"
+    )
     for browser in self.browsers:
       urls = self.filter_splashscreen_urls(browser.url_list)
       self.assertEqual(len(urls), repetitions)
@@ -236,15 +253,15 @@ class BlinkAITestCase(helper.SubStoryTestCase):
       browser.expected_js = copy.deepcopy(browser.expected_js)
 
     runner = Runner(
-        self.out_dir,
-        self.browsers,
-        benchmark,
-        env_config=EnvConfig(),
-        env_validation_mode=ValidationMode.SKIP,
-        platform=self.platform,
-        repetitions=repetitions,
-        throw=True,
-        in_memory_result_db=True,
+      self.out_dir,
+      self.browsers,
+      benchmark,
+      env_config=EnvConfig(),
+      env_validation_mode=ValidationMode.SKIP,
+      platform=self.platform,
+      repetitions=repetitions,
+      throw=True,
+      in_memory_result_db=True,
     )
 
     with mock.patch.object(self.benchmark_cls, "validate_url") as cm:
@@ -255,8 +272,8 @@ class BlinkAITestCase(helper.SubStoryTestCase):
       urls = self.filter_splashscreen_urls(browser.url_list)
       self.assertEqual(len(urls), repetitions)
       self.assertIn(
-          self.story_cls.URL + "?api=language_model&stories=language_model",
-          urls)
+        self.story_cls.URL + "?api=language_model&stories=language_model", urls
+      )
       self.assertSequenceEqual(browser.expected_js, [])
 
   def test_custom_url(self):
@@ -264,12 +281,16 @@ class BlinkAITestCase(helper.SubStoryTestCase):
     stories = self.story_cls.from_names(["language_model"], url=custom_url)
     self.assertEqual(len(stories), 1)
     story = stories[0]
-    self.assertDictEqual(story.url_params, {
+    self.assertDictEqual(
+      story.url_params,
+      {
         "api": "language_model",
         "stories": "language_model",
-    })
-    self.assertEqual(story.test_url,
-                     custom_url + "?api=language_model&stories=language_model")
+      },
+    )
+    self.assertEqual(
+      story.test_url, custom_url + "?api=language_model&stories=language_model"
+    )
 
   def test_run_error(self):
     stories = self.story_cls.from_names(["language_model"])
@@ -286,23 +307,23 @@ class BlinkAITestCase(helper.SubStoryTestCase):
       browser.expected_js = copy.deepcopy(browser.expected_js)
 
     runner = Runner(
-        self.out_dir,
-        active_browsers,
-        benchmark,
-        env_config=EnvConfig(),
-        env_validation_mode=ValidationMode.SKIP,
-        platform=self.platform,
-        repetitions=repetitions,
-        throw=True,
-        in_memory_result_db=True,
+      self.out_dir,
+      active_browsers,
+      benchmark,
+      env_config=EnvConfig(),
+      env_validation_mode=ValidationMode.SKIP,
+      platform=self.platform,
+      repetitions=repetitions,
+      throw=True,
+      in_memory_result_db=True,
     )
 
     with mock.patch.object(self.benchmark_cls, "validate_url") as cm:
       with self.assertRaises(ValueError) as cm_err:
         runner.run()
       self.assertIn(
-          "Blink-AI Benchmark did not finish successfully",
-          str(cm_err.exception),
+        "Blink-AI Benchmark did not finish successfully",
+        str(cm_err.exception),
       )
     cm.assert_called_once()
 
@@ -311,39 +332,40 @@ class BlinkAITestCase(helper.SubStoryTestCase):
 
   def test_multimodal_stories(self):
     stories = self.story_cls.from_names(
-        ["multimodal_image", "multimodal_audio"])
+      ["multimodal_image", "multimodal_audio"]
+    )
     self.assertEqual(len(stories), 1)
     story = stories[0]
     self.assertDictEqual(
-        story.url_params,
-        {
-            "api": "language_model",
-            "stories": "multimodal_image,multimodal_audio",
-        },
+      story.url_params,
+      {
+        "api": "language_model",
+        "stories": "multimodal_image,multimodal_audio",
+      },
     )
     self.assertEqual(
-        story.test_url,
-        self.story_cls.URL +
-        "?api=language_model&stories=multimodal_image%2Cmultimodal_audio",
+      story.test_url,
+      self.story_cls.URL
+      + "?api=language_model&stories=multimodal_image%2Cmultimodal_audio",
     )
 
   def test_substories_and_default(self):
     default_stories = self.story_cls.default_story_names()
     self.assertEqual(
-        default_stories,
-        (
-            "language_model",
-            "multimodal_image",
-            "multimodal_images",
-            "multimodal_audio",
-        ),
+      default_stories,
+      (
+        "language_model",
+        "multimodal_image",
+        "multimodal_images",
+        "multimodal_audio",
+      ),
     )
     for opt_in_story in (
-        "mtp_summary",
-        "mtp_flight",
-        "mtp_emoji",
-        "mtp_constrained_summary",
-        "tool_calling",
+      "mtp_summary",
+      "mtp_flight",
+      "mtp_emoji",
+      "mtp_constrained_summary",
+      "tool_calling",
     ):
       self.assertIn(opt_in_story, self.story_cls.SUBSTORIES)
       self.assertNotIn(opt_in_story, default_stories)
@@ -354,10 +376,11 @@ class BlinkAITestCase(helper.SubStoryTestCase):
     self.assertEqual(default_story.name, "language_model")
     self.assertEqual(default_story.required_features, base_features)
     default_flags = self.benchmark_cls.extra_flags(
-        self.browsers[0].attributes(), default_story)
+      self.browsers[0].attributes(), default_story
+    )
     self.assertIn(
-        "OnDeviceModelIdleTimeout:on_device_model_idle_timeout/10s",
-        str(default_flags),
+      "OnDeviceModelIdleTimeout:on_device_model_idle_timeout/10s",
+      str(default_flags),
     )
     self.assertIn("OnDeviceAiDefaultEnabled", str(default_flags))
     self.assertNotIn("OnDeviceModelSpeculativeDecoding", str(default_flags))
@@ -366,54 +389,57 @@ class BlinkAITestCase(helper.SubStoryTestCase):
     mtp_story_obj = self.story_cls.from_names(["mtp_summary"])[0]
     self.assertEqual(mtp_story_obj.name, "language_model_mtp_summary")
     self.assertEqual(
-        mtp_story_obj.required_features,
-        base_features + ("OnDeviceModelSpeculativeDecoding",),
+      mtp_story_obj.required_features,
+      base_features + ("OnDeviceModelSpeculativeDecoding",),
     )
-    mtp_flags = self.benchmark_cls.extra_flags(self.browsers[0].attributes(),
-                                               mtp_story_obj)
+    mtp_flags = self.benchmark_cls.extra_flags(
+      self.browsers[0].attributes(), mtp_story_obj
+    )
     self.assertIn("OnDeviceModelSpeculativeDecoding", str(mtp_flags))
     self.assertNotIn("AIPromptAPIToolUse", str(mtp_flags))
 
     tool_use_story_obj = self.story_cls.from_names(["tool_calling"])[0]
     self.assertEqual(
-        tool_use_story_obj.required_features,
-        base_features + (
-            "AIPromptAPIToolUse",
-            "OnDeviceModelConversationBackend",
-            "AIApiFoundationalModel:model_version/v4",
-        ),
+      tool_use_story_obj.required_features,
+      base_features
+      + (
+        "AIPromptAPIToolUse",
+        "OnDeviceModelConversationBackend",
+        "AIApiFoundationalModel:model_version/v4",
+      ),
     )
     tool_use_flags = self.benchmark_cls.extra_flags(
-        self.browsers[0].attributes(), tool_use_story_obj)
+      self.browsers[0].attributes(), tool_use_story_obj
+    )
     self.assertIn("AIPromptAPIToolUse", str(tool_use_flags))
     self.assertIn("OnDeviceModelConversationBackend", str(tool_use_flags))
     self.assertIn(
-        "AIApiFoundationalModel:model_version/v4",
-        str(tool_use_flags),
+      "AIApiFoundationalModel:model_version/v4",
+      str(tool_use_flags),
     )
     self.assertNotIn("OnDeviceModelSpeculativeDecoding", str(tool_use_flags))
 
   def test_mtp_stories(self):
     stories = self.story_cls.from_names(
-        ["mtp_summary", "mtp_flight", "mtp_emoji"])
+      ["mtp_summary", "mtp_flight", "mtp_emoji"]
+    )
     self.assertEqual(len(stories), 1)
     story = stories[0]
     self.assertEqual(
-        story.required_features,
-        LANGUAGE_MODEL_API.base_features +
-        ("OnDeviceModelSpeculativeDecoding",),
+      story.required_features,
+      LANGUAGE_MODEL_API.base_features + ("OnDeviceModelSpeculativeDecoding",),
     )
     self.assertDictEqual(
-        story.url_params,
-        {
-            "api": "language_model",
-            "stories": "mtp_summary,mtp_flight,mtp_emoji",
-        },
+      story.url_params,
+      {
+        "api": "language_model",
+        "stories": "mtp_summary,mtp_flight,mtp_emoji",
+      },
     )
     self.assertEqual(
-        story.test_url,
-        self.story_cls.URL + "?api=language_model"
-        "&stories=mtp_summary%2Cmtp_flight%2Cmtp_emoji",
+      story.test_url,
+      self.story_cls.URL + "?api=language_model"
+      "&stories=mtp_summary%2Cmtp_flight%2Cmtp_emoji",
     )
 
   def test_mtp_constrained_story(self):
@@ -422,14 +448,16 @@ class BlinkAITestCase(helper.SubStoryTestCase):
     self.assertNotIn(name, self.story_cls.default_story_names())
     story = self.story_cls.from_names([name])[0]
     self.assertEqual(
-        story.required_features,
-        LANGUAGE_MODEL_API.base_features +
-        ("OnDeviceModelSpeculativeDecoding",),
+      story.required_features,
+      LANGUAGE_MODEL_API.base_features + ("OnDeviceModelSpeculativeDecoding",),
     )
-    self.assertDictEqual(story.url_params, {
+    self.assertDictEqual(
+      story.url_params,
+      {
         "api": "language_model",
         "stories": name,
-    })
+      },
+    )
     flags = self.benchmark_cls.extra_flags(self.browsers[0].attributes(), story)
     self.assertIn("OnDeviceModelSpeculativeDecoding", str(flags))
 
@@ -438,20 +466,24 @@ class BlinkAITestCase(helper.SubStoryTestCase):
     self.assertEqual(len(stories), 1)
     story = stories[0]
     self.assertEqual(
-        story.required_features,
-        LANGUAGE_MODEL_API.base_features + (
-            "AIPromptAPIToolUse",
-            "OnDeviceModelConversationBackend",
-            "AIApiFoundationalModel:model_version/v4",
-        ),
+      story.required_features,
+      LANGUAGE_MODEL_API.base_features
+      + (
+        "AIPromptAPIToolUse",
+        "OnDeviceModelConversationBackend",
+        "AIApiFoundationalModel:model_version/v4",
+      ),
     )
-    self.assertDictEqual(story.url_params, {
+    self.assertDictEqual(
+      story.url_params,
+      {
         "api": "language_model",
         "stories": "tool_calling",
-    })
+      },
+    )
     self.assertEqual(
-        story.test_url,
-        self.story_cls.URL + "?api=language_model&stories=tool_calling",
+      story.test_url,
+      self.story_cls.URL + "?api=language_model&stories=tool_calling",
     )
 
   def test_api_config_and_model_selection(self) -> None:
@@ -459,11 +491,12 @@ class BlinkAITestCase(helper.SubStoryTestCase):
     self.assertEqual(story_v4.name, "language_model_language_model")
     self.assertEqual(story_v4.model, "v4")
     self.assertEqual(
-        story_v4.required_features,
-        LANGUAGE_MODEL_API.base_features + (
-            "OnDeviceModelConversationBackend",
-            "AIApiFoundationalModel:model_version/v4",
-        ),
+      story_v4.required_features,
+      LANGUAGE_MODEL_API.base_features
+      + (
+        "OnDeviceModelConversationBackend",
+        "AIApiFoundationalModel:model_version/v4",
+      ),
     )
 
     tool_v4 = self.story_cls.from_names(["tool_calling"], model="v4")[0]
@@ -483,32 +516,35 @@ class BlinkAITestCase(helper.SubStoryTestCase):
     with self.assertRaises(ValueError):
       BlinkAIStoryFilter.parse_api_names(())
 
-    compatible_filter = self.story_filter(["mtp_summary", "mtp_flight"],
-                                          separate=False)
+    compatible_filter = self.story_filter(
+      ["mtp_summary", "mtp_flight"], separate=False
+    )
     self.assertEqual(len(compatible_filter.stories), 1)
 
     with self.assertRaises(ValueError):
       self.story_filter(["language_model", "mtp_summary"], separate=False)
 
-    args_conflict = self.parse_args("--stories=language_model,tool_calling",
-                                    "--combined")
+    args_conflict = self.parse_args(
+      "--stories=language_model,tool_calling", "--combined"
+    )
     with self.assertRaises(ValueError):
       self.benchmark_cls.from_cli_args(args_conflict)
 
     args_separate = self.parse_args(
-        "--stories=language_model,mtp_summary,tool_calling",
-        "--separate",
-        "--api=language_model",
+      "--stories=language_model,mtp_summary,tool_calling",
+      "--separate",
+      "--api=language_model",
     )
     benchmark = self.benchmark_cls.from_cli_args(args_separate)
     self.assertEqual(len(benchmark.stories), 3)
 
     single_neg_args = self.parse_args(
-        "--stories=default,-multimodal_audio,-multimodal_images")
+      "--stories=default,-multimodal_audio,-multimodal_images"
+    )
     single_neg_bm = self.benchmark_cls.from_cli_args(single_neg_args)
     self.assertEqual(
-        single_neg_bm.stories[0].substories,
-        ("language_model", "multimodal_image"),
+      single_neg_bm.stories[0].substories,
+      ("language_model", "multimodal_image"),
     )
 
     with self.assertRaises(ValueError):
@@ -527,50 +563,58 @@ class BlinkAITestCase(helper.SubStoryTestCase):
     tool_v4_args = self.parse_args("--stories=tool_calling", "--model=v4")
     tool_v4_benchmark = self.benchmark_cls.from_cli_args(tool_v4_args)
     self.assertEqual(len(tool_v4_benchmark.stories), 1)
-    self.assertEqual(tool_v4_benchmark.stories[0].name,
-                     "language_model_tool_calling")
+    self.assertEqual(
+      tool_v4_benchmark.stories[0].name, "language_model_tool_calling"
+    )
 
-    tool_conflict_args = self.parse_args("--stories=tool_calling",
-                                         "--model=default")
+    tool_conflict_args = self.parse_args(
+      "--stories=tool_calling", "--model=default"
+    )
     with self.assertRaises(ValueError):
       self.benchmark_cls.from_cli_args(tool_conflict_args)
 
   def test_custom_api_config_and_setup_js_global(self) -> None:
     writer_api = BlinkAIApiConfig.create(
-        name="writer",
-        js_global="Writer",
-        base_features=("AIWriterAPI",),
-        default_model="v1",
-        default_substories=("short", "long"),
-        models=(BlinkAIModelConfig("v1", features=("WriterModelV1",)),),
-        substories=(
-            BlinkAISubstoryConfig("short", features=("FeatureA", "FeatureB")),
-            BlinkAISubstoryConfig("long", features=("FeatureB", "FeatureA")),
-            BlinkAISubstoryConfig("extra", features=("FeatureA", "FeatureB")),
-        ),
+      name="writer",
+      js_global="Writer",
+      base_features=("AIWriterAPI",),
+      default_model="v1",
+      default_substories=("short", "long"),
+      models=(BlinkAIModelConfig("v1", features=("WriterModelV1",)),),
+      substories=(
+        BlinkAISubstoryConfig("short", features=("FeatureA", "FeatureB")),
+        BlinkAISubstoryConfig("long", features=("FeatureB", "FeatureA")),
+        BlinkAISubstoryConfig("extra", features=("FeatureA", "FeatureB")),
+      ),
     )
     self.assertEqual(
-        writer_api.resolve_features(),
-        ("AIWriterAPI", "WriterModelV1"),
+      writer_api.resolve_features(),
+      ("AIWriterAPI", "WriterModelV1"),
     )
     writer_api.validate_combined_substories(("short", "long"))
 
-    patched_configs = immutabledict({
+    patched_configs = immutabledict(
+      {
         **API_CONFIGS,
         "writer": writer_api,
-    })
+      }
+    )
     with mock.patch(
-        "crossbench.benchmarks.blink_ai.config.registry.API_CONFIGS",
-        patched_configs):
+      "crossbench.benchmarks.blink_ai.config.registry.API_CONFIGS",
+      patched_configs,
+    ):
       default_stories = self.story_cls.default(api_name="writer")
       self.assertEqual(len(default_stories), 1)
       story = default_stories[0]
       self.assertTrue(story.has_default_substories)
       self.assertEqual(story.name, "writer")
-      self.assertEqual(story.url_params, {
+      self.assertEqual(
+        story.url_params,
+        {
           "api": "writer",
           "stories": "short,long",
-      })
+        },
+      )
 
       all_stories = self.story_cls.all(separate=False, api_name="writer")
       self.assertEqual(len(all_stories), 1)
@@ -590,104 +634,115 @@ class BlinkAITestCase(helper.SubStoryTestCase):
       multi_args = self.parse_args("--api=language_model,writer")
       multi_benchmark = self.benchmark_cls.from_cli_args(multi_args)
       self.assertEqual(
-          len(multi_benchmark.stories),
-          len(LANGUAGE_MODEL_API.default_substories) +
-          len(writer_api.default_substories),
+        len(multi_benchmark.stories),
+        len(LANGUAGE_MODEL_API.default_substories)
+        + len(writer_api.default_substories),
       )
 
       all_api_args = self.parse_args("--api=all")
       all_api_benchmark = self.benchmark_cls.from_cli_args(all_api_args)
       self.assertEqual(
-          len(all_api_benchmark.stories),
-          len(LANGUAGE_MODEL_API.default_substories) +
-          len(writer_api.default_substories),
+        len(all_api_benchmark.stories),
+        len(LANGUAGE_MODEL_API.default_substories)
+        + len(writer_api.default_substories),
       )
 
       all_api_sep_args = self.parse_args("--api=all", "--separate")
       all_api_sep_benchmark = self.benchmark_cls.from_cli_args(all_api_sep_args)
       self.assertEqual(
-          len(all_api_sep_benchmark.stories),
-          len(LANGUAGE_MODEL_API.default_substories) +
-          len(writer_api.default_substories),
+        len(all_api_sep_benchmark.stories),
+        len(LANGUAGE_MODEL_API.default_substories)
+        + len(writer_api.default_substories),
       )
 
       with self.assertRaises(argparse.ArgumentTypeError):
         self.benchmark_cls.from_cli_args(
-            self.parse_args("--api=language_model,writer", "--combined"))
+          self.parse_args("--api=language_model,writer", "--combined")
+        )
 
       qualified_subset_args = self.parse_args(
-          "--api=language_model,writer",
-          "--stories=language_model:mtp_summary,writer:short",
+        "--api=language_model,writer",
+        "--stories=language_model:mtp_summary,writer:short",
       )
       qualified_subset_bm = self.benchmark_cls.from_cli_args(
-          qualified_subset_args)
+        qualified_subset_args
+      )
       self.assertEqual(
-          tuple(s.name for s in qualified_subset_bm.stories),
-          ("language_model_mtp_summary", "writer_short"),
+        tuple(s.name for s in qualified_subset_bm.stories),
+        ("language_model_mtp_summary", "writer_short"),
       )
 
       for neg_pattern in ("writer:-long", "-writer:-long", "-writer:long"):
         neg_bm = self.benchmark_cls.from_cli_args(
-            self.parse_args(
-                "--api=language_model,writer",
-                f"--stories=writer:default,{neg_pattern}",
-            ))
+          self.parse_args(
+            "--api=language_model,writer",
+            f"--stories=writer:default,{neg_pattern}",
+          )
+        )
         self.assertEqual(
-            tuple(s.name for s in neg_bm.stories),
-            ("writer_short",),
+          tuple(s.name for s in neg_bm.stories),
+          ("writer_short",),
         )
 
       with self.assertRaises(ValueError):
         self.benchmark_cls.from_cli_args(
-            self.parse_args(
-                "--api=language_model,writer",
-                "--stories=writer:short,-writer:short",
-            ))
+          self.parse_args(
+            "--api=language_model,writer",
+            "--stories=writer:short,-writer:short",
+          )
+        )
       with self.assertRaises(ValueError):
         self.benchmark_cls.from_cli_args(
-            self.parse_args("--api=writer", "--stories=writer:"))
+          self.parse_args("--api=writer", "--stories=writer:")
+        )
 
       multi_filter = self.story_filter(
-          ["default"],
-          separate=True,
-          api_names=("language_model", "writer"),
+        ["default"],
+        separate=True,
+        api_names=("language_model", "writer"),
       )
       assert isinstance(multi_filter, BlinkAIStoryFilter)
       from_names_stories = multi_filter.stories_from_names(
-          ("language_model:mtp_summary", "writer:short"))
+        ("language_model:mtp_summary", "writer:short")
+      )
       self.assertEqual(
-          tuple(s.name for s in from_names_stories),
-          ("language_model_mtp_summary", "writer_short"),
+        tuple(s.name for s in from_names_stories),
+        ("language_model_mtp_summary", "writer_short"),
       )
       with self.assertRaises(ValueError):
         multi_filter.stories_from_names(("short",))
       with self.assertRaises(ValueError):
         self.story_filter(
-            ["default"],
-            separate=False,
-            api_names=("language_model", "writer"),
+          ["default"],
+          separate=False,
+          api_names=("language_model", "writer"),
         )
 
       with self.assertRaises(ValueError):
         self.benchmark_cls.from_cli_args(
-            self.parse_args("--api=language_model,writer",
-                            "--stories=mtp_summary"))
+          self.parse_args(
+            "--api=language_model,writer", "--stories=mtp_summary"
+          )
+        )
       with self.assertRaises(ValueError):
         self.benchmark_cls.from_cli_args(
-            self.parse_args("--api=language_model", "--stories=writer:short"))
+          self.parse_args("--api=language_model", "--stories=writer:short")
+        )
       with self.assertRaises(ValueError):
         self.benchmark_cls.from_cli_args(
-            self.parse_args("--api=language_model", "--stories=:short"))
+          self.parse_args("--api=language_model", "--stories=:short")
+        )
 
       with self.assertRaises(argparse.ArgumentTypeError):
         self.benchmark_cls.from_cli_args(
-            self.parse_args("--api=language_model,writer", "--model=v4"))
+          self.parse_args("--api=language_model,writer", "--model=v4")
+        )
       with self.assertRaises(ValueError):
         self.story_filter(
-            ["default"],
-            separate=True,
-            api_names=("language_model", "writer"),
-            model="v4",
+          ["default"],
+          separate=True,
+          api_names=("language_model", "writer"),
+          model="v4",
         )
       with self.assertRaises(argparse.ArgumentError):
         self.parse_args("--api=all,writer")
@@ -698,9 +753,9 @@ class BlinkAITestCase(helper.SubStoryTestCase):
       mock_run.actions = mock.MagicMock(return_value=mock_actions)
       story.setup(mock_run)
       mock_actions.wait_js_condition.assert_called_once_with(
-          "return !!window.Writer && window.testStatus === 'waiting'",
-          0.5,
-          timeout=dt.timedelta(seconds=45),
+        "return !!window.Writer && window.testStatus === 'waiting'",
+        0.5,
+        timeout=dt.timedelta(seconds=45),
       )
 
       mock_actions.wait_js_condition.side_effect = TimeoutError("timed out")
@@ -711,61 +766,63 @@ class BlinkAITestCase(helper.SubStoryTestCase):
 
   def test_vram_probe_context_single_gpu(self):
     samples = [
-        {
-            "gpu_0": 100.0,
-        },
-        {
-            "gpu_0": 150.0,
-        },
-        {
-            "gpu_0": 200.0,
-        },
-        {
-            "gpu_0": 120.0,
-        },
+      {
+        "gpu_0": 100.0,
+      },
+      {
+        "gpu_0": 150.0,
+      },
+      {
+        "gpu_0": 200.0,
+      },
+      {
+        "gpu_0": 120.0,
+      },
     ]
     data = self._run_vram_probe_context(samples, {"downloadTimeMs": 10.0})
     self.assertEqual(data["downloadTimeMs"], 10.0)
     self._assert_vram_stats(data, peak_mb=200.0, baseline_mb=100.0)
     self._assert_vram_stats(
-        data, peak_mb=200.0, baseline_mb=100.0, gpu_id="gpu_0")
+      data, peak_mb=200.0, baseline_mb=100.0, gpu_id="gpu_0"
+    )
 
   def test_vram_probe_context_multi_gpu(self):
     samples = [
-        {
-            "gpu_0": 100.0,
-            "gpu_1": 200.0,
-        },
-        {
-            "gpu_0": 150.0,
-            "gpu_1": 250.0,
-        },
-        {
-            "gpu_0": 300.0,
-            "gpu_1": 220.0,
-        },
-        {
-            "gpu_0": 100.0,
-            "gpu_1": 200.0,
-        },
+      {
+        "gpu_0": 100.0,
+        "gpu_1": 200.0,
+      },
+      {
+        "gpu_0": 150.0,
+        "gpu_1": 250.0,
+      },
+      {
+        "gpu_0": 300.0,
+        "gpu_1": 220.0,
+      },
+      {
+        "gpu_0": 100.0,
+        "gpu_1": 200.0,
+      },
     ]
-    data = self._run_vram_probe_context(samples,
-                                        {"sessionCreationTimeMs": 50.0})
+    data = self._run_vram_probe_context(
+      samples, {"sessionCreationTimeMs": 50.0}
+    )
     self.assertEqual(data["sessionCreationTimeMs"], 50.0)
     self._assert_vram_stats(data, peak_mb=550.0, baseline_mb=300.0)
     self._assert_vram_stats(
-        data,
-        peak_mb=300.0,
-        baseline_mb=100.0,
-        gpu_id="gpu_0",
-        check_flat_gpu=True,
+      data,
+      peak_mb=300.0,
+      baseline_mb=100.0,
+      gpu_id="gpu_0",
+      check_flat_gpu=True,
     )
     self._assert_vram_stats(
-        data,
-        peak_mb=250.0,
-        baseline_mb=200.0,
-        gpu_id="gpu_1",
-        check_flat_gpu=True,
+      data,
+      peak_mb=250.0,
+      baseline_mb=200.0,
+      gpu_id="gpu_1",
+      check_flat_gpu=True,
     )
 
   def test_vram_probe_context_no_gpu(self):
@@ -790,32 +847,44 @@ class BlinkAITestCase(helper.SubStoryTestCase):
       self._setup_run_js_expect(browser, probe_results)
       browser.expected_js = copy.deepcopy(browser.expected_js)
 
-    self.platform.gpu_vram_used = mock.Mock(side_effect=[{
-        "gpu_0": 100.0,
-    }, {
-        "gpu_0": 250.0,
-    }] + [{
-        "gpu_0": 150.0,
-    }] * 20)
+    self.platform.gpu_vram_used = mock.Mock(
+      side_effect=[
+        {
+          "gpu_0": 100.0,
+        },
+        {
+          "gpu_0": 250.0,
+        },
+      ]
+      + [
+        {
+          "gpu_0": 150.0,
+        }
+      ]
+      * 20
+    )
 
     runner = Runner(
-        self.out_dir,
-        self.browsers,
-        benchmark,
-        env_config=EnvConfig(),
-        env_validation_mode=ValidationMode.SKIP,
-        platform=self.platform,
-        repetitions=1,
-        throw=True,
-        in_memory_result_db=True,
+      self.out_dir,
+      self.browsers,
+      benchmark,
+      env_config=EnvConfig(),
+      env_validation_mode=ValidationMode.SKIP,
+      platform=self.platform,
+      repetitions=1,
+      throw=True,
+      in_memory_result_db=True,
     )
 
     with mock.patch.object(self.benchmark_cls, "validate_url") as cm:
       runner.run()
     cm.assert_called_once()
 
-    expected_vram_keys = tuple(f"vram_{stat}_{unit}" for stat in VRAM_STAT_NAMES
-                               for unit in ("mb", "bytes"))
+    expected_vram_keys = tuple(
+      f"vram_{stat}_{unit}"
+      for stat in VRAM_STAT_NAMES
+      for unit in ("mb", "bytes")
+    )
     summary_file = self.out_dir / "blink_ai.json"
     self.assertTrue(summary_file.exists())
     summary_content = json.loads(summary_file.read_text())
@@ -826,7 +895,7 @@ class BlinkAITestCase(helper.SubStoryTestCase):
       self.assertIn("vram/peak_mb", browser_data)
 
     story_json_files = [
-        f for f in self.out_dir.glob("**/blink_ai.json") if f != summary_file
+      f for f in self.out_dir.glob("**/blink_ai.json") if f != summary_file
     ]
     self.assertTrue(len(story_json_files) > 0)
     for json_file in story_json_files:

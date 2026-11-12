@@ -17,13 +17,16 @@ if TYPE_CHECKING:
 def validate_cls(cls: type[Benchmark]) -> None:
   for benchmark_probe_cls in cls.PROBES:
     assert inspect.isclass(benchmark_probe_cls), (
-        f"{cls}.PROBES must contain classes only, "
-        f"but got {type(benchmark_probe_cls)}")
-    assert issubclass(
-        benchmark_probe_cls,
-        Probe), (f"Expected Probe class but got {type(benchmark_probe_cls)}")
+      f"{cls}.PROBES must contain classes only, "
+      f"but got {type(benchmark_probe_cls)}"
+    )
+    assert issubclass(benchmark_probe_cls, Probe), (
+      f"Expected Probe class but got {type(benchmark_probe_cls)}"
+    )
     assert issubclass(benchmark_probe_cls, BenchmarkProbeMixin), (
-        f"{benchmark_probe_cls} should be BenchmarkProbeMixin "
-        f"for {type(cls)}.PROBES")
+      f"{benchmark_probe_cls} should be BenchmarkProbeMixin "
+      f"for {type(cls)}.PROBES"
+    )
     assert benchmark_probe_cls.NAME, (
-        f"Expected probe.NAME for {benchmark_probe_cls}")
+      f"Expected probe.NAME for {benchmark_probe_cls}"
+    )

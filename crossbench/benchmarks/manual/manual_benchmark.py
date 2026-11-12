@@ -28,18 +28,20 @@ if TYPE_CHECKING:
 
 
 class ManualStory(Story, metaclass=abc.ABCMeta):
-
   STORY_NAME = "manual"
 
-  def __init__(self,
-               start_after: dt.timedelta | None = dt.timedelta(),
-               run_for: dt.timedelta | None = dt.timedelta(),
-               url: str | None = None) -> None:
+  def __init__(
+    self,
+    start_after: dt.timedelta | None = dt.timedelta(),
+    run_for: dt.timedelta | None = dt.timedelta(),
+    url: str | None = None,
+  ) -> None:
     self._start_after: Final[dt.timedelta | None] = start_after
     self._run_for: Final[dt.timedelta | None] = run_for
     self._url: Final[str | None] = url
-    duration = ((start_after or dt.timedelta()) +
-                (run_for or dt.timedelta(seconds=30)))
+    duration = (start_after or dt.timedelta()) + (
+      run_for or dt.timedelta(seconds=30)
+    )
     super().__init__(self.STORY_NAME, duration)
 
   @override
@@ -50,8 +52,10 @@ class ManualStory(Story, metaclass=abc.ABCMeta):
     elif self._start_after.total_seconds():
       logging.critical("-" * 80)
       logging.critical(
-          "The browser has launched. Measurement will start in %s"
-          " (or press enter to start immediately)", self._start_after)
+        "The browser has launched. Measurement will start in %s"
+        " (or press enter to start immediately)",
+        self._start_after,
+      )
       with contextlib.suppress(KeyboardInterrupt):
         input_helper.input_with_timeout(timeout=self._start_after)
     logging.info("Starting Manual Benchmark...")
@@ -75,8 +79,10 @@ class ManualStory(Story, metaclass=abc.ABCMeta):
         ui.prompt()
     else:
       logging.critical(
-          "Measurement has started. The browser will close in %s"
-          " (or press enter to close immediately)", self._run_for)
+        "Measurement has started. The browser will close in %s"
+        " (or press enter to close immediately)",
+        self._run_for,
+      )
       with contextlib.suppress(KeyboardInterrupt):
         input_helper.input_with_timeout(timeout=self._run_for)
 
@@ -94,18 +100,22 @@ class ManualBenchmark(Benchmark, metaclass=abc.ABCMeta):
   Optionally waits for |start_after| seconds, then runs measurements for
   |run_for| seconds, then closes the browser.
   """
+
   NAME: ClassVar = "manual"
   DEFAULT_STORY_CLS: ClassVar = ManualStory
 
-  def __init__(self,
-               action_runner_config: ActionRunnerConfig | None = None,
-               start_after: dt.timedelta | None = None,
-               run_for: dt.timedelta | None = None,
-               url: str | None = None,
-               expose_cdp: bool = False) -> None:
+  def __init__(
+    self,
+    action_runner_config: ActionRunnerConfig | None = None,
+    start_after: dt.timedelta | None = None,
+    run_for: dt.timedelta | None = None,
+    url: str | None = None,
+    expose_cdp: bool = False,
+  ) -> None:
     self._expose_cdp: Final[bool] = expose_cdp
     manual_story = ManualStory(
-        start_after=start_after, run_for=run_for, url=url)
+      start_after=start_after, run_for=run_for, url=url
+    )
     super().__init__([manual_story], action_runner_config)
 
   @override
@@ -119,26 +129,32 @@ class ManualBenchmark(Benchmark, metaclass=abc.ABCMeta):
   def add_cli_arguments(cls, parser: CBArgumentParser) -> CBArgumentParser:
     super().add_cli_arguments(parser)
     parser.add_argument(
-        "--start-after",
-        type=DurationParser.positive_or_zero_duration,
-        help="How long to wait until measurement starts")
+      "--start-after",
+      type=DurationParser.positive_or_zero_duration,
+      help="How long to wait until measurement starts",
+    )
     parser.add_argument(
-        "--run-for",
-        "--stop-after",
-        "--duration",
-        type=DurationParser.positive_duration,
-        help="How long to run measurement for")
+      "--run-for",
+      "--stop-after",
+      "--duration",
+      type=DurationParser.positive_duration,
+      help="How long to run measurement for",
+    )
     parser.add_argument(
-        "--url",
-        "--test-url",
-        type=ObjectParser.url_str,
-        help="Navigate to URL right after the start-after timeout.")
+      "--url",
+      "--test-url",
+      type=ObjectParser.url_str,
+      help="Navigate to URL right after the start-after timeout.",
+    )
     parser.add_argument(
-        "--expose-cdp",
-        action="store_true",
-        default=False,
-        help=("Expose the CDP WebSocket endpoint to a file and logs. "
-              "See 'cdp_endpoint' probe help for more details."))
+      "--expose-cdp",
+      action="store_true",
+      default=False,
+      help=(
+        "Expose the CDP WebSocket endpoint to a file and logs. "
+        "See 'cdp_endpoint' probe help for more details."
+      ),
+    )
     return parser
 
   @classmethod

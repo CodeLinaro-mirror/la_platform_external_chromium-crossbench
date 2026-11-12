@@ -9,8 +9,12 @@ import logging
 from typing import TYPE_CHECKING, ClassVar, override
 
 from crossbench.action_runner.action.enums import ReadyState
-from crossbench.benchmarks.jetstream.jetstream import JetStreamBenchmark, \
-    JetStreamProbe, JetStreamProbeContext, JetStreamStory
+from crossbench.benchmarks.jetstream.jetstream import (
+  JetStreamBenchmark,
+  JetStreamProbe,
+  JetStreamProbeContext,
+  JetStreamStory,
+)
 
 if TYPE_CHECKING:
   from crossbench.benchmarks.base import VersionParts
@@ -46,54 +50,56 @@ class JetStream11Story(JetStreamStory):
   # URL_CHROME_FORK: str = "https://chromium-workloads.web.app/jetstream/v1.1-custom/"
   URL_OFFICIAL: ClassVar[str] = "https://browserbench.org/JetStream1.1/"
   SUBSTORIES: ClassVar[tuple[str, ...]] = (
-      "3d-cube",
-      "3d-raytrace",
-      "base64",
-      "cdjs",
-      "code-first-load",
-      "code-multi-load",
-      "crypto-aes",
-      "crypto-md5",
-      "crypto-sha1",
-      "date-format-tofte",
-      "date-format-xparb",
-      "mandreel",
-      "n-body",
-      "regex-dna",
-      "splay",
-      "tagcloud",
-      "typescript",
-      "bigfib.cpp",
-      "box2d",
-      "container.cpp",
-      "crypto",
-      "delta-blue",
-      "dry.c",
-      "earley-boyer",
-      "float-mm.c",
-      "gbemu",
-      "gcc-loops.cpp",
-      "hash-map",
-      "n-body.c",
-      "navier-stokes",
-      "pdfjs",
-      "proto-raytracer",
-      "quicksort.c",
-      "regexp-2010",
-      "richards",
-      "towers.c",
-      "zlib",
+    "3d-cube",
+    "3d-raytrace",
+    "base64",
+    "cdjs",
+    "code-first-load",
+    "code-multi-load",
+    "crypto-aes",
+    "crypto-md5",
+    "crypto-sha1",
+    "date-format-tofte",
+    "date-format-xparb",
+    "mandreel",
+    "n-body",
+    "regex-dna",
+    "splay",
+    "tagcloud",
+    "typescript",
+    "bigfib.cpp",
+    "box2d",
+    "container.cpp",
+    "crypto",
+    "delta-blue",
+    "dry.c",
+    "earley-boyer",
+    "float-mm.c",
+    "gbemu",
+    "gcc-loops.cpp",
+    "hash-map",
+    "n-body.c",
+    "navier-stokes",
+    "pdfjs",
+    "proto-raytracer",
+    "quicksort.c",
+    "regexp-2010",
+    "richards",
+    "towers.c",
+    "zlib",
   )
 
   @override
   def setup(self, run: Run) -> None:
     with run.actions("Setup") as actions:
       actions.show_url(
-          url=self.get_run_url(run),
-          ready_state=ReadyState.COMPLETE,
-          timeout=dt.timedelta(seconds=10))
+        url=self.get_run_url(run),
+        ready_state=ReadyState.COMPLETE,
+        timeout=dt.timedelta(seconds=10),
+      )
       actions.wait_js_condition(
-          "return !!JetStream;", min_interval=0.01, timeout=2)
+        "return !!JetStream;", min_interval=0.01, timeout=2
+      )
       actions.js("JetStream.initialize();")
       # Intercept console.log to capture the raw results.
       actions.js("""
@@ -113,13 +119,14 @@ class JetStream11Story(JetStreamStory):
   def run_wait_until_done(self, run: Run) -> None:
     with run.actions("Waiting for completion") as actions:
       actions.wait_js_condition(
-          """
+        """
           let summaryElement = document.getElementById("result-summary");
           return (summaryElement.innerHTML.indexOf("Score") >= 0);
           """,
-          0.5,
-          timeout=self.slow_duration,
-          delay=self.substory_duration)
+        0.5,
+        timeout=self.slow_duration,
+        delay=self.substory_duration,
+      )
 
 
 ProbeClsTupleT = tuple[type[JetStream11Probe], ...]

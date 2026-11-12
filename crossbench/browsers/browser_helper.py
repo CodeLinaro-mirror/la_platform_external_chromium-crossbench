@@ -15,4 +15,4 @@ def convert_flags_to_label(*flags: str, index: int | None = None) -> str:
     label = _FLAG_TO_PATH_RE.sub("_", "_".join(flags).replace("--", ""))
   if index is None:
     return label
-  return f"{str(index).rjust(2,'0')}_{label}"
+  return f"{str(index).rjust(2, '0')}_{label}"

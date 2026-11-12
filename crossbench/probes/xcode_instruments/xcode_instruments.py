@@ -7,14 +7,19 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, ClassVar, Final, Self, override
 
 from crossbench.browsers.chromium_based.chromium_based import ChromiumBased
-from crossbench.probes.probe import Probe, ProbeConfigParser, \
-    ProbeIncompatibleBrowser, ProbeKeyT
+from crossbench.probes.probe import (
+  Probe,
+  ProbeConfigParser,
+  ProbeIncompatibleBrowser,
+  ProbeKeyT,
+)
 from crossbench.probes.probe_error import ProbeValidationError
 from crossbench.probes.profiling.enum import TargetMode
 from crossbench.probes.result_location import ResultLocation
 from crossbench.probes.xcode_instruments.context import XcodeInstrumentsContext
-from crossbench.probes.xcode_instruments.instrument_package import \
-    InstrumentPackage
+from crossbench.probes.xcode_instruments.instrument_package import (
+  InstrumentPackage,
+)
 
 if TYPE_CHECKING:
   from crossbench import path as pth
@@ -29,6 +34,7 @@ class XcodeInstrumentsProbe(Probe):
   What is recorded is defined by a human-readable Instruments package source
   (.instrpkg), see InstrumentPackage.
   """
+
   NAME: ClassVar = "xcode_instruments"
   # xctrace always runs on the host Mac, even when recording an iOS device, so
   # the resulting .trace bundle lives on the host.
@@ -39,28 +45,32 @@ class XcodeInstrumentsProbe(Probe):
   def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     parser.add_default_argument(
-        "instrument",
-        type=InstrumentPackage.parse_source,
-        required=True,
-        help=("Path to the Instruments package source (.instrpkg) to record "
-              "with. All its instruments are recorded; they declare which "
-              "built-in Instruments tables are recorded and their settings. "
-              "Required: there is no default instrument."))
+      "instrument",
+      type=InstrumentPackage.parse_source,
+      required=True,
+      help=(
+        "Path to the Instruments package source (.instrpkg) to record "
+        "with. All its instruments are recorded; they declare which "
+        "built-in Instruments tables are recorded and their settings. "
+        "Required: there is no default instrument."
+      ),
+    )
     parser.add_argument(
-        "target",
-        type=TargetMode,
-        choices=(
-            TargetMode.SYSTEM_WIDE,
-            TargetMode.BROWSER_APP_ONLY,
-            TargetMode.RENDERER_PROCESS_ONLY,
-        ),
-        default=TargetMode.SYSTEM_WIDE,
-        help="What process(es) should be traced.")
+      "target",
+      type=TargetMode,
+      choices=(
+        TargetMode.SYSTEM_WIDE,
+        TargetMode.BROWSER_APP_ONLY,
+        TargetMode.RENDERER_PROCESS_ONLY,
+      ),
+      default=TargetMode.SYSTEM_WIDE,
+      help="What process(es) should be traced.",
+    )
     return parser
 
-  def __init__(self,
-               instrument: pth.LocalPath,
-               target: TargetMode = TargetMode.SYSTEM_WIDE) -> None:
+  def __init__(
+    self, instrument: pth.LocalPath, target: TargetMode = TargetMode.SYSTEM_WIDE
+  ) -> None:
     super().__init__()
     self._instrument: Final[pth.LocalPath] = instrument
     self._target: Final[TargetMode] = target
@@ -79,8 +89,11 @@ class XcodeInstrumentsProbe(Probe):
   @property
   @override
   def key(self) -> ProbeKeyT:
-    return (*super().key, ("instrument", str(self._instrument)),
-            ("target", str(self._target)))
+    return (
+      *super().key,
+      ("instrument", str(self._instrument)),
+      ("target", str(self._target)),
+    )
 
   @override
   def attach(self, browser: Browser) -> None:
@@ -95,20 +108,28 @@ class XcodeInstrumentsProbe(Probe):
     super().validate_browser(env, browser)
     browser_platform = browser.platform
     if not (browser_platform.is_macos or browser_platform.is_ios):
-      raise ProbeIncompatibleBrowser(self, browser,
-                                     "only supported on macOS and iOS")
+      raise ProbeIncompatibleBrowser(
+        self, browser, "only supported on macOS and iOS"
+      )
     host_platform = browser.host_platform
     if not host_platform.is_macos:
-      raise ProbeIncompatibleBrowser(self, browser,
-                                     "xctrace recording requires a macOS host")
+      raise ProbeIncompatibleBrowser(
+        self, browser, "xctrace recording requires a macOS host"
+      )
     if not host_platform.which("xctrace"):
       raise ProbeValidationError(self, "Please install Xcode to use xctrace")
-    supported_targets = (TargetMode.SYSTEM_WIDE, TargetMode.BROWSER_APP_ONLY,
-                         TargetMode.RENDERER_PROCESS_ONLY)
+    supported_targets = (
+      TargetMode.SYSTEM_WIDE,
+      TargetMode.BROWSER_APP_ONLY,
+      TargetMode.RENDERER_PROCESS_ONLY,
+    )
     if self._target not in supported_targets:
       raise ProbeIncompatibleBrowser(
-          self, browser, f"Unsupported target mode: {self._target}. "
-          f"Should be one of {supported_targets}.")
+        self,
+        browser,
+        f"Unsupported target mode: {self._target}. "
+        f"Should be one of {supported_targets}.",
+      )
 
   @override
   def create_context(self, run: Run) -> XcodeInstrumentsContext:

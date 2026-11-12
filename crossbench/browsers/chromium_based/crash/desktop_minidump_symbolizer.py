@@ -12,18 +12,19 @@ from typing import override
 
 from crossbench import path as pth
 from crossbench.browsers.chromium_based.crash import helper
-from crossbench.browsers.chromium_based.crash.minidump_symbolizer import \
-    MinidumpSymbolizer
+from crossbench.browsers.chromium_based.crash.minidump_symbolizer import (
+  MinidumpSymbolizer,
+)
 from crossbench.helper import path_finder
 from crossbench.plt.base import SubprocessError
 
 _MINIDUMP_BINARY_RE = re.compile(r'\(code_file\)\s+=\s+\"(?P<path>.*)\"')
 _BUNDLED_DYLIB_RE = re.compile(
-    r"Framework\.framework/Versions/\d+.\d+.\d+.\d+/Libraries/.*\.dylib")
+  r"Framework\.framework/Versions/\d+.\d+.\d+.\d+/Libraries/.*\.dylib"
+)
 
 
 class DesktopMinidumpSymbolizer(MinidumpSymbolizer):
-
   @override
   def symbolize_minidump(self, minidump: pth.LocalPath) -> str | None:
     """Gets the stack trace from the given minidump.
@@ -52,9 +53,15 @@ class DesktopMinidumpSymbolizer(MinidumpSymbolizer):
     # the one starting from the exception context record.
     # Specify kb instead of k in order to get four arguments listed, for
     # easier diagnosis from stacks.
-    output = self._platform.sh_stdout(cdb, "-y", self._build_dir, "-c",
-                                      ".ecxr;.lastevent;kb30;~*kb30;q", "-z",
-                                      minidump)
+    output = self._platform.sh_stdout(
+      cdb,
+      "-y",
+      self._build_dir,
+      "-c",
+      ".ecxr;.lastevent;kb30;~*kb30;q",
+      "-z",
+      minidump,
+    )
 
     # The output we care about starts with "Last event:" or possibly
     # other things we haven't seen yet. If we can't find the start of the
@@ -74,9 +81,12 @@ class DesktopMinidumpSymbolizer(MinidumpSymbolizer):
     Args:
       minidump: The path to the minidump being symbolized.
     """
-    minidump_dump = helper.find_crash_binary(self._platform, "minidump_dump",
-                                             self._build_dir,
-                                             path_finder.MinidumpDumpFinder)
+    minidump_dump = helper.find_crash_binary(
+      self._platform,
+      "minidump_dump",
+      self._build_dir,
+      path_finder.MinidumpDumpFinder,
+    )
     if not minidump_dump:
       logging.warning("minidump_dump not found.")
       return []
@@ -85,7 +95,8 @@ class DesktopMinidumpSymbolizer(MinidumpSymbolizer):
 
     try:
       minidump_output = self._platform.sh_stdout(
-          minidump_dump, minidump, quiet=True)
+        minidump_dump, minidump, quiet=True
+      )
     except SubprocessError as e:
       # For some reason minidump_dump always fails despite successful dumping.
       minidump_output = e.stdout.decode() if e.stdout else ""
@@ -99,7 +110,8 @@ class DesktopMinidumpSymbolizer(MinidumpSymbolizer):
 
         # Filter out system binaries.
         if binary_path_str.startswith(
-            ("/usr/lib/", "/System/Library/", "/lib/")):
+          ("/usr/lib/", "/System/Library/", "/lib/")
+        ):
           continue
 
         # Filter out other binary file types which have no symbols.
@@ -110,7 +122,8 @@ class DesktopMinidumpSymbolizer(MinidumpSymbolizer):
     return self._filter_symbol_binaries(symbol_binaries)
 
   def _filter_symbol_binaries(
-      self, symbol_binaries: list[pth.LocalPath]) -> list[pth.LocalPath]:
+    self, symbol_binaries: list[pth.LocalPath]
+  ) -> list[pth.LocalPath]:
     """Filters out unnecessary symbol binaries to save symbolization time.
 
     Args:
@@ -125,7 +138,8 @@ class DesktopMinidumpSymbolizer(MinidumpSymbolizer):
     return symbol_binaries
 
   def _filter_symbol_binaries_macos(
-      self, symbol_binaries: list[pth.LocalPath]) -> list[pth.LocalPath]:
+    self, symbol_binaries: list[pth.LocalPath]
+  ) -> list[pth.LocalPath]:
     # The vast majority of the symbol binaries for component builds on Mac
     # are .dylib, and none of them appear to contribute any additional
     # information. So, remove them to save a *lot* of time.
@@ -134,7 +148,8 @@ class DesktopMinidumpSymbolizer(MinidumpSymbolizer):
     for binary in symbol_binaries:
       binary_name = binary.name
       if not binary_name.endswith(".dylib") or _BUNDLED_DYLIB_RE.search(
-          binary_name):
+        binary_name
+      ):
         filtered_binaries.append(binary)
     return filtered_binaries
 
@@ -148,16 +163,16 @@ class DesktopMinidumpSymbolizer(MinidumpSymbolizer):
       return colocated_cdb
 
     possible_paths = (
-        # Installed copies of the Windows SDK.
-        "Windows Kits/*/Debuggers/x86",
-        "Windows Kits/*/Debuggers/x64",
-        # Old copies of the Debugging Tools for Windows.
-        "Debugging Tools For Windows",
-        "Debugging Tools For Windows (x86)",
-        "Debugging Tools For Windows (x64)",
-        # The hermetic copy of the Windows toolchain in depot_tools.
-        "win_toolchain/vs_files/*/win_sdk/Debuggers/x86",
-        "win_toolchain/vs_files/*/win_sdk/Debuggers/x64",
+      # Installed copies of the Windows SDK.
+      "Windows Kits/*/Debuggers/x86",
+      "Windows Kits/*/Debuggers/x64",
+      # Old copies of the Debugging Tools for Windows.
+      "Debugging Tools For Windows",
+      "Debugging Tools For Windows (x86)",
+      "Debugging Tools For Windows (x64)",
+      # The hermetic copy of the Windows toolchain in depot_tools.
+      "win_toolchain/vs_files/*/win_sdk/Debuggers/x86",
+      "win_toolchain/vs_files/*/win_sdk/Debuggers/x64",
     )
 
     for possible_path in possible_paths:

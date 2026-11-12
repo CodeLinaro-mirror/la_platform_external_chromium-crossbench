@@ -22,13 +22,16 @@ if TYPE_CHECKING:
   from crossbench.probes.results import ProbeResult
 
 # TODO: go over these again and clean the categories.
-MINIMAL_CONFIG: Final[frozenset[str]] = frozenset((
+MINIMAL_CONFIG: Final[frozenset[str]] = frozenset(
+  (
     "blink.user_timing",
     "toplevel",
     "v8",
     "v8.execute",
-))
-DEVTOOLS_TRACE_CONFIG: Final[frozenset[str]] = frozenset((
+  )
+)
+DEVTOOLS_TRACE_CONFIG: Final[frozenset[str]] = frozenset(
+  (
     "blink.console",
     "blink.user_timing",
     "devtools.timeline",
@@ -41,12 +44,13 @@ DEVTOOLS_TRACE_CONFIG: Final[frozenset[str]] = frozenset((
     "disabled-by-default-lighthouse",
     "disabled-by-default-v8.compile",
     "disabled-by-default-v8.cpu_profiler",
-    "disabled-by-default-v8.cpu_profiler.hires"
-    "latencyInfo",
+    "disabled-by-default-v8.cpu_profiler.hireslatencyInfo",
     "toplevel",
     "v8.execute",
-))
-V8_TRACE_CONFIG: Final[frozenset[str]] = frozenset((
+  )
+)
+V8_TRACE_CONFIG: Final[frozenset[str]] = frozenset(
+  (
     "blink",
     "blink.user_timing",
     "browser",
@@ -82,39 +86,51 @@ V8_TRACE_CONFIG: Final[frozenset[str]] = frozenset((
     "v8.memory",
     "v8.execute",
     "wayland",
-))
+  )
+)
 V8_GC_STATS_TRACE_CONFIG: Final[frozenset[str]] = V8_TRACE_CONFIG | frozenset(
-    ("disabled-by-default-v8.gc_stats",))
+  ("disabled-by-default-v8.gc_stats",)
+)
 
 TRACE_PRESETS: Final[dict[str, frozenset[str]]] = {
-    "empty": frozenset(),
-    "minimal": MINIMAL_CONFIG,
-    "devtools": DEVTOOLS_TRACE_CONFIG,
-    "v8": V8_TRACE_CONFIG,
-    "v8-gc-stats": V8_GC_STATS_TRACE_CONFIG,
+  "empty": frozenset(),
+  "minimal": MINIMAL_CONFIG,
+  "devtools": DEVTOOLS_TRACE_CONFIG,
+  "v8": V8_TRACE_CONFIG,
+  "v8-gc-stats": V8_GC_STATS_TRACE_CONFIG,
 }
 
 
 @enum.unique
 class RecordMode(ConfigEnum):
-  CONTINUOUSLY = ("record-continuously",
-                  "Record until the trace buffer is full.")
-  UNTIL_FULL = ("record-until-full", "Record until the user ends the trace. "
-                "The trace buffer is a fixed size and we use it as "
-                "a ring buffer during recording.")
-  AS_MUCH_AS_POSSIBLE = ("record-as-much-as-possible",
-                         "Record until the trace buffer is full, "
-                         "but with a huge buffer size.")
-  TRACE_TO_CONSOLE = ("trace-to-console",
-                      "Echo to console. Events are discarded.")
+  CONTINUOUSLY = (
+    "record-continuously",
+    "Record until the trace buffer is full.",
+  )
+  UNTIL_FULL = (
+    "record-until-full",
+    "Record until the user ends the trace. "
+    "The trace buffer is a fixed size and we use it as "
+    "a ring buffer during recording.",
+  )
+  AS_MUCH_AS_POSSIBLE = (
+    "record-as-much-as-possible",
+    "Record until the trace buffer is full, but with a huge buffer size.",
+  )
+  TRACE_TO_CONSOLE = (
+    "trace-to-console",
+    "Echo to console. Events are discarded.",
+  )
 
 
 @enum.unique
 class RecordFormat(ConfigEnum):
   JSON = ("json", "Old about://tracing compatible file format.")
   PROTO = ("proto", "New https://ui.perfetto.dev/ compatible format")
-  PROTO_JSON = ("proto-json",
-                "Same as 'proto' but also converts the result to legacy JSON.")
+  PROTO_JSON = (
+    "proto-json",
+    "Same as 'proto' but also converts the result to legacy JSON.",
+  )
 
 
 def parse_trace_config_file_path(value: str) -> pth.LocalPath:
@@ -122,24 +138,30 @@ def parse_trace_config_file_path(value: str) -> pth.LocalPath:
   if "trace_config" not in data:
     raise argparse.ArgumentTypeError("Missing 'trace_config' property.")
   NumberParser.positive_int(
-      data.get("startup_duration", "0"), "for 'startup_duration'")
+    data.get("startup_duration", "0"), "for 'startup_duration'"
+  )
   if "result_file" in data:
     raise argparse.ArgumentTypeError(
-        "Explicit 'result_file' is not allowed with crossbench. "
-        "--probe=tracing sets a results location automatically.")
+      "Explicit 'result_file' is not allowed with crossbench. "
+      "--probe=tracing sets a results location automatically."
+    )
   config = ObjectParser.dict(data["trace_config"], "trace_config")
-  if "included_categories" not in config and (
-      "excluded_categories" not in config) and ("memory_dump_config"
-                                                not in config):
+  if (
+    "included_categories" not in config
+    and ("excluded_categories" not in config)
+    and ("memory_dump_config" not in config)
+  ):
     raise argparse.ArgumentTypeError(
-        "Empty trace config: no trace categories or memory dumps configured.")
+      "Empty trace config: no trace categories or memory dumps configured."
+    )
   RecordMode.parse(config.get("record_mode", RecordMode.CONTINUOUSLY))
   config_file_path = pth.LocalPath(value)
   return config_file_path.absolute()
 
 
 ANDROID_TRACE_CONFIG_PATH: Final = pth.AnyPosixPath(
-    "/data/local/chrome-trace-config.json")
+  "/data/local/chrome-trace-config.json"
+)
 
 
 class TracingProbe(ChromiumProbe):
@@ -157,6 +179,7 @@ class TracingProbe(ChromiumProbe):
   - trace_config: Use a predefined trace config file that overrides the two
                   previous options.
   """
+
   NAME: ClassVar = "tracing"
   RESULT_LOCATION: ClassVar = ResultLocation.BROWSER
   CHROMIUM_FLAGS: ClassVar[tuple[str, ...]] = ("--enable-perfetto",)
@@ -167,57 +190,72 @@ class TracingProbe(ChromiumProbe):
     parser = super().config_parser()
     # TODO: Create separate TraceConfig object for parsing.
     parser.add_default_argument(
-        "preset",
-        type=str,
-        default="minimal",
-        choices=TRACE_PRESETS.keys(),
-        help=("Use predefined trace categories, "
-              f"see source {__file__} for more details. "
-              "This is cumulative with the categories option."))
+      "preset",
+      type=str,
+      default="minimal",
+      choices=TRACE_PRESETS.keys(),
+      help=(
+        "Use predefined trace categories, "
+        f"see source {__file__} for more details. "
+        "This is cumulative with the categories option."
+      ),
+    )
     parser.add_argument(
-        "categories",
-        is_list=True,
-        default=[],
-        type=str,
-        help=("A list of trace categories to enable.\n"
-              "https://bit.ly/chrome-about-tracing\n"
-              "This is cumulative with the preset option."))
+      "categories",
+      is_list=True,
+      default=[],
+      type=str,
+      help=(
+        "A list of trace categories to enable.\n"
+        "https://bit.ly/chrome-about-tracing\n"
+        "This is cumulative with the preset option."
+      ),
+    )
     parser.add_argument(
-        "trace_config",
-        type=parse_trace_config_file_path,
-        help=("Sets Chromium's --trace-config-file to the given json config.\n"
-              "https://bit.ly/chromium-memory-startup-tracing\n"
-              "'trace_config' is incompatible with the preset and categories "
-              "option."))
+      "trace_config",
+      type=parse_trace_config_file_path,
+      help=(
+        "Sets Chromium's --trace-config-file to the given json config.\n"
+        "https://bit.ly/chromium-memory-startup-tracing\n"
+        "'trace_config' is incompatible with the preset and categories "
+        "option."
+      ),
+    )
     parser.add_argument(
-        "startup_duration",
-        default=0,
-        type=NumberParser.positive_zero_int,
-        help=("Stop recording tracing after a given number of seconds. "
-              "Use 0 (default) for unlimited recording time."))
+      "startup_duration",
+      default=0,
+      type=NumberParser.positive_zero_int,
+      help=(
+        "Stop recording tracing after a given number of seconds. "
+        "Use 0 (default) for unlimited recording time."
+      ),
+    )
     parser.add_argument(
-        "record_mode",
-        default=RecordMode.CONTINUOUSLY,
-        type=RecordMode,
-        help="")
+      "record_mode", default=RecordMode.CONTINUOUSLY, type=RecordMode, help=""
+    )
     parser.add_argument(
-        "record_format",
-        default=RecordFormat.PROTO,
-        type=RecordFormat,
-        help=("Choose between 'json', 'proto' or 'proto-json' format. "
-              "With 'proto-json' the proto result file is converted "
-              "automatically to the legacy json format."))
+      "record_format",
+      default=RecordFormat.PROTO,
+      type=RecordFormat,
+      help=(
+        "Choose between 'json', 'proto' or 'proto-json' format. "
+        "With 'proto-json' the proto result file is converted "
+        "automatically to the legacy json format."
+      ),
+    )
     cb_traceconv.add_argument(parser)
     return parser
 
-  def __init__(self,
-               preset: str | None = None,
-               categories: Sequence[str] | None = None,
-               trace_config: pth.LocalPath | None = None,
-               startup_duration: int = 0,
-               record_mode: RecordMode = RecordMode.CONTINUOUSLY,
-               record_format: RecordFormat = RecordFormat.PROTO,
-               traceconv: pth.LocalPath | None = None) -> None:
+  def __init__(
+    self,
+    preset: str | None = None,
+    categories: Sequence[str] | None = None,
+    trace_config: pth.LocalPath | None = None,
+    startup_duration: int = 0,
+    record_mode: RecordMode = RecordMode.CONTINUOUSLY,
+    record_format: RecordFormat = RecordFormat.PROTO,
+    traceconv: pth.LocalPath | None = None,
+  ) -> None:
     super().__init__()
     self._trace_config: Final[pth.LocalPath | None] = trace_config
     self._categories: set[str] = set(categories or MINIMAL_CONFIG)
@@ -227,8 +265,9 @@ class TracingProbe(ChromiumProbe):
     if self._trace_config:
       if self._categories and self._categories != set(MINIMAL_CONFIG):
         raise argparse.ArgumentTypeError(
-            "TracingProbe requires either a list of "
-            "trace categories or a trace_config file.")
+          "TracingProbe requires either a list of "
+          "trace categories or a trace_config file."
+        )
       self._categories = set()
 
     self._startup_duration: Final[int] = startup_duration
@@ -241,12 +280,15 @@ class TracingProbe(ChromiumProbe):
   @property
   @override
   def key(self) -> ProbeKeyT:
-    return (*super().key, ("preset", self._preset), ("categories",
-                                                     tuple(self._categories)),
-            ("startup_duration",
-             self._startup_duration), ("record_mode", str(self._record_mode)),
-            ("record_format", str(self._record_format)), ("traceconv",
-                                                          str(self._traceconv)))
+    return (
+      *super().key,
+      ("preset", self._preset),
+      ("categories", tuple(self._categories)),
+      ("startup_duration", self._startup_duration),
+      ("record_mode", str(self._record_mode)),
+      ("record_format", str(self._record_format)),
+      ("traceconv", str(self._traceconv)),
+    )
 
   @property
   @override
@@ -292,7 +334,8 @@ class TracingProbe(ChromiumProbe):
     if self._trace_config:
       # TODO: use ANDROID_TRACE_CONFIG_PATH
       assert not browser.platform.is_android, (
-          "Trace config files not supported on android yet")
+        "Trace config files not supported on android yet"
+      )
       flags["--trace-config-file"] = str(self._trace_config.absolute())
     else:
       flags["--trace-startup-record-mode"] = str(self._record_mode)
@@ -326,8 +369,8 @@ class TracingProbeContext(ProbeContext[TracingProbe]):
     if self._record_format == RecordFormat.PROTO:
       return result
     trace_file = result.get("proto")
-    if legacy_json_file := cb_traceconv.convert_to_json(self.host_platform,
-                                                        self.probe.traceconv,
-                                                        trace_file):
+    if legacy_json_file := cb_traceconv.convert_to_json(
+      self.host_platform, self.probe.traceconv, trace_file
+    ):
       return self.local_result(perfetto=(trace_file,), json=(legacy_json_file,))
     return result

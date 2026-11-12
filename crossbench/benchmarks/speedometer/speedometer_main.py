@@ -6,9 +6,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, ClassVar, override
 
-from crossbench.benchmarks.speedometer.speedometer_3 import \
-    Speedometer3Benchmark, Speedometer3BenchmarkStoryFilter, \
-    Speedometer3Probe, Speedometer3ProbeContext, Speedometer3Story
+from crossbench.benchmarks.speedometer.speedometer_3 import (
+  Speedometer3Benchmark,
+  Speedometer3BenchmarkStoryFilter,
+  Speedometer3Probe,
+  Speedometer3ProbeContext,
+  Speedometer3Story,
+)
 
 if TYPE_CHECKING:
   import argparse
@@ -22,6 +26,7 @@ class SpeedometerMainProbe(Speedometer3Probe):
   Speedometer3-specific probe (compatible with the main version).
   Extracts all speedometer times and scores.
   """
+
   NAME: ClassVar[str] = "speedometer_main"
 
   @override
@@ -39,13 +44,15 @@ class SpeedometerMainBenchmarkStoryFilter(Speedometer3BenchmarkStoryFilter):
   @classmethod
   @override
   def add_cli_arguments(
-      cls, parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+    cls, parser: argparse.ArgumentParser
+  ) -> argparse.ArgumentParser:
     parser = super().add_cli_arguments(parser)
     parser.add_argument(
-        "--measure-prepare",
-        default=False,
-        action="store_true",
-        help="Include benchmark setup time in score.")
+      "--measure-prepare",
+      default=False,
+      action="store_true",
+      help="Include benchmark setup time in score.",
+    )
     return parser
 
   @classmethod
@@ -61,16 +68,19 @@ class SpeedometerMainStory(Speedometer3Story):
   __doc__ = Speedometer3Story.__doc__
   NAME: ClassVar[str] = "speedometer_main"
   URL: ClassVar[str] = "https://chromium-workloads.web.app/speedometer/main/"
-  URL_OFFICIAL: ClassVar[
-      str] = "https://chromium-workloads.web.app/speedometer/main/"
-  URL_CHROME_FORK: ClassVar[
-      str] = "https://chromium-workloads.web.app/speedometer/main-custom/"
+  URL_OFFICIAL: ClassVar[str] = (
+    "https://chromium-workloads.web.app/speedometer/main/"
+  )
+  URL_CHROME_FORK: ClassVar[str] = (
+    "https://chromium-workloads.web.app/speedometer/main-custom/"
+  )
 
 
 class SpeedometerMainBenchmark(Speedometer3Benchmark):
   """
   Benchmark runner for the Speedometer main version.
   """
+
   NAME: ClassVar[str] = "speedometer_main"
   DEFAULT_STORY_CLS: ClassVar[type[SpeedometerMainStory]] = SpeedometerMainStory
   PROBES: ClassVar[ProbeClsTupleT] = (SpeedometerMainProbe,)
@@ -84,5 +94,12 @@ class SpeedometerMainBenchmark(Speedometer3Benchmark):
   @classmethod
   @override
   def aliases(cls) -> tuple[str, ...]:
-    return ("sp4", "sp4-latest", "speedometer4", "speedometer4-latest",
-            "speedometer_4", "speedometer_4-latest", *super().aliases())
+    return (
+      "sp4",
+      "sp4-latest",
+      "speedometer4",
+      "speedometer4-latest",
+      "speedometer_4",
+      "speedometer_4-latest",
+      *super().aliases(),
+    )

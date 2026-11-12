@@ -26,7 +26,6 @@ if TYPE_CHECKING:
 
 
 class BrowserSessionRunGroupTestCase(BaseRunGroupTestCase):
-
   def test_basic_properties(self):
     session = self.default_session()
     self.assertEqual(session.index, 0)
@@ -269,9 +268,8 @@ class BrowserSessionRunGroupTestCase(BaseRunGroupTestCase):
     session.set_ready()
     did_run = False
     with mock.patch.object(
-        session.network,
-        "open",
-        side_effect=ValueError("Network startup error")):
+      session.network, "open", side_effect=ValueError("Network startup error")
+    ):
       with session.open() as startup_is_success:
         # Due to how context managers work we run the inner code even if
         # the setup failed.
@@ -289,9 +287,8 @@ class BrowserSessionRunGroupTestCase(BaseRunGroupTestCase):
     did_run = False
     with self.assertRaisesRegex(ValueError, "Network startup error"):
       with mock.patch.object(
-          session.network,
-          "open",
-          side_effect=ValueError("Network startup error")):
+        session.network, "open", side_effect=ValueError("Network startup error")
+      ):
         with session.open():
           did_run = True
     self.assertFalse(did_run)
@@ -313,16 +310,17 @@ class BrowserSessionRunGroupTestCase(BaseRunGroupTestCase):
     session.set_ready()
     cache_dir = self.platform.path("/tmp/custom_cache_dir")
     with (
-        mock.patch.object(
-            session.browser, "_setup_cache_dir", return_value=cache_dir),
-        mock.patch.object(
-            session.browser,
-            "start",
-            side_effect=ValueError("Browser startup error")),
-        mock.patch.object(
-            session.browser,
-            "teardown",
-            wraps=session.browser.teardown) as mock_teardown,
+      mock.patch.object(
+        session.browser, "_setup_cache_dir", return_value=cache_dir
+      ),
+      mock.patch.object(
+        session.browser,
+        "start",
+        side_effect=ValueError("Browser startup error"),
+      ),
+      mock.patch.object(
+        session.browser, "teardown", wraps=session.browser.teardown
+      ) as mock_teardown,
     ):
       with session.open() as startup_is_success:
         self.assertFalse(startup_is_success)
@@ -334,15 +332,17 @@ class BrowserSessionRunGroupTestCase(BaseRunGroupTestCase):
 
   def test_start_and_stop_browser_in_session(self) -> None:
     browser = mock_browser.MockChromeDev(
-        "dev", settings=Settings(platform=self.platform, start_browser=False))
+      "dev", settings=Settings(platform=self.platform, start_browser=False)
+    )
     session = self.default_session(browser=browser)
     run = MockRun(self.runner, session, "story 0")
     session.append(run)
     session.set_ready()
     with (
-        mock.patch.object(session.browser, "quit", wraps=session.browser.quit)
-        as mock_quit,
-        session.open() as startup_is_success,
+      mock.patch.object(
+        session.browser, "quit", wraps=session.browser.quit
+      ) as mock_quit,
+      session.open() as startup_is_success,
     ):
       self.assertTrue(startup_is_success)
       self.assertFalse(session.browser.is_running)
@@ -370,8 +370,9 @@ class BrowserSessionRunGroupTestCase(BaseRunGroupTestCase):
     run = MockRun(self.runner, session, "story 0")
     session.append(run)
     session.set_ready()
-    with mock.patch.object(session.browser_platform,
-                           "close_all_apps") as mock_close_all_apps:
+    with mock.patch.object(
+      session.browser_platform, "close_all_apps"
+    ) as mock_close_all_apps:
       with session.open() as startup_is_success:
         self.assertTrue(startup_is_success)
       mock_close_all_apps.assert_called_once_with()
@@ -381,21 +382,24 @@ class BrowserSessionRunGroupTestCase(BaseRunGroupTestCase):
     run = MockRun(self.runner, session, "story 0")
     session.append(run)
     session.set_ready()
-    with mock.patch.object(session.browser_platform,
-                           "close_all_apps") as mock_close_all_apps:
+    with mock.patch.object(
+      session.browser_platform, "close_all_apps"
+    ) as mock_close_all_apps:
       with session.open(is_dry_run=True) as startup_is_success:
         self.assertTrue(startup_is_success)
       mock_close_all_apps.assert_not_called()
 
   def test_first_browser_launch_closes_all_tabs(self) -> None:
     browser = mock_browser.MockChromeDev(
-        "dev", settings=Settings(platform=self.platform, start_browser=False))
+      "dev", settings=Settings(platform=self.platform, start_browser=False)
+    )
     session = self.default_session(browser=browser)
     run = MockRun(self.runner, session, "story 0")
     session.append(run)
     session.set_ready()
-    with mock.patch.object(session.browser,
-                           "close_all_tabs") as mock_close_all_tabs:
+    with mock.patch.object(
+      session.browser, "close_all_tabs"
+    ) as mock_close_all_tabs:
       with session.open() as startup_is_success:
         self.assertTrue(startup_is_success)
         mock_close_all_tabs.assert_not_called()
@@ -406,15 +410,18 @@ class BrowserSessionRunGroupTestCase(BaseRunGroupTestCase):
         mock_close_all_tabs.assert_called_once_with()
 
   def test_first_browser_launch_with_startup_urls_skips_close_all_tabs(
-      self) -> None:
+    self,
+  ) -> None:
     browser = mock_browser.MockChromeDev(
-        "dev", settings=Settings(platform=self.platform, start_browser=False))
+      "dev", settings=Settings(platform=self.platform, start_browser=False)
+    )
     session = self.default_session(browser=browser)
     run = MockRun(self.runner, session, "story 0")
     session.append(run)
     session.set_ready()
-    with mock.patch.object(session.browser,
-                           "close_all_tabs") as mock_close_all_tabs:
+    with mock.patch.object(
+      session.browser, "close_all_tabs"
+    ) as mock_close_all_tabs:
       with session.open() as startup_is_success:
         self.assertTrue(startup_is_success)
         session.start_browser(startup_urls=("chrome://newtab/",))
@@ -426,16 +433,16 @@ class BrowserSessionRunGroupTestCase(BaseRunGroupTestCase):
     session.append(run)
     session.set_ready()
     with mock.patch.object(
-        session.browser, "close_all_tabs",
-        side_effect=NotImplementedError) as mock_close_all_tabs:
+      session.browser, "close_all_tabs", side_effect=NotImplementedError
+    ) as mock_close_all_tabs:
       with session.open() as startup_is_success:
         self.assertTrue(startup_is_success)
       mock_close_all_tabs.assert_called_once_with()
 
   def test_start_browser_startup_urls_unsupported_browser(self) -> None:
     browser = mock_browser.MockFirefox(
-        "firefox",
-        settings=Settings(platform=self.platform, start_browser=False))
+      "firefox", settings=Settings(platform=self.platform, start_browser=False)
+    )
     session = self.default_session(browser=browser)
     run = MockRun(self.runner, session, "story 0")
     session.append(run)
@@ -448,13 +455,13 @@ class BrowserSessionRunGroupTestCase(BaseRunGroupTestCase):
     linux_platform = mock_helper.LinuxMockPlatform()
     path = pth.LocalPath("/fake/firefox")
     with (
-        mock.patch.object(linux_platform, "exists", return_value=True),
-        mock.patch.object(linux_platform, "is_file", return_value=True),
-        mock.patch.object(
-            linux_platform, "app_version", return_value="120.0.0"),
+      mock.patch.object(linux_platform, "exists", return_value=True),
+      mock.patch.object(linux_platform, "is_file", return_value=True),
+      mock.patch.object(linux_platform, "app_version", return_value="120.0.0"),
     ):
       browser = FirefoxWebDriver(
-          "firefox", path, settings=Settings(platform=linux_platform))
+        "firefox", path, settings=Settings(platform=linux_platform)
+      )
       session = mock.MagicMock()
       with self.assertRaisesRegex(NotImplementedError, "FirefoxWebDriver"):
         browser.start(session, startup_urls=("https://google.com/",))
@@ -463,17 +470,18 @@ class BrowserSessionRunGroupTestCase(BaseRunGroupTestCase):
     mac_platform = mock_helper.MacOsMockPlatform()
     safari_path = pth.LocalPath("/Applications/Safari.app")
     with (
-        mock.patch.object(mac_platform, "exists", return_value=True),
-        mock.patch.object(mac_platform, "is_file", return_value=True),
-        mock.patch.object(mac_platform, "is_dir", return_value=True),
-        mock.patch.object(
-            mac_platform,
-            "app_version",
-            side_effect=["16.6", "Included with Safari 16.6 (18615.3.12.11.2)"],
-        ),
+      mock.patch.object(mac_platform, "exists", return_value=True),
+      mock.patch.object(mac_platform, "is_file", return_value=True),
+      mock.patch.object(mac_platform, "is_dir", return_value=True),
+      mock.patch.object(
+        mac_platform,
+        "app_version",
+        side_effect=["16.6", "Included with Safari 16.6 (18615.3.12.11.2)"],
+      ),
     ):
       safari_browser = SafariWebDriver(
-          "safari", safari_path, settings=Settings(platform=mac_platform))
+        "safari", safari_path, settings=Settings(platform=mac_platform)
+      )
       session = mock.MagicMock()
       with self.assertRaisesRegex(NotImplementedError, "SafariWebDriver"):
         safari_browser.start(session, startup_urls=("https://google.com/",))

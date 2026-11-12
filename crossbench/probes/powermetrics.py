@@ -10,8 +10,12 @@ import subprocess
 from typing import TYPE_CHECKING, ClassVar, Final, Self, Sequence, override
 
 from crossbench.parse import DurationParser
-from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext, \
-    ProbeKeyT
+from crossbench.probes.probe import (
+  Probe,
+  ProbeConfigParser,
+  ProbeContext,
+  ProbeKeyT,
+)
 from crossbench.probes.result_location import ResultLocation
 from crossbench.str_enum_with_help import StrEnumWithHelp
 
@@ -26,11 +30,15 @@ if TYPE_CHECKING:
 @enum.unique
 class SamplerType(StrEnumWithHelp):
   BATTERY = ("battery", "Battery level")
-  CPU_POWER = ("cpu_power",
-               "CPU power and per-core frequency and idle residency")
+  CPU_POWER = (
+    "cpu_power",
+    "CPU power and per-core frequency and idle residency",
+  )
   DISK = ("disk", "Number of read/write ops/bytes")
-  GPU_POWER = ("gpu_power",
-               "GPU power consumption, frequency and active residency")
+  GPU_POWER = (
+    "gpu_power",
+    "GPU power consumption, frequency and active residency",
+  )
   INTERRUPTS = ("interrupts", "Per-core interrupt count")
   NETWORK = ("network", "Number of in/out packets/bytes")
   TASKS = ("tasks", "Per-task stats including CPU usage and wakeups")
@@ -44,27 +52,34 @@ class PowerMetricsProbe(Probe):
 
   NAME: ClassVar = "powermetrics"
   RESULT_LOCATION: ClassVar = ResultLocation.BROWSER
-  SAMPLERS: ClassVar[tuple[SamplerType,
-                           ...]] = (SamplerType.BATTERY, SamplerType.CPU_POWER,
-                                    SamplerType.DISK, SamplerType.GPU_POWER,
-                                    SamplerType.INTERRUPTS, SamplerType.NETWORK,
-                                    SamplerType.TASKS, SamplerType.THERMAL)
+  SAMPLERS: ClassVar[tuple[SamplerType, ...]] = (
+    SamplerType.BATTERY,
+    SamplerType.CPU_POWER,
+    SamplerType.DISK,
+    SamplerType.GPU_POWER,
+    SamplerType.INTERRUPTS,
+    SamplerType.NETWORK,
+    SamplerType.TASKS,
+    SamplerType.THERMAL,
+  )
 
   @classmethod
   @override
   def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
-        "sampling_interval",
-        type=DurationParser.positive_duration,
-        default=1000)
+      "sampling_interval", type=DurationParser.positive_duration, default=1000
+    )
     parser.add_argument(
-        "samplers", type=SamplerType, default=cls.SAMPLERS, is_list=True)
+      "samplers", type=SamplerType, default=cls.SAMPLERS, is_list=True
+    )
     return parser
 
-  def __init__(self,
-               sampling_interval: dt.timedelta = dt.timedelta(),
-               samplers: Sequence[SamplerType] = SAMPLERS) -> None:
+  def __init__(
+    self,
+    sampling_interval: dt.timedelta = dt.timedelta(),
+    samplers: Sequence[SamplerType] = SAMPLERS,
+  ) -> None:
     super().__init__()
     self._sampling_interval: Final[dt.timedelta] = sampling_interval
     if sampling_interval.total_seconds() < 0:
@@ -74,9 +89,11 @@ class PowerMetricsProbe(Probe):
   @property
   @override
   def key(self) -> ProbeKeyT:
-    return (*super().key, ("sampling_interval",
-                           self.sampling_interval.total_seconds()),
-            ("samplers", tuple(map(str, self.samplers))))
+    return (
+      *super().key,
+      ("sampling_interval", self.sampling_interval.total_seconds()),
+      ("samplers", tuple(map(str, self.samplers))),
+    )
 
   @property
   def sampling_interval(self) -> dt.timedelta:
@@ -97,25 +114,26 @@ class PowerMetricsProbe(Probe):
 
 
 class PowerMetricsProbeContext(ProbeContext[PowerMetricsProbe]):
-
   def __init__(self, probe: PowerMetricsProbe, run: Run) -> None:
     super().__init__(probe, run)
     self._power_metrics_process: subprocess.Popen | None = None
     self._output_plist_file: Final[pth.AnyPath] = self.result_path.with_suffix(
-        ".plist")
+      ".plist"
+    )
 
   def start(self) -> None:
     self._power_metrics_process = self.browser_platform.popen(
-        "sudo",
-        "powermetrics",
-        "-f",
-        "plist",
-        f"--samplers={','.join(map(str, self.probe.samplers))}",
-        "-i",
-        f"{int(self.probe.sampling_interval.total_seconds())}",
-        "--output-file",
-        self._output_plist_file,
-        stdout=subprocess.DEVNULL)
+      "sudo",
+      "powermetrics",
+      "-f",
+      "plist",
+      f"--samplers={','.join(map(str, self.probe.samplers))}",
+      "-i",
+      f"{int(self.probe.sampling_interval.total_seconds())}",
+      "--output-file",
+      self._output_plist_file,
+      stdout=subprocess.DEVNULL,
+    )
     if self._power_metrics_process.poll():
       raise ValueError("Could not start powermetrics")
 

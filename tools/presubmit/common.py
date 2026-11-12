@@ -17,11 +17,12 @@ if TYPE_CHECKING:
   from presubmit_support import AffectedFile, InputApi, OutputApi
 
 PLACEHOLDER_BYPASS_REASONS: Final[frozenset[str]] = frozenset(
-    {"todo", "tbd", "none", "n/a", "fixme", "xxx"})
+  {"todo", "tbd", "none", "n/a", "fixme", "xxx"}
+)
 
 SKIPPED_PATHS: Final[tuple[str, ...]] = (
-    "third_party/*",
-    "*crossbench/third_party/*",
+  "third_party/*",
+  "*crossbench/third_party/*",
 )
 
 
@@ -49,25 +50,30 @@ class AstViolation:
   line_text: str
 
   def format_error(self) -> str:
-    return (f"{self.file_path}:{self.line_number}:{self.col_offset}: "
-            f"{self.line_text}")
+    return (
+      f"{self.file_path}:{self.line_number}:{self.col_offset}: {self.line_text}"
+    )
 
   @classmethod
   def from_raw(
-      cls,
-      raw_violations: Iterable[RawAstViolation],
-      parsed_file: ParsedPythonFile,
+    cls,
+    raw_violations: Iterable[RawAstViolation],
+    parsed_file: ParsedPythonFile,
   ) -> list[AstViolation]:
     return [
-        cls(parsed_file.path, v.line_number, v.col_offset, v.name,
-            parsed_file.lines[v.line_number - 1].strip())
-        for v in raw_violations
-        if v.line_number in parsed_file.changed_lines
+      cls(
+        parsed_file.path,
+        v.line_number,
+        v.col_offset,
+        v.name,
+        parsed_file.lines[v.line_number - 1].strip(),
+      )
+      for v in raw_violations
+      if v.line_number in parsed_file.changed_lines
     ]
 
 
 class PresubmitCheck:
-
   def __init__(self, input_api: InputApi, output_api: OutputApi) -> None:
     self._input_api: Final[InputApi] = input_api
     self._output_api: Final[OutputApi] = output_api
@@ -91,19 +97,24 @@ class PresubmitCheck:
   @classmethod
   def is_skipped_path(cls, input_api: InputApi, file_path: str) -> bool:
     return any(
-        input_api.fnmatch.fnmatch(file_path, pattern)
-        for pattern in SKIPPED_PATHS)
+      input_api.fnmatch.fnmatch(file_path, pattern) for pattern in SKIPPED_PATHS
+    )
 
   def affected_python_files(self, path_prefix: str = "") -> list[AffectedFile]:
 
     def file_filter(f: AffectedFile) -> bool:
       path: str = f.LocalPath()
-      return (path.startswith(path_prefix) and path.endswith(".py") and
-              not self.is_skipped_path(self._input_api, path))
+      return (
+        path.startswith(path_prefix)
+        and path.endswith(".py")
+        and not self.is_skipped_path(self._input_api, path)
+      )
 
     return list(
-        self._input_api.AffectedFiles(
-            file_filter=file_filter, include_deletes=False))
+      self._input_api.AffectedFiles(
+        file_filter=file_filter, include_deletes=False
+      )
+    )
 
   @classmethod
   def changed_lines(cls, affected_file: AffectedFile) -> set[int]:
@@ -119,17 +130,18 @@ class PresubmitCheck:
       content: str = self._input_api.ReadFile(str(full_path), "r")
       tree: ast.Module = ast.parse(content, filename=str(full_path))
       yield ParsedPythonFile(
-          file_path,
-          content.splitlines(),
-          changed_lines,
-          tree,
+        file_path,
+        content.splitlines(),
+        changed_lines,
+        tree,
       )
 
   @classmethod
   def parse_bypass_reason(cls, description: str, key: str) -> str | None:
     pattern: str = rf"^[ \t]*{re.escape(key)}[ \t]*=[ \t]*(\S.*)$"
-    for match in re.finditer(pattern, description,
-                             re.MULTILINE | re.IGNORECASE):
+    for match in re.finditer(
+      pattern, description, re.MULTILINE | re.IGNORECASE
+    ):
       reason: str = match.group(1).strip()
       if reason.lower() not in PLACEHOLDER_BYPASS_REASONS:
         return reason
@@ -140,7 +152,6 @@ class PresubmitCheck:
 
 
 class AstCheckVisitor(ast.NodeVisitor, metaclass=abc.ABCMeta):
-
   def __init__(self) -> None:
     super().__init__()
     self._violations: list[RawAstViolation] = []
@@ -151,14 +162,15 @@ class AstCheckVisitor(ast.NodeVisitor, metaclass=abc.ABCMeta):
 
   def add_violation(self, node: ast.stmt | ast.expr, name: str) -> None:
     self._violations.append(
-        RawAstViolation(node.lineno, node.col_offset + 1, name))
+      RawAstViolation(node.lineno, node.col_offset + 1, name)
+    )
 
   @classmethod
   @abc.abstractmethod
   def report(
-      cls,
-      presubmit: PresubmitCheck,
-      violations: Sequence[AstViolation],
+    cls,
+    presubmit: PresubmitCheck,
+    violations: Sequence[AstViolation],
   ) -> list[object]:
     raise NotImplementedError
 
@@ -168,22 +180,23 @@ class AstCheckVisitor(ast.NodeVisitor, metaclass=abc.ABCMeta):
 
   @classmethod
   def check_all(
-      cls,
-      input_api: InputApi,
-      output_api: OutputApi,
-      visitor_classes: Sequence[type[AstCheckVisitor]],
+    cls,
+    input_api: InputApi,
+    output_api: OutputApi,
+    visitor_classes: Sequence[type[AstCheckVisitor]],
   ) -> list[object]:
     presubmit = PresubmitCheck(input_api, output_api)
     results: list[object] = []
     collected: dict[type[AstCheckVisitor], list[AstViolation]] = {
-        v_cls: [] for v_cls in visitor_classes
+      v_cls: [] for v_cls in visitor_classes
     }
     for parsed_file in presubmit.iter_parsed_python_files():
       for v_cls in visitor_classes:
         visitor = v_cls()
         visitor.visit(parsed_file.tree)
         collected[v_cls].extend(
-            AstViolation.from_raw(visitor.violations, parsed_file))
+          AstViolation.from_raw(visitor.violations, parsed_file)
+        )
     for v_cls, violations in collected.items():
       results.extend(v_cls.report(presubmit, violations))
     return results

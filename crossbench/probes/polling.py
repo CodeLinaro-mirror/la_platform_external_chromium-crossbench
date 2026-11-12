@@ -12,8 +12,12 @@ import time
 from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Self, override
 
 from crossbench.parse import DurationParser, ObjectParser
-from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext, \
-    ProbeKeyT
+from crossbench.probes.probe import (
+  Probe,
+  ProbeConfigParser,
+  ProbeContext,
+  ProbeKeyT,
+)
 from crossbench.probes.results import LocalProbeResult, ProbeResult
 
 if TYPE_CHECKING:
@@ -31,6 +35,7 @@ class PollingProbe(Probe, metaclass=abc.ABCMeta):
   """
   Abstract probe to periodically collect the results of any bash cmd.
   """
+
   NAME: ClassVar = "polling"
   IS_GENERAL_PURPOSE: ClassVar = False
 
@@ -39,29 +44,35 @@ class PollingProbe(Probe, metaclass=abc.ABCMeta):
   def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
-        "interval",
-        type=DurationParser.duration_range(_MIN_POLL_INTERVAL),
-        default=_DEFAULT_POLL_INTERVAL,
-        help="Run the cmd at this interval and produce separate results.")
+      "interval",
+      type=DurationParser.duration_range(_MIN_POLL_INTERVAL),
+      default=_DEFAULT_POLL_INTERVAL,
+      help="Run the cmd at this interval and produce separate results.",
+    )
     return parser
 
   def __init__(
-      self,
-      cmd: Iterable[CmdArg],
-      interval: dt.timedelta = _DEFAULT_POLL_INTERVAL,
+    self,
+    cmd: Iterable[CmdArg],
+    interval: dt.timedelta = _DEFAULT_POLL_INTERVAL,
   ) -> None:
     super().__init__()
     self._cmd: Final[TupleCmdArgs] = tuple(cmd)
     self._interval: Final[dt.timedelta] = interval
     if interval < _MIN_POLL_INTERVAL:
-      raise ValueError(f"Polling interval must be >= {_MIN_POLL_INTERVAL}s, "
-                       f"but got: {interval}")
+      raise ValueError(
+        f"Polling interval must be >= {_MIN_POLL_INTERVAL}s, "
+        f"but got: {interval}"
+      )
 
   @property
   @override
   def key(self) -> ProbeKeyT:
-    return (*super().key, ("cmd", tuple(self.cmd)),
-            ("interval", self.interval.total_seconds()))
+    return (
+      *super().key,
+      ("cmd", tuple(self.cmd)),
+      ("interval", self.interval.total_seconds()),
+    )
 
   @property
   def interval(self) -> dt.timedelta:
@@ -75,8 +86,10 @@ class PollingProbe(Probe, metaclass=abc.ABCMeta):
   def validate_env(self, env: RunnerEnv) -> None:
     super().validate_env(env)
     if env.repetitions != 1:
-      env.handle_warning(f"Probe={self.NAME} cannot merge data over multiple "
-                         f"repetitions={env.repetitions}.")
+      env.handle_warning(
+        f"Probe={self.NAME} cannot merge data over multiple "
+        f"repetitions={env.repetitions}."
+      )
 
   @override
   def get_context_cls(self) -> type[PollingProbeContext]:
@@ -96,10 +109,11 @@ class PollingShellProbe(PollingProbe):
   def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
-        "cmd",
-        type=ObjectParser.sh_cmd,
-        required=True,
-        help="Write stdout of this CMD as a result.")
+      "cmd",
+      type=ObjectParser.sh_cmd,
+      required=True,
+      help="Write stdout of this CMD as a result.",
+    )
     return parser
 
 
@@ -108,8 +122,12 @@ class PollingProbeContext(ProbeContext[PollingProbe]):
 
   def __init__(self, probe: PollingProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._poller = CMDPoller(self.browser_platform, self.probe.cmd,
-                             self.probe.interval, self.local_result_path)
+    self._poller = CMDPoller(
+      self.browser_platform,
+      self.probe.cmd,
+      self.probe.interval,
+      self.local_result_path,
+    )
 
   @override
   def setup(self) -> None:
@@ -126,16 +144,21 @@ class PollingProbeContext(ProbeContext[PollingProbe]):
 
 
 class CMDPoller(threading.Thread):
-
-  def __init__(self, platform: plt.Platform, cmd: Iterable[CmdArg],
-               interval: dt.timedelta, path: pth.LocalPath) -> None:
+  def __init__(
+    self,
+    platform: plt.Platform,
+    cmd: Iterable[CmdArg],
+    interval: dt.timedelta,
+    path: pth.LocalPath,
+  ) -> None:
     super().__init__()
     self._platform: Final[plt.Platform] = platform
     self._cmd: Final[TupleCmdArgs] = tuple(cmd)
     self._path: Final[pth.LocalPath] = path
     if interval < dt.timedelta(seconds=0.1):
-      raise ValueError("Poller interval should be >= 0.1s for accuracy, "
-                       f"but got {interval}s")
+      raise ValueError(
+        f"Poller interval should be >= 0.1s for accuracy, but got {interval}s"
+      )
     self._interval_seconds: Final[float] = interval.total_seconds()
     self._event: Final[threading.Event] = threading.Event()
 
@@ -156,8 +179,11 @@ class CMDPoller(threading.Thread):
       poll_end = dt.datetime.now()
       diff = (poll_end - poll_start).total_seconds()
       if diff > self._interval_seconds:
-        logging.warning("Poller command took longer than expected %fs: %s",
-                        self._interval_seconds, self._cmd)
+        logging.warning(
+          "Poller command took longer than expected %fs: %s",
+          self._interval_seconds,
+          self._cmd,
+        )
 
       # Calculate wait_time against fixed start time to avoid drifting.
       total_time = (time.monotonic_ns() - start_time) / 10.0**9

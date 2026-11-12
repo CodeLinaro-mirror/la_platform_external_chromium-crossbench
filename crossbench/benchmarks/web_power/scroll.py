@@ -10,10 +10,17 @@ import tempfile
 from typing import TYPE_CHECKING, ClassVar, Final, override
 
 from crossbench import path as pth
-from crossbench.benchmarks.web_power.base import WebPowerBenchmarkBase, \
-    WebPowerSiteConfig, WebPowerStory, WebPowerStoryFilter, _value_or
-from crossbench.benchmarks.web_power.scroll_gen import GeneratorConfig, \
-    generate_scroll_commands
+from crossbench.benchmarks.web_power.base import (
+  WebPowerBenchmarkBase,
+  WebPowerSiteConfig,
+  WebPowerStory,
+  WebPowerStoryFilter,
+  _value_or,
+)
+from crossbench.benchmarks.web_power.scroll_gen import (
+  GeneratorConfig,
+  generate_scroll_commands,
+)
 from crossbench.parse import NumberParser
 from crossbench.plt.ios import IOSPlatform
 
@@ -43,23 +50,30 @@ class WebPowerScrollStory(WebPowerStory):
   def input_rate(self) -> int:
     return self.config.input_rate
 
-  def __init__(self,
-               name_suffix: str,
-               site_config: WebPowerSiteConfig,
-               scroll_count: int | None = None,
-               input_rate: int | None = None,
-               stabilization_time: dt.timedelta | None = None) -> None:
+  def __init__(
+    self,
+    name_suffix: str,
+    site_config: WebPowerSiteConfig,
+    scroll_count: int | None = None,
+    input_rate: int | None = None,
+    stabilization_time: dt.timedelta | None = None,
+  ) -> None:
     self.config: Final[GeneratorConfig] = GeneratorConfig(
-        input_rate=_value_or(input_rate, self.DEFAULT_INPUT_RATE),
-        scroll_count=_value_or(scroll_count, self.DEFAULT_SCROLL_COUNT))
-    stabilization_time = _value_or(stabilization_time,
-                                   site_config.default_stabilization_time)
+      input_rate=_value_or(input_rate, self.DEFAULT_INPUT_RATE),
+      scroll_count=_value_or(scroll_count, self.DEFAULT_SCROLL_COUNT),
+    )
+    stabilization_time = _value_or(
+      stabilization_time, site_config.default_stabilization_time
+    )
 
     total_duration = (
-        self.config.sequence_duration() + stabilization_time +
-        WebPowerStory.DEFAULT_GRACE_PERIOD)
-    super().__init__(name_suffix, site_config, total_duration,
-                     stabilization_time)
+      self.config.sequence_duration()
+      + stabilization_time
+      + WebPowerStory.DEFAULT_GRACE_PERIOD
+    )
+    super().__init__(
+      name_suffix, site_config, total_duration, stabilization_time
+    )
 
     self.local_file: pth.LocalPath | None = None
     self.remote_file: pth.AnyPath | None = None
@@ -69,20 +83,22 @@ class WebPowerScrollStory(WebPowerStory):
     if isinstance(run.browser_platform, IOSPlatform):
       if self.config.input_rate != self.DEFAULT_INPUT_RATE:
         logging.warning(
-            "--input-rate=%d is ignored on iOS; WebDriverAgent synthesizes "
-            "touches at a fixed rate.", self.config.input_rate)
+          "--input-rate=%d is ignored on iOS; WebDriverAgent synthesizes "
+          "touches at a fixed rate.",
+          self.config.input_rate,
+        )
       with run.actions("Init_WDA", verbose=True):
         run.browser_platform.wda.ensure_session()
       super().setup(run)
       return
 
-    assert (self.local_file is None)
-    assert (self.remote_file is None)
+    assert self.local_file is None
+    assert self.remote_file is None
 
     if not run.browser_platform.is_android:
       raise RuntimeError(
-          "The web-power-scroll benchmark is only supported on Android "
-          "and iOS.")
+        "The web-power-scroll benchmark is only supported on Android and iOS."
+      )
 
     # Register cleanup at exit, in case an exception is raised in between
     # setup() and run() being called.
@@ -93,13 +109,15 @@ class WebPowerScrollStory(WebPowerStory):
         display_res = run.browser_platform.display_resolution()
         evemu_data = generate_scroll_commands(self.config, display_res)
         with tempfile.NamedTemporaryFile(
-            mode="w", encoding="utf-8", suffix=".evemu", delete=False) as f:
+          mode="w", encoding="utf-8", suffix=".evemu", delete=False
+        ) as f:
           f.write(evemu_data)
           self.local_file = pth.LocalPath(f.name)
 
       with run.actions("Push_Scrolls", verbose=True):
         self.remote_file = run.browser_platform.path(
-            "/data/local/tmp/scrolling_sequence.evemu")
+          "/data/local/tmp/scrolling_sequence.evemu"
+        )
         run.browser_platform.push(self.local_file, self.remote_file)
     except Exception:
       self.clear_files(run)
@@ -111,17 +129,19 @@ class WebPowerScrollStory(WebPowerStory):
   def run(self, run: Run) -> None:
     if isinstance(run.browser_platform, IOSPlatform):
       with run.actions(
-          "Run", verbose=True, performance_mark=WebPowerStory.MEASUREMENT_MARK):
+        "Run", verbose=True, performance_mark=WebPowerStory.MEASUREMENT_MARK
+      ):
         with run.actions("Scroll"):
           self._run_ios_scroll(run.browser_platform)
       return
 
-    assert (self.local_file is not None)
-    assert (self.remote_file is not None)
+    assert self.local_file is not None
+    assert self.remote_file is not None
 
     try:
       with run.actions(
-          "Run", verbose=True, performance_mark=WebPowerStory.MEASUREMENT_MARK):
+        "Run", verbose=True, performance_mark=WebPowerStory.MEASUREMENT_MARK
+      ):
         with run.actions("Scroll"):
           run.browser_platform.sh("uinput", self.remote_file)
 
@@ -136,14 +156,15 @@ class WebPowerScrollStory(WebPowerStory):
 
     swipe_down = (fixed_x, y_bottom, fixed_x, y_top)
     swipe_up = (fixed_x, y_top, fixed_x, y_bottom)
-    cycle_swipes = ([swipe_down] * self.config.swipes_per_direction +
-                    [swipe_up] * self.config.swipes_per_direction)
+    cycle_swipes = [swipe_down] * self.config.swipes_per_direction + [
+      swipe_up
+    ] * self.config.swipes_per_direction
     all_swipes = cycle_swipes * self.config.scroll_count
     platform.wda.swipe_sequence(
-        all_swipes,
-        duration=self.config.swipe_duration,
-        settle_duration=self.config.settle_duration,
-        lift_duration=self.config.lift_duration,
+      all_swipes,
+      duration=self.config.swipe_duration,
+      settle_duration=self.config.settle_duration,
+      lift_duration=self.config.lift_duration,
     )
 
   def clear_files(self, run: Run) -> None:
@@ -173,25 +194,28 @@ class WebPowerScrollBenchmark(WebPowerBenchmarkBase):
 
   @classmethod
   @override
-  def add_scenario_cli_arguments(cls,
-                                 parser: CBArgumentParser) -> CBArgumentParser:
+  def add_scenario_cli_arguments(
+    cls, parser: CBArgumentParser
+  ) -> CBArgumentParser:
     story_cls = cls.DEFAULT_STORY_CLS
     parser.add_argument(
-        "--scrolls",
-        "--scroll-count",
-        dest="scroll_count",
-        type=NumberParser.positive_int,
-        default=None,
-        help="Number of times to repeat the up/down scroll sequence "
-        f"(Default: {story_cls.DEFAULT_SCROLL_COUNT})")
+      "--scrolls",
+      "--scroll-count",
+      dest="scroll_count",
+      type=NumberParser.positive_int,
+      default=None,
+      help="Number of times to repeat the up/down scroll sequence "
+      f"(Default: {story_cls.DEFAULT_SCROLL_COUNT})",
+    )
     parser.add_argument(
-        "--input-rate",
-        "--rate",
-        dest="input_rate",
-        type=NumberParser.positive_int,
-        default=None,
-        help="Frequency of synthetic scroll touch events in Hz. "
-        f"(Default: {story_cls.DEFAULT_INPUT_RATE}Hz)")
+      "--input-rate",
+      "--rate",
+      dest="input_rate",
+      type=NumberParser.positive_int,
+      default=None,
+      help="Frequency of synthetic scroll touch events in Hz. "
+      f"(Default: {story_cls.DEFAULT_INPUT_RATE}Hz)",
+    )
     return parser
 
   @classmethod

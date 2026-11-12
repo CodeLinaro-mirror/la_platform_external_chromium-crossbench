@@ -12,10 +12,11 @@ from crossbench.browsers.chromium_based.chromium_based import ChromiumBased
 
 
 class Chrome(ChromeBaseMixin, ChromiumBased):
-
   @classmethod
   @override
   def attributes(cls) -> BrowserAttributes:
-    return (super().attributes()
-            | BrowserAttributes.CHROME
-            | BrowserAttributes.DESKTOP)
+    return (
+      super().attributes()
+      | BrowserAttributes.CHROME
+      | BrowserAttributes.DESKTOP
+    )

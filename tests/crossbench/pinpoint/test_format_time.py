@@ -13,7 +13,6 @@ from tests.crossbench.base import BaseCrossbenchTestCase
 
 
 class FormatTimeTest(BaseCrossbenchTestCase):
-
   def test_format_time_today(self):
     now = dt.datetime(2024, 3, 10, 15, 0, 0)
     input_str = "2024-03-10 09:30:00"

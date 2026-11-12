@@ -5,90 +5,121 @@
 from __future__ import annotations
 
 from crossbench.benchmarks.blink_ai import BlinkAIBenchmark
-from crossbench.benchmarks.devtools_frontend.devtools_frontend_benchmark import \
-    DevToolsFrontendBenchmark
+from crossbench.benchmarks.devtools_frontend.devtools_frontend_benchmark import (
+  DevToolsFrontendBenchmark,
+)
 from crossbench.benchmarks.embedder import EmbedderBenchmark
-from crossbench.benchmarks.jetstream import JetStream11Benchmark, \
-    JetStream20Benchmark, JetStream21Benchmark, JetStream22Benchmark, \
-    JetStream30Benchmark, JetStreamMainBenchmark
-from crossbench.benchmarks.loading.browser_startup import \
-    BrowserStartupBenchmark
+from crossbench.benchmarks.jetstream import (
+  JetStream11Benchmark,
+  JetStream20Benchmark,
+  JetStream21Benchmark,
+  JetStream22Benchmark,
+  JetStream30Benchmark,
+  JetStreamMainBenchmark,
+)
+from crossbench.benchmarks.loading.browser_startup import (
+  BrowserStartupBenchmark,
+)
 from crossbench.benchmarks.loading.loading_benchmark import LoadingBenchmark
-from crossbench.benchmarks.loadline import LoadLine1PhoneBenchmark, \
-    LoadLine1PhoneDebugBenchmark, LoadLine1PhoneFastBenchmark, \
-    LoadLine1TabletBenchmark, LoadLine1TabletDebugBenchmark, \
-    LoadLine1TabletFastBenchmark, LoadLine2PhoneBenchmark, \
-    LoadLine2PhoneDebugBenchmark, LoadLine2TabletBenchmark, \
-    LoadLine2TabletDebugBenchmark, LoadLine2WebApiPhoneBenchmark, \
-    LoadLine2WebApiPhoneDebugBenchmark, LoadLine2WebApiTabletBenchmark, \
-    LoadLine2WebApiTabletDebugBenchmark
+from crossbench.benchmarks.loadline import (
+  LoadLine1PhoneBenchmark,
+  LoadLine1PhoneDebugBenchmark,
+  LoadLine1PhoneFastBenchmark,
+  LoadLine1TabletBenchmark,
+  LoadLine1TabletDebugBenchmark,
+  LoadLine1TabletFastBenchmark,
+  LoadLine2PhoneBenchmark,
+  LoadLine2PhoneDebugBenchmark,
+  LoadLine2TabletBenchmark,
+  LoadLine2TabletDebugBenchmark,
+  LoadLine2WebApiPhoneBenchmark,
+  LoadLine2WebApiPhoneDebugBenchmark,
+  LoadLine2WebApiTabletBenchmark,
+  LoadLine2WebApiTabletDebugBenchmark,
+)
 from crossbench.benchmarks.manual import ManualBenchmark
 from crossbench.benchmarks.memory.memory_benchmark import MemoryBenchmark
-from crossbench.benchmarks.motionmark import MotionMark10Benchmark, \
-    MotionMark11Benchmark, MotionMark12Benchmark, MotionMark13Benchmark, \
-    MotionMark2PreviewBenchmark, MotionMark131Benchmark, \
-    MotionMark132Benchmark, MotionMarkMainBenchmark
-from crossbench.benchmarks.multiwindow_memory_stress import \
-    MultiwindowMemoryStressBenchmark
+from crossbench.benchmarks.motionmark import (
+  MotionMark2PreviewBenchmark,
+  MotionMark10Benchmark,
+  MotionMark11Benchmark,
+  MotionMark12Benchmark,
+  MotionMark13Benchmark,
+  MotionMark131Benchmark,
+  MotionMark132Benchmark,
+  MotionMarkMainBenchmark,
+)
+from crossbench.benchmarks.multiwindow_memory_stress import (
+  MultiwindowMemoryStressBenchmark,
+)
 from crossbench.benchmarks.powerline import PowerlineBenchmark
-from crossbench.benchmarks.speedometer import Speedometer10Benchmark, \
-    Speedometer20Benchmark, Speedometer21Benchmark, Speedometer30Benchmark, \
-    Speedometer31Benchmark, SpeedometerMainBenchmark
-from crossbench.benchmarks.web_power import WebPowerBenchmark, \
-    WebPowerIdleBenchmark, WebPowerMediaPlaybackBenchmark, \
-    WebPowerPageLoadBenchmark, WebPowerScrollBenchmark
+from crossbench.benchmarks.speedometer import (
+  Speedometer10Benchmark,
+  Speedometer20Benchmark,
+  Speedometer21Benchmark,
+  Speedometer30Benchmark,
+  Speedometer31Benchmark,
+  SpeedometerMainBenchmark,
+)
+from crossbench.benchmarks.web_power import (
+  WebPowerBenchmark,
+  WebPowerIdleBenchmark,
+  WebPowerMediaPlaybackBenchmark,
+  WebPowerPageLoadBenchmark,
+  WebPowerScrollBenchmark,
+)
 from crossbench.benchmarks.webai import WebAIBenchmark
 from crossbench.benchmarks.webxprt import WebXPRT5Benchmark
 
 __all__ = [
-    "BlinkAIBenchmark",
-    "DevToolsFrontendBenchmark",
-    "EmbedderBenchmark",
-    "JetStream11Benchmark",
-    "JetStream20Benchmark",
-    "JetStream21Benchmark",
-    "JetStream22Benchmark",
-    "JetStream30Benchmark",
-    "JetStreamMainBenchmark",
-    "LoadingBenchmark",
-    "BrowserStartupBenchmark",
-    "LoadLine1PhoneBenchmark",
-    "LoadLine1PhoneDebugBenchmark",
-    "LoadLine1PhoneFastBenchmark",
-    "LoadLine1TabletBenchmark",
-    "LoadLine1TabletDebugBenchmark",
-    "LoadLine1TabletFastBenchmark",
-    "LoadLine2PhoneBenchmark",
-    "LoadLine2PhoneDebugBenchmark",
-    "LoadLine2TabletBenchmark",
-    "LoadLine2TabletDebugBenchmark",
-    "LoadLine2WebApiPhoneBenchmark",
-    "LoadLine2WebApiPhoneDebugBenchmark",
-    "LoadLine2WebApiTabletBenchmark",
-    "LoadLine2WebApiTabletDebugBenchmark",
-    "ManualBenchmark",
-    "MemoryBenchmark",
-    "MotionMark10Benchmark",
-    "MotionMark11Benchmark",
-    "MotionMark12Benchmark",
-    "MotionMark131Benchmark",
-    "MotionMark132Benchmark",
-    "MotionMark13Benchmark",
-    "MotionMark2PreviewBenchmark",
-    "MotionMarkMainBenchmark",
-    "MultiwindowMemoryStressBenchmark",
-    "PowerlineBenchmark",
-    "Speedometer10Benchmark",
-    "Speedometer20Benchmark",
-    "Speedometer21Benchmark",
-    "Speedometer30Benchmark",
-    "Speedometer31Benchmark",
-    "SpeedometerMainBenchmark",
-    "WebAIBenchmark",
-    "WebPowerBenchmark",
-    "WebPowerIdleBenchmark",
-    "WebPowerMediaPlaybackBenchmark",
-    "WebPowerPageLoadBenchmark",
-    "WebPowerScrollBenchmark",
-    "WebXPRT5Benchmark",
+  "BlinkAIBenchmark",
+  "DevToolsFrontendBenchmark",
+  "EmbedderBenchmark",
+  "JetStream11Benchmark",
+  "JetStream20Benchmark",
+  "JetStream21Benchmark",
+  "JetStream22Benchmark",
+  "JetStream30Benchmark",
+  "JetStreamMainBenchmark",
+  "LoadingBenchmark",
+  "BrowserStartupBenchmark",
+  "LoadLine1PhoneBenchmark",
+  "LoadLine1PhoneDebugBenchmark",
+  "LoadLine1PhoneFastBenchmark",
+  "LoadLine1TabletBenchmark",
+  "LoadLine1TabletDebugBenchmark",
+  "LoadLine1TabletFastBenchmark",
+  "LoadLine2PhoneBenchmark",
+  "LoadLine2PhoneDebugBenchmark",
+  "LoadLine2TabletBenchmark",
+  "LoadLine2TabletDebugBenchmark",
+  "LoadLine2WebApiPhoneBenchmark",
+  "LoadLine2WebApiPhoneDebugBenchmark",
+  "LoadLine2WebApiTabletBenchmark",
+  "LoadLine2WebApiTabletDebugBenchmark",
+  "ManualBenchmark",
+  "MemoryBenchmark",
+  "MotionMark10Benchmark",
+  "MotionMark11Benchmark",
+  "MotionMark12Benchmark",
+  "MotionMark131Benchmark",
+  "MotionMark132Benchmark",
+  "MotionMark13Benchmark",
+  "MotionMark2PreviewBenchmark",
+  "MotionMarkMainBenchmark",
+  "MultiwindowMemoryStressBenchmark",
+  "PowerlineBenchmark",
+  "Speedometer10Benchmark",
+  "Speedometer20Benchmark",
+  "Speedometer21Benchmark",
+  "Speedometer30Benchmark",
+  "Speedometer31Benchmark",
+  "SpeedometerMainBenchmark",
+  "WebAIBenchmark",
+  "WebPowerBenchmark",
+  "WebPowerIdleBenchmark",
+  "WebPowerMediaPlaybackBenchmark",
+  "WebPowerPageLoadBenchmark",
+  "WebPowerScrollBenchmark",
+  "WebXPRT5Benchmark",
 ]

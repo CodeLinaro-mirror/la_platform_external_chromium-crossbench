@@ -10,28 +10,35 @@ import functools
 from typing import TYPE_CHECKING, ClassVar, Final, Self, override
 
 from crossbench import exception
-from crossbench.action_runner.virtual_device.virtual_device_type import \
-    VirtualDeviceType
-from crossbench.config import ConfigObject, ConfigParser, ObjectParser, \
-    UnusedPropertiesMode
+from crossbench.action_runner.virtual_device.virtual_device_type import (
+  VirtualDeviceType,
+)
+from crossbench.config import (
+  ConfigObject,
+  ConfigParser,
+  ObjectParser,
+  UnusedPropertiesMode,
+)
 
 if TYPE_CHECKING:
   from crossbench.types import JsonDict
 
 
 class VirtualDeviceTypeConfigParser(ConfigParser[VirtualDeviceType]):
-
   def __init__(self) -> None:
     super().__init__(
-        VirtualDeviceType, unused_properties_mode=UnusedPropertiesMode.IGNORE)
+      VirtualDeviceType, unused_properties_mode=UnusedPropertiesMode.IGNORE
+    )
     self.add_argument(
-        "device_type",
-        aliases=("type",),
-        type=ObjectParser.non_empty_str,
-        required=True)
+      "device_type",
+      aliases=("type",),
+      type=ObjectParser.non_empty_str,
+      required=True,
+    )
 
-  def new_instance_from_kwargs(self, kwargs: dict[str,
-                                                  object]) -> VirtualDeviceType:
+  def new_instance_from_kwargs(
+    self, kwargs: dict[str, object]
+  ) -> VirtualDeviceType:
     return VirtualDeviceType(kwargs["device_type"])
 
 
@@ -67,10 +74,12 @@ class VirtualDeviceConfig(ConfigObject, metaclass=abc.ABCMeta):
     config.pop("type", None)
 
     with exception.annotate_argparsing(
-        f'Parsing VirtualDeviceConfig ...{{ type: "{device_type}", ...}}:'):
+      f'Parsing VirtualDeviceConfig ...{{ type: "{device_type}", ...}}:'
+    ):
       device_config = target_cls.config_parser().parse(config, **kwargs)
-    assert isinstance(device_config,
-                      cls), (f"Expected {cls} but got {type(device_config)}")
+    assert isinstance(device_config, cls), (
+      f"Expected {cls} but got {type(device_config)}"
+    )
     return device_config
 
   @classmethod
@@ -89,6 +98,6 @@ class VirtualDeviceConfig(ConfigObject, metaclass=abc.ABCMeta):
 
   def to_json(self) -> JsonDict:
     return {
-        "name": self.name,
-        "type": str(self.device_type),
+      "name": self.name,
+      "type": str(self.device_type),
     }

@@ -17,7 +17,6 @@ from tests import test_helper
 
 
 class TestRunnerStateMachine(fake_filesystem_unittest.TestCase):
-
   def setUp(self) -> None:
     super().setUp()
     self.setUpPyfakefs()
@@ -142,11 +141,12 @@ class TestRunnerStateMachine(fake_filesystem_unittest.TestCase):
 
   def test_last_modified_changes(self):
     with mock.patch(
-        "crossbench.runner.runner_state.dt.datetime") as mock_datetime:
+      "crossbench.runner.runner_state.dt.datetime"
+    ) as mock_datetime:
       mock_datetime.now.return_value.isoformat.side_effect = [
-          "2026-04-29T12:00:00",
-          "2026-04-29T12:00:00",
-          "2026-04-29T12:00:01",
+        "2026-04-29T12:00:00",
+        "2026-04-29T12:00:00",
+        "2026-04-29T12:00:01",
       ]
 
       state = RunnerStateMachine(self.mock_runner)

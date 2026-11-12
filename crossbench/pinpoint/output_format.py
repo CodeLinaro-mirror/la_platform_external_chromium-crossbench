@@ -30,19 +30,21 @@ class OutputFormat(StrEnum):
     raise ValueError(f"OutputFormat {self} is not a delimited format")
 
 
-def write_delimited(stream: TextIO,
-                    headers: Sequence[str],
-                    rows: Iterable[Sequence[object]],
-                    delimiter: str = ",") -> None:
+def write_delimited(
+  stream: TextIO,
+  headers: Sequence[str],
+  rows: Iterable[Sequence[object]],
+  delimiter: str = ",",
+) -> None:
   """Writes rows with headers to stream as delimited CSV/TSV data."""
   writer = csv.writer(stream, delimiter=delimiter)
   writer.writerow(headers)
   writer.writerows(rows)
 
 
-def format_delimited(headers: Sequence[str],
-                     rows: Iterable[Sequence[object]],
-                     delimiter: str = ",") -> str:
+def format_delimited(
+  headers: Sequence[str], rows: Iterable[Sequence[object]], delimiter: str = ","
+) -> str:
   """Formats rows with headers as a delimited CSV/TSV string."""
   buffer = io.StringIO()
   write_delimited(buffer, headers, rows, delimiter=delimiter)

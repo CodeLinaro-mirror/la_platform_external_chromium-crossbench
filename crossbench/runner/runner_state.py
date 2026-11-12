@@ -35,7 +35,6 @@ class RunnerState(BaseState):
 
 
 class RunnerStateMachine(StateMachine[RunnerState]):
-
   def __init__(self, runner: Runner) -> None:
     super().__init__(RunnerState.INITIAL)
     self._status_lock: Final[threading.Lock] = threading.Lock()
@@ -111,17 +110,17 @@ class RunnerStateMachine(StateMachine[RunnerState]):
 
   def _write_nolock(self) -> None:
     status_data = {
-        "pid": self._pid,
-        "status": self.state.name,
-        "created": self._created,
-        "last_modified": dt.datetime.now().isoformat(),
-        "runs": {
-            "dir": self._runs_dir_str,
-            "total": self._total_runs,
-            "current": sorted(self._active_runs),
-            "success": self._success_count,
-            "failed": self._failed_count,
-        },
+      "pid": self._pid,
+      "status": self.state.name,
+      "created": self._created,
+      "last_modified": dt.datetime.now().isoformat(),
+      "runs": {
+        "dir": self._runs_dir_str,
+        "total": self._total_runs,
+        "current": sorted(self._active_runs),
+        "success": self._success_count,
+        "failed": self._failed_count,
+      },
     }
     with self._status_file.open("w") as f:
       json.dump(status_data, f, indent=2)

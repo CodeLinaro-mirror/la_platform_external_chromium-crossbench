@@ -4,11 +4,14 @@
 
 from __future__ import annotations
 
-from crossbench.benchmarks.webai.webai import WebAIBenchmark, WebAIProbe, \
-    WebAIStory
+from crossbench.benchmarks.webai.webai import (
+  WebAIBenchmark,
+  WebAIProbe,
+  WebAIStory,
+)
 
 __all__ = [
-    "WebAIBenchmark",
-    "WebAIProbe",
-    "WebAIStory",
+  "WebAIBenchmark",
+  "WebAIProbe",
+  "WebAIStory",
 ]

@@ -18,28 +18,29 @@ from tests import test_helper
 
 
 class PerfettoSubcommandTest(unittest.TestCase):
-
   def setUp(self):
     super().setUp()
     self.cli = CrossBenchCLI()
     subcommand = self.cli.subcommands["perfetto"]
     self.assertIsInstance(subcommand, PerfettoCrossbenchSubcommand)
     self.subcommand = subcommand
-    self.test_categories = (CategoryDescription(
+    self.test_categories = (
+      CategoryDescription(
         data_source="track_event",
         name="blink",
         description="Blink engine",
-        tags=("benchmark", "loading")),
-                            CategoryDescription(
-                                data_source="track_event",
-                                name="v8",
-                                description="V8 engine",
-                                tags=("javascript",)),
-                            CategoryDescription(
-                                data_source="linux.ftrace",
-                                name="",
-                                description="",
-                                tags=()))
+        tags=("benchmark", "loading"),
+      ),
+      CategoryDescription(
+        data_source="track_event",
+        name="v8",
+        description="V8 engine",
+        tags=("javascript",),
+      ),
+      CategoryDescription(
+        data_source="linux.ftrace", name="", description="", tags=()
+      ),
+    )
 
   @contextlib.contextmanager
   def captured_stdout(self) -> Iterator[io.StringIO]:
@@ -52,8 +53,9 @@ class PerfettoSubcommandTest(unittest.TestCase):
     categories_subcommand = self.subcommand._categories_subcommand
 
     with self.captured_stdout() as fake_out:
-      categories_subcommand.subcommand_run(args, self.test_categories,
-                                           "mock_browser")
+      categories_subcommand.subcommand_run(
+        args, self.test_categories, "mock_browser"
+      )
       output = fake_out.getvalue()
 
       # Verify output is valid JSON containing our categories
@@ -67,8 +69,9 @@ class PerfettoSubcommandTest(unittest.TestCase):
     categories_subcommand = self.subcommand._categories_subcommand
 
     with self.captured_stdout() as fake_out:
-      categories_subcommand.subcommand_run(args, self.test_categories,
-                                           "mock_browser")
+      categories_subcommand.subcommand_run(
+        args, self.test_categories, "mock_browser"
+      )
       output = fake_out.getvalue()
 
       self.assertIn("Categories for mock_browser", output)
@@ -80,8 +83,9 @@ class PerfettoSubcommandTest(unittest.TestCase):
     data_sources_subcommand = self.subcommand._data_sources_subcommand
 
     with self.captured_stdout() as fake_out:
-      data_sources_subcommand.subcommand_run(args, self.test_categories,
-                                             "mock_browser")
+      data_sources_subcommand.subcommand_run(
+        args, self.test_categories, "mock_browser"
+      )
       output = fake_out.getvalue()
 
       parsed = json.loads(output)
@@ -93,8 +97,9 @@ class PerfettoSubcommandTest(unittest.TestCase):
     data_sources_subcommand = self.subcommand._data_sources_subcommand
 
     with self.captured_stdout() as fake_out:
-      data_sources_subcommand.subcommand_run(args, self.test_categories,
-                                             "mock_browser")
+      data_sources_subcommand.subcommand_run(
+        args, self.test_categories, "mock_browser"
+      )
       output = fake_out.getvalue()
 
       self.assertIn("Data Sources for mock_browser", output)

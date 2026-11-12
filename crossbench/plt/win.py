@@ -30,11 +30,11 @@ class WinVersion(PlatformVersion):
 class WinPlatform(Platform):
   # TODO: support remote platforms
   SEARCH_PATHS = (
-      pth.LocalPath("."),
-      pth.LocalPath(os.path.expandvars("%ProgramFiles%")),
-      pth.LocalPath(os.path.expandvars("%ProgramFiles(x86)%")),
-      pth.LocalPath(os.path.expandvars("%APPDATA%")),
-      pth.LocalPath(os.path.expandvars("%LOCALAPPDATA%")),
+    pth.LocalPath("."),
+    pth.LocalPath(os.path.expandvars("%ProgramFiles%")),
+    pth.LocalPath(os.path.expandvars("%ProgramFiles(x86)%")),
+    pth.LocalPath(os.path.expandvars("%APPDATA%")),
+    pth.LocalPath(os.path.expandvars("%LOCALAPPDATA%")),
   )
 
   @property
@@ -83,9 +83,14 @@ class WinPlatform(Platform):
   @functools.cached_property
   @override
   def cpu(self) -> str:
-    return self.powershell_stdout(
+    return (
+      self.powershell_stdout(
         "Get-CIMInstance -query 'select * from Win32_Processor' | ft Name",
-    ).strip().splitlines()[2].strip()
+      )
+      .strip()
+      .splitlines()[2]
+      .strip()
+    )
 
   @override
   def killall(self, process_name: str) -> None:
@@ -100,9 +105,15 @@ class WinPlatform(Platform):
     # The method in base class doesn't always give the correct answer,
     # because it uses py_platform.machine, which give the architecture of
     # the Python binary. It is possible to run x64 Python on ARM Windows.
-    cpu_caption = self.powershell_stdout(
+    cpu_caption = (
+      self.powershell_stdout(
         "Get-CIMInstance -query 'select * from Win32_Processor' | ft Caption",
-    ).strip().splitlines()[2].strip().lower()
+      )
+      .strip()
+      .splitlines()[2]
+      .strip()
+      .lower()
+    )
     if cpu_caption.startswith("arm"):
       return "arm64" if "64-bit" in cpu_caption else "arm"
     return super()._raw_machine_arch()
@@ -124,9 +135,10 @@ class WinPlatform(Platform):
     TotalMilliseconds : 1217994978.9862
     """
     uptime_output = self.powershell_stdout(
-        "(New-TimeSpan -Start ("
-        "Get-CimInstance Win32_OperatingSystem).LastBootUpTime"
-        ")")
+      "(New-TimeSpan -Start ("
+      "Get-CimInstance Win32_OperatingSystem).LastBootUpTime"
+      ")"
+    )
     results = {}
     for line in uptime_output.splitlines():
       line = line.strip()
@@ -137,11 +149,12 @@ class WinPlatform(Platform):
       value_f: float = float(value)
       results[unit] = value_f
     return dt.timedelta(
-        days=results["Days"],
-        hours=results["Hours"],
-        minutes=results["Minutes"],
-        seconds=results["Seconds"],
-        milliseconds=results["Milliseconds"])
+      days=results["Days"],
+      hours=results["Hours"],
+      minutes=results["Minutes"],
+      seconds=results["Seconds"],
+      milliseconds=results["Milliseconds"],
+    )
 
   @override
   def search_binary(self, app_or_bin: pth.AnyPathLike) -> pth.AnyPath | None:
@@ -150,8 +163,10 @@ class WinPlatform(Platform):
     if not app_or_bin_path.parts:
       raise ValueError("Got empty path")
     if app_or_bin_path.suffix.lower() not in (".exe", ".bat"):
-      raise ValueError("Expected executable path with '.exe' or '.bat' suffix, "
-                       f"but got: {app_or_bin_path.name!r}")
+      raise ValueError(
+        "Expected executable path with '.exe' or '.bat' suffix, "
+        f"but got: {app_or_bin_path.name!r}"
+      )
     if result_path := self.which(app_or_bin):
       if not self.exists(result_path):
         raise RuntimeError(f"Resolved binary {result_path} does not exist.")
@@ -164,11 +179,15 @@ class WinPlatform(Platform):
     if not self.exists(app_or_bin):
       raise ValueError(f"Binary {app_or_bin} does not exist.")
     if version := self.sh_stdout(
-        "powershell", "-command",
-        f"(Get-Item '{app_or_bin}').VersionInfo.ProductVersion").strip():
+      "powershell",
+      "-command",
+      f"(Get-Item '{app_or_bin}').VersionInfo.ProductVersion",
+    ).strip():
       name = self.sh_stdout(
-          "powershell", "-command",
-          f"(Get-Item '{app_or_bin}').VersionInfo.ProductName").strip()
+        "powershell",
+        "-command",
+        f"(Get-Item '{app_or_bin}').VersionInfo.ProductName",
+      ).strip()
       return f"{name} {version}"
     try:
       # Fall back to command-line tools.
@@ -179,8 +198,9 @@ class WinPlatform(Platform):
     raise ValueError(f"Could not extract version for {app_or_bin}")
 
   @override
-  def symlink_or_copy(self, src: pth.AnyPathLike,
-                      dst: pth.AnyPathLike) -> pth.AnyPath:
+  def symlink_or_copy(
+    self, src: pth.AnyPathLike, dst: pth.AnyPathLike
+  ) -> pth.AnyPath:
     """Windows does not support symlinking without admin support.
     Copy files on windows but symlink everywhere else (see base Platform)."""
     self.assert_is_local()
@@ -210,16 +230,18 @@ class WinPlatform(Platform):
     nvidia_smi = self.which("nvidia-smi")
     if not nvidia_smi:
       default_path = self.path(
-          r"C:\Program Files\NVIDIA Corporation\NVSMI\nvidia-smi.exe")
+        r"C:\Program Files\NVIDIA Corporation\NVSMI\nvidia-smi.exe"
+      )
       if self.exists(default_path):
         nvidia_smi = default_path
 
     if nvidia_smi:
       out = self.sh_stdout(
-          nvidia_smi,
-          "--query-gpu=memory.used",
-          "--format=csv,noheader,nounits",
-          check=False)
+        nvidia_smi,
+        "--query-gpu=memory.used",
+        "--format=csv,noheader,nounits",
+        check=False,
+      )
       vram_dict: dict[str, float] = {}
       for i, line in enumerate(out.splitlines()):
         if line := line.strip():
@@ -233,12 +255,13 @@ class WinPlatform(Platform):
     if not (wmic := Binaries.WMIC.search(self)):
       return super().gpu_vram_used()
     out = self.sh_stdout(
-        wmic,
-        "path",
-        "Win32_PerfFormattedData_GPUPerformanceCounters_GPUAdapterMemory",
-        "get",
-        "DedicatedUsage,SharedUsage",
-        check=False)
+      wmic,
+      "path",
+      "Win32_PerfFormattedData_GPUPerformanceCounters_GPUAdapterMemory",
+      "get",
+      "DedicatedUsage,SharedUsage",
+      check=False,
+    )
     total_bytes = 0
     for line in out.splitlines():
       line = line.strip()

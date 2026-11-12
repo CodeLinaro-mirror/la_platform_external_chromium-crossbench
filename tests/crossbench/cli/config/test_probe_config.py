@@ -15,7 +15,6 @@ from tests.crossbench.cli.config.base import BaseConfigTestCase
 
 
 class ProbeConfigTestCase(BaseConfigTestCase):
-
   def test_parse_inline_str(self):
     mock_d8_file = pth.LocalPath("out/d8")
     self.fs.create_file(mock_d8_file, st_size=8 * 1024)
@@ -44,8 +43,9 @@ class ProbeConfigTestCase(BaseConfigTestCase):
     self.assertEqual(config.src_str, src_str)
     self.assertIsNone(config.config_str)
     self.assertIsNotNone(config.config_dict)
-    self.assertDictEqual(config.config_dict,
-                         hjson.loads(probe_config_file.read_text()))
+    self.assertDictEqual(
+      config.config_dict, hjson.loads(probe_config_file.read_text())
+    )
 
   def test_parse_non_hjson_inline_file(self):
     trace_config_file = TraceConfig.preset_dir() / "v8.txtpb"

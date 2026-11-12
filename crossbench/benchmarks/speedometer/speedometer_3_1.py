@@ -7,9 +7,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, ClassVar, override
 
 from crossbench import path as pth
-from crossbench.benchmarks.speedometer.speedometer_3 import \
-    Speedometer3Benchmark, Speedometer3Probe, Speedometer3ProbeContext, \
-    Speedometer3Story
+from crossbench.benchmarks.speedometer.speedometer_3 import (
+  Speedometer3Benchmark,
+  Speedometer3Probe,
+  Speedometer3ProbeContext,
+  Speedometer3Story,
+)
 
 if TYPE_CHECKING:
   from crossbench.benchmarks.base import VersionParts
@@ -21,6 +24,7 @@ class Speedometer31Probe(Speedometer3Probe):
   Speedometer3-specific probe (compatible with v3.1).
   Extracts all speedometer times and scores.
   """
+
   NAME: ClassVar[str] = "speedometer_3.1"
 
   @override
@@ -37,14 +41,16 @@ class Speedometer31Story(Speedometer3Story):
   NAME: ClassVar[str] = "speedometer_3.1"
   URL: ClassVar[str] = "https://chromium-workloads.web.app/speedometer/v3.1/"
   URL_OFFICIAL: ClassVar[str] = "https://browserbench.org/Speedometer3.1/"
-  URL_CHROME_FORK: ClassVar[
-      str] = "https://chromium-workloads.web.app/speedometer/v3.1-custom/"
+  URL_CHROME_FORK: ClassVar[str] = (
+    "https://chromium-workloads.web.app/speedometer/v3.1-custom/"
+  )
 
 
 class Speedometer31Benchmark(Speedometer3Benchmark):
   """
   Benchmark runner for Speedometer 3.1
   """
+
   NAME: ClassVar[str] = "speedometer_3.1"
   DEFAULT_STORY_CLS: ClassVar[type[Speedometer31Story]] = Speedometer31Story
   PROBES: ClassVar[ProbeClsTupleT] = (Speedometer31Probe,)
@@ -58,6 +64,16 @@ class Speedometer31Benchmark(Speedometer3Benchmark):
   @classmethod
   @override
   def aliases(cls) -> tuple[str, ...]:
-    return ("sp", "sp-latest", "speedometer", "speedometer-latest", "sp3",
-            "sp3-latest", "speedometer3", "speedometer3-latest",
-            "speedometer_3", "speedometer_3-latest", *super().aliases())
+    return (
+      "sp",
+      "sp-latest",
+      "speedometer",
+      "speedometer-latest",
+      "sp3",
+      "sp3-latest",
+      "speedometer3",
+      "speedometer3-latest",
+      "speedometer_3",
+      "speedometer_3-latest",
+      *super().aliases(),
+    )

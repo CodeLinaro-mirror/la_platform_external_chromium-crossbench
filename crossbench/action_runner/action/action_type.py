@@ -17,32 +17,47 @@ class ActionType(ConfigEnum):
   SCROLL = ("scroll", "Scroll on page")
   CLICK = ("click", "Click on element or at specified coordinates")
   SWIPE = ("swipe", "Swipe on screen")
-  MOUSE_MOVE = ("mouse_move",
-                "Move the mouse cursor smoothly along a sequence of waypoints")
-  TEXT_INPUT = ("text_input", "Type printable characters at a "
-                "specified speed.")
+  MOUSE_MOVE = (
+    "mouse_move",
+    "Move the mouse cursor smoothly along a sequence of waypoints",
+  )
+  TEXT_INPUT = ("text_input", "Type printable characters at a specified speed.")
   RAW_INPUT = ("raw_input", "Inject a sequence of raw input events")
-  WAIT_FOR_CONDITION = ("wait_for_condition",
-                        "Wait until JS condition becomes true")
-  WAIT_FOR_ELEMENT = ("wait_for_element",
-                      "Wait until element appears on the page")
-  INJECT_NEW_DOCUMENT_SCRIPT = ("inject_new_document_script", (
+  WAIT_FOR_CONDITION = (
+    "wait_for_condition",
+    "Wait until JS condition becomes true",
+  )
+  WAIT_FOR_ELEMENT = (
+    "wait_for_element",
+    "Wait until element appears on the page",
+  )
+  INJECT_NEW_DOCUMENT_SCRIPT = (
+    "inject_new_document_script",
+    (
       "Evaluates given script in every frame upon creation "
       "(before loading frame's scripts). "
-      "Only supported in chromium-based browsers."))
+      "Only supported in chromium-based browsers."
+    ),
+  )
   SCREENSHOT = ("screenshot", "Take a screenshot")
   SWITCH_TAB = ("switch_tab", "Switch the tab that actions are sent to")
-  SWITCH_FRAME = ("switch_frame", "Switch webdriver context to the specified "
-                  "frame (or default content if selector is empty)")
+  SWITCH_FRAME = (
+    "switch_frame",
+    "Switch webdriver context to the specified "
+    "frame (or default content if selector is empty)",
+  )
   CLOSE_ALL_TABS = ("close_all_tabs", "Close all tabs")
   CLOSE_TAB = ("close_tab", "Close the specified tab")
   OPEN_DEVTOOLS = ("open_devtools", "Open the browser's developer tools")
   WAIT_FOR_DOWNLOAD = ("wait_for_download", "wait for a download to complete")
-  WAIT_FOR_READY_STATE = ("wait_for_ready_state",
-                          "Wait for a specific document.readyState")
-  WAIT_FOR_URL_MATCHES = ("wait_for_url_matches",
-                          "Wait for the current browser url to match with the "
-                          "specified pattern")
+  WAIT_FOR_READY_STATE = (
+    "wait_for_ready_state",
+    "Wait for a specific document.readyState",
+  )
+  WAIT_FOR_URL_MATCHES = (
+    "wait_for_url_matches",
+    "Wait for the current browser url to match with the specified pattern",
+  )
   DUMP_HTML = ("dump_html", "Dump the current document's HTML")
   MEET_CREATE = ("meet_create", "Create a Google Meet meeting")
   MEET_SCRIPT = ("meet_script", "Run a script to automate Meet bot actions")
@@ -54,5 +69,7 @@ class ActionType(ConfigEnum):
   LAUNCH_APP = ("launch_app", "Launch a native application or activity")
   CLOSE_APP = ("close_app", "Close a native application")
   CLOSE_ALL_APPS = ("close_all_apps", "Close all native applications")
-  AGENT = ("agent",
-           "Run an AI agent to dynamically generate and execute actions")
+  AGENT = (
+    "agent",
+    "Run an AI agent to dynamically generate and execute actions",
+  )

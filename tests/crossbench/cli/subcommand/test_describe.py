@@ -14,7 +14,6 @@ from tests import test_helper
 
 
 class DescribeSubcommandTest(unittest.TestCase):
-
   @override
   def setUp(self) -> None:
     super().setUp()
@@ -39,7 +38,8 @@ class DescribeSubcommandTest(unittest.TestCase):
 
     # Verify arguments structure inside group
     repeat_group = next(
-        g for g in groups if g["name"] == "Run & Repetition Options")
+      g for g in groups if g["name"] == "Run & Repetition Options"
+    )
     self.assertIsInstance(repeat_group, dict)
     self.assertIn("arguments", repeat_group)
     arguments = repeat_group["arguments"]

@@ -17,24 +17,26 @@ from crossbench.helper.path_finder_base import BasePathFinder
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.base import SubprocessError
 from crossbench.probes.cb_perfetto import traceconv
-from crossbench.probes.trace_processor.context.base import \
-    TraceProcessorProbeContext
-from crossbench.probes.trace_processor.query_config import \
-    TraceProcessorQueryConfig
+from crossbench.probes.trace_processor.context.base import (
+  TraceProcessorProbeContext,
+)
+from crossbench.probes.trace_processor.query_config import (
+  TraceProcessorQueryConfig,
+)
 
 if TYPE_CHECKING:
   from crossbench import plt
   from crossbench.browsers.browser import Browser
   from crossbench.probes.results import LocalProbeResult
-  from crossbench.probes.trace_processor.trace_processor import \
-      TraceProcessorProbe
+  from crossbench.probes.trace_processor.trace_processor import (
+    TraceProcessorProbe,
+  )
   from crossbench.runner.run import Run
 
 KB = 1024
 
 
 class ChromiumSymbolPathFinder(BasePathFinder):
-
   def __init__(self, browser: Browser) -> None:
     self._browser: Final[Browser] = browser
     super().__init__(browser.host_platform)
@@ -69,7 +71,6 @@ class ChromiumSymbolPathFinder(BasePathFinder):
 
 
 class TraceProcessorSymbolizingProbeContext(TraceProcessorProbeContext):
-
   def __init__(self, probe: TraceProcessorProbe, run: Run) -> None:
     self._has_symbols: bool = False
     super().__init__(probe, run)
@@ -135,7 +136,8 @@ class TraceProcessorSymbolizingProbeContext(TraceProcessorProbeContext):
     symbols_path = symbols_path.resolve()
 
     env = traceconv.symbolizer_env(
-        self.host_platform, symbols_path, llvm_symbolizer=llvm_symbolizer_bin)
+      self.host_platform, symbols_path, llvm_symbolizer=llvm_symbolizer_bin
+    )
 
     traceconv_log = self.local_result_path / "traceconv.log"
     has_traceconv_error = False
@@ -143,21 +145,23 @@ class TraceProcessorSymbolizingProbeContext(TraceProcessorProbeContext):
       try:
         with traceconv_log.open("w", encoding="utf-8") as log_file:
           self.host_platform.sh(
-              traceconv_bin,
-              "--verbose",
-              "symbolize",
-              merged_file,
-              symbols_result,
-              env=env,
-              stdout=log_file,
-              stderr=log_file)
+            traceconv_bin,
+            "--verbose",
+            "symbolize",
+            merged_file,
+            symbols_result,
+            env=env,
+            stdout=log_file,
+            stderr=log_file,
+          )
       except SubprocessError as e:
         has_traceconv_error = True
         logging.error("Symbolization failed: %s", e)
         self._log_traceconv_error(traceconv_log)
 
     if not self.host_platform.exists(symbols_result) or (
-        self.host_platform.file_size(symbols_result) < 100 * KB):
+      self.host_platform.file_size(symbols_result) < 100 * KB
+    ):
       self._traceconv_version_check(traceconv_bin)
       logging.error("Could not generate valid symbols file: %s.", symbols_path)
       if not has_traceconv_error:
@@ -180,14 +184,17 @@ class TraceProcessorSymbolizingProbeContext(TraceProcessorProbeContext):
 
   def _traceconv_version_check(self, traceconv_bin: pth.LocalPath) -> None:
     traceconv_version_str = self.host_platform.sh_stdout(
-        traceconv_bin, "--version")
+      traceconv_bin, "--version"
+    )
     traceconv_version = traceconv.PerfettoVersion.parse(traceconv_version_str)
     if traceconv_version < traceconv.MIN_VERSION:
       logging.error(
-          "traceconv version is too old: %s\n"
-          "Make sure you have traceconv version at least %s due to "
-          "http://crbug.com/481290800.", traceconv_version,
-          traceconv.MIN_VERSION.version_str)
+        "traceconv version is too old: %s\n"
+        "Make sure you have traceconv version at least %s due to "
+        "http://crbug.com/481290800.",
+        traceconv_version,
+        traceconv.MIN_VERSION.version_str,
+      )
 
   def _ensure_symbols(self) -> pth.LocalPath | None:
     # If the user provided no perfetto_binary_path, the default value is
@@ -204,33 +211,37 @@ class TraceProcessorSymbolizingProbeContext(TraceProcessorProbeContext):
     return None
 
   def _maybe_symbolized_result(
-      self, result: LocalProbeResult,
-      symbols_result: pth.LocalPath) -> LocalProbeResult:
-    self.write_zip_file(self._symbolized_trace_path,
-                        (*result.perfetto_list, symbols_result))
+    self, result: LocalProbeResult, symbols_result: pth.LocalPath
+  ) -> LocalProbeResult:
+    self.write_zip_file(
+      self._symbolized_trace_path, (*result.perfetto_list, symbols_result)
+    )
 
-    if (self.host_platform.file_size(self._symbolized_trace_path)
-        < self.host_platform.file_size(self.merged_trace_path)):
+    if self.host_platform.file_size(
+      self._symbolized_trace_path
+    ) < self.host_platform.file_size(self.merged_trace_path):
       logging.error("Failed to generated symbolized trace file")
       return result
 
     # If we have a successfully symbolized trace file we can replace
     # the original merged_trace.zip.
     self.host_platform.rm(self.merged_trace_path)
-    self.host_platform.rename(self._symbolized_trace_path,
-                              self.merged_trace_path)
+    self.host_platform.rename(
+      self._symbolized_trace_path, self.merged_trace_path
+    )
     self._has_symbols = True
     return self.local_result(perfetto=(self.merged_trace_path,))
 
 
 _MACOS_SYMBOL_ARCH_LOOKUP = {
-    MachineArch.ARM_64: "arm64",
-    MachineArch.X64: "x86_64",
+  MachineArch.ARM_64: "arm64",
+  MachineArch.X64: "x86_64",
 }
 
 
-def _download_macos_symbols(host_platform: plt.Platform,
-                            browser: Browser) -> pth.LocalPath | None:
+def _download_macos_symbols(
+  host_platform: plt.Platform, browser: Browser
+) -> pth.LocalPath | None:
   checkout_path = ChromiumCheckoutFinder(host_platform).path
   if not checkout_path:
     logging.debug("Could not find chromium checkout to download symbols.")
@@ -242,8 +253,11 @@ def _download_macos_symbols(host_platform: plt.Platform,
     return None
 
   version = browser.version
-  if version.is_unknown or version.channel == BrowserVersionChannel.ANY or (
-      not version.parts_str):
+  if (
+    version.is_unknown
+    or version.channel == BrowserVersionChannel.ANY
+    or (not version.parts_str)
+  ):
     logging.warning("Could not determine browser version for symbol download.")
     return None
 
@@ -261,9 +275,18 @@ def _download_macos_symbols(host_platform: plt.Platform,
 
   with ui.spinner(title="Downloading symbols"):
     try:
-      host_platform.sh(sys.executable, download_script, "--version",
-                       version_str, "--arch", arch_str, "--out", output_dir,
-                       "--channel", channel_name)
+      host_platform.sh(
+        sys.executable,
+        download_script,
+        "--version",
+        version_str,
+        "--arch",
+        arch_str,
+        "--out",
+        output_dir,
+        "--channel",
+        channel_name,
+      )
     except SubprocessError as e:
       logging.error("Failed to download symbols: %s", e)
       return None

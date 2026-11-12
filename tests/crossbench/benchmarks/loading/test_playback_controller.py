@@ -9,32 +9,35 @@ import datetime as dt
 import unittest
 from unittest import mock
 
-from crossbench.benchmarks.loading.playback_controller import \
-    ForeverPlaybackController, PeriodicPlaybackController, \
-    PlaybackController, RepeatPlaybackController, TimeoutPlaybackController
+from crossbench.benchmarks.loading.playback_controller import (
+  ForeverPlaybackController,
+  PeriodicPlaybackController,
+  PlaybackController,
+  RepeatPlaybackController,
+  TimeoutPlaybackController,
+)
 from tests import test_helper
 
 
 class PlaybackControllerTestCase(unittest.TestCase):
-
   def test_parse_invalid(self):
     for invalid in [
-        "11",
-        "something",
-        "1.5x",
-        "4.3.h",
-        "4.5.x",
-        "-1x",
-        "-1.4x",
-        "-2h",
-        "-2.1h",
-        "1h30",
-        "infx",
-        "infh",
-        "nanh",
-        "nanx",
-        "0s",
-        "0",
+      "11",
+      "something",
+      "1.5x",
+      "4.3.h",
+      "4.5.x",
+      "-1x",
+      "-1.4x",
+      "-2h",
+      "-2.1h",
+      "1h30",
+      "infx",
+      "infh",
+      "nanh",
+      "nanx",
+      "0s",
+      "0",
     ]:
       with self.subTest(pattern=invalid):
         with self.assertRaises((argparse.ArgumentTypeError, ValueError)):
@@ -116,14 +119,16 @@ class PlaybackControllerTestCase(unittest.TestCase):
     iterations = list(PlaybackController.timeout(dt.timedelta()))
     self.assertSequenceEqual(iterations, [0])
     iterations = list(
-        PlaybackController.timeout(dt.timedelta(milliseconds=0.1)))
+      PlaybackController.timeout(dt.timedelta(milliseconds=0.1))
+    )
     self.assertSequenceEqual(iterations, list(range(len(iterations))))
 
   def test_timeout_mocked(self):
     controller = PlaybackController.timeout(dt.timedelta(seconds=1))
     now = dt.datetime.now()
     with mock.patch(
-        "crossbench.benchmarks.loading.playback_controller.dt") as mock_dt:
+      "crossbench.benchmarks.loading.playback_controller.dt"
+    ) as mock_dt:
       mock_dt.datetime.now.return_value = now
       iterator = iter(controller)
       for _ in range(100):
@@ -147,12 +152,17 @@ class PlaybackControllerTestCase(unittest.TestCase):
 
   def test_periodic_mocked(self):
     controller = PlaybackController.periodic(
-        period=dt.timedelta(seconds=1), count=2)
+      period=dt.timedelta(seconds=1), count=2
+    )
     now = dt.datetime.now()
-    with mock.patch(
+    with (
+      mock.patch(
         "crossbench.benchmarks.loading.playback_controller.dt",
-    ) as mock_dt, mock.patch(
-        "crossbench.benchmarks.loading.playback_controller.time") as mock_time:
+      ) as mock_dt,
+      mock.patch(
+        "crossbench.benchmarks.loading.playback_controller.time"
+      ) as mock_time,
+    ):
       mock_dt.datetime.now.return_value = now
       iterator = iter(controller)
 

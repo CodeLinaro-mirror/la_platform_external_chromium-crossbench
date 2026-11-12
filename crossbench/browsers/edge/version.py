@@ -14,9 +14,9 @@ if TYPE_CHECKING:
 
 
 class EdgeVersion(ChromiumVersion):
-
   _PREFIX_RE: Final[re.Pattern] = re.compile(
-      rf"microsoft edge(?:{ChromiumVersion.CHANNEL_RE.pattern})? ", re.I)
+    rf"microsoft edge(?:{ChromiumVersion.CHANNEL_RE.pattern})? ", re.I
+  )
 
   @classmethod
   @override
@@ -26,8 +26,9 @@ class EdgeVersion(ChromiumVersion):
     prefix = prefix.lower()
     if prefix.strip() == "m":
       return True
-    return (bool(cls._PREFIX_RE.fullmatch(prefix)) or
-            super()._validate_prefix(prefix))
+    return bool(cls._PREFIX_RE.fullmatch(prefix)) or super()._validate_prefix(
+      prefix
+    )
 
   @classmethod
   @override

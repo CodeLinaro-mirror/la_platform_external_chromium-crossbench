@@ -13,19 +13,30 @@ from typing import TYPE_CHECKING, override
 from unittest import mock
 
 from crossbench.action_runner.input_events import TouchEvent
-from crossbench.action_runner.virtual_device.touchscreen import \
-    TouchscreenVirtualDeviceConfig
+from crossbench.action_runner.virtual_device.touchscreen import (
+  TouchscreenVirtualDeviceConfig,
+)
 from crossbench.benchmarks.loading.point import Point
 from crossbench.cli.config.driver import BrowserDriverType, DriverConfig
 from crossbench.plt.android_adb import AndroidAdbPlatform, AndroidDeviceInfo
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.base import Platform
-from crossbench.plt.pyodide_adb import PyodideAdb, PyodideAndroidAdbPlatform, \
-    PyodideGcsBlob, PyodidePlatform, PyodideStreamingPopen, is_pyodide_env
+from crossbench.plt.pyodide_adb import (
+  PyodideAdb,
+  PyodideAndroidAdbPlatform,
+  PyodideGcsBlob,
+  PyodidePlatform,
+  PyodideStreamingPopen,
+  is_pyodide_env,
+)
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
-from tests.crossbench.mock_helper import LinuxMockPlatform, \
-    PyodideMockPlatform, ShResult, ShResultType
+from tests.crossbench.mock_helper import (
+  LinuxMockPlatform,
+  PyodideMockPlatform,
+  ShResult,
+  ShResultType,
+)
 from tests.crossbench.plt.test_android_adb import AndroidAdbMockPlatformTest
 from tests.crossbench.plt.test_linux import LocalLinuxMockPlatformTestCase
 
@@ -37,7 +48,6 @@ MOCK_GCS_FILE_SIZE: int = 45678
 
 
 class MockJsBuffer:
-
   def __init__(self, data: bytes) -> None:
     self._data: bytes = data
 
@@ -46,7 +56,6 @@ class MockJsBuffer:
 
 
 class MockWebAdb:
-
   def __init__(self, serial: str = "mock-serial-123") -> None:
     self.serial = serial
     self.shell_calls: list[str] = []
@@ -73,15 +82,15 @@ class MockWebAdb:
     return list(self._expected_sh_cmds)
 
   def expect_sh(
-      self,
-      *args: CmdArg | int,
-      result: ShResultType = "",
-      returncode: int = 0,
+    self,
+    *args: CmdArg | int,
+    result: ShResultType = "",
+    returncode: int = 0,
   ) -> None:
     if args:
       if self._expected_sh_cmds is None:
         self._expected_sh_cmds = []
-      cmd_str = (str(args[0]) if len(args) == 1 else shlex.join(map(str, args)))
+      cmd_str = str(args[0]) if len(args) == 1 else shlex.join(map(str, args))
       self._expected_sh_cmds.append(cmd_str)
     if isinstance(result, (str, bytes)):
       result = ShResult(result, returncode)
@@ -96,21 +105,24 @@ class MockWebAdb:
     return self._next_proc_id
 
   def writeProcessStdin(  # noqa: N802
-      self,
-      proc_id: int,
-      data: str,
+    self,
+    proc_id: int,
+    data: str,
   ) -> None:
     self.process_stdin.setdefault(proc_id, []).append(data)
 
   def closeProcessStdin(self, proc_id: int) -> None:  # noqa: N802
     self.closed_stdin_processes.append(proc_id)
     self.process_logs.setdefault(proc_id, []).append(
-        json.dumps({
-            "text": "",
-            "nextOffset": 1,
-            "isExited": True,
-            "exitCode": 0,
-        }))
+      json.dumps(
+        {
+          "text": "",
+          "nextOffset": 1,
+          "isExited": True,
+          "exitCode": 0,
+        }
+      )
+    )
 
   def killProcess(self, proc_id: int) -> None:  # noqa: N802
     self.killed_processes.append(proc_id)
@@ -122,24 +134,27 @@ class MockWebAdb:
     return ""
 
   def shell(
-      self,
-      cmd: str,
-      input: str | None = None,  # pylint: disable=redefined-builtin
+    self,
+    cmd: str,
+    input: str | None = None,  # pylint: disable=redefined-builtin
   ) -> str | bytes:
     if self._expected_sh_cmds is not None:
-      assert self._expected_sh_cmds, (
-          f"Missing expected sh_cmds, but got: {cmd}")
+      assert self._expected_sh_cmds, f"Missing expected sh_cmds, but got: {cmd}"
       expected = self._expected_sh_cmds.pop(0)
-      assert expected == cmd, (f"After {len(self.shell_calls)} cmds:\n"
-                               f"  expected: {expected!r}\n"
-                               f"  got:      {cmd!r}")
+      assert expected == cmd, (
+        f"After {len(self.shell_calls)} cmds:\n"
+        f"  expected: {expected!r}\n"
+        f"  got:      {cmd!r}"
+      )
     self.shell_calls.append(cmd)
     self.shell_inputs.append(input)
     if self._sh_results:
       return self._sh_results.pop(0).result
     if self._expected_sh_cmds is not None:
-      raise ValueError(f"After {len(self.shell_calls)} cmds: "
-                       f"MockWebAdb has no more sh outputs for cmd: {cmd}")
+      raise ValueError(
+        f"After {len(self.shell_calls)} cmds: "
+        f"MockWebAdb has no more sh outputs for cmd: {cmd}"
+      )
     return f"mock_out: {cmd}"
 
   def push(self, src: str, dest: str) -> None:
@@ -181,10 +196,12 @@ class MockWebAdb:
 
   def gcsGetMetadata(self, url: str) -> str:  # noqa: N802
     del url
-    return json.dumps({
+    return json.dumps(
+      {
         "md5Hash": "mock_hash_123",
         "size": MOCK_GCS_FILE_SIZE,
-    })
+      }
+    )
 
   def gcsDownloadFile(self, url: str, dest: str) -> None:  # noqa: N802
     self.gcs_downloads.append((url, dest))
@@ -222,9 +239,11 @@ class PyodideMockPlatformTestCase(LocalLinuxMockPlatformTestCase):
   def test_driver_config_pyodide(self) -> None:
     mock_js = mock.MagicMock()
     mock_js.webadb = self.webadb
-    with mock.patch("crossbench.plt.pyodide.js", mock_js), \
-         mock.patch("crossbench.plt.pyodide_adb.js", mock_js), \
-         mock.patch("crossbench.plt.PLATFORM", self.platform):
+    with (
+      mock.patch("crossbench.plt.pyodide.js", mock_js),
+      mock.patch("crossbench.plt.pyodide_adb.js", mock_js),
+      mock.patch("crossbench.plt.PLATFORM", self.platform),
+    ):
       driver_config = DriverConfig(driver_type=BrowserDriverType.ANDROID_CDP)
       plt = driver_config.get_platform()
       self.assertIsInstance(plt, PyodideAndroidAdbPlatform)
@@ -234,20 +253,21 @@ class PyodideMockPlatformTestCase(LocalLinuxMockPlatformTestCase):
       mock_plt = mock.MagicMock(spec=Platform)
       mock_plt._raw_machine_arch.side_effect = lambda: "wasm32"
       self.assertEqual(
-          Platform.machine.func(mock_plt),  # type: ignore[attr-defined]
-          MachineArch.WASM_32,
+        Platform.machine.func(mock_plt),  # type: ignore[attr-defined]
+        MachineArch.WASM_32,
       )
     with mock.patch("platform.machine", return_value="wasm64"):
       mock_plt = mock.MagicMock(spec=Platform)
       mock_plt._raw_machine_arch.side_effect = lambda: "wasm64"
       self.assertEqual(
-          Platform.machine.func(mock_plt),  # type: ignore[attr-defined]
-          MachineArch.WASM_64,
+        Platform.machine.func(mock_plt),  # type: ignore[attr-defined]
+        MachineArch.WASM_64,
       )
 
   def test_gcs_blob(self) -> None:
     blob = PyodideGcsBlob(
-        "gs://chrome-partner-loadline/test.wprgo", webadb=self.webadb)
+      "gs://chrome-partner-loadline/test.wprgo", webadb=self.webadb
+    )
     blob.reload()
     self.assertEqual(blob.md5_hash, "mock_hash_123")
     self.assertEqual(blob.size, MOCK_GCS_FILE_SIZE)
@@ -255,8 +275,8 @@ class PyodideMockPlatformTestCase(LocalLinuxMockPlatformTestCase):
 
     blob.download_to_filename("/cache/wpr/test.wprgo")
     self.assertEqual(
-        self.webadb.gcs_downloads[-1],
-        ("gs://chrome-partner-loadline/test.wprgo", "/cache/wpr/test.wprgo"),
+      self.webadb.gcs_downloads[-1],
+      ("gs://chrome-partner-loadline/test.wprgo", "/cache/wpr/test.wprgo"),
     )
 
   def test_pyodide_platform_gcs(self) -> None:
@@ -267,8 +287,9 @@ class PyodideMockPlatformTestCase(LocalLinuxMockPlatformTestCase):
 
     dest = self.platform.local_path("/cache/wpr/archive.wprgo")
     self.platform.download_gcs_file(url, dest)
-    self.assertEqual(self.webadb.gcs_downloads[-1],
-                     (url, "/cache/wpr/archive.wprgo"))
+    self.assertEqual(
+      self.webadb.gcs_downloads[-1], (url, "/cache/wpr/archive.wprgo")
+    )
     self.assertEqual(dest.stat().st_size, MOCK_GCS_FILE_SIZE)
 
 
@@ -280,9 +301,9 @@ class PyodideAdbTest(CrossbenchFakeFsTestCase):
     self.platform = LinuxMockPlatform()
     self.webadb = MockWebAdb()
     self.adb = PyodideAdb(
-        host_platform=self.platform,
-        device_identifier="mock-serial-123",
-        webadb=self.webadb,
+      host_platform=self.platform,
+      device_identifier="mock-serial-123",
+      webadb=self.webadb,
     )
 
   def test_basic_properties(self) -> None:
@@ -297,11 +318,12 @@ class PyodideAdbTest(CrossbenchFakeFsTestCase):
 
   def test_shell_true_and_false(self) -> None:
     res = self.adb.shell(
-        "echo 'hello world' > /data/local/tmp/test", shell=True)
+      "echo 'hello world' > /data/local/tmp/test", shell=True
+    )
     self.assertEqual(res.returncode, 0)
     self.assertEqual(
-        self.webadb.shell_calls[-1],
-        "echo 'hello world' > /data/local/tmp/test",
+      self.webadb.shell_calls[-1],
+      "echo 'hello world' > /data/local/tmp/test",
     )
     with self.assertRaises(ValueError):
       self.adb.shell("echo", "hello", "world", shell=True)
@@ -310,13 +332,13 @@ class PyodideAdbTest(CrossbenchFakeFsTestCase):
     src_p = str(self.platform.path("/src/file"))
     dest_p = str(self.platform.path("/dest/file"))
     self.adb.push(
-        self.platform.local_path("/src/file"),
-        self.platform.local_path("/dest/file"),
+      self.platform.local_path("/src/file"),
+      self.platform.local_path("/dest/file"),
     )
     self.assertEqual(self.webadb.push_calls[0], (src_p, dest_p))
     self.adb.pull(
-        self.platform.local_path("/dest/file"),
-        self.platform.local_path("/src/file"),
+      self.platform.local_path("/dest/file"),
+      self.platform.local_path("/src/file"),
     )
     self.assertEqual(self.webadb.pull_calls[0], (dest_p, src_p))
 
@@ -328,23 +350,24 @@ class PyodideAdbTest(CrossbenchFakeFsTestCase):
     js_buf = MockJsBuffer(b"package:com.android.chrome\n")
     with mock.patch.object(self.webadb, "shell", return_value=js_buf):
       self.assertEqual(
-          self.adb.shell_stdout_bytes("pm", "list", "packages"),
-          b"package:com.android.chrome\n",
+        self.adb.shell_stdout_bytes("pm", "list", "packages"),
+        b"package:com.android.chrome\n",
       )
       self.assertEqual(
-          self.adb.shell_stdout("pm", "list", "packages"),
-          "package:com.android.chrome\n",
+        self.adb.shell_stdout("pm", "list", "packages"),
+        "package:com.android.chrome\n",
       )
     self.assertEqual(self.adb._to_bytes(b"abc"), b"abc")
     self.assertEqual(self.adb._to_bytes("xyz"), b"xyz")
 
   def test_shell_input(self) -> None:
     res = self.adb.shell(
-        "tee", "/sys/kernel/tracing/trace_marker", input=b"I|0|mark\n")
+      "tee", "/sys/kernel/tracing/trace_marker", input=b"I|0|mark\n"
+    )
     self.assertEqual(res.returncode, 0)
     self.assertEqual(
-        self.webadb.shell_calls[-1],
-        "tee /sys/kernel/tracing/trace_marker",
+      self.webadb.shell_calls[-1],
+      "tee /sys/kernel/tracing/trace_marker",
     )
     self.assertEqual(self.webadb.shell_inputs[-1], "I|0|mark\n")
     out = self.adb.shell_stdout_bytes("cat", input=b"hello\n")
@@ -387,15 +410,15 @@ class PyodideAndroidAdbPlatformTest(AndroidAdbMockPlatformTest):
   @override
   def setup_platform(self) -> PyodideAndroidAdbPlatform:
     self.adb = PyodideAdb(
-        host_platform=self.host_platform,
-        device_identifier=self.DEVICE_ID,
-        webadb=self.webadb,
+      host_platform=self.host_platform,
+      device_identifier=self.DEVICE_ID,
+      webadb=self.webadb,
     )
     platform = PyodideAndroidAdbPlatform(
-        host_platform=self.host_platform,
-        device_identifier=self.DEVICE_ID,
-        adb=self.adb,
-        webadb=self.webadb,
+      host_platform=self.host_platform,
+      device_identifier=self.DEVICE_ID,
+      adb=self.adb,
+      webadb=self.webadb,
     )
     self.mock_platform_str(platform, "adb.mock_platform.arm64")
     return platform
@@ -404,30 +427,31 @@ class PyodideAndroidAdbPlatformTest(AndroidAdbMockPlatformTest):
   def tearDown(self) -> None:
     expected_sh_cmds = self.webadb.expected_sh_cmds
     if expected_sh_cmds is not None:
-      self.assertSequenceEqual(expected_sh_cmds, [],
-                               "Got additional unused webadb shell cmds.")
+      self.assertSequenceEqual(
+        expected_sh_cmds, [], "Got additional unused webadb shell cmds."
+      )
     super().tearDown()
 
   @override
   def expect_sh(
-      self,
-      *args: CmdArg | int,
-      result: ShResultType = "",
-      returncode: int = 0,
+    self,
+    *args: CmdArg | int,
+    result: ShResultType = "",
+    returncode: int = 0,
   ) -> None:
     self.webadb.expect_sh(*args, result=result, returncode=returncode)
 
   @override
   def expect_path_check(
-      self,
-      flag: str,
-      path: pth.AnyPathLike,
-      exists: bool = True,
+    self,
+    flag: str,
+    path: pth.AnyPathLike,
+    exists: bool = True,
   ) -> None:
     quoted_path = shlex.quote(str(self.platform.path(path)))
     self.expect_sh(
-        f"[ {flag} {quoted_path} ] && echo 1",
-        result="1\n" if exists else "",
+      f"[ {flag} {quoted_path} ] && echo 1",
+      result="1\n" if exists else "",
     )
 
   @override
@@ -438,8 +462,8 @@ class PyodideAndroidAdbPlatformTest(AndroidAdbMockPlatformTest):
   def test_adb_basic_properties(self) -> None:
     self.assertEqual(self.adb.serial_id, self.DEVICE_ID)
     self.assertEqual(
-        self.adb.device_info,
-        AndroidDeviceInfo(device_id=self.DEVICE_ID, name="device"),
+      self.adb.device_info,
+      AndroidDeviceInfo(device_id=self.DEVICE_ID, name="device"),
     )
     self.assertIn(self.DEVICE_ID, str(self.adb))
 
@@ -466,14 +490,16 @@ class PyodideAndroidAdbPlatformTest(AndroidAdbMockPlatformTest):
     src_file = self.host_platform.local_path("/src/file.txt")
     dest_file = self.platform.path("/sdcard/file.txt")
     self.platform.push(src_file, dest_file)
-    self.assertEqual(self.webadb.push_calls[-1],
-                     (str(src_file), str(dest_file)))
+    self.assertEqual(
+      self.webadb.push_calls[-1], (str(src_file), str(dest_file))
+    )
 
     pull_dest = self.host_platform.local_path("/tmp/download.txt")
     self.expect_path_check("-e", dest_file)
     self.platform.pull(dest_file, pull_dest)
-    self.assertEqual(self.webadb.pull_calls[-1],
-                     (str(dest_file), str(pull_dest)))
+    self.assertEqual(
+      self.webadb.pull_calls[-1], (str(dest_file), str(pull_dest))
+    )
 
     self.expect_path_check("-e", dest_file, exists=False)
     with self.assertRaises(ValueError):
@@ -481,25 +507,29 @@ class PyodideAndroidAdbPlatformTest(AndroidAdbMockPlatformTest):
 
   def test_send_cdp_command(self) -> None:
     with mock.patch.object(
-        self.webadb,
-        "sendCdpCommand",
-        return_value='{"frameId": "mock_frame_123"}',
+      self.webadb,
+      "sendCdpCommand",
+      return_value='{"frameId": "mock_frame_123"}',
     ) as mock_send:
-      res = self.platform.send_cdp_command("Page.navigate",
-                                           {"url": "https://example.com"})
-      mock_send.assert_called_once_with("Page.navigate",
-                                        '{"url": "https://example.com"}')
+      res = self.platform.send_cdp_command(
+        "Page.navigate", {"url": "https://example.com"}
+      )
+      mock_send.assert_called_once_with(
+        "Page.navigate", '{"url": "https://example.com"}'
+      )
       self.assertEqual(res, {"id": 1, "result": {"frameId": "mock_frame_123"}})
 
   def test_switch_to_new_tab(self) -> None:
     with mock.patch.object(
-        self.webadb, "switchTab", return_value="session_123") as mock_switch:
+      self.webadb, "switchTab", return_value="session_123"
+    ) as mock_switch:
       self.platform.switch_to_new_tab("https://example.com")
       mock_switch.assert_called_once_with("https://example.com")
 
   def test_start_devtools(self) -> None:
     with mock.patch.object(
-        self.webadb, "startDevTools", return_value="OK") as mock_start:
+      self.webadb, "startDevTools", return_value="OK"
+    ) as mock_start:
       self.platform.start_devtools()
       mock_start.assert_called_once()
 
@@ -510,7 +540,8 @@ class PyodideAndroidAdbPlatformTest(AndroidAdbMockPlatformTest):
 
   def test_stop_devtools(self) -> None:
     with mock.patch.object(
-        self.webadb, "stopDevTools", return_value="OK") as mock_stop:
+      self.webadb, "stopDevTools", return_value="OK"
+    ) as mock_stop:
       self.platform.stop_devtools()
       mock_stop.assert_called_once()
 
@@ -522,8 +553,9 @@ class PyodideAndroidAdbPlatformTest(AndroidAdbMockPlatformTest):
 
     dest = self.host_platform.local_path("/cache/wpr/archive.wprgo")
     self.platform.download_gcs_file(url, dest)
-    self.assertEqual(self.webadb.gcs_downloads[-1],
-                     (url, "/cache/wpr/archive.wprgo"))
+    self.assertEqual(
+      self.webadb.gcs_downloads[-1], (url, "/cache/wpr/archive.wprgo")
+    )
     self.assertEqual(dest.stat().st_size, MOCK_GCS_FILE_SIZE)
 
   def test_interrupted(self) -> None:
@@ -580,8 +612,9 @@ class PyodideAndroidAdbPlatformTest(AndroidAdbMockPlatformTest):
   @override
   def test_trace_mark(self) -> None:
     super().test_trace_mark()
-    self.assertEqual(self.webadb.shell_inputs[-1],
-                     "I|0|crossbench-android-mark\n")
+    self.assertEqual(
+      self.webadb.shell_inputs[-1], "I|0|crossbench-android-mark\n"
+    )
 
   @override
   def test_sh_input(self) -> None:
@@ -592,17 +625,23 @@ class PyodideAndroidAdbPlatformTest(AndroidAdbMockPlatformTest):
 
     self.expect_sh("cat", result=b"hello world bytes")
     hello_world_bytes = self.platform.sh_stdout_bytes(
-        "cat", input=b"hello world bytes")
+      "cat", input=b"hello world bytes"
+    )
     self.assertEqual(hello_world_bytes, b"hello world bytes")
     self.assertEqual(self.webadb.shell_inputs[-1], "hello world bytes")
 
   def test_uinput_end_to_end_via_webadb(self) -> None:
     with (
-        self.patch_getprop(AndroidAdbPlatform.MIN_UINPUT_SDK_VERSION),
-        mock.patch.object(self.platform, "sleep"),
+      self.patch_getprop(AndroidAdbPlatform.MIN_UINPUT_SDK_VERSION),
+      mock.patch.object(self.platform, "sleep"),
     ):
-      self.platform.setup_virtual_devices((TouchscreenVirtualDeviceConfig(
-          name="touch1", width=1080, height=2400),))
+      self.platform.setup_virtual_devices(
+        (
+          TouchscreenVirtualDeviceConfig(
+            name="touch1", width=1080, height=2400
+          ),
+        )
+      )
       self.assertEqual(self.webadb.spawned_processes, ["uinput -"])
       self.assertIn("touch1", self.platform._virtual_devices)
       proc_id = self.platform._virtual_devices["touch1"].proc.pid
@@ -610,11 +649,11 @@ class PyodideAndroidAdbPlatformTest(AndroidAdbMockPlatformTest):
       self.assertIn("N: touch1", self.webadb.process_stdin[proc_id][0])
 
       self.platform.inject_input_events(
-          "touch1",
-          (
-              TouchEvent(Point(100, 200), is_down=True),
-              TouchEvent(Point(100, 200), is_down=False),
-          ),
+        "touch1",
+        (
+          TouchEvent(Point(100, 200), is_down=True),
+          TouchEvent(Point(100, 200), is_down=False),
+        ),
       )
       self.assertEqual(len(self.webadb.process_stdin[proc_id]), 2)
       self.assertIn("0003 0035 0100", self.webadb.process_stdin[proc_id][1])
@@ -657,8 +696,8 @@ class PyodideAndroidAdbPlatformTest(AndroidAdbMockPlatformTest):
     self.expect_sh("am start -a com.android.setupwizard.FOUR_CORNER_EXIT")
     self.expect_sh("settings get global device_provisioned", result="1\n")
     with (
-        mock.patch.object(self.webadb, "root") as mock_root,
-        mock.patch.object(self.platform, "sleep"),
+      mock.patch.object(self.webadb, "root") as mock_root,
+      mock.patch.object(self.platform, "sleep"),
     ):
       self.platform.setup()
       mock_root.assert_called_once()
@@ -672,21 +711,23 @@ class PyodideAndroidAdbPlatformTest(AndroidAdbMockPlatformTest):
     self.expect_sh("id", result="uid=2000(shell) gid=2000(shell)")
     self.expect_sh("id", result="uid=2000(shell) gid=2000(shell)")
     with (
-        mock.patch.object(self.webadb, "root") as mock_root,
-        self.assertLogs(level="WARNING") as cm,
+      mock.patch.object(self.webadb, "root") as mock_root,
+      self.assertLogs(level="WARNING") as cm,
     ):
       self.platform.setup()
       mock_root.assert_called_once()
     self.assertTrue(
-        any("did not acquire root privileges" in msg for msg in cm.output))
+      any("did not acquire root privileges" in msg for msg in cm.output)
+    )
 
   @override
   def test_setup_skips_oobe_bypass_when_disabled(self) -> None:
     platform = PyodideAndroidAdbPlatform(
-        host_platform=self.host_platform,
-        device_identifier=self.DEVICE_ID,
-        adb=self.adb,
-        bypass_oobe=False)
+      host_platform=self.host_platform,
+      device_identifier=self.DEVICE_ID,
+      adb=self.adb,
+      bypass_oobe=False,
+    )
     self.assertFalse(platform.bypass_oobe)
     self.expect_sh("am get-current-user", result="10\n")
     platform.setup()
@@ -700,31 +741,35 @@ class PyodideStreamingPopenTest(CrossbenchFakeFsTestCase):
     self.webadb = MockWebAdb()
     self.platform = PyodidePlatform(webadb=self.webadb)
     self.android_platform = PyodideAndroidAdbPlatform(
-        host_platform=self.platform,
-        device_identifier="mock-serial-123",
-        webadb=self.webadb,
+      host_platform=self.platform,
+      device_identifier="mock-serial-123",
+      webadb=self.webadb,
     )
 
   def test_poll_running_and_complete(self) -> None:
     log_file = io.StringIO()
     proc = PyodideStreamingPopen(
-        self.android_platform,
-        proc_id=101,
-        cmd="echo hello",
-        local_log_file=log_file,
+      self.android_platform,
+      proc_id=101,
+      cmd="echo hello",
+      local_log_file=log_file,
     )
     self.webadb.process_logs[101] = [
-        json.dumps({
-            "text": "line1\n",
-            "nextOffset": 1,
-            "isExited": False,
-        }),
-        json.dumps({
-            "text": "line2\n",
-            "nextOffset": 2,
-            "isExited": True,
-            "exitCode": 0,
-        }),
+      json.dumps(
+        {
+          "text": "line1\n",
+          "nextOffset": 1,
+          "isExited": False,
+        }
+      ),
+      json.dumps(
+        {
+          "text": "line2\n",
+          "nextOffset": 2,
+          "isExited": True,
+          "exitCode": 0,
+        }
+      ),
     ]
     self.assertIsNone(proc.poll())
     self.assertEqual(log_file.getvalue(), "line1\n")
@@ -735,17 +780,19 @@ class PyodideStreamingPopenTest(CrossbenchFakeFsTestCase):
 
   def test_poll_error_exit_code(self) -> None:
     proc = PyodideStreamingPopen(
-        self.android_platform,
-        proc_id=101,
-        cmd="failing_cmd",
+      self.android_platform,
+      proc_id=101,
+      cmd="failing_cmd",
     )
     self.webadb.process_logs[101] = [
-        json.dumps({
-            "text": "err\n",
-            "nextOffset": 1,
-            "isExited": True,
-            "exitCode": 42,
-        }),
+      json.dumps(
+        {
+          "text": "err\n",
+          "nextOffset": 1,
+          "isExited": True,
+          "exitCode": 42,
+        }
+      ),
     ]
     self.assertEqual(proc.poll(), 42)
     self.assertEqual(proc.returncode, 42)
@@ -753,9 +800,9 @@ class PyodideStreamingPopenTest(CrossbenchFakeFsTestCase):
 
   def test_kill(self) -> None:
     proc = PyodideStreamingPopen(
-        self.android_platform,
-        proc_id=101,
-        cmd="sleep 100",
+      self.android_platform,
+      proc_id=101,
+      cmd="sleep 100",
     )
     self.assertIsNone(proc.poll())
     proc.kill()
@@ -766,9 +813,9 @@ class PyodideStreamingPopenTest(CrossbenchFakeFsTestCase):
 
   def test_terminate(self) -> None:
     proc = PyodideStreamingPopen(
-        self.android_platform,
-        proc_id=101,
-        cmd="sleep 100",
+      self.android_platform,
+      proc_id=101,
+      cmd="sleep 100",
     )
     self.assertIsNone(proc.poll())
     proc.terminate()
@@ -779,9 +826,9 @@ class PyodideStreamingPopenTest(CrossbenchFakeFsTestCase):
 
   def test_send_signal(self) -> None:
     proc = PyodideStreamingPopen(
-        self.android_platform,
-        proc_id=101,
-        cmd="sleep 100",
+      self.android_platform,
+      proc_id=101,
+      cmd="sleep 100",
     )
     proc.send_signal(2)
     self.assertIn(101, self.webadb.killed_processes)
@@ -789,17 +836,19 @@ class PyodideStreamingPopenTest(CrossbenchFakeFsTestCase):
 
   def test_kill_already_exited(self) -> None:
     proc = PyodideStreamingPopen(
-        self.android_platform,
-        proc_id=101,
-        cmd="exit_with_error",
+      self.android_platform,
+      proc_id=101,
+      cmd="exit_with_error",
     )
     self.webadb.process_logs[101] = [
-        json.dumps({
-            "text": "",
-            "nextOffset": 1,
-            "isExited": True,
-            "exitCode": 1,
-        }),
+      json.dumps(
+        {
+          "text": "",
+          "nextOffset": 1,
+          "isExited": True,
+          "exitCode": 1,
+        }
+      ),
     ]
     self.assertEqual(proc.poll(), 1)
     self.webadb.killed_processes.clear()

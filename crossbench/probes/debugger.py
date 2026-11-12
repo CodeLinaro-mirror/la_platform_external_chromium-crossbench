@@ -21,8 +21,8 @@ if TYPE_CHECKING:
   from crossbench.env.runner_env import RunnerEnv
 
 _DEBUGGER_LOOKUP: Final[dict[str, str]] = {
-    "macos": "lldb",
-    "linux": "gdb",
+  "macos": "lldb",
+  "linux": "gdb",
 }
 
 DEFAULT_GEOMETRY: Final = "80x70"
@@ -32,6 +32,7 @@ class DebuggerProbe(Probe):
   """
   Probe debugging chrome's renderer process.
   """
+
   NAME: ClassVar = "debugger"
   RESULT_LOCATION: ClassVar = ResultLocation.BROWSER
 
@@ -40,45 +41,54 @@ class DebuggerProbe(Probe):
   def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
-        "debugger",
-        type=plt.PLATFORM.parse_local_binary_path,
-        default=_DEBUGGER_LOOKUP.get(plt.PLATFORM.name,
-                                     "debugger probe not supported"),
-        help="Set a custom debugger binary. "
-        "Currently only gdb and lldb are supported.")
+      "debugger",
+      type=plt.PLATFORM.parse_local_binary_path,
+      default=_DEBUGGER_LOOKUP.get(
+        plt.PLATFORM.name, "debugger probe not supported"
+      ),
+      help="Set a custom debugger binary. "
+      "Currently only gdb and lldb are supported.",
+    )
     parser.add_argument(
-        "auto_run",
-        type=ObjectParser.bool,
-        default=True,
-        help="Automatically start the renderer process in the debugger.")
+      "auto_run",
+      type=ObjectParser.bool,
+      default=True,
+      help="Automatically start the renderer process in the debugger.",
+    )
     parser.add_argument(
-        "spare_renderer_process",
-        type=ObjectParser.bool,
-        default=False,
-        help=("Chrome-only: Enable/Disable spare renderer processes via \n"
-              "--enable-/--disable-features=SpareRendererForSitePerProcess.\n"
-              "Spare renderers are disabled by default when profiling "
-              "for fewer uninteresting processes."))
+      "spare_renderer_process",
+      type=ObjectParser.bool,
+      default=False,
+      help=(
+        "Chrome-only: Enable/Disable spare renderer processes via \n"
+        "--enable-/--disable-features=SpareRendererForSitePerProcess.\n"
+        "Spare renderers are disabled by default when profiling "
+        "for fewer uninteresting processes."
+      ),
+    )
     parser.add_argument(
-        "geometry",
-        type=str,
-        default=DEFAULT_GEOMETRY,
-        help="Geometry of the terminal (xterm) used to display the debugger.")
+      "geometry",
+      type=str,
+      default=DEFAULT_GEOMETRY,
+      help="Geometry of the terminal (xterm) used to display the debugger.",
+    )
     parser.add_argument(
-        "args",
-        type=str,
-        default=(),
-        is_list=True,
-        help="Additional args that are passed to the debugger.")
+      "args",
+      type=str,
+      default=(),
+      is_list=True,
+      help="Additional args that are passed to the debugger.",
+    )
     return parser
 
   def __init__(
-      self,
-      debugger: pth.LocalPath,
-      auto_run: bool = True,
-      spare_renderer_process: bool = False,
-      geometry: str = DEFAULT_GEOMETRY,
-      args: Iterable[str] = ()) -> None:
+    self,
+    debugger: pth.LocalPath,
+    auto_run: bool = True,
+    spare_renderer_process: bool = False,
+    geometry: str = DEFAULT_GEOMETRY,
+    args: Iterable[str] = (),
+  ) -> None:
     super().__init__()
     self._debugger_bin: Final[pth.LocalPath] = debugger
     self._debugger_args: Final[Iterable[str]] = args
@@ -89,10 +99,14 @@ class DebuggerProbe(Probe):
   @property
   @override
   def key(self) -> ProbeKeyT:
-    return (*super().key, ("debugger", str(self._debugger_bin)),
-            ("debugger_args", tuple(self._debugger_args)),
-            ("auto_run", self._auto_run), ("geometry", str(self._geometry)),
-            ("spare_renderer_process", self._spare_renderer_process))
+    return (
+      *super().key,
+      ("debugger", str(self._debugger_bin)),
+      ("debugger_args", tuple(self._debugger_args)),
+      ("auto_run", self._auto_run),
+      ("geometry", str(self._geometry)),
+      ("spare_renderer_process", self._spare_renderer_process),
+    )
 
   @override
   def validate_browser(self, env: RunnerEnv, browser: Browser) -> None:
@@ -121,13 +135,13 @@ class DebuggerProbe(Probe):
   def renderer_cmd_prefix(self) -> str:
     # TODO: support more terminals.
     debugger_cmd = [
-        "xterm",
-        "-title",
-        "renderer",
-        "-geometry",
-        self._geometry,
-        "-e",
-        str(self._debugger_bin),
+      "xterm",
+      "-title",
+      "renderer",
+      "-geometry",
+      self._geometry,
+      "-e",
+      str(self._debugger_bin),
     ]
     if self._debugger_bin.name == "lldb":
       if self._auto_run:
@@ -137,7 +151,8 @@ class DebuggerProbe(Probe):
       debugger_cmd += ["--"]
     else:
       assert self._debugger_bin.name == "gdb", (
-          f"Unsupported debugger: {self._debugger_bin}")
+        f"Unsupported debugger: {self._debugger_bin}"
+      )
       if self._auto_run:
         debugger_cmd += ["-ex", "run"]
       if self._debugger_args:

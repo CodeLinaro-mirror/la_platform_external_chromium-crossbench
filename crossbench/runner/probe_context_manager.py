@@ -8,8 +8,16 @@ import abc
 import contextlib
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, Final, Generic, Iterable, Iterator, Self, \
-    TypeVar, cast
+from typing import (
+  TYPE_CHECKING,
+  Final,
+  Generic,
+  Iterable,
+  Iterator,
+  Self,
+  TypeVar,
+  cast,
+)
 
 from crossbench.helper.state import State, StateMachine
 from crossbench.probes.all import PROBE_LOOKUP
@@ -29,9 +37,9 @@ ProbeContextT = TypeVar("ProbeContextT", bound=BaseProbeContext)
 
 
 class ProbeContextManager(abc.ABC, Generic[ResultOriginT, ProbeContextT]):
-
-  def __init__(self, result_origin: ResultOriginT,
-               probe_results: ProbeResultDict) -> None:
+  def __init__(
+    self, result_origin: ResultOriginT, probe_results: ProbeResultDict
+  ) -> None:
     self._state: Final[StateMachine[State]] = StateMachine(State.INITIAL)
     self._origin: Final[ResultOriginT] = result_origin
     self._probe_results: Final[ProbeResultDict] = probe_results
@@ -88,10 +96,11 @@ class ProbeContextManager(abc.ABC, Generic[ResultOriginT, ProbeContextT]):
     assert not self._probe_contexts, "Wrong probe context initialization order"
     probe_set = set()
     for probe in probes:
-      assert probe not in probe_set, (f"Got duplicate probe name={probe.name}")
+      assert probe not in probe_set, f"Got duplicate probe name={probe.name}"
       probe_set.add(probe)
       assert probe.is_attached, (
-          f"Probe {probe.name} is not properly attached to a browser")
+        f"Probe {probe.name} is not properly attached to a browser"
+      )
 
   def _create_contexts(self, probes: tuple[Probe, ...]) -> None:
     unique_contexts = set()
@@ -139,10 +148,12 @@ class ProbeContextManager(abc.ABC, Generic[ResultOriginT, ProbeContextT]):
       self._setup_probe_contexts = []
       self._failed_probe_contexts = []
 
-  def _teardown(self,
-                probe_contexts: list[ProbeContextT],
-                is_dry_run: bool,
-                setup_error: bool = False) -> None:
+  def _teardown(
+    self,
+    probe_contexts: list[ProbeContextT],
+    is_dry_run: bool,
+    setup_error: bool = False,
+  ) -> None:
     if setup_error:
       assert self._probe_contexts, "Invalid state"
     self._state.expect(State.DONE)
@@ -163,8 +174,9 @@ class ProbeContextManager(abc.ABC, Generic[ResultOriginT, ProbeContextT]):
       return
     if probe.is_internal:
       return
-    logging.warning("Probe did not extract any data. probe=%s in %s", probe,
-                    self._origin)
+    logging.warning(
+      "Probe did not extract any data. probe=%s in %s", probe, self._origin
+    )
 
   @abc.abstractmethod
   def _create_probe_context(self, probe: Probe) -> ProbeContextT | None:
@@ -176,13 +188,17 @@ class ProbeContextManager(abc.ABC, Generic[ResultOriginT, ProbeContextT]):
   def has_probe_context_by_name(self, probe_name: str) -> bool:
     if probe_name not in PROBE_LOOKUP:
       raise ValueError(f"Unknown probe name: '{probe_name}'")
-    return any(context.probe.NAME == probe_name
-               for context in self._probe_contexts.values())
+    return any(
+      context.probe.NAME == probe_name
+      for context in self._probe_contexts.values()
+    )
 
-  def get_probe_context(self,
-                        probe_cls: type[ProbeT]) -> ProbeContext[ProbeT] | None:
+  def get_probe_context(
+    self, probe_cls: type[ProbeT]
+  ) -> ProbeContext[ProbeT] | None:
     if probe_context := self._probe_contexts.get(probe_cls):
       assert isinstance(probe_context.probe, probe_cls), (
-          f"Expected instance of {probe_cls}: got {probe_context.probe}")
+        f"Expected instance of {probe_cls}: got {probe_context.probe}"
+      )
       return cast(ProbeContext[ProbeT], probe_context)
     return None

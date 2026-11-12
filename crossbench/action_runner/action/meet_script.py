@@ -33,7 +33,8 @@ class MeetScriptAction(BondAction):
   def config_parser(cls: type[Self]) -> ConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
-        "script", type=ObjectParser.non_empty_str, required=True)
+      "script", type=ObjectParser.non_empty_str, required=True
+    )
     return parser
 
   @override

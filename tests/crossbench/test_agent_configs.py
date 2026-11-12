@@ -25,20 +25,20 @@ _EXPECTED_PROJECT: Final[str] = "crossbench"
 # a minimal in-memory descriptor schema here to parse and validate
 # agent_configs.textproto in tests.
 _SCHEMA: Final[dict[str, list[tuple[Any, ...]]]] = {
-    "Filter": [
-        ("project", 1, _TYPE_STR, True),
-        ("path_regex", 2, _TYPE_STR, True),
-    ],
-    "AgentConfig": [
-        ("id", 1, _TYPE_STR, False),
-        ("display_name", 2, _TYPE_STR, False),
-        ("description", 3, _TYPE_STR, False),
-        ("skills", 4, _TYPE_STR, True),
-        ("include_filters", 5, _TYPE_MSG, True, "Filter"),
-        ("exclude_filters", 6, _TYPE_MSG, True, "Filter"),
-        ("automatic", 7, _TYPE_BOOL, False),
-    ],
-    "HostAgents": [("configs", 1, _TYPE_MSG, True, "AgentConfig")],
+  "Filter": [
+    ("project", 1, _TYPE_STR, True),
+    ("path_regex", 2, _TYPE_STR, True),
+  ],
+  "AgentConfig": [
+    ("id", 1, _TYPE_STR, False),
+    ("display_name", 2, _TYPE_STR, False),
+    ("description", 3, _TYPE_STR, False),
+    ("skills", 4, _TYPE_STR, True),
+    ("include_filters", 5, _TYPE_MSG, True, "Filter"),
+    ("exclude_filters", 6, _TYPE_MSG, True, "Filter"),
+    ("automatic", 7, _TYPE_BOOL, False),
+  ],
+  "HostAgents": [("configs", 1, _TYPE_MSG, True, "AgentConfig")],
 }
 
 
@@ -46,7 +46,8 @@ def create_host_agents_message_class() -> type[Any]:
   file_proto = descriptor_pb2.FileDescriptorProto()
   file_proto.name = "agent.proto"
   file_proto.package = (
-      "google.corp.android.engprod.codereviewagentconfiguration.v1")
+    "google.corp.android.engprod.codereviewagentconfiguration.v1"
+  )
 
   for msg_name, fields in _SCHEMA.items():
     m = file_proto.message_type.add(name=msg_name)
@@ -54,8 +55,10 @@ def create_host_agents_message_class() -> type[Any]:
       name, num, ftype, repeated = field_spec[:4]
       type_name = field_spec[4] if len(field_spec) > 4 else None
       label = (
-          descriptor_pb2.FieldDescriptorProto.LABEL_REPEATED
-          if repeated else descriptor_pb2.FieldDescriptorProto.LABEL_OPTIONAL)
+        descriptor_pb2.FieldDescriptorProto.LABEL_REPEATED
+        if repeated
+        else descriptor_pb2.FieldDescriptorProto.LABEL_OPTIONAL
+      )
       f = m.field.add(name=name, number=num, type=ftype, label=label)
       if type_name:
         f.type_name = type_name
@@ -90,10 +93,10 @@ def extract_md_frontmatter(content: str) -> str:
 
 
 def validate_skill_reference(
-    agent_id: str,
-    expected_desc: str,
-    skill_ref: str,
-    root_path: pathlib.Path,
+  agent_id: str,
+  expected_desc: str,
+  skill_ref: str,
+  root_path: pathlib.Path,
 ) -> list[str]:
   skill_path = root_path / skill_ref
   if not skill_path.is_file():
@@ -111,7 +114,7 @@ def validate_skill_reference(
 
   if not frontmatter_raw:
     return [
-        f"Agent '{agent_id}': skill '{skill_ref}': YAML frontmatter is empty.",
+      f"Agent '{agent_id}': skill '{skill_ref}': YAML frontmatter is empty.",
     ]
 
   try:
@@ -125,22 +128,25 @@ def validate_skill_reference(
   errors: list[str] = []
   fm_id = str(frontmatter.get("id") or frontmatter.get("name", "")).strip()
   if agent_id not in (fm_id, f"cb-{fm_id}"):
-    errors.append(f"Agent id '{agent_id}' does not match frontmatter id/name "
-                  f"'{fm_id}' in '{skill_ref}'.")
+    errors.append(
+      f"Agent id '{agent_id}' does not match frontmatter id/name "
+      f"'{fm_id}' in '{skill_ref}'."
+    )
 
   fm_desc = str(frontmatter.get("description", "")).strip()
   if fm_desc != expected_desc.strip():
     errors.append(
-        f"Agent '{agent_id}': description in agent_configs.textproto does "
-        f"not match description in '{skill_ref}'.")
+      f"Agent '{agent_id}': description in agent_configs.textproto does "
+      f"not match description in '{skill_ref}'."
+    )
 
   return errors
 
 
 def validate_path_regexes(
-    agent_id: str,
-    filters: Sequence[Any],
-    filter_kind: str,
+  agent_id: str,
+  filters: Sequence[Any],
+  filter_kind: str,
 ) -> list[str]:
   errors: list[str] = []
   for f in filters:
@@ -148,32 +154,35 @@ def validate_path_regexes(
       try:
         re.compile(regex)
       except re.error as e:
-        errors.append(f"Agent '{agent_id}': invalid {filter_kind} path_regex "
-                      f"'{regex}': {e}")
+        errors.append(
+          f"Agent '{agent_id}': invalid {filter_kind} path_regex '{regex}': {e}"
+        )
   return errors
 
 
 def validate_include_filters(
-    agent_id: str,
-    filters: Sequence[Any],
+  agent_id: str,
+  filters: Sequence[Any],
 ) -> list[str]:
   errors: list[str] = []
   for f in filters:
     if not f.project:
       errors.append(
-          f"Agent '{agent_id}': include_filter is missing 'project' "
-          f"(must explicitly specify project: '{_EXPECTED_PROJECT}' to avoid "
-          "host-wide matching across other repositories).")
+        f"Agent '{agent_id}': include_filter is missing 'project' "
+        f"(must explicitly specify project: '{_EXPECTED_PROJECT}' to avoid "
+        "host-wide matching across other repositories)."
+      )
     elif list(f.project) != [_EXPECTED_PROJECT]:
       errors.append(
-          f"Agent '{agent_id}': unexpected project in include_filter: "
-          f"{list(f.project)} (expected: ['{_EXPECTED_PROJECT}']).")
+        f"Agent '{agent_id}': unexpected project in include_filter: "
+        f"{list(f.project)} (expected: ['{_EXPECTED_PROJECT}'])."
+      )
   return errors
 
 
 def validate_agent_config(
-    config: Any,
-    root_path: pathlib.Path,
+  config: Any,
+  root_path: pathlib.Path,
 ) -> list[str]:
   agent_id: str = config.id
   if not agent_id:
@@ -185,26 +194,32 @@ def validate_agent_config(
   else:
     for skill_ref in config.skills:
       errors.extend(
-          validate_skill_reference(agent_id, config.description, skill_ref,
-                                   root_path))
+        validate_skill_reference(
+          agent_id, config.description, skill_ref, root_path
+        )
+      )
 
   if not config.include_filters:
-    errors.append(f"Agent '{agent_id}': missing 'include_filters' "
-                  f"(agent would be disabled by CRACS).")
+    errors.append(
+      f"Agent '{agent_id}': missing 'include_filters' "
+      f"(agent would be disabled by CRACS)."
+    )
   else:
     errors.extend(
-        validate_path_regexes(agent_id, config.include_filters, "include"))
+      validate_path_regexes(agent_id, config.include_filters, "include")
+    )
     errors.extend(validate_include_filters(agent_id, config.include_filters))
 
   errors.extend(
-      validate_path_regexes(agent_id, config.exclude_filters, "exclude"))
+    validate_path_regexes(agent_id, config.exclude_filters, "exclude")
+  )
 
   return errors
 
 
 def validate_agent_configs(
-    content: str,
-    root_path: pathlib.Path,
+  content: str,
+  root_path: pathlib.Path,
 ) -> list[str]:
   host_agents_class = create_host_agents_message_class()
   msg = host_agents_class()
@@ -231,21 +246,23 @@ def validate_agent_configs(
 
 
 class AgentConfigsTestCase(unittest.TestCase):
-
   def test_repo_agent_configs(self) -> None:
     repo_root = pathlib.Path(__file__).parents[2]
     config_file = repo_root / "agents" / "agent_configs.textproto"
-    self.assertTrue(config_file.is_file(),
-                    f"Missing config file: {config_file}")
+    self.assertTrue(
+      config_file.is_file(), f"Missing config file: {config_file}"
+    )
     content = config_file.read_text(encoding="utf-8")
     errors = validate_agent_configs(content, repo_root)
     self.assertEqual(
-        errors, [], "Validation errors in agents/agent_configs.textproto:\n" +
-        "\n".join(errors))
+      errors,
+      [],
+      "Validation errors in agents/agent_configs.textproto:\n"
+      + "\n".join(errors),
+    )
 
 
 class AgentConfigsValidatorMockTestCase(unittest.TestCase):
-
   def setUp(self) -> None:
     super().setUp()
     self.temp_dir = tempfile.TemporaryDirectory()
@@ -254,28 +271,31 @@ class AgentConfigsValidatorMockTestCase(unittest.TestCase):
     self.skill_dir.mkdir(parents=True, exist_ok=True)
     self.skill_file = self.skill_dir / "SKILL.md"
     self.skill_file.write_text(
-        "---\n"
-        "name: My Skill\n"
-        "id: crossbench-my-skill\n"
-        "description: Validates skills.\n"
-        "---\n",
-        encoding="utf-8")
+      "---\n"
+      "name: My Skill\n"
+      "id: crossbench-my-skill\n"
+      "description: Validates skills.\n"
+      "---\n",
+      encoding="utf-8",
+    )
 
   def tearDown(self) -> None:
     self.temp_dir.cleanup()
     super().tearDown()
 
   def test_valid_agent_config(self) -> None:
-    proto_text = ("configs {\n"
-                  '  id: "crossbench-my-skill"\n'
-                  '  display_name: "My Skill"\n'
-                  '  description: "Validates skills."\n'
-                  '  skills: "agents/skills/my-skill/SKILL.md"\n'
-                  "  include_filters {\n"
-                  '    project: "crossbench"\n'
-                  '    path_regex: ".*\\\\.py$"\n'
-                  "  }\n"
-                  "}\n")
+    proto_text = (
+      "configs {\n"
+      '  id: "crossbench-my-skill"\n'
+      '  display_name: "My Skill"\n'
+      '  description: "Validates skills."\n'
+      '  skills: "agents/skills/my-skill/SKILL.md"\n'
+      "  include_filters {\n"
+      '    project: "crossbench"\n'
+      '    path_regex: ".*\\\\.py$"\n'
+      "  }\n"
+      "}\n"
+    )
     errors = validate_agent_configs(proto_text, self.root_path)
     self.assertEqual(errors, [])
 
@@ -285,147 +305,171 @@ class AgentConfigsValidatorMockTestCase(unittest.TestCase):
     self.assertTrue(any("syntax error" in e.lower() for e in errors))
 
   def test_missing_skills_file(self) -> None:
-    proto_text = ("configs {\n"
-                  '  id: "crossbench-my-skill"\n'
-                  '  description: "Validates skills."\n'
-                  '  skills: "agents/skills/nonexistent/SKILL.md"\n'
-                  "  include_filters {\n"
-                  '    project: "crossbench"\n'
-                  '    path_regex: ".*\\\\.py$"\n'
-                  "  }\n"
-                  "}\n")
+    proto_text = (
+      "configs {\n"
+      '  id: "crossbench-my-skill"\n'
+      '  description: "Validates skills."\n'
+      '  skills: "agents/skills/nonexistent/SKILL.md"\n'
+      "  include_filters {\n"
+      '    project: "crossbench"\n'
+      '    path_regex: ".*\\\\.py$"\n'
+      "  }\n"
+      "}\n"
+    )
     errors = validate_agent_configs(proto_text, self.root_path)
     self.assertTrue(any("does not exist" in e for e in errors))
 
   def test_id_mismatch(self) -> None:
-    proto_text = ("configs {\n"
-                  '  id: "crossbench-wrong-id"\n'
-                  '  description: "Validates skills."\n'
-                  '  skills: "agents/skills/my-skill/SKILL.md"\n'
-                  "  include_filters {\n"
-                  '    project: "crossbench"\n'
-                  '    path_regex: ".*\\\\.py$"\n'
-                  "  }\n"
-                  "}\n")
+    proto_text = (
+      "configs {\n"
+      '  id: "crossbench-wrong-id"\n'
+      '  description: "Validates skills."\n'
+      '  skills: "agents/skills/my-skill/SKILL.md"\n'
+      "  include_filters {\n"
+      '    project: "crossbench"\n'
+      '    path_regex: ".*\\\\.py$"\n'
+      "  }\n"
+      "}\n"
+    )
     errors = validate_agent_configs(proto_text, self.root_path)
     self.assertTrue(
-        any("does not match frontmatter id/name" in e for e in errors))
+      any("does not match frontmatter id/name" in e for e in errors)
+    )
 
   def test_description_mismatch(self) -> None:
-    proto_text = ("configs {\n"
-                  '  id: "crossbench-my-skill"\n'
-                  '  description: "Different description."\n'
-                  '  skills: "agents/skills/my-skill/SKILL.md"\n'
-                  "  include_filters {\n"
-                  '    project: "crossbench"\n'
-                  '    path_regex: ".*\\\\.py$"\n'
-                  "  }\n"
-                  "}\n")
+    proto_text = (
+      "configs {\n"
+      '  id: "crossbench-my-skill"\n'
+      '  description: "Different description."\n'
+      '  skills: "agents/skills/my-skill/SKILL.md"\n'
+      "  include_filters {\n"
+      '    project: "crossbench"\n'
+      '    path_regex: ".*\\\\.py$"\n'
+      "  }\n"
+      "}\n"
+    )
     errors = validate_agent_configs(proto_text, self.root_path)
     self.assertTrue(any("does not match description" in e for e in errors))
 
   def test_invalid_path_regex(self) -> None:
-    proto_text = ("configs {\n"
-                  '  id: "crossbench-my-skill"\n'
-                  '  description: "Validates skills."\n'
-                  '  skills: "agents/skills/my-skill/SKILL.md"\n'
-                  "  include_filters {\n"
-                  '    project: "crossbench"\n'
-                  '    path_regex: "[invalid regex"\n'
-                  "  }\n"
-                  "}\n")
+    proto_text = (
+      "configs {\n"
+      '  id: "crossbench-my-skill"\n'
+      '  description: "Validates skills."\n'
+      '  skills: "agents/skills/my-skill/SKILL.md"\n'
+      "  include_filters {\n"
+      '    project: "crossbench"\n'
+      '    path_regex: "[invalid regex"\n'
+      "  }\n"
+      "}\n"
+    )
     errors = validate_agent_configs(proto_text, self.root_path)
     self.assertTrue(any("invalid include path_regex" in e for e in errors))
 
   def test_skill_missing_frontmatter(self) -> None:
     self.skill_file.write_text("No frontmatter here\n", encoding="utf-8")
-    proto_text = ("configs {\n"
-                  '  id: "crossbench-my-skill"\n'
-                  '  description: "Validates skills."\n'
-                  '  skills: "agents/skills/my-skill/SKILL.md"\n'
-                  "  include_filters {\n"
-                  '    project: "crossbench"\n'
-                  '    path_regex: ".*\\\\.py$"\n'
-                  "  }\n"
-                  "}\n")
+    proto_text = (
+      "configs {\n"
+      '  id: "crossbench-my-skill"\n'
+      '  description: "Validates skills."\n'
+      '  skills: "agents/skills/my-skill/SKILL.md"\n'
+      "  include_filters {\n"
+      '    project: "crossbench"\n'
+      '    path_regex: ".*\\\\.py$"\n'
+      "  }\n"
+      "}\n"
+    )
     errors = validate_agent_configs(proto_text, self.root_path)
     self.assertTrue(
-        any("Missing starting YAML frontmatter delimiter" in e for e in errors))
+      any("Missing starting YAML frontmatter delimiter" in e for e in errors)
+    )
 
   def test_skill_empty_frontmatter(self) -> None:
     self.skill_file.write_text("---\n---\n", encoding="utf-8")
-    proto_text = ("configs {\n"
-                  '  id: "crossbench-my-skill"\n'
-                  '  description: "Validates skills."\n'
-                  '  skills: "agents/skills/my-skill/SKILL.md"\n'
-                  "  include_filters {\n"
-                  '    project: "crossbench"\n'
-                  '    path_regex: ".*\\\\.py$"\n'
-                  "  }\n"
-                  "}\n")
+    proto_text = (
+      "configs {\n"
+      '  id: "crossbench-my-skill"\n'
+      '  description: "Validates skills."\n'
+      '  skills: "agents/skills/my-skill/SKILL.md"\n'
+      "  include_filters {\n"
+      '    project: "crossbench"\n'
+      '    path_regex: ".*\\\\.py$"\n'
+      "  }\n"
+      "}\n"
+    )
     errors = validate_agent_configs(proto_text, self.root_path)
     self.assertTrue(any("YAML frontmatter is empty" in e for e in errors))
 
   def test_duplicate_agent_id(self) -> None:
-    proto_text = ("configs {\n"
-                  '  id: "crossbench-my-skill"\n'
-                  '  description: "Validates skills."\n'
-                  '  skills: "agents/skills/my-skill/SKILL.md"\n'
-                  "  include_filters {\n"
-                  '    project: "crossbench"\n'
-                  '    path_regex: ".*\\\\.py$"\n'
-                  "  }\n"
-                  "}\n"
-                  "configs {\n"
-                  '  id: "crossbench-my-skill"\n'
-                  '  description: "Validates skills."\n'
-                  '  skills: "agents/skills/my-skill/SKILL.md"\n'
-                  "  include_filters {\n"
-                  '    project: "crossbench"\n'
-                  '    path_regex: ".*\\\\.py$"\n'
-                  "  }\n"
-                  "}\n")
+    proto_text = (
+      "configs {\n"
+      '  id: "crossbench-my-skill"\n'
+      '  description: "Validates skills."\n'
+      '  skills: "agents/skills/my-skill/SKILL.md"\n'
+      "  include_filters {\n"
+      '    project: "crossbench"\n'
+      '    path_regex: ".*\\\\.py$"\n'
+      "  }\n"
+      "}\n"
+      "configs {\n"
+      '  id: "crossbench-my-skill"\n'
+      '  description: "Validates skills."\n'
+      '  skills: "agents/skills/my-skill/SKILL.md"\n'
+      "  include_filters {\n"
+      '    project: "crossbench"\n'
+      '    path_regex: ".*\\\\.py$"\n'
+      "  }\n"
+      "}\n"
+    )
     errors = validate_agent_configs(proto_text, self.root_path)
     self.assertTrue(any("Duplicate agent id found" in e for e in errors))
 
   def test_missing_project_in_include_filter(self) -> None:
-    proto_text = ("configs {\n"
-                  '  id: "crossbench-my-skill"\n'
-                  '  display_name: "My Skill"\n'
-                  '  description: "Validates skills."\n'
-                  '  skills: "agents/skills/my-skill/SKILL.md"\n'
-                  "  include_filters {\n"
-                  '    path_regex: ".*\\\\.py$"\n'
-                  "  }\n"
-                  "}\n")
+    proto_text = (
+      "configs {\n"
+      '  id: "crossbench-my-skill"\n'
+      '  display_name: "My Skill"\n'
+      '  description: "Validates skills."\n'
+      '  skills: "agents/skills/my-skill/SKILL.md"\n'
+      "  include_filters {\n"
+      '    path_regex: ".*\\\\.py$"\n'
+      "  }\n"
+      "}\n"
+    )
     errors = validate_agent_configs(proto_text, self.root_path)
     self.assertTrue(any("missing 'project'" in e for e in errors))
 
   def test_invalid_project_in_include_filter(self) -> None:
-    proto_text = ("configs {\n"
-                  '  id: "crossbench-my-skill"\n'
-                  '  display_name: "My Skill"\n'
-                  '  description: "Validates skills."\n'
-                  '  skills: "agents/skills/my-skill/SKILL.md"\n'
-                  "  include_filters {\n"
-                  '    project: "other-project"\n'
-                  '    path_regex: ".*\\\\.py$"\n'
-                  "  }\n"
-                  "}\n")
+    proto_text = (
+      "configs {\n"
+      '  id: "crossbench-my-skill"\n'
+      '  display_name: "My Skill"\n'
+      '  description: "Validates skills."\n'
+      '  skills: "agents/skills/my-skill/SKILL.md"\n'
+      "  include_filters {\n"
+      '    project: "other-project"\n'
+      '    path_regex: ".*\\\\.py$"\n'
+      "  }\n"
+      "}\n"
+    )
     errors = validate_agent_configs(proto_text, self.root_path)
     self.assertTrue(
-        any("unexpected project in include_filter" in e for e in errors))
+      any("unexpected project in include_filter" in e for e in errors)
+    )
 
   def test_extract_md_frontmatter_valid(self) -> None:
-    content = ("---\n"
-               "name: test-skill\n"
-               "description: A test skill description.\n"
-               "---\n"
-               "\n"
-               "# Content\n")
+    content = (
+      "---\n"
+      "name: test-skill\n"
+      "description: A test skill description.\n"
+      "---\n"
+      "\n"
+      "# Content\n"
+    )
     self.assertEqual(
-        extract_md_frontmatter(content),
-        "name: test-skill\ndescription: A test skill description.")
+      extract_md_frontmatter(content),
+      "name: test-skill\ndescription: A test skill description.",
+    )
 
   def test_extract_md_frontmatter_empty(self) -> None:
     with self.assertRaises(ValueError) as cm:
@@ -436,15 +480,17 @@ class AgentConfigsValidatorMockTestCase(unittest.TestCase):
     content = "name: test\n---\n"
     with self.assertRaises(ValueError) as cm:
       extract_md_frontmatter(content)
-    self.assertIn("Missing starting YAML frontmatter delimiter '---'.",
-                  str(cm.exception))
+    self.assertIn(
+      "Missing starting YAML frontmatter delimiter '---'.", str(cm.exception)
+    )
 
   def test_extract_md_frontmatter_missing_end_delimiter(self) -> None:
     content = "---\nname: test\ndescription: desc\n"
     with self.assertRaises(ValueError) as cm:
       extract_md_frontmatter(content)
-    self.assertIn("Missing closing YAML frontmatter delimiter '---'.",
-                  str(cm.exception))
+    self.assertIn(
+      "Missing closing YAML frontmatter delimiter '---'.", str(cm.exception)
+    )
 
 
 if __name__ == "__main__":

@@ -11,21 +11,23 @@ from tests import test_helper
 
 
 class CollectionHelperTestCase(unittest.TestCase):
-
   def test_close_matches_empty_choices(self):
     with self.assertRaises(ValueError):
       close_matches_message("foo", [])
 
   def test_close_matches_single_match(self):
-    msg, alt = close_matches_message("perfettoo", ["perfetto", "trace"],
-                                     "probe")
+    msg, alt = close_matches_message(
+      "perfettoo", ["perfetto", "trace"], "probe"
+    )
     self.assertEqual(alt, "perfetto")
-    self.assertEqual(msg,
-                     "Invalid probe: 'perfettoo'. Did you mean 'perfetto'?")
+    self.assertEqual(
+      msg, "Invalid probe: 'perfettoo'. Did you mean 'perfetto'?"
+    )
 
   def test_close_matches_multiple_matches(self):
-    msg, alt = close_matches_message("linux", ["linux-perf", "linux-perff"],
-                                     "bot")
+    msg, alt = close_matches_message(
+      "linux", ["linux-perf", "linux-perff"], "bot"
+    )
     self.assertIsNone(alt)
     self.assertIn("Did you mean one of", msg)
     self.assertIn("linux-perf", msg)
@@ -38,12 +40,13 @@ class CollectionHelperTestCase(unittest.TestCase):
 
   def test_close_matches_substring_fallback_multiple(self):
     msg, alt = close_matches_message(
-        "m1", ["mac-m1-pro-perf", "mac-m1-max-perf", "linux-perf"], "bot")
+      "m1", ["mac-m1-pro-perf", "mac-m1-max-perf", "linux-perf"], "bot"
+    )
     self.assertIsNone(alt)
     self.assertEqual(
-        msg,
-        "Invalid bot: 'm1'. Did you mean one of mac-m1-pro-perf, "
-        "mac-m1-max-perf?",
+      msg,
+      "Invalid bot: 'm1'. Did you mean one of mac-m1-pro-perf, "
+      "mac-m1-max-perf?",
     )
 
   def test_close_matches_no_match_small_choices(self):

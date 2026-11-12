@@ -9,7 +9,6 @@ from typing import Final, Generic, Iterable, TypeVar, cast
 
 
 class UnexpectedStateError(RuntimeError):
-
   def __init__(self, state: BaseState, expected: Iterable[BaseState]) -> None:
     self._state: Final[BaseState] = state
     self._expected: Final[tuple[BaseState, ...]] = tuple(expected)
@@ -32,6 +31,7 @@ class BaseState(enum.IntEnum):
 @enum.unique
 class State(BaseState):
   """Default state implementation."""
+
   INITIAL = enum.auto()
   SETUP = enum.auto()
   READY = enum.auto()
@@ -43,7 +43,6 @@ StateT = TypeVar("StateT", bound="BaseState")
 
 
 class StateMachine(Generic[StateT]):
-
   def __init__(self, default: StateT) -> None:
     self._state: StateT = default
 

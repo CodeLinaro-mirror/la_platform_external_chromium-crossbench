@@ -17,6 +17,7 @@ class BrowserDriverLogProbe(InternalProbe):
   """
   Runner-internal: Collects the driver logs
   """
+
   NAME: ClassVar = "browser.driver.log"
 
   @override
@@ -25,7 +26,6 @@ class BrowserDriverLogProbe(InternalProbe):
 
 
 class BrowserDriverLogProbeContext(ProbeContext[BrowserDriverLogProbe]):
-
   @override
   def setup(self) -> None:
     pass

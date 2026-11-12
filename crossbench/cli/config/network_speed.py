@@ -19,22 +19,30 @@ if TYPE_CHECKING:
 
 def _settings_str(name: str) -> str:
   settings = ts_proxy_settings.TRAFFIC_SETTINGS[name]
-  return (f"rtt={settings['rtt_ms']}ms, "
-          f"in={settings['in_kbps']} kbps,"
-          f"out={settings['out_kbps']} kbps")
+  return (
+    f"rtt={settings['rtt_ms']}ms, "
+    f"in={settings['in_kbps']} kbps,"
+    f"out={settings['out_kbps']} kbps"
+  )
 
 
 @enum.unique
 class NetworkSpeedPreset(ConfigEnum):
   """Presets that match ts_proxy settings."""
+
   LIVE = ("live", "Untroubled default network settings")
-  MOBILE_3G_SLOW = ("3G-slow",
-                    f"Slow 3G network settings: {_settings_str('3G-slow')}")
+  MOBILE_3G_SLOW = (
+    "3G-slow",
+    f"Slow 3G network settings: {_settings_str('3G-slow')}",
+  )
   MOBILE_3G_REGULAR = (
-      "3G-regular",
-      f"Regular 3G network settings: {_settings_str('3G-regular')}")
-  MOBILE_3G_FAST = ("3G-fast",
-                    f"Slow 3G network settings: {_settings_str('3G-fast')}")
+    "3G-regular",
+    f"Regular 3G network settings: {_settings_str('3G-regular')}",
+  )
+  MOBILE_3G_FAST = (
+    "3G-fast",
+    f"Slow 3G network settings: {_settings_str('3G-fast')}",
+  )
   MOBILE_4G = ("4G", f"Regular 4G network settings: {_settings_str('4G')}")
 
 
@@ -79,25 +87,30 @@ class NetworkSpeedConfig(ConfigObject):
   def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(cls, default=cls.default())
     parser.add_argument(
-        "ts_proxy", type=PathParser.existing_file_path, required=False)
+      "ts_proxy", type=PathParser.existing_file_path, required=False
+    )
     # See tsproxy.py --help
     parser.add_argument(
-        "rtt_ms",
-        type=NumberParser.positive_int,
-        help="Round Trip Time Latency (in ms).")
+      "rtt_ms",
+      type=NumberParser.positive_int,
+      help="Round Trip Time Latency (in ms).",
+    )
     parser.add_argument(
-        "in_kbps",
-        type=NumberParser.positive_int,
-        help="Download Bandwidth (in 1000 bits/s - Kbps).")
+      "in_kbps",
+      type=NumberParser.positive_int,
+      help="Download Bandwidth (in 1000 bits/s - Kbps).",
+    )
     parser.add_argument(
-        "out_kbps",
-        type=NumberParser.positive_int,
-        help="Upload Bandwidth (in 1000 bits/s - Kbps).")
+      "out_kbps",
+      type=NumberParser.positive_int,
+      help="Upload Bandwidth (in 1000 bits/s - Kbps).",
+    )
     parser.add_argument(
-        "window",
-        default=10,
-        type=NumberParser.positive_int,
-        help="Emulated TCP initial congestion window (defaults to 10).")
+      "window",
+      default=10,
+      type=NumberParser.positive_int,
+      help="Emulated TCP initial congestion window (defaults to 10).",
+    )
     return parser
 
   @classmethod

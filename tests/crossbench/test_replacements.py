@@ -14,7 +14,6 @@ from tests import test_helper
 
 
 class CustomConfigObjectWithReplacements(ConfigObject):
-
   @classmethod
   @override
   def parse_str(cls, value: str) -> Self:
@@ -37,46 +36,53 @@ class CustomConfigObjectWithReplacements(ConfigObject):
 
 
 class ConfigParserTestCase(unittest.TestCase):
-
   def test_one_replacement(self):
-    config = CustomConfigObjectWithReplacements.parse({
+    config = CustomConfigObjectWithReplacements.parse(
+      {
         "name": "crossbench",
         "replacements": {
-            "cross": "chrome",
+          "cross": "chrome",
         },
-    })
+      }
+    )
     self.assertIsInstance(config, CustomConfigObjectWithReplacements)
     self.assertEqual(config.name, "chromebench")
 
   def test_multiple_replacements_overlapping(self):
-    config = CustomConfigObjectWithReplacements.parse({
+    config = CustomConfigObjectWithReplacements.parse(
+      {
         "name": "crossbench",
         "replacements": {
-            "cross": "chrome",
-            "chrome": "android",
+          "cross": "chrome",
+          "chrome": "android",
         },
-    })
+      }
+    )
     self.assertIsInstance(config, CustomConfigObjectWithReplacements)
     self.assertEqual(config.name, "androidbench")
 
   def test_replacement_non_str(self):
-    config = CustomConfigObjectWithReplacements.parse({
+    config = CustomConfigObjectWithReplacements.parse(
+      {
         "name": "crossbench",
         "replacements": {
-            "cross": 1,
+          "cross": 1,
         },
-    })
+      }
+    )
     self.assertIsInstance(config, CustomConfigObjectWithReplacements)
     self.assertEqual(config.name, "1bench")
 
   def test_replacement_key_non_str_raises(self):
     with self.assertRaisesRegex(ValueError, "replacements"):
-      CustomConfigObjectWithReplacements.parse({
+      CustomConfigObjectWithReplacements.parse(
+        {
           "name": "crossbench",
           "replacements": {
-              1: 1,
+            1: 1,
           },
-      })
+        }
+      )
 
 
 if __name__ == "__main__":

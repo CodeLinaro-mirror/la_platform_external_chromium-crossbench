@@ -11,8 +11,11 @@ from typing import TYPE_CHECKING, ClassVar, Self, override
 
 from crossbench.action_runner.action.action import ACTION_TIMEOUT, Action
 from crossbench.action_runner.action.action_type import ActionType
-from crossbench.action_runner.input_events import EVENT_INPUT_SOURCES, \
-    InputEvent, WaitEvent
+from crossbench.action_runner.input_events import (
+  EVENT_INPUT_SOURCES,
+  InputEvent,
+  WaitEvent,
+)
 from crossbench.action_runner.virtual_device.all import DEFAULT_VIRTUAL_DEVICES
 from crossbench.benchmarks.loading.input_source import InputSource
 from crossbench.parse import ObjectParser
@@ -37,15 +40,16 @@ class RawInputAction(Action):
 
   TYPE: ClassVar[ActionType] = ActionType.RAW_INPUT
   SUPPORTED_INPUT_SOURCES: ClassVar[tuple[InputSource, ...]] = (
-      InputSource.KEYBOARD,
-      InputSource.TOUCH,
-      InputSource.MOUSE,
+    InputSource.KEYBOARD,
+    InputSource.TOUCH,
+    InputSource.MOUSE,
   )
 
   events: tuple[InputEvent, ...] = ()
   source: InputSource = InputSource.KEYBOARD
   source_device: str = dataclasses.field(
-      default=DEFAULT_VIRTUAL_DEVICES[InputSource.KEYBOARD].name, kw_only=True)
+    default=DEFAULT_VIRTUAL_DEVICES[InputSource.KEYBOARD].name, kw_only=True
+  )
 
   @classmethod
   def _infer_input_source(cls, events: Iterable[InputEvent]) -> InputSource:
@@ -53,19 +57,23 @@ class RawInputAction(Action):
     for event in events:
       if event_source := EVENT_INPUT_SOURCES.get(type(event)):
         if inferred_source is not None and event_source != inferred_source:
-          raise ValueError("Events have conflicting input sources: "
-                           f"{inferred_source} and {event_source}")
+          raise ValueError(
+            "Events have conflicting input sources: "
+            f"{inferred_source} and {event_source}"
+          )
         inferred_source = event_source
     return inferred_source or InputSource.KEYBOARD
 
   @classmethod
   @override
-  def create(cls: type[Self],
-             events: Iterable[InputEvent] = (),
-             source: InputSource | None = None,
-             source_device: str | None = None,
-             timeout: dt.timedelta = ACTION_TIMEOUT,
-             index: int = 0) -> Self:
+  def create(
+    cls: type[Self],
+    events: Iterable[InputEvent] = (),
+    source: InputSource | None = None,
+    source_device: str | None = None,
+    timeout: dt.timedelta = ACTION_TIMEOUT,
+    index: int = 0,
+  ) -> Self:
     events = tuple(events)
     if source is None:
       source = cls._infer_input_source(events)
@@ -73,11 +81,12 @@ class RawInputAction(Action):
       if default_device := DEFAULT_VIRTUAL_DEVICES.get(source):
         source_device = default_device.name
     return cls(
-        events=events,
-        source=source,
-        source_device=source_device or "",
-        timeout=timeout,
-        index=index)
+      events=events,
+      source=source,
+      source_device=source_device or "",
+      timeout=timeout,
+      index=index,
+    )
 
   @classmethod
   @override
@@ -86,12 +95,14 @@ class RawInputAction(Action):
     parser = super().config_parser()
     parser.add_argument("events", type=InputEvent, is_list=True, required=True)
     parser.add_argument(
-        "source", type=InputSource.parse, required=False, default=None)
+      "source", type=InputSource.parse, required=False, default=None
+    )
     parser.add_argument(
-        "source_device",
-        type=ObjectParser.non_empty_str,
-        required=False,
-        default=None)
+      "source_device",
+      type=ObjectParser.non_empty_str,
+      required=False,
+      default=None,
+    )
     return parser
 
   @property
@@ -101,9 +112,10 @@ class RawInputAction(Action):
   @property
   @override
   def duration(self) -> dt.timedelta:
-    return sum((event.duration
-                for event in self.events
-                if isinstance(event, WaitEvent)), dt.timedelta())
+    return sum(
+      (event.duration for event in self.events if isinstance(event, WaitEvent)),
+      dt.timedelta(),
+    )
 
   @override
   def run_with(self, action_runner: ActionRunner) -> None:
@@ -116,12 +128,14 @@ class RawInputAction(Action):
       raise ValueError(f"{self}.events cannot be empty")
     if self.source not in self.SUPPORTED_INPUT_SOURCES:
       raise ValueError(
-          f"Unsupported input source for {self.__class__.__name__}: "
-          f"{self.source}")
+        f"Unsupported input source for {self.__class__.__name__}: {self.source}"
+      )
     inferred_source = self._infer_input_source(self.events)
     if inferred_source != self.source:
-      raise ValueError(f"Events input source {inferred_source} is incompatible "
-                       f"with {self}.source={self.source}")
+      raise ValueError(
+        f"Events input source {inferred_source} is incompatible "
+        f"with {self}.source={self.source}"
+      )
     ObjectParser.non_empty_str(self.source_device, f"{self}.source_device")
 
   @override

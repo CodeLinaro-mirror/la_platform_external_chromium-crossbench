@@ -8,18 +8,27 @@ import abc
 import datetime as dt
 import json
 import logging
-from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Mapping, \
-    Sequence, override
+from typing import (
+  TYPE_CHECKING,
+  ClassVar,
+  Final,
+  Iterable,
+  Mapping,
+  Sequence,
+  override,
+)
 
 from immutabledict import immutabledict
 
 from crossbench.action_runner.action.click import ClickAction
-from crossbench.action_runner.action.position import PositionConfig, \
-    SelectorConfig
-from crossbench.action_runner.element_not_found_error import \
-    ElementNotFoundError
-from crossbench.benchmarks.base import PressBenchmark, \
-    PressBenchmarkStoryFilter
+from crossbench.action_runner.action.position import (
+  PositionConfig,
+  SelectorConfig,
+)
+from crossbench.action_runner.element_not_found_error import (
+  ElementNotFoundError,
+)
+from crossbench.benchmarks.base import PressBenchmark, PressBenchmarkStoryFilter
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.benchmarks.loading.input_source import InputSource
 from crossbench.helper import url_helper
@@ -46,11 +55,13 @@ def _probe_remove_tests_segments(path: tuple[str, ...]) -> str:
 
 
 class SpeedometerProbe(
-    BenchmarkProbeMixin, JsonResultProbe, metaclass=abc.ABCMeta):
+  BenchmarkProbeMixin, JsonResultProbe, metaclass=abc.ABCMeta
+):
   """
   Speedometer-specific probe (compatible with v2.X and v3.X).
   Extracts all speedometer times and scores.
   """
+
   SORT_KEYS: ClassVar[bool] = False
   SCORE_METRIC_KEY: ClassVar[str] = "Score"
 
@@ -62,8 +73,9 @@ class SpeedometerProbe(
   @override
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
     merged = MetricsMerger.merge_json_list(
-        repetitions_group.results[self].json
-        for repetitions_group in group.repetitions_groups)
+      repetitions_group.results[self].json
+      for repetitions_group in group.repetitions_groups
+    )
     if self.SCORE_METRIC_KEY not in merged.data:
       merged.data[self.SCORE_METRIC_KEY] = self._compute_total_score(merged)
     return self.write_group_result(group, merged)
@@ -75,7 +87,8 @@ class SpeedometerProbe(
         line_item_scores.append(metric.values)
     total_score = Metric()
     for iteration_line_items_score_values in zip(
-        *line_item_scores, strict=True):
+      *line_item_scores, strict=True
+    ):
       iteration_score = Metric(iteration_line_items_score_values).geomean
       total_score.append(iteration_score)
     return total_score
@@ -91,7 +104,8 @@ class SpeedometerProbe(
   @override
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
     return self.merge_browsers_json_list(group).merge(
-        self.merge_browsers_csv_list(group))
+      self.merge_browsers_csv_list(group)
+    )
 
   @override
   def log_run_result(self, run: Run) -> None:
@@ -101,8 +115,9 @@ class SpeedometerProbe(
   def log_browsers_result(self, group: BrowsersRunGroup) -> None:
     self._log_result(group.results, single_result=False)
 
-  def _log_result(self, result_dict: ProbeResultDict,
-                  single_result: bool) -> None:
+  def _log_result(
+    self, result_dict: ProbeResultDict, single_result: bool
+  ) -> None:
     if self not in result_dict:
       return
     results_json: pth.LocalPath = result_dict[self].json
@@ -122,14 +137,16 @@ class SpeedometerProbe(
         self._log_result_metrics(data)
 
   @override
-  def _extract_result_metrics_table(self, metrics: JsonDict,
-                                    table: dict[str, list[str]]) -> None:
+  def _extract_result_metrics_table(
+    self, metrics: JsonDict, table: dict[str, list[str]]
+  ) -> None:
     for metric_key, metric in metrics.items():
       if not self.is_valid_metric_key(metric_key):
         continue
       assert isinstance(metric, Mapping)
       table[metric_key].append(
-          Metric.format(metric["average"], metric["stddev"]))
+        Metric.format(metric["average"], metric["stddev"])
+      )
 
 
 class SpeedometerProbeContext(JsonResultProbeContext):
@@ -145,34 +162,36 @@ class SpeedometerProbeContext(JsonResultProbeContext):
   @override
   def flatten_json_data(self, json_data: Json) -> Json:
     metrics_data = [
-        ObjectParser.dict(item) for item in ObjectParser.non_empty_sequence(
-            json_data, f"{self.probe.name} metrics")
+      ObjectParser.dict(item)
+      for item in ObjectParser.non_empty_sequence(
+        json_data, f"{self.probe.name} metrics"
+      )
     ]
     # json_data may contain multiple iterations, merge those first
     merged = MetricsMerger(
-        metrics_data, key_fn=_probe_remove_tests_segments).to_json(
-            value_fn=lambda values: values.average, sort=self.probe.SORT_KEYS)
+      metrics_data, key_fn=_probe_remove_tests_segments
+    ).to_json(value_fn=lambda values: values.average, sort=self.probe.SORT_KEYS)
     return Flatten(merged, sort=self.probe.SORT_KEYS).data
 
 
 class SpeedometerStory(PressBenchmarkStory, metaclass=abc.ABCMeta):
   URL_LOCAL: ClassVar[str] = "http://localhost:8000/"
   DEFAULT_ITERATIONS: ClassVar[int] = 10
-  BUTTON_SELECTOR: ClassVar[str] = \
-      "#runSuites, start-tests-button, .buttons button"
+  BUTTON_SELECTOR: ClassVar[str] = (
+    "#runSuites, start-tests-button, .buttons button"
+  )
 
   def __init__(
-      self,
-      substories: Sequence[str] = (),
-      iterations: int | None = None,
-      url_params: Mapping[str, str] | None = None,
-      url: str | None = None,
-      tags: Iterable[str] = (),
+    self,
+    substories: Sequence[str] = (),
+    iterations: int | None = None,
+    url_params: Mapping[str, str] | None = None,
+    url: str | None = None,
+    tags: Iterable[str] = (),
   ) -> None:
     self._iterations: Final[int] = NumberParser.positive_int(
-        iterations or self.DEFAULT_ITERATIONS,
-        "iteration count",
-        parse_str=False)
+      iterations or self.DEFAULT_ITERATIONS, "iteration count", parse_str=False
+    )
     self._url_params: Final[Mapping[str, str]] = immutabledict(url_params or {})
     super().__init__(substories=substories, url=url, tags=tags)
 
@@ -226,18 +245,20 @@ class SpeedometerStory(PressBenchmarkStory, metaclass=abc.ABCMeta):
 
   def _wait_for_ready(self, actions: Actions) -> None:
     actions.wait_js_condition(
-        "return window.Suites !== undefined;", 0.5, timeout=10)
+      "return window.Suites !== undefined;", 0.5, timeout=10
+    )
 
   def _setup_substories(self, actions: Actions) -> None:
     if self._substories == self.SUBSTORIES:
       return
     actions.js(
-        """
+      """
         let substories = arguments[0];
         Suites.forEach((suite) => {
           suite.disabled = substories.indexOf(suite.name) === -1;
         });""",
-        arguments=[self._substories])
+      arguments=[self._substories],
+    )
 
   def _setup_benchmark_client(self, actions: Actions) -> None:
     actions.js("""
@@ -265,18 +286,21 @@ class SpeedometerStory(PressBenchmarkStory, metaclass=abc.ABCMeta):
         # is more likely to trigger touch boosts on the device and thus more
         # realistic of the real world.
         if not self._try_click_start_button_android(run, actions):
-          logging.warning("Couldn't press button via adb tap, "
-                          "falling back to starting benchmark via JS")
+          logging.warning(
+            "Couldn't press button via adb tap, "
+            "falling back to starting benchmark via JS"
+          )
           self._start_via_js(actions)
       else:
         self._start_via_js(actions)
       actions.wait(self.fast_duration)
     with run.actions("Waiting for completion") as actions:
       actions.wait_js_condition(
-          "return window.testDone",
-          0.5,
-          timeout=self.slow_duration,
-          delay=self.substory_duration)
+        "return window.testDone",
+        0.5,
+        timeout=self.slow_duration,
+        delay=self.substory_duration,
+      )
 
   def _try_click_start_button_android(self, run: Run, actions: Actions) -> bool:
     # Enlarge the button first, as the coordinate logic doesn't work perfectly
@@ -292,9 +316,11 @@ class SpeedometerStory(PressBenchmarkStory, metaclass=abc.ABCMeta):
         """)
 
     selector_config = SelectorConfig(
-        self.BUTTON_SELECTOR, required=True, scroll_into_view=False, wait=False)
-    action = ClickAction.create(InputSource.TOUCH,
-                                PositionConfig(selector=selector_config))
+      self.BUTTON_SELECTOR, required=True, scroll_into_view=False, wait=False
+    )
+    action = ClickAction.create(
+      InputSource.TOUCH, PositionConfig(selector=selector_config)
+    )
     try:
       run.action_runner.click_touch(action)
       return True
@@ -302,8 +328,9 @@ class SpeedometerStory(PressBenchmarkStory, metaclass=abc.ABCMeta):
       return False
 
   def _start_via_js(self, actions: Actions) -> None:
-    actions.js(f"let selector = '{self.BUTTON_SELECTOR}';"
-               """
+    actions.js(
+      f"let selector = '{self.BUTTON_SELECTOR}';"
+      """
         if (window.startTest) {
           window.startTest();
         } else {
@@ -311,7 +338,8 @@ class SpeedometerStory(PressBenchmarkStory, metaclass=abc.ABCMeta):
           let startButton = document.querySelector(selector);
           startButton.click();
         }
-        """)
+        """
+    )
 
 
 ProbeClsTupleT = tuple[type[SpeedometerProbe], ...]
@@ -323,18 +351,20 @@ class SpeedometerBenchmarkStoryFilter(PressBenchmarkStoryFilter):
   @classmethod
   @override
   def add_cli_arguments(
-      cls, parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+    cls, parser: argparse.ArgumentParser
+  ) -> argparse.ArgumentParser:
     parser = super().add_cli_arguments(parser)
     parser.add_argument(
-        "--iterations",
-        "--iteration-count",
-        default=SpeedometerStory.DEFAULT_ITERATIONS,
-        type=NumberParser.positive_int,
-        help="Number of iterations each Speedometer subtest is run "
-        "within the same session. \n"
-        "Note: --repetitions restarts the whole benchmark, --iterations runs "
-        "the same test tests n-times within the same session without the setup "
-        "overhead of starting up a whole new browser.")
+      "--iterations",
+      "--iteration-count",
+      default=SpeedometerStory.DEFAULT_ITERATIONS,
+      type=NumberParser.positive_int,
+      help="Number of iterations each Speedometer subtest is run "
+      "within the same session. \n"
+      "Note: --repetitions restarts the whole benchmark, --iterations runs "
+      "the same test tests n-times within the same session without the setup "
+      "overhead of starting up a whole new browser.",
+    )
     return parser
 
   @classmethod
@@ -351,15 +381,15 @@ class SpeedometerBenchmarkStoryFilter(PressBenchmarkStoryFilter):
     return {}
 
   def __init__(
-      self,
-      story_cls: type[SpeedometerStory],
-      patterns: Sequence[str],
-      args: argparse.Namespace,
-      separate: bool = False,
-      url: str | None = None,
-      iterations: int | None = None,
-      url_params: Mapping[str, str] | None = None,
-      tags: Sequence[str] = (),
+    self,
+    story_cls: type[SpeedometerStory],
+    patterns: Sequence[str],
+    args: argparse.Namespace,
+    separate: bool = False,
+    url: str | None = None,
+    iterations: int | None = None,
+    url_params: Mapping[str, str] | None = None,
+    tags: Sequence[str] = (),
   ) -> None:
     assert issubclass(story_cls, SpeedometerStory)
     self._iterations: Final[int | None] = iterations
@@ -367,18 +397,19 @@ class SpeedometerBenchmarkStoryFilter(PressBenchmarkStoryFilter):
     super().__init__(story_cls, patterns, args, separate, url, tags)
 
   @override
-  def stories_from_names(self,
-                         names: Sequence[str]) -> tuple[SpeedometerStory, ...]:
+  def stories_from_names(
+    self, names: Sequence[str]
+  ) -> tuple[SpeedometerStory, ...]:
     return self.story_cls.from_names(
-        names,
-        separate=self.separate,
-        url=self.url,
-        iterations=self._iterations,
-        url_params=self._url_params)
+      names,
+      separate=self.separate,
+      url=self.url,
+      iterations=self._iterations,
+      url_params=self._url_params,
+    )
 
 
 class SpeedometerBenchmark(PressBenchmark, metaclass=abc.ABCMeta):
-
   DEFAULT_STORY_CLS: ClassVar = SpeedometerStory
   STORY_FILTER_CLS: ClassVar = SpeedometerBenchmarkStoryFilter
 

@@ -29,7 +29,6 @@ if TYPE_CHECKING:
 
 
 class FakeSwitchTo:
-
   def __init__(self, driver: FakeWebDriver) -> None:
     self._driver: FakeWebDriver = driver
 
@@ -41,7 +40,6 @@ class FakeSwitchTo:
 
 
 class FakeTimeouts:
-
   def __init__(self) -> None:
     self.script: float = 30.0
     self.implicit_wait: float = 0.0
@@ -52,15 +50,16 @@ class FakeWebDriver(webdriver.Remote):
   """Stateful W3C-like WebDriver stub for window/session lifecycle tests."""
 
   def __init__(
-      self,
-      handles: Sequence[str] = ("tab-1",),
-      current_handle: str | None = "tab-1",
-      invalidate_session_on_last_close: bool = True,
+    self,
+    handles: Sequence[str] = ("tab-1",),
+    current_handle: str | None = "tab-1",
+    invalidate_session_on_last_close: bool = True,
   ) -> None:
     # Intentionally skip super().__init__() to avoid network connections.
     self.session_id: str | None = "fake-session-id"
     self.command_executor: RemoteConnection = RemoteConnection(
-        client_config=ClientConfig(remote_server_addr="http://127.0.0.1:9999"))
+      client_config=ClientConfig(remote_server_addr="http://127.0.0.1:9999")
+    )
     self._handles: list[str] = list(handles)
     self._current_handle: str | None = current_handle
     self._invalidate_on_last_close: bool = invalidate_session_on_last_close
@@ -69,11 +68,11 @@ class FakeWebDriver(webdriver.Remote):
     self._timeouts: FakeTimeouts = FakeTimeouts()
     self.closed_handles: list[str] = []
     self.urls_by_handle: dict[str, str] = {
-        handle: f"https://example.com/{handle}" for handle in handles
+      handle: f"https://example.com/{handle}" for handle in handles
     }
     self._capabilities: dict[str, object] = {
-        "browserVersion": "123.0.4567.89",
-        "setWindowRect": False,
+      "browserVersion": "123.0.4567.89",
+      "setWindowRect": False,
     }
     self.quit_called: bool = False
 
@@ -104,14 +103,17 @@ class FakeWebDriver(webdriver.Remote):
   def _check_session(self) -> None:
     if not self._session_valid:
       raise selenium.common.exceptions.InvalidSessionIdException(
-          "WebDriver session was invalidated after closing the last window")
+        "WebDriver session was invalidated after closing the last window"
+      )
 
   def _require_current_window(self) -> str:
     self._check_session()
-    if (self._current_handle is None or
-        self._current_handle not in self._handles):
+    if (
+      self._current_handle is None or self._current_handle not in self._handles
+    ):
       raise selenium.common.exceptions.NoSuchWindowException(
-          "Browsing context has been discarded")
+        "Browsing context has been discarded"
+      )
     return self._current_handle
 
   @property
@@ -135,7 +137,8 @@ class FakeWebDriver(webdriver.Remote):
     self._check_session()
     if handle not in self._handles:
       raise selenium.common.exceptions.NoSuchWindowException(
-          f"No such window: {handle}")
+        f"No such window: {handle}"
+      )
     self._current_handle = handle
 
   def open_new_window(self, type_hint: str = "tab") -> None:
@@ -185,10 +188,9 @@ class StubWebDriverBrowser(WebDriverBrowser):
   def type_name(cls) -> str:
     return "stub"
 
-  def __init__(self,
-               label: str,
-               driver: webdriver.Remote,
-               settings: Settings | None = None) -> None:
+  def __init__(
+    self, label: str, driver: webdriver.Remote, settings: Settings | None = None
+  ) -> None:
     self._private_driver: webdriver.Remote = driver
     super().__init__(label=label, path=None, settings=settings)
 
@@ -201,10 +203,12 @@ class StubWebDriverBrowser(WebDriverBrowser):
     return pth.AnyPath("/usr/bin/fakedriver")
 
   @override
-  def _start_driver(self,
-                    session: BrowserSessionRunGroup,
-                    driver_path: pth.AnyPath,
-                    startup_urls: Sequence[str] = ()) -> webdriver.Remote:
+  def _start_driver(
+    self,
+    session: BrowserSessionRunGroup,
+    driver_path: pth.AnyPath,
+    startup_urls: Sequence[str] = (),
+  ) -> webdriver.Remote:
     del session, driver_path, startup_urls
     return self._private_driver
 
@@ -222,16 +226,17 @@ class StubWebDriverBrowser(WebDriverBrowser):
 
 
 class WebDriverBrowserTestCase(BaseCrossbenchTestCase):
-
   def _create_remote_browser(self, driver: webdriver.Remote) -> RemoteWebDriver:
     browser = RemoteWebDriver("test-driver", driver)
     browser._is_running = True
     return browser
 
   def test_close_all_tabs_keeps_current_tab_and_navigates_to_blank(
-      self) -> None:
+    self,
+  ) -> None:
     driver = FakeWebDriver(
-        handles=["tab-1", "tab-2", "tab-3"], current_handle="tab-2")
+      handles=["tab-1", "tab-2", "tab-3"], current_handle="tab-2"
+    )
     browser = self._create_remote_browser(driver)
 
     browser.close_all_tabs()
@@ -244,9 +249,10 @@ class WebDriverBrowserTestCase(BaseCrossbenchTestCase):
 
   def test_close_all_tabs_single_tab_preserves_session(self) -> None:
     driver = FakeWebDriver(
-        handles=["tab-1"],
-        current_handle="tab-1",
-        invalidate_session_on_last_close=True)
+      handles=["tab-1"],
+      current_handle="tab-1",
+      invalidate_session_on_last_close=True,
+    )
     browser = self._create_remote_browser(driver)
 
     browser.close_all_tabs()
@@ -270,7 +276,8 @@ class WebDriverBrowserTestCase(BaseCrossbenchTestCase):
 
   def test_close_all_tabs_stale_current_handle_keeps_last_tab(self) -> None:
     driver = FakeWebDriver(
-        handles=["tab-1", "tab-2"], current_handle="stale-tab")
+      handles=["tab-1", "tab-2"], current_handle="stale-tab"
+    )
     browser = self._create_remote_browser(driver)
 
     browser.close_all_tabs()
@@ -291,11 +298,12 @@ class WebDriverBrowserTestCase(BaseCrossbenchTestCase):
   def test_close_all_tabs_handles_http_errors(self) -> None:
     mock_driver = mock.MagicMock(spec=webdriver.Remote)
     mock_driver.capabilities = {
-        "browserVersion": "123.0.4567.89",
-        "setWindowRect": False,
+      "browserVersion": "123.0.4567.89",
+      "setWindowRect": False,
     }
     type(mock_driver).window_handles = mock.PropertyMock(
-        side_effect=urllib3.exceptions.MaxRetryError(mock.Mock(), "/windows"))
+      side_effect=urllib3.exceptions.MaxRetryError(mock.Mock(), "/windows")
+    )
     browser = self._create_remote_browser(mock_driver)
 
     browser.close_all_tabs()
@@ -303,18 +311,20 @@ class WebDriverBrowserTestCase(BaseCrossbenchTestCase):
 
   def test_quit_closes_extra_tabs_and_final_window(self) -> None:
     driver = FakeWebDriver(
-        handles=["tab-1", "tab-2"],
-        current_handle="tab-1",
-        invalidate_session_on_last_close=False)
+      handles=["tab-1", "tab-2"],
+      current_handle="tab-1",
+      invalidate_session_on_last_close=False,
+    )
     browser = StubWebDriverBrowser(
-        "stub", driver, settings=Settings(platform=self.platform))
+      "stub", driver, settings=Settings(platform=self.platform)
+    )
     browser._is_running = True
     if self.platform.is_macos:
       self.platform.expect_sh(
-          "/usr/bin/osascript",
-          "-e",
-          f'\n  tell application "{browser.app_path}"\n'
-          "    quit\n  end tell\n      ",
+        "/usr/bin/osascript",
+        "-e",
+        f'\n  tell application "{browser.app_path}"\n'
+        "    quit\n  end tell\n      ",
       )
 
     browser.quit()
@@ -326,17 +336,19 @@ class WebDriverBrowserTestCase(BaseCrossbenchTestCase):
   def test_macos_quit_closes_extra_tabs_and_final_window(self) -> None:
     macos_platform = MacOsMockPlatform()
     driver = FakeWebDriver(
-        handles=["tab-1", "tab-2"],
-        current_handle="tab-1",
-        invalidate_session_on_last_close=False)
+      handles=["tab-1", "tab-2"],
+      current_handle="tab-1",
+      invalidate_session_on_last_close=False,
+    )
     browser = StubWebDriverBrowser(
-        "stub", driver, settings=Settings(platform=macos_platform))
+      "stub", driver, settings=Settings(platform=macos_platform)
+    )
     browser._is_running = True
     macos_platform.expect_sh(
-        "/usr/bin/osascript",
-        "-e",
-        f'\n  tell application "{browser.app_path}"\n'
-        "    quit\n  end tell\n      ",
+      "/usr/bin/osascript",
+      "-e",
+      f'\n  tell application "{browser.app_path}"\n'
+      "    quit\n  end tell\n      ",
     )
 
     browser.quit()
@@ -349,7 +361,8 @@ class WebDriverBrowserTestCase(BaseCrossbenchTestCase):
   def test_macos_safari_close_all_tabs_preserves_session(self) -> None:
     macos_platform = MacOsMockPlatform()
     safari_bin = macos_platform.path(
-        "/Applications/Safari.app/Contents/MacOS/Safari")
+      "/Applications/Safari.app/Contents/MacOS/Safari"
+    )
     safaridriver_bin = macos_platform.path("/usr/bin/safaridriver")
     if not self.fs.exists(safari_bin):
       self.fs.create_file(safari_bin, st_mode=0o755)
@@ -357,17 +370,20 @@ class WebDriverBrowserTestCase(BaseCrossbenchTestCase):
       self.fs.create_file(safaridriver_bin, st_mode=0o755)
     macos_platform.expect_sh(safari_bin, "--version", result="Safari 17.4")
     macos_platform.expect_sh(
-        safaridriver_bin,
-        "--version",
-        result="Included with Safari 17.4 (19618.1.15.11.14)")
+      safaridriver_bin,
+      "--version",
+      result="Included with Safari 17.4 (19618.1.15.11.14)",
+    )
     browser = SafariWebDriver(
-        "safari",
-        macos_platform.path("/Applications/Safari.app"),
-        settings=Settings(platform=macos_platform))
+      "safari",
+      macos_platform.path("/Applications/Safari.app"),
+      settings=Settings(platform=macos_platform),
+    )
     driver = FakeWebDriver(
-        handles=["tab-1", "tab-2"],
-        current_handle="tab-1",
-        invalidate_session_on_last_close=True)
+      handles=["tab-1", "tab-2"],
+      current_handle="tab-1",
+      invalidate_session_on_last_close=True,
+    )
     browser._private_driver = driver
     browser._is_running = True
 

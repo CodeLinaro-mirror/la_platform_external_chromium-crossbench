@@ -6,8 +6,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, override
 
-from crossbench.probes.cb_perfetto.constants import PERFETTO_CONFIG_NAME, \
-    PERFETTO_TRACE_NAME
+from crossbench.probes.cb_perfetto.constants import (
+  PERFETTO_CONFIG_NAME,
+  PERFETTO_TRACE_NAME,
+)
 from crossbench.probes.cb_perfetto.context.base import PerfettoProbeContext
 from crossbench.probes.cb_perfetto.downloader import PerfettoToolDownloader
 
@@ -22,7 +24,6 @@ if TYPE_CHECKING:
 
 
 class DesktopPerfettoProbeContext(PerfettoProbeContext):
-
   def __init__(self, probe: PerfettoProbe, run: Run) -> None:
     self._tracebox_proc: subprocess.Popen | None = None
     super().__init__(probe, run)
@@ -34,8 +35,9 @@ class DesktopPerfettoProbeContext(PerfettoProbeContext):
 
   @override
   def get_default_result_path(self) -> pth.AnyPath:
-    return self._run.get_default_probe_result_path(
-        self._probe).with_name(PERFETTO_TRACE_NAME)
+    return self._run.get_default_probe_result_path(self._probe).with_name(
+      PERFETTO_TRACE_NAME
+    )
 
   @override
   def setup(self) -> None:
@@ -47,7 +49,8 @@ class DesktopPerfettoProbeContext(PerfettoProbeContext):
   def _setup_validate_bin(self) -> None:
     if not self.browser_platform.which(self._tracebox_bin):
       self._tracebox_bin = PerfettoToolDownloader(
-          "tracebox", platform=self.browser_platform).download()
+        "tracebox", platform=self.browser_platform
+      ).download()
     super()._setup_validate_bin()
 
   @override
@@ -56,8 +59,9 @@ class DesktopPerfettoProbeContext(PerfettoProbeContext):
     return super().teardown()
 
   def _setup_tracebox(self) -> subprocess.Popen:
-    return self.browser_platform.popen(self._tracebox_bin, "traced",
-                                       "traced_probes")
+    return self.browser_platform.popen(
+      self._tracebox_bin, "traced", "traced_probes"
+    )
 
   def _teardown_tracebox(self) -> None:
     if self._tracebox_proc:

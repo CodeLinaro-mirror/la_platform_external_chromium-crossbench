@@ -17,7 +17,6 @@ if TYPE_CHECKING:
 
 
 class RemotePlatformMixin:
-
   def __init__(self, host_platform: Platform) -> None:
     self._host_platform: Final[Platform] = host_platform
     super().__init__()
@@ -36,11 +35,13 @@ class RemotePlatformMixin:
   def sleep(self, seconds: float | dt.timedelta) -> None:
     self._host_platform.sleep(seconds)
 
-  def build_shell_cmd(self,
-                      *args: CmdArg,
-                      shell: bool = False,
-                      env: Mapping[str, str] | None = None,
-                      cwd: pth.AnyPath | None = None) -> ListCmdArgs:
+  def build_shell_cmd(
+    self,
+    *args: CmdArg,
+    shell: bool = False,
+    env: Mapping[str, str] | None = None,
+    cwd: pth.AnyPath | None = None,
+  ) -> ListCmdArgs:
     raise NotImplementedError
 
 
@@ -52,19 +53,23 @@ class RemotePopen(subprocess.Popen):
   termination.
   """
 
-  def __init__(self,
-               platform: Platform,
-               args: ListCmdArgs,
-               bufsize: int = -1,
-               stdout: ProcessIo = None,
-               stderr: ProcessIo = None,
-               stdin: ProcessIo = None) -> None:
+  def __init__(
+    self,
+    platform: Platform,
+    args: ListCmdArgs,
+    bufsize: int = -1,
+    stdout: ProcessIo = None,
+    stderr: ProcessIo = None,
+    stdin: ProcessIo = None,
+  ) -> None:
     self._platform: Final[Platform] = platform
     assert self._platform.is_remote, (
-        f"Cannot create remote process on local platform {self._platform}")
+      f"Cannot create remote process on local platform {self._platform}"
+    )
     self._remote_pid: int | None = None
     super().__init__(
-        args, bufsize=bufsize, stdout=stdout, stderr=stderr, stdin=stdin)
+      args, bufsize=bufsize, stdout=stdout, stderr=stderr, stdin=stdin
+    )
 
   def set_remote_pid(self, pid: int) -> None:
     assert self._remote_pid is None, "Should not set remote PID twice"

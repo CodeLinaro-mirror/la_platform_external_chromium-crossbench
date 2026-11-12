@@ -7,15 +7,23 @@ from __future__ import annotations
 from crossbench.browsers.cdp_android import CdpAndroidBrowser
 from crossbench.browsers.chrome.applescript import ChromeAppleScript
 from crossbench.browsers.chrome.chrome import Chrome
-from crossbench.browsers.chrome.webdriver import ChromeWebDriver, \
-    ChromeWebDriverAndroid, ChromeWebDriverChromeOsSsh, ChromeWebDriverSsh, \
-    LocalChromeWebDriverAndroid
+from crossbench.browsers.chrome.webdriver import (
+  ChromeWebDriver,
+  ChromeWebDriverAndroid,
+  ChromeWebDriverChromeOsSsh,
+  ChromeWebDriverSsh,
+  LocalChromeWebDriverAndroid,
+)
 from crossbench.browsers.chromium.applescript import ChromiumAppleScript
 from crossbench.browsers.chromium.chromium import Chromium
-from crossbench.browsers.chromium.webdriver import ChromiumBasedWebDriver, \
-    ChromiumWebDriver, ChromiumWebDriverAndroid, \
-    ChromiumWebDriverChromeOsSsh, ChromiumWebDriverSsh, \
-    LocalChromiumWebDriverAndroid
+from crossbench.browsers.chromium.webdriver import (
+  ChromiumBasedWebDriver,
+  ChromiumWebDriver,
+  ChromiumWebDriverAndroid,
+  ChromiumWebDriverChromeOsSsh,
+  ChromiumWebDriverSsh,
+  LocalChromiumWebDriverAndroid,
+)
 from crossbench.browsers.chromium_based.chromium_based import ChromiumBased
 from crossbench.browsers.edge.edge import Edge
 from crossbench.browsers.edge.webdriver import EdgeWebDriver
@@ -23,42 +31,45 @@ from crossbench.browsers.firefox.firefox import Firefox
 from crossbench.browsers.firefox.webdriver import FirefoxWebDriver
 from crossbench.browsers.safari.applescript import SafariAppleScript
 from crossbench.browsers.safari.safari import Safari
-from crossbench.browsers.safari.webdriver import SafariWdaIOS, \
-    SafariWebDriver, SafariWebdriverIOS
+from crossbench.browsers.safari.webdriver import (
+  SafariWdaIOS,
+  SafariWebDriver,
+  SafariWebdriverIOS,
+)
 from crossbench.browsers.shell.d8.d8 import D8
 from crossbench.browsers.webkit.webdriver import WebKitWebDriver
 from crossbench.browsers.webview.browser import WebviewBrowser
 from crossbench.browsers.webview.embedder import WebviewEmbedder
 
 __all__ = [
-    "CdpAndroidBrowser",
-    "Chrome",
-    "ChromeAppleScript",
-    "ChromeWebDriver",
-    "ChromeWebDriverAndroid",
-    "ChromeWebDriverChromeOsSsh",
-    "ChromeWebDriverSsh",
-    "Chromium",
-    "ChromiumAppleScript",
-    "ChromiumBased",
-    "ChromiumBasedWebDriver",
-    "ChromiumWebDriver",
-    "ChromiumWebDriverAndroid",
-    "ChromiumWebDriverChromeOsSsh",
-    "ChromiumWebDriverSsh",
-    "D8",
-    "Edge",
-    "EdgeWebDriver",
-    "Firefox",
-    "FirefoxWebDriver",
-    "LocalChromeWebDriverAndroid",
-    "LocalChromiumWebDriverAndroid",
-    "Safari",
-    "SafariAppleScript",
-    "SafariWdaIOS",
-    "SafariWebDriver",
-    "SafariWebdriverIOS",
-    "WebKitWebDriver",
-    "WebviewBrowser",
-    "WebviewEmbedder",
+  "CdpAndroidBrowser",
+  "Chrome",
+  "ChromeAppleScript",
+  "ChromeWebDriver",
+  "ChromeWebDriverAndroid",
+  "ChromeWebDriverChromeOsSsh",
+  "ChromeWebDriverSsh",
+  "Chromium",
+  "ChromiumAppleScript",
+  "ChromiumBased",
+  "ChromiumBasedWebDriver",
+  "ChromiumWebDriver",
+  "ChromiumWebDriverAndroid",
+  "ChromiumWebDriverChromeOsSsh",
+  "ChromiumWebDriverSsh",
+  "D8",
+  "Edge",
+  "EdgeWebDriver",
+  "Firefox",
+  "FirefoxWebDriver",
+  "LocalChromeWebDriverAndroid",
+  "LocalChromiumWebDriverAndroid",
+  "Safari",
+  "SafariAppleScript",
+  "SafariWdaIOS",
+  "SafariWebDriver",
+  "SafariWebdriverIOS",
+  "WebKitWebDriver",
+  "WebviewBrowser",
+  "WebviewEmbedder",
 ]

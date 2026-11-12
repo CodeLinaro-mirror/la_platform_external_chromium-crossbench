@@ -13,7 +13,8 @@ if TYPE_CHECKING:
 
 
 def _check_for_duplicate_keys(
-    key_values: Iterable[tuple[str, Json]]) -> JsonDict:
+  key_values: Iterable[tuple[str, Json]],
+) -> JsonDict:
   result: JsonDict = {}
   for key, value in key_values:
     if key in result:

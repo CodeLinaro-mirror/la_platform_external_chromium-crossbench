@@ -30,9 +30,11 @@ class ActionTypeConfigParser(ConfigParser[ActionType]):
 
   def __init__(self) -> None:
     super().__init__(
-        ActionType, unused_properties_mode=UnusedPropertiesMode.IGNORE)
+      ActionType, unused_properties_mode=UnusedPropertiesMode.IGNORE
+    )
     self.add_argument(
-        "action", aliases=("type",), type=ActionType.parse, required=True)
+      "action", aliases=("type",), type=ActionType.parse, required=True
+    )
 
   def new_instance_from_kwargs(self, kwargs: dict[str, object]) -> ActionType:
     action = kwargs["action"]
@@ -77,7 +79,8 @@ class Action(ConfigObject, metaclass=abc.ABCMeta):
     config.pop("type", None)
 
     with exception.annotate_argparsing(
-        f'Parsing Action details  ...{{ action: "{action_type}", ...}}:'):
+      f'Parsing Action details  ...{{ action: "{action_type}", ...}}:'
+    ):
       action = action_cls.config_parser().parse(config, **kwargs)
     assert isinstance(action, cls), f"Expected {cls} but got {type(action)}"
     return cast(Self, action)
@@ -89,9 +92,8 @@ class Action(ConfigObject, metaclass=abc.ABCMeta):
     parser = ConfigParser(cls)
     parser.add_argument("index", type=NumberParser.positive_zero_int, default=0)
     parser.add_argument(
-        "timeout",
-        type=DurationParser.positive_duration,
-        default=ACTION_TIMEOUT)
+      "timeout", type=DurationParser.positive_duration, default=ACTION_TIMEOUT
+    )
     return parser
 
   @property
@@ -111,7 +113,8 @@ class Action(ConfigObject, metaclass=abc.ABCMeta):
     super().validate()
     if self.timeout.total_seconds() < 0:
       raise ValueError(
-          f"{self}.timeout should be positive, but got {self.timeout}")
+        f"{self}.timeout should be positive, but got {self.timeout}"
+      )
     NumberParser.positive_zero_int(self.index, f"{self}.index")
 
   def to_json(self) -> JsonDict:

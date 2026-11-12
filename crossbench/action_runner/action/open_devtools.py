@@ -30,7 +30,8 @@ class OpenDevToolsAction(BaseTabAction):
   def config_parser(cls: type[Self]) -> ConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
-        "panel_name", type=ObjectParser.non_empty_str, default="elements")
+      "panel_name", type=ObjectParser.non_empty_str, default="elements"
+    )
     return parser
 
   @override

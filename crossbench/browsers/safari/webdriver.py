@@ -8,8 +8,7 @@ import datetime as dt
 import logging
 import os
 import subprocess
-from typing import TYPE_CHECKING, ClassVar, Final, Sequence, TypedDict, \
-    override
+from typing import TYPE_CHECKING, ClassVar, Final, Sequence, TypedDict, override
 
 from selenium import webdriver
 from selenium.webdriver.safari.options import Options as SafariOptions
@@ -39,7 +38,6 @@ class SafariDriverKwargs(TypedDict):
 
 
 class SafariWebDriver(WebDriverBrowser, Safari):
-
   MAX_STARTUP_TIMEOUT: ClassVar[dt.timedelta] = dt.timedelta(seconds=10)
   # Delay between launching safaridriver and sending the first session
   # request. safaridriver answers HTTP requests before it has finished
@@ -47,10 +45,9 @@ class SafariWebDriver(WebDriverBrowser, Safari):
   # see all of them.
   DRIVER_WARMUP_DELAY: ClassVar[dt.timedelta] = dt.timedelta(seconds=0)
 
-  def __init__(self,
-               label: str,
-               path: pth.AnyPath,
-               settings: Settings | None = None) -> None:
+  def __init__(
+    self, label: str, path: pth.AnyPath, settings: Settings | None = None
+  ) -> None:
     super().__init__(label, path, settings)
     assert self.platform.is_apple, f"Unsupported platform: {self.platform}"
     self._service: SafariService | None = None
@@ -60,25 +57,30 @@ class SafariWebDriver(WebDriverBrowser, Safari):
     # TODO: support remote platform
     assert self.host_platform.is_local, "Remote platform is not supported yet"
     return self.host_platform.local_path(
-        find_safaridriver(self.path, self.platform))
+      find_safaridriver(self.path, self.platform)
+    )
 
   @override
   def _setup_driver_log_file(self) -> pth.LocalPath:
     raise NotImplementedError("Cannot use custom driver log path for Safari")
 
   @override
-  def _start_driver(self,
-                    session: BrowserSessionRunGroup,
-                    driver_path: pth.AnyPath,
-                    startup_urls: Sequence[str] = ()) -> webdriver.Remote:
+  def _start_driver(
+    self,
+    session: BrowserSessionRunGroup,
+    driver_path: pth.AnyPath,
+    startup_urls: Sequence[str] = (),
+  ) -> webdriver.Remote:
     assert not startup_urls
     return self._start_safari_driver(session, driver_path)
 
-  def _start_safari_driver(self, session: BrowserSessionRunGroup,
-                           driver_path: pth.AnyPath) -> webdriver.Safari:
+  def _start_safari_driver(
+    self, session: BrowserSessionRunGroup, driver_path: pth.AnyPath
+  ) -> webdriver.Safari:
     assert not self._is_running
-    logging.info("STARTING BROWSER: browser: %s driver: %s", self.path,
-                 driver_path)
+    logging.info(
+      "STARTING BROWSER: browser: %s driver: %s", self.path, driver_path
+    )
 
     options: SafariOptions = self._get_driver_options(session)
     session.setup_selenium_options(options)
@@ -87,8 +89,10 @@ class SafariWebDriver(WebDriverBrowser, Safari):
     driver_kwargs: SafariDriverKwargs = {"service": service, "options": options}
 
     try:
-      with ui.spinner(), exception.annotate(
-          "Starting safaridriver with retries"):
+      with (
+        ui.spinner(),
+        exception.annotate("Starting safaridriver with retries"),
+      ):
         driver = self._start_driver_with_retries(driver_path, driver_kwargs)
         self.host_platform.sleep(0.5)
     except BaseException:
@@ -97,14 +101,17 @@ class SafariWebDriver(WebDriverBrowser, Safari):
 
     assert driver.session_id, "Could not start webdriver"
     logs: pth.AnyPath = (
-        self.host_platform.home() / "Library/Logs/com.apple.WebDriver" /
-        driver.session_id)
+      self.host_platform.home()
+      / "Library/Logs/com.apple.WebDriver"
+      / driver.session_id
+    )
     all_logs = list(self.host_platform.glob(logs, "safaridriver*"))
     if all_logs:
       first_log_file = all_logs[0]
       self._driver_log_file = pth.LocalPath(first_log_file)
       assert self.host_platform.is_file(first_log_file), (
-          f"Invalid log file {first_log_file}")
+        f"Invalid log file {first_log_file}"
+      )
     return driver
 
   def _create_service(self, driver_path: pth.LocalPath) -> SafariService:
@@ -117,9 +124,10 @@ class SafariWebDriver(WebDriverBrowser, Safari):
     """
     assert not self._service, "safaridriver service is already running"
     service = SafariService(
-        executable_path=os.fspath(driver_path),
-        reuse_service=True,
-        env=self._get_service_env())
+      executable_path=os.fspath(driver_path),
+      reuse_service=True,
+      env=self._get_service_env(),
+    )
     self._service = service
     return service
 
@@ -155,14 +163,15 @@ class SafariWebDriver(WebDriverBrowser, Safari):
 
   # TODO(cbruni): implement iOS platform
   def _start_driver_with_retries(
-      self, driver_path: pth.AnyPath,
-      driver_kwargs: SafariDriverKwargs) -> webdriver.Safari:
+    self, driver_path: pth.AnyPath, driver_kwargs: SafariDriverKwargs
+  ) -> webdriver.Safari:
     # safaridriver for iOS / technology preview seems to be brittle.
     # Let's give it several chances to start up.
     seen_exceptions: set[type[Exception]] = set()
     retries = 0
     for _ in WaitRange(
-        min=2, timeout=self.MAX_STARTUP_TIMEOUT).wait_with_backoff():
+      min=2, timeout=self.MAX_STARTUP_TIMEOUT
+    ).wait_with_backoff():
       try:
         # Selenium stops the service after a failed session request, so we
         # have to (re)start it before every attempt.
@@ -174,13 +183,17 @@ class SafariWebDriver(WebDriverBrowser, Safari):
         message = str(e).lower()
         if "--enable" in message or "remote automation" in message:
           logging.error(
-              "Safari Remote Automation is not enabled. "
-              "Please run '%s --enable' or enable it in "
-              "Safari's 'Develop' menu.", driver_path)
+            "Safari Remote Automation is not enabled. "
+            "Please run '%s --enable' or enable it in "
+            "Safari's 'Develop' menu.",
+            driver_path,
+          )
           raise DriverException("Could not start SafariWebDriver") from e
         logging.warning(
-            "SafariWebDriver: startup failed (%s: %s), retrying...",
-            exception_type, e)
+          "SafariWebDriver: startup failed (%s: %s), retrying...",
+          exception_type,
+          e,
+        )
         # After 2 retries we don't accept the same error twice.
         if retries >= 2 and exception_type in seen_exceptions:
           logging.error("SafariWebDriver: startup error %s", e)
@@ -189,8 +202,9 @@ class SafariWebDriver(WebDriverBrowser, Safari):
         seen_exceptions.add(type(e))
     raise DriverException("Could not start SafariWebDriver")
 
-  def _get_driver_options(self,
-                          session: BrowserSessionRunGroup) -> SafariOptions:
+  def _get_driver_options(
+    self, session: BrowserSessionRunGroup
+  ) -> SafariOptions:
     options = SafariOptions()
     # Don't wait for document-ready.
     options.set_capability("pageLoadStrategy", "none")
@@ -214,8 +228,9 @@ class SafariWebDriver(WebDriverBrowser, Safari):
         return
     version = self.host_platform.sh_stdout(self.driver_path, "--version")
     assert str(self.version.major) in version, (
-        f"safaridriver={self.driver_path} version='{version}' "
-        f" doesn't match safari version={self.version.major}")
+      f"safaridriver={self.driver_path} version='{version}' "
+      f" doesn't match safari version={self.version.major}"
+    )
 
   @override
   def _setup_window(self) -> None:
@@ -260,9 +275,11 @@ class SafariWebdriverIOS(SafariWebDriver):
   @classmethod
   @override
   def attributes(cls) -> BrowserAttributes:
-    return ((super().attributes() & ~BrowserAttributes.DESKTOP)
-            | BrowserAttributes.MOBILE
-            | BrowserAttributes.REMOTE)
+    return (
+      (super().attributes() & ~BrowserAttributes.DESKTOP)
+      | BrowserAttributes.MOBILE
+      | BrowserAttributes.REMOTE
+    )
 
   @property
   def ios_platform(self) -> IOSPlatform:
@@ -270,37 +287,42 @@ class SafariWebdriverIOS(SafariWebDriver):
     return self.platform
 
   @override
-  def _start_driver(self,
-                    session: BrowserSessionRunGroup,
-                    driver_path: pth.AnyPath,
-                    startup_urls: Sequence[str] = ()) -> webdriver.Remote:
+  def _start_driver(
+    self,
+    session: BrowserSessionRunGroup,
+    driver_path: pth.AnyPath,
+    startup_urls: Sequence[str] = (),
+  ) -> webdriver.Remote:
     assert not startup_urls
     self._launch_with_env_vars()
     return super()._start_driver(
-        session, driver_path, startup_urls=startup_urls)
+      session, driver_path, startup_urls=startup_urls
+    )
 
   def _launch_with_env_vars(self) -> None:
     if env_vars := self._get_env_vars():
-      logging.info("Launching %s with environment variables: %s",
-                   self.BUNDLE_ID, env_vars)
+      logging.info(
+        "Launching %s with environment variables: %s", self.BUNDLE_ID, env_vars
+      )
       self.ios_platform.launch_app(self.BUNDLE_ID, env_vars=env_vars)
       self.host_platform.sleep(self.ENV_LAUNCH_SETTLE)
 
   @override
-  def _get_driver_options(self,
-                          session: BrowserSessionRunGroup) -> SafariOptions:
+  def _get_driver_options(
+    self, session: BrowserSessionRunGroup
+  ) -> SafariOptions:
     options = super()._get_driver_options(session)
     assert isinstance(self.platform, IOSPlatform)
     desired_cap = {
-        # "browserName": "Safari",
-        # "browserVersion": "17.0.3", # iOS version
-        # "safari:deviceType": "iPhone",
-        # "safari:deviceName": "XXX's iPhone",
-        "safari:deviceUDID": self.platform.udid,
-        "platformName": "iOS",
-        "safari:initialUrl": "about:blank",
-        "safari:openLinksInBackground": True,
-        "safari:allowPopups": True,
+      # "browserName": "Safari",
+      # "browserVersion": "17.0.3", # iOS version
+      # "safari:deviceType": "iPhone",
+      # "safari:deviceName": "XXX's iPhone",
+      "safari:deviceUDID": self.platform.udid,
+      "platformName": "iOS",
+      "safari:initialUrl": "about:blank",
+      "safari:openLinksInBackground": True,
+      "safari:allowPopups": True,
     }
     if self.platform.is_simulator:
       desired_cap["safari:useSimulator"] = True
@@ -323,8 +345,9 @@ class SafariWebdriverIOS(SafariWebDriver):
         self.ios_platform.launch_app(self.BUNDLE_ID)
 
   @override
-  def _resolve_binary(self,
-                      path: pth.AnyPath) -> tuple[pth.AnyPath, pth.AnyPath]:
+  def _resolve_binary(
+    self, path: pth.AnyPath
+  ) -> tuple[pth.AnyPath, pth.AnyPath]:
     return path, path
 
   @override
@@ -339,10 +362,10 @@ class SafariWdaIOS(Safari):
   BUNDLE_ID: Final[str] = "com.apple.mobilesafari"
 
   def __init__(
-      self,
-      label: str,
-      path: pth.AnyPath,
-      settings: Settings | None = None,
+    self,
+    label: str,
+    path: pth.AnyPath,
+    settings: Settings | None = None,
   ) -> None:
     super().__init__(label, path, settings=settings)
     self._manual: bool = False
@@ -377,8 +400,8 @@ class SafariWdaIOS(Safari):
 
   @override
   def _resolve_binary(
-      self,
-      path: pth.AnyPath,
+    self,
+    path: pth.AnyPath,
   ) -> tuple[pth.AnyPath, pth.AnyPath]:
     return path, path
 
@@ -391,9 +414,9 @@ class SafariWdaIOS(Safari):
     return None
 
   @override
-  def start(self,
-            session: BrowserSessionRunGroup,
-            startup_urls: Sequence[str] = ()) -> None:
+  def start(
+    self, session: BrowserSessionRunGroup, startup_urls: Sequence[str] = ()
+  ) -> None:
     super().start(session, startup_urls=startup_urls)
     assert not startup_urls
     self._log_browser_start(self._get_browser_flags_for_session(session))
@@ -409,7 +432,8 @@ class SafariWdaIOS(Safari):
     except (WDAError, OSError) as e:
       logging.debug("Safari not running before launch: %s", e)
     self.ios_platform.wda.launch_app(
-        self.BUNDLE_ID, env_vars=self._get_env_vars())
+      self.BUNDLE_ID, env_vars=self._get_env_vars()
+    )
     self._is_running = True
 
   @override
@@ -418,13 +442,14 @@ class SafariWdaIOS(Safari):
 
   @override
   def show_url(
-      self,
-      url: str,
-      target: WindowTarget = WindowTarget.SELF,
+    self,
+    url: str,
+    target: WindowTarget = WindowTarget.SELF,
   ) -> None:
     if target != WindowTarget.SELF:
       raise NotImplementedError(
-          f"{type(self).__name__}.show_url does not support target {target}")
+        f"{type(self).__name__}.show_url does not support target {target}"
+      )
     logging.debug("SafariWdaIOS.show_url(%s)", url)
     # WDA's /url endpoint uses iOS system URL scheme deep-linking (openURL:
     # via SpringBoard), which only routes http/https URLs to Safari and fails
@@ -433,27 +458,29 @@ class SafariWdaIOS(Safari):
       return
     if self._manual:
       self.ios_platform.launch_app(
-          self.BUNDLE_ID, env_vars=self._get_env_vars(), payload_url=url)
+        self.BUNDLE_ID, env_vars=self._get_env_vars(), payload_url=url
+      )
       return
     self.ios_platform.wda.open_url(url)
 
   @override
   def js(
-      self,
-      script: str,
-      timeout: dt.timedelta | None = None,
-      arguments: Sequence[object] = (),
+    self,
+    script: str,
+    timeout: dt.timedelta | None = None,
+    arguments: Sequence[object] = (),
   ) -> None:
     del script, timeout, arguments
     raise NotImplementedError(
-        "JavaScript execution is not supported on iOS Safari via WDA.")
+      "JavaScript execution is not supported on iOS Safari via WDA."
+    )
 
   @override
   def performance_mark(
-      self,
-      name: str,
-      detail: Json = None,
-      prefix: str = "crossbench-",
+    self,
+    name: str,
+    detail: Json = None,
+    prefix: str = "crossbench-",
   ) -> None:
     del detail
     logging.debug("%s: skipping performance_mark: %s%s", self, prefix, name)

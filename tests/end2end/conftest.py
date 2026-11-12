@@ -43,9 +43,11 @@ TEST_DRIVER_FLAG: Final = "--test-driver-path"
 
 def pytest_addoption(parser):
   parser.addoption(
-      TEST_BROWSER_FLAG, "--browserpath", default=None, type=PathParser.path)
+    TEST_BROWSER_FLAG, "--browserpath", default=None, type=PathParser.path
+  )
   parser.addoption(
-      TEST_DRIVER_FLAG, "--driverpath", default=None, type=PathParser.path)
+    TEST_DRIVER_FLAG, "--driverpath", default=None, type=PathParser.path
+  )
   parser.addoption(ADB_DEVICE_ID_FLAG, default=None, type=str)
   parser.addoption(ADB_PATH_FLAG, default=None, type=str)
   parser.addoption(BUNDLETOOL_FLAG, default=None, type=str)
@@ -73,7 +75,8 @@ def _get_app_path(request, option_key) -> pathlib.Path | None:
 @pytest.fixture(scope="session")
 def driver_path(request) -> pathlib.Path | None:
   maybe_driver_path: pth.LocalPath | None = _get_app_path(
-      request, TEST_DRIVER_FLAG)
+    request, TEST_DRIVER_FLAG
+  )
   if maybe_driver_path:
     logging.info("driver path: %s", maybe_driver_path)
     assert maybe_driver_path.exists()
@@ -83,7 +86,8 @@ def driver_path(request) -> pathlib.Path | None:
 @pytest.fixture(scope="session")
 def browser_path(request) -> pathlib.Path | None:
   maybe_browser_path: pathlib.Path | None = _get_app_path(
-      request, TEST_BROWSER_FLAG)
+    request, TEST_BROWSER_FLAG
+  )
   if maybe_browser_path:
     logging.info("browser path: %s", maybe_browser_path)
     assert maybe_browser_path.exists()
@@ -92,8 +96,9 @@ def browser_path(request) -> pathlib.Path | None:
   try:
     return pathlib.Path(browsers.Chrome.stable_path(plt.PLATFORM))
   except ValueError as e:
-    logging.warning("Unable to find Chrome Stable on %s, error=%s",
-                    plt.PLATFORM, e)
+    logging.warning(
+      "Unable to find Chrome Stable on %s, error=%s", plt.PLATFORM, e
+    )
     return None
 
 
@@ -130,7 +135,6 @@ def session_patch_chrome_driver_finder(driver_path, browser_path):
     return
 
   class MockChromeDriverFinder(ChromeDriverFinder):
-
     @override
     def download(self):
       if self.browser.path == browser_path:
@@ -140,8 +144,9 @@ def session_patch_chrome_driver_finder(driver_path, browser_path):
       return super().download()
 
   with mock.patch(
-      "crossbench.browsers.chromium_based.webdriver.ChromeDriverFinder",
-      new=MockChromeDriverFinder):
+    "crossbench.browsers.chromium_based.webdriver.ChromeDriverFinder",
+    new=MockChromeDriverFinder,
+  ):
     yield
 
 
@@ -169,11 +174,12 @@ def mock_patch_chrome_stable(browser_path) -> Iterator[None]:
       return BrowserVariantsConfig.get_chromium_browser_cls(browser_config)
     return BrowserVariantsConfig.get_chrome_browser_cls(browser_config)
 
-  with mock.patch.object(
-      Chrome, "stable_path", return_value=browser_path), mock.patch.object(
-          BrowserVariantsConfig,
-          "get_browser_cls",
-          side_effect=mock_get_browser_cls):
+  with (
+    mock.patch.object(Chrome, "stable_path", return_value=browser_path),
+    mock.patch.object(
+      BrowserVariantsConfig, "get_browser_cls", side_effect=mock_get_browser_cls
+    ),
+  ):
     yield
 
 

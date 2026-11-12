@@ -7,13 +7,15 @@ import abc
 import unittest
 
 from crossbench.flags.base import FrozenFlagsError
-from crossbench.flags.chrome_features import ChromeBaseFeatures, \
-    ChromeBlinkFeatures, ChromeFeatures
+from crossbench.flags.chrome_features import (
+  ChromeBaseFeatures,
+  ChromeBlinkFeatures,
+  ChromeFeatures,
+)
 from tests import test_helper
 
 
 class _ChromeBaseFeaturesTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
-
   @abc.abstractmethod
   def instance(self) -> ChromeBaseFeatures:
     pass
@@ -104,7 +106,8 @@ class _ChromeBaseFeaturesTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
     features_1.update(features_2)
     self.assertSetEqual(features_1.disabled, {"feature1", "featureX"})
     self.assertSetEqual(
-        set(features_1.enabled.keys()), {"feature2", "featureY"})
+      set(features_1.enabled.keys()), {"feature2", "featureY"}
+    )
 
   def test_update_conflict(self):
     features_1 = self.instance()
@@ -124,7 +127,6 @@ class _ChromeBaseFeaturesTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
 
 
 class ChromeFeaturesTestCase(_ChromeBaseFeaturesTestCase):
-
   def instance(self) -> ChromeFeatures:
     return ChromeFeatures()
 
@@ -170,7 +172,8 @@ class ChromeFeaturesTestCase(_ChromeBaseFeaturesTestCase):
     features.enable("feature1")
     features.disable("feature2")
     self.assertEqual(
-        str(features), "--enable-features=feature1 --disable-features=feature2")
+      str(features), "--enable-features=feature1 --disable-features=feature2"
+    )
 
   def test_enable_disable_complex(self):
     features = self.instance()
@@ -178,11 +181,14 @@ class ChromeFeaturesTestCase(_ChromeBaseFeaturesTestCase):
     features.enable("feature1:k1/v1")
     features.enable("feature2<Trial.Group:k2/v2")
     features.disable("feature3:k3/v3")
-    self.assertDictEqual(features.enabled, {
+    self.assertDictEqual(
+      features.enabled,
+      {
         "feature0": None,
         "feature1": ":k1/v1",
         "feature2": "<Trial.Group:k2/v2",
-    })
+      },
+    )
     self.assertSetEqual(features.disabled, {"feature3"})
 
   def test_conflicting_values_enabled(self):
@@ -221,7 +227,6 @@ class ChromeFeaturesTestCase(_ChromeBaseFeaturesTestCase):
 
 
 class ChromeBlinkFeaturesTestCase(_ChromeBaseFeaturesTestCase):
-
   def instance(self) -> ChromeBlinkFeatures:
     return ChromeBlinkFeatures()
 
@@ -239,9 +244,12 @@ class ChromeBlinkFeaturesTestCase(_ChromeBaseFeaturesTestCase):
 
   def test_enable_invalid(self):
     features = self.instance()
-    for invalid in ("feature2:k1", "feature3:k1/v1/k2/v2",
-                    "feature4<Trial1:k1/v1/k2/v2",
-                    "feature5<Trial1.Group1:k1/v1/k2/v2"):
+    for invalid in (
+      "feature2:k1",
+      "feature3:k1/v1/k2/v2",
+      "feature4<Trial1:k1/v1/k2/v2",
+      "feature5<Trial1.Group1:k1/v1/k2/v2",
+    ):
       with self.assertRaises(ValueError):
         features.enable(invalid)
     self.assertTrue(features.is_empty)
@@ -257,15 +265,17 @@ class ChromeBlinkFeaturesTestCase(_ChromeBaseFeaturesTestCase):
     features.disable("feature1")
     features.disable("feature2")
     self.assertEqual(
-        str(features), "--disable-blink-features=feature1,feature2")
+      str(features), "--disable-blink-features=feature1,feature2"
+    )
 
   def test_enable_disable_chrome_blink(self):
     features = self.instance()
     features.enable("feature1")
     features.disable("feature2")
     self.assertEqual(
-        str(features),
-        "--enable-blink-features=feature1 --disable-blink-features=feature2")
+      str(features),
+      "--enable-blink-features=feature1 --disable-blink-features=feature2",
+    )
 
 
 del _ChromeBaseFeaturesTestCase

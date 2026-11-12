@@ -4,8 +4,9 @@
 
 from __future__ import annotations
 
-from crossbench.probes.cb_perfetto.context.windows import \
-    WindowsPerfettoProbeContext
+from crossbench.probes.cb_perfetto.context.windows import (
+  WindowsPerfettoProbeContext,
+)
 
 
 class MacPerfettoProbeContext(WindowsPerfettoProbeContext):

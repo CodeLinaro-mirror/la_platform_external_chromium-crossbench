@@ -38,7 +38,7 @@ if __name__ == "__main__":
     more_flags.append(f"--ignore={END2END_TEST_DIR / 'android'}")
 
   test_helper.run_pytest(
-      END2END_TEST_DIR,
-      *more_flags,
-      retries=2,
+    END2END_TEST_DIR,
+    *more_flags,
+    retries=2,
   )

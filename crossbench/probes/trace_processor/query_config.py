@@ -28,10 +28,10 @@ class TraceProcessorQueryConfig(ConfigObject):
   @classmethod
   @override
   def create(
-      cls,
-      name: str,
-      sql: str,
-      replacements: Replacements | None = None,
+    cls,
+    name: str,
+    sql: str,
+    replacements: Replacements | None = None,
   ) -> Self:
     if replacements:
       sql = replacements.apply(sql)
@@ -39,8 +39,9 @@ class TraceProcessorQueryConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_dict(cls, config: dict[str, object],
-                 **kwargs) -> TraceProcessorQueryConfig:
+  def parse_dict(
+    cls, config: dict[str, object], **kwargs
+  ) -> TraceProcessorQueryConfig:
     keys = {"device_override", "device_lookup", "sql_device_override"}
     if keys.intersection(config) and cls is TraceProcessorQueryConfig:
       return DeviceSpecificTraceProcessorQuery.parse_dict(config, **kwargs)
@@ -74,7 +75,8 @@ class TraceProcessorQueryConfig(ConfigObject):
     parser = ConfigParser(cls)
     parser.add_argument("name", type=ObjectParser.safe_filename, required=True)
     parser.add_argument(
-        "sql", type=ObjectParser.str_or_file_contents, required=True)
+      "sql", type=ObjectParser.str_or_file_contents, required=True
+    )
     parser.add_argument("replacements", aliases=("replace",), type=Replacements)
     return parser
 
@@ -83,7 +85,8 @@ class TraceProcessorQueryConfig(ConfigObject):
     return self._sql
 
   def resolve_for_platform(
-      self, platform: Platform) -> TraceProcessorQueryConfig | None:
+    self, platform: Platform
+  ) -> TraceProcessorQueryConfig | None:
     del platform
     return self
 
@@ -91,18 +94,19 @@ class TraceProcessorQueryConfig(ConfigObject):
 @dataclasses.dataclass(frozen=True)
 class DeviceSpecificTraceProcessorQuery(TraceProcessorQueryConfig):
   device_override: immutabledict[re.Pattern, str] = dataclasses.field(
-      default_factory=immutabledict)
+    default_factory=immutabledict
+  )
   fallback_sql: str | None = None
   replacements: Replacements | None = None
 
   @classmethod
   @override
   def create(
-      cls,
-      name: str,
-      sql: str | None = None,
-      replacements: Replacements | None = None,
-      device_override: dict[str, str] | None = None,
+    cls,
+    name: str,
+    sql: str | None = None,
+    replacements: Replacements | None = None,
+    device_override: dict[str, str] | None = None,
   ) -> Self:
     compiled_device_override: dict[re.Pattern, str] = {}
     for model, path in (device_override or {}).items():
@@ -110,13 +114,14 @@ class DeviceSpecificTraceProcessorQuery(TraceProcessorQueryConfig):
         compiled_device_override[re.compile(model)] = path
       except re.error as e:
         raise ValueError(
-            f"Invalid regular expression in device_override: {model}") from e
+          f"Invalid regular expression in device_override: {model}"
+        ) from e
     return cls(
-        name=name,
-        _sql="",
-        device_override=immutabledict(compiled_device_override),
-        fallback_sql=sql,
-        replacements=replacements,
+      name=name,
+      _sql="",
+      device_override=immutabledict(compiled_device_override),
+      fallback_sql=sql,
+      replacements=replacements,
     )
 
   @classmethod
@@ -125,10 +130,11 @@ class DeviceSpecificTraceProcessorQuery(TraceProcessorQueryConfig):
     parser = ConfigParser(cls)
     parser.add_argument("name", type=ObjectParser.safe_filename, required=True)
     parser.add_argument(
-        "device_override",
-        aliases=("device_lookup", "sql_device_override"),
-        type=ObjectParser.dict,
-        required=True)
+      "device_override",
+      aliases=("device_lookup", "sql_device_override"),
+      type=ObjectParser.dict,
+      required=True,
+    )
     parser.add_argument("sql", type=str, required=False)
     parser.add_argument("replacements", aliases=("replace",), type=Replacements)
     return parser
@@ -137,22 +143,27 @@ class DeviceSpecificTraceProcessorQuery(TraceProcessorQueryConfig):
   @override
   def sql(self) -> str:
     raise RuntimeError(
-        "DeviceSpecificTraceProcessorQuery must be resolved for a platform "
-        "before accessing its SQL.")
+      "DeviceSpecificTraceProcessorQuery must be resolved for a platform "
+      "before accessing its SQL."
+    )
 
   def resolve_for_platform(
-      self, platform: Platform) -> TraceProcessorQueryConfig | None:
+    self, platform: Platform
+  ) -> TraceProcessorQueryConfig | None:
     return self.resolve_for_device_model(platform.model)
 
   def resolve_for_device_model(
-      self, device_model: str) -> TraceProcessorQueryConfig | None:
+    self, device_model: str
+  ) -> TraceProcessorQueryConfig | None:
     query_path = ""
 
     for model_re, path in self.device_override.items():
       if model_re.fullmatch(device_model):
         if query_path and query_path != path:
-          raise ValueError("Multiple conflicting mappings match device model "
-                           f"'{device_model}': '{query_path}' and '{path}'")
+          raise ValueError(
+            "Multiple conflicting mappings match device model "
+            f"'{device_model}': '{query_path}' and '{path}'"
+          )
         query_path = path
 
     if not query_path:
@@ -165,4 +176,5 @@ class DeviceSpecificTraceProcessorQuery(TraceProcessorQueryConfig):
     sql_path = PathParser.existing_file_path(QUERIES_DIR / value, "sql query")
     sql = sql_path.read_text(encoding="utf-8")
     return TraceProcessorQueryConfig.create(
-        name=self.name, sql=sql, replacements=self.replacements)
+      name=self.name, sql=sql, replacements=self.replacements
+    )

@@ -24,29 +24,35 @@ class BitsMergeSubcommand(CrossbenchSubcommand):
   """A subcommand for merging BITS traces with the device's Perfetto traces."""
 
   @override
-  def register_subcommand(self,
-                          subparsers: Subparsers) -> argparse.ArgumentParser:
+  def register_subcommand(
+    self, subparsers: Subparsers
+  ) -> argparse.ArgumentParser:
     self._parser = subparsers.add_parser(
-        "bits-merge",
-        aliases=("bits_merge",),
-        help=("Zips the BITS trace of every run together with the device's "
-              "Perfetto trace and a perfetto_manifest that aligns their "
-              "clocks, so that trace_processor (and thus the Perfetto UI) "
-              "loads both onto a common timeline."))
+      "bits-merge",
+      aliases=("bits_merge",),
+      help=(
+        "Zips the BITS trace of every run together with the device's "
+        "Perfetto trace and a perfetto_manifest that aligns their "
+        "clocks, so that trace_processor (and thus the Perfetto UI) "
+        "loads both onto a common timeline."
+      ),
+    )
     self._parser.set_defaults(crossbench_subcommand=self)
     return self.parser
 
   @override
   def add_cli_arguments(self, parser: CBArgumentParser) -> CBArgumentParser:
     parser.add_argument(
-        "result_dir",
-        type=results_uploader.result_dir,
-        help="Path to the benchmark result directory.")
+      "result_dir",
+      type=results_uploader.result_dir,
+      help="Path to the benchmark result directory.",
+    )
     parser.add_argument(
-        "output_dir",
-        type=PathParser.not_existing_or_empty_path,
-        help="Directory to write one archive per run to. Must be empty or "
-        "not exist yet.")
+      "output_dir",
+      type=PathParser.not_existing_or_empty_path,
+      help="Directory to write one archive per run to. Must be empty or "
+      "not exist yet.",
+    )
     self.cli.add_debugging_arguments(parser)
     return parser
 

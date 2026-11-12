@@ -40,12 +40,14 @@ class InputSourceAction(BaseDurationAction, metaclass=abc.ABCMeta):
   def config_parser(cls: type[Self]) -> ConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
-        "source", type=InputSource.parse, default=InputSource.JS)
+      "source", type=InputSource.parse, default=InputSource.JS
+    )
     parser.add_argument(
-        "source_device",
-        type=ObjectParser.non_empty_str,
-        required=False,
-        default=None)
+      "source_device",
+      type=ObjectParser.non_empty_str,
+      required=False,
+      default=None,
+    )
     return parser
 
   @property
@@ -60,10 +62,13 @@ class InputSourceAction(BaseDurationAction, metaclass=abc.ABCMeta):
   def validate_input_source(self) -> None:
     if self.input_source not in self.supported_input_sources():
       raise ValueError(
-          f"Unsupported input source for {self.__class__.__name__}")
+        f"Unsupported input source for {self.__class__.__name__}"
+      )
     if self.input_source in DEFAULT_VIRTUAL_DEVICES and not self.source_device:
-      raise ValueError(f"Missing source_device for {self.__class__.__name__} "
-                       f"with source {self.input_source}")
+      raise ValueError(
+        f"Missing source_device for {self.__class__.__name__} "
+        f"with source {self.input_source}"
+      )
 
   @abc.abstractmethod
   def supported_input_sources(self) -> tuple[InputSource, ...]:

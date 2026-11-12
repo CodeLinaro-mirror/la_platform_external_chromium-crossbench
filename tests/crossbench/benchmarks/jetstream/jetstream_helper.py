@@ -18,15 +18,18 @@ from tests.crossbench.benchmarks import helper
 
 if TYPE_CHECKING:
   from crossbench.action_runner.config import ActionRunnerConfig
-  from crossbench.benchmarks.jetstream.jetstream_2 import \
-      JetStream2Benchmark, JetStream2Probe, JetStream2ProbeContext, \
-      JetStream2Story
+  from crossbench.benchmarks.jetstream.jetstream_2 import (
+    JetStream2Benchmark,
+    JetStream2Probe,
+    JetStream2ProbeContext,
+    JetStream2Story,
+  )
   from crossbench.benchmarks.jetstream.jetstream_3 import JetStream3Story
 
 
 class JetStream2BaseTestCase(
-    helper.PressBaseBenchmarkTestCase, metaclass=abc.ABCMeta):
-
+  helper.PressBaseBenchmarkTestCase, metaclass=abc.ABCMeta
+):
   @property
   @abc.abstractmethod
   @override
@@ -68,23 +71,25 @@ class JetStream2BaseTestCase(
       self.assertNotIn(self.story_cls.URL, urls)
       self.assertNotIn(self.story_cls.URL_LOCAL, urls)
 
-  def _test_run(self,
-                custom_url: str | None = None,
-                story_names=("WSL",),
-                throw: bool = True):
+  def _test_run(
+    self,
+    custom_url: str | None = None,
+    story_names=("WSL",),
+    throw: bool = True,
+  ):
     repetitions = 3
     stories = self.story_cls.from_names(story_names, url=custom_url)
     example_story_data = {
-        "FirstIteration": 1,
-        "Average": 0.1,
-        "Worst4": 1.1,
-        "Score": 1,
+      "FirstIteration": 1,
+      "Average": 0.1,
+      "Worst4": 1.1,
+      "Score": 1,
     }
     # The order should match Runner.get_runs
     for _ in range(repetitions):
       for _ in stories:
         jetstream_probe_results = {
-            story.name: example_story_data for story in stories
+          story.name: example_story_data for story in stories
         }
         for browser in self.browsers:
           self._test_run_browser_expectations(browser, jetstream_probe_results)
@@ -95,15 +100,16 @@ class JetStream2BaseTestCase(
     benchmark = self.benchmark_cls(stories, custom_url=custom_url)
     self.assertTrue(len(benchmark.describe()) > 0)
     runner = Runner(
-        self.out_dir,
-        self.browsers,
-        benchmark,
-        env_config=EnvConfig(),
-        env_validation_mode=ValidationMode.SKIP,
-        platform=self.platform,
-        repetitions=repetitions,
-        throw=throw,
-        in_memory_result_db=True)
+      self.out_dir,
+      self.browsers,
+      benchmark,
+      env_config=EnvConfig(),
+      env_validation_mode=ValidationMode.SKIP,
+      platform=self.platform,
+      repetitions=repetitions,
+      throw=throw,
+      in_memory_result_db=True,
+    )
     with mock.patch.object(RunnerEnv, "validate_url", return_value=True) as cm:
       runner.run()
     cm.assert_called_once()
@@ -116,16 +122,18 @@ class JetStream2BaseTestCase(
     with csv_file.open(encoding="utf-8") as f:
       csv_data = list(csv.DictReader(f, delimiter="\t"))
     self.assertSequenceEqual(
-        list(csv_data[0].keys()), ["label", "", "dev", "stable"])
+      list(csv_data[0].keys()), ["label", "", "dev", "stable"]
+    )
     self.assertDictEqual(
-        csv_data[1],
-        {
-            "label": "version",
-            "dev": "102.22.33.44",
-            "stable": "100.22.33.44",
-            # One padding element
-            "": "",
-        })
+      csv_data[1],
+      {
+        "label": "version",
+        "dev": "102.22.33.44",
+        "stable": "100.22.33.44",
+        # One padding element
+        "": "",
+      },
+    )
 
     with self.assertLogs(level="INFO") as cm:
       for probe in runner.probes:
@@ -142,8 +150,9 @@ class JetStream2BaseTestCase(
     self.assertIn("102.22.33.44", output)
     self.assertIn("100.22.33.44", output)
 
-  def _test_run_browser_expectations(self, browser,
-                                     jetstream_probe_results) -> None:
+  def _test_run_browser_expectations(
+    self, browser, jetstream_probe_results
+  ) -> None:
     # Ready state complete
     browser.expect_js(result=True)
     # Page is ready
@@ -195,7 +204,6 @@ class JetStream2BaseTestCase(
 
 # TODO: introduce JetStreamBaseTestCase
 class JetStream3BaseTestCase(JetStream2BaseTestCase, metaclass=abc.ABCMeta):
-
   def test_all_stories_have_tags(self):
     for story_name in self.story_cls.all_story_names():
       story = self.story_cls.from_names([story_name])[0]
@@ -207,8 +215,9 @@ class JetStream3BaseTestCase(JetStream2BaseTestCase, metaclass=abc.ABCMeta):
     prefetch_resources: bool = True
 
   @override
-  def _test_run_browser_expectations(self, browser,
-                                     jetstream_probe_results) -> None:
+  def _test_run_browser_expectations(
+    self, browser, jetstream_probe_results
+  ) -> None:
     # Ready state complete
     browser.expect_js(result=True)
     # UI is updated and ready,
@@ -307,10 +316,11 @@ class JetStream3BaseTestCase(JetStream2BaseTestCase, metaclass=abc.ABCMeta):
     benchmark = self.benchmark_cls.from_cli_args(args)
     self.assertTrue(benchmark.stories)
     substory_names = {
-        name for story in benchmark.stories for name in story.substories
+      name for story in benchmark.stories for name in story.substories
     }
-    self.assertSetEqual(substory_names,
-                        set(self.story_cls.default_story_names()))
+    self.assertSetEqual(
+      substory_names, set(self.story_cls.default_story_names())
+    )
 
   def test_tags_invalid(self):
     args = self.Namespace()

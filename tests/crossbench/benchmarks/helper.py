@@ -27,8 +27,8 @@ class BaseBenchmarkTestCase(BaseCrossbenchTestCase, metaclass=abc.ABCMeta):
   def setUp(self):
     super().setUp()
     self.assertTrue(
-        issubclass(self.benchmark_cls, benchmark_module.Benchmark),
-        f"Expected Benchmark subclass, but got: BENCHMARK={self.benchmark_cls}",
+      issubclass(self.benchmark_cls, benchmark_module.Benchmark),
+      f"Expected Benchmark subclass, but got: BENCHMARK={self.benchmark_cls}",
     )
 
   def create_parser(self) -> CBArgumentParser:
@@ -39,8 +39,7 @@ class BaseBenchmarkTestCase(BaseCrossbenchTestCase, metaclass=abc.ABCMeta):
 
   def parse_args(self, *args: str | Sequence[str]) -> argparse.Namespace:
     flattened_args: list[str] = [
-        item for arg in args
-        for item in ([arg] if isinstance(arg, str) else arg)
+      item for arg in args for item in ([arg] if isinstance(arg, str) else arg)
     ]
     return self.create_parser().parse_args(flattened_args)
 
@@ -52,7 +51,6 @@ class BaseBenchmarkTestCase(BaseCrossbenchTestCase, metaclass=abc.ABCMeta):
 
 
 class SubStoryTestCase(BaseBenchmarkTestCase, metaclass=abc.ABCMeta):
-
   @property
   @abc.abstractmethod
   @override
@@ -63,14 +61,17 @@ class SubStoryTestCase(BaseBenchmarkTestCase, metaclass=abc.ABCMeta):
   def story_filter_cls(self) -> type[benchmark_module.StoryFilter]:
     return self.benchmark_cls.STORY_FILTER_CLS
 
-  def story_filter(self,
-                   patterns: Sequence[str],
-                   args: argparse.Namespace | None = None,
-                   **kwargs) -> benchmark_module.StoryFilter:
+  def story_filter(
+    self,
+    patterns: Sequence[str],
+    args: argparse.Namespace | None = None,
+    **kwargs,
+  ) -> benchmark_module.StoryFilter:
     if args is None:
       args = self.namespace()
     return self.story_filter_cls(
-        story_cls=self.story_cls, patterns=patterns, args=args, **kwargs)
+      story_cls=self.story_cls, patterns=patterns, args=args, **kwargs
+    )
 
   def namespace(self) -> argparse.Namespace:
     return argparse.Namespace()
@@ -117,7 +118,6 @@ class SubStoryTestCase(BaseBenchmarkTestCase, metaclass=abc.ABCMeta):
 
 
 class PressBaseBenchmarkTestCase(SubStoryTestCase, metaclass=abc.ABCMeta):
-
   @property
   @abc.abstractmethod
   @override
@@ -143,22 +143,21 @@ class PressBaseBenchmarkTestCase(SubStoryTestCase, metaclass=abc.ABCMeta):
   def test_all(self):
     all_stories = [story.name for story in self.story_cls.all(separate=True)]
     all_regexp = [
-        story.name for story in self.story_filter([".*"], separate=True).stories
+      story.name for story in self.story_filter([".*"], separate=True).stories
     ]
     all_string = [
-        story.name
-        for story in self.story_filter(["all"], separate=True).stories
+      story.name for story in self.story_filter(["all"], separate=True).stories
     ]
     self.assertListEqual(all_stories, all_regexp)
     self.assertListEqual(all_stories, all_string)
 
   def test_default(self):
     default_stories = [
-        story.name for story in self.story_cls.default(separate=True)
+      story.name for story in self.story_cls.default(separate=True)
     ]
     default_string = [
-        story.name
-        for story in self.story_filter(["default"], separate=True).stories
+      story.name
+      for story in self.story_filter(["default"], separate=True).stories
     ]
     self.assertListEqual(default_stories, default_string)
 
@@ -167,8 +166,10 @@ class PressBaseBenchmarkTestCase(SubStoryTestCase, metaclass=abc.ABCMeta):
     story_name = self.story_cls.all_story_names()[0]
     all_stories = [story.name for story in self.story_cls.all(separate=True)]
     filtered_stories = [
-        story.name for story in self.story_filter([".*", f"-{story_name}"],
-                                                  separate=True).stories
+      story.name
+      for story in self.story_filter(
+        [".*", f"-{story_name}"], separate=True
+      ).stories
     ]
     self.assertEqual(len(filtered_stories) + 1, len(all_stories))
     for name in filtered_stories:
@@ -268,7 +269,8 @@ class PressBaseBenchmarkTestCase(SubStoryTestCase, metaclass=abc.ABCMeta):
     custom_expected = self.parse_args(f"--custom-benchmark-url={custom_url}")
     for alias in ("--url", "--local", "--local-url"):
       self.assertEqual(
-          self.parse_args(f"{alias}={custom_url}"), custom_expected)
+        self.parse_args(f"{alias}={custom_url}"), custom_expected
+      )
 
     story_name = self.story_cls.default_story_names()[0]
     stories_expected = self.parse_args(f"--stories={story_name}")
@@ -287,7 +289,8 @@ class PressBaseBenchmarkTestCase(SubStoryTestCase, metaclass=abc.ABCMeta):
       parser.parse_args(["--live", "--custom-benchmark-url=http://example.com"])
     with self.assertRaises(argparse.ArgumentError):
       parser.parse_args(
-          ["--official", "--custom-benchmark-url=http://example.com"])
+        ["--official", "--custom-benchmark-url=http://example.com"]
+      )
 
   def test_cli_flag_stories_all(self):
     args = self.parse_args("--stories=all")
@@ -343,8 +346,8 @@ class PressBaseBenchmarkTestCase(SubStoryTestCase, metaclass=abc.ABCMeta):
     self.assertTrue(args.separate)
     benchmark_instance = self.benchmark_cls.from_cli_args(args)
     self.assertEqual(
-        len(benchmark_instance.stories),
-        len(self.story_cls.default_story_names()))
+      len(benchmark_instance.stories), len(self.story_cls.default_story_names())
+    )
 
     parser = self.create_parser()
     with self.assertRaises(argparse.ArgumentError):

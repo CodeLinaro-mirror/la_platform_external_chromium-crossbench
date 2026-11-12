@@ -23,49 +23,70 @@ from pyfakefs.fake_filesystem import OSType
 from crossbench import path as pth
 from crossbench.action_runner.action.enums import ButtonClick
 from crossbench.action_runner.action.position import UiSelectorConfig
-from crossbench.action_runner.element_not_found_error import \
-    ElementNotFoundError
-from crossbench.action_runner.input_events import InputEvent, KeyEvent, \
-    MouseButtonEvent, MouseMoveEvent, TouchEvent, WaitEvent
-from crossbench.action_runner.virtual_device.keyboard import \
-    KeyboardVirtualDeviceConfig
-from crossbench.action_runner.virtual_device.mouse import \
-    MouseVirtualDeviceConfig
-from crossbench.action_runner.virtual_device.touchscreen import \
-    TouchscreenVirtualDeviceConfig
-from crossbench.action_runner.virtual_device.virtual_device_config import \
-    VirtualDeviceConfig
+from crossbench.action_runner.element_not_found_error import (
+  ElementNotFoundError,
+)
+from crossbench.action_runner.input_events import (
+  InputEvent,
+  KeyEvent,
+  MouseButtonEvent,
+  MouseMoveEvent,
+  TouchEvent,
+  WaitEvent,
+)
+from crossbench.action_runner.virtual_device.keyboard import (
+  KeyboardVirtualDeviceConfig,
+)
+from crossbench.action_runner.virtual_device.mouse import (
+  MouseVirtualDeviceConfig,
+)
+from crossbench.action_runner.virtual_device.touchscreen import (
+  TouchscreenVirtualDeviceConfig,
+)
+from crossbench.action_runner.virtual_device.virtual_device_config import (
+  VirtualDeviceConfig,
+)
 from crossbench.benchmarks.loading.point import Point
 from crossbench.helper.version import VersionParseError
 from crossbench.helper.wait import WaitRange
-from crossbench.plt.android_adb import Adb, AndroidAdbPlatform, \
-    AndroidBuildType, AndroidDeviceInfo, AndroidVersion, adb_connect, \
-    adb_devices, is_adb_tcp_endpoint
+from crossbench.plt.android_adb import (
+  Adb,
+  AndroidAdbPlatform,
+  AndroidBuildType,
+  AndroidDeviceInfo,
+  AndroidVersion,
+  adb_connect,
+  adb_devices,
+  is_adb_tcp_endpoint,
+)
 from crossbench.plt.arch import MachineArch
-from crossbench.plt.axml import RES_STRING_POOL_TYPE, \
-    RES_XML_START_ELEMENT_TYPE, RES_XML_TYPE, \
-    parse_binary_manifest_package_name
+from crossbench.plt.axml import (
+  RES_STRING_POOL_TYPE,
+  RES_XML_START_ELEMENT_TYPE,
+  RES_XML_TYPE,
+  parse_binary_manifest_package_name,
+)
 from crossbench.plt.display_info import DisplayResolution
-from crossbench.plt.evemu_platform_mixin import W3C_TO_LINUX, \
-    VirtualDeviceState
+from crossbench.plt.evemu_platform_mixin import W3C_TO_LINUX, VirtualDeviceState
 from crossbench.plt.port_manager import PortForwardException
 from crossbench.plt.process_meminfo import ProcessMeminfo
 from crossbench.plt.remote import RemotePopen
 from tests import test_helper
-from tests.crossbench.mock_helper import ShResult, ShResultType, \
-    WinMockPlatform
+from tests.crossbench.mock_helper import ShResult, ShResultType, WinMockPlatform
 from tests.crossbench.plt.helper import BasePosixMockPlatformTestCase
 from third_party.protoc import activitymanagerservice_pb2
 
 ADB_DEVICE_SAMPLE_OUTPUT = (
-    "List of devices attached\n"
-    "emulator-5556 device product:sdk_google_phone_x86_64 "
-    "model:Android_SDK_built_for_x86_64 device:generic_x86_64\n")
+  "List of devices attached\n"
+  "emulator-5556 device product:sdk_google_phone_x86_64 "
+  "model:Android_SDK_built_for_x86_64 device:generic_x86_64\n"
+)
 ADB_DEVICES_SAMPLE_OUTPUT = (
-    f"{ADB_DEVICE_SAMPLE_OUTPUT}"
-    "emulator-5554 device product:sdk_google_phone_x86 "
-    "model:Android_SDK_built_for_x86 device:generic_x86\n"
-    "0a388e93      device usb:1-1 product:razor model:Nexus_7 device:flo\n")
+  f"{ADB_DEVICE_SAMPLE_OUTPUT}"
+  "emulator-5554 device product:sdk_google_phone_x86 "
+  "model:Android_SDK_built_for_x86 device:generic_x86\n"
+  "0a388e93      device usb:1-1 product:razor model:Nexus_7 device:flo\n"
+)
 
 DUMPSYS_DISPLAY_OUTPUT: Final[str] = """
   SensorObserver
@@ -141,7 +162,8 @@ class BaseAndroidAdbMockPlatformTestCase(BasePosixMockPlatformTestCase):
     self.expect_startup_devices()
     self.adb = Adb(self.host_platform, self.DEVICE_ID)
     platform = AndroidAdbPlatform(
-        self.host_platform, self.DEVICE_ID, adb=self.adb)
+      self.host_platform, self.DEVICE_ID, adb=self.adb
+    )
     self.mock_platform_str(platform, "adb.mock_platform.arm64")
     return platform
 
@@ -150,41 +172,45 @@ class BaseAndroidAdbMockPlatformTestCase(BasePosixMockPlatformTestCase):
 
   def adb_setup(self):
     adb_patcher = mock.patch(
-        "crossbench.plt.android_adb._find_adb_bin",
-        return_value=pathlib.Path("adb"))
+      "crossbench.plt.android_adb._find_adb_bin",
+      return_value=pathlib.Path("adb"),
+    )
     adb_patcher.start()
     self.addCleanup(adb_patcher.stop)
 
   def expect_startup_devices(self, devices: str = ADB_DEVICES_SAMPLE_OUTPUT):
     if self.host_platform.is_macos:
       self.host_platform.expect_sh(
-          "brew", "--prefix", result=ShResult(returncode=1))
+        "brew", "--prefix", result=ShResult(returncode=1)
+      )
     self.host_platform.expect_sh(pathlib.Path("adb"), "start-server")
     self.host_platform.expect_sh(
-        pathlib.Path("adb"), "devices", "-l", result=devices)
+      pathlib.Path("adb"), "devices", "-l", result=devices
+    )
 
   def expect_sh(self, *args, result: ShResultType = "", returncode: int = 0):
     self.expect_adb("shell", *args, result=result, returncode=returncode)
 
   def expect_path_check(
-      self,
-      flag: str,
-      path: pth.AnyPathLike,
-      exists: bool = True,
+    self,
+    flag: str,
+    path: pth.AnyPathLike,
+    exists: bool = True,
   ) -> None:
     self.expect_sh(
-        f"'[' {flag} {self.platform.path(path)} ']'",
-        returncode=0 if exists else 1,
+      f"'[' {flag} {self.platform.path(path)} ']'",
+      returncode=0 if exists else 1,
     )
 
   def expect_adb(self, *args, result: ShResultType = "", returncode: int = 0):
     self.host_platform.expect_sh(
-        pathlib.Path("adb"),
-        "-s",
-        self.DEVICE_ID,
-        *args,
-        result=result,
-        returncode=returncode)
+      pathlib.Path("adb"),
+      "-s",
+      self.DEVICE_ID,
+      *args,
+      result=result,
+      returncode=returncode,
+    )
 
   def test_is_android(self):
     self.assertTrue(self.platform.is_android)
@@ -193,7 +219,6 @@ class BaseAndroidAdbMockPlatformTestCase(BasePosixMockPlatformTestCase):
     self.expect_sh("tee /sys/kernel/tracing/trace_marker")
     self.platform.trace_mark("android-mark")
 
-
   def test_clear_memory_page_cache(self):
     self.expect_sh("getprop ro.build.version.sdk", result="37")
     self.expect_sh("sync")
@@ -201,24 +226,29 @@ class BaseAndroidAdbMockPlatformTestCase(BasePosixMockPlatformTestCase):
     self.expect_sh("getprop perf.drop_caches", result="3")
     self.expect_sh("getprop perf.drop_caches", result="0")
     with mock.patch.object(
-        self.platform, "sh", wraps=self.platform.sh) as mock_sh:
+      self.platform, "sh", wraps=self.platform.sh
+    ) as mock_sh:
       self.platform.clear_memory_page_cache()
-    mock_sh.assert_has_calls([
+    mock_sh.assert_has_calls(
+      [
         mock.call("sync"),
         mock.call("setprop", "perf.drop_caches", "3"),
-    ])
+      ]
+    )
 
   def test_clear_memory_page_cache_unsupported_sdk(self):
     with mock.patch.object(
-        self.adb,
-        "getprop",
-        return_value=str(AndroidAdbPlatform.MIN_DROP_CACHES_SDK_VERSION - 1)):
+      self.adb,
+      "getprop",
+      return_value=str(AndroidAdbPlatform.MIN_DROP_CACHES_SDK_VERSION - 1),
+    ):
       with self.assertLogs(level="ERROR") as cm:
         with mock.patch.object(self.platform, "sh") as mock_sh:
           self.platform.clear_memory_page_cache()
           mock_sh.assert_not_called()
-          self.assertIn("Cannot clear memory page cache on Android SDK",
-                        cm.output[0])
+          self.assertIn(
+            "Cannot clear memory page cache on Android SDK", cm.output[0]
+          )
 
   def test_clock_boottime_ns(self) -> None:
     self.expect_sh("cat /proc/uptime", result="521909.79 3504712.93\n")
@@ -232,39 +262,46 @@ class BaseAndroidAdbMockPlatformTestCase(BasePosixMockPlatformTestCase):
 
   def test_popen_kill_all_sends_remote_adb_kill(self):
     self.expect_sh(
-        "mktemp /data/local/tmp/XXXXXXXXXXX", result="/data/local/tmp/pid1")
+      "mktemp /data/local/tmp/XXXXXXXXXXX", result="/data/local/tmp/pid1"
+    )
     self.expect_sh("mv /data/local/tmp/pid1 /data/local/tmp/pid1popen_pid_")
     self.expect_sh("cat /data/local/tmp/pid1popen_pid_", result="4242\n")
     self.expect_sh("'[' -e /data/local/tmp/pid1popen_pid_ ']'")
     self.expect_sh("rm /data/local/tmp/pid1popen_pid_")
     self.expect_sh("kill -9 4242")
-    with (mock.patch("subprocess.Popen.__init__", return_value=None)
-          as mock_popen_init,
-          mock.patch("subprocess.Popen.poll", return_value=None),
-          mock.patch("subprocess.Popen.send_signal") as mock_local_send_signal):
+    with (
+      mock.patch(
+        "subprocess.Popen.__init__", return_value=None
+      ) as mock_popen_init,
+      mock.patch("subprocess.Popen.poll", return_value=None),
+      mock.patch("subprocess.Popen.send_signal") as mock_local_send_signal,
+    ):
       proc = self.platform.popen("sleep", "5")
       self.assertIsInstance(proc, RemotePopen)
       self.assertEqual(proc.remote_pid, 4242)
-      mock_popen_init.assert_called_once_with([
+      mock_popen_init.assert_called_once_with(
+        [
           self.adb._adb_bin,
           "-s",
           self.DEVICE_ID,
           "shell",
           "set -m; sleep 5 & PID=$!"
           " && echo $PID >/data/local/tmp/pid1popen_pid_ && wait $PID",
-      ],
-                                              bufsize=-1,
-                                              stdout=None,
-                                              stderr=None,
-                                              stdin=None)
+        ],
+        bufsize=-1,
+        stdout=None,
+        stderr=None,
+        stdin=None,
+      )
       self.assertEqual(self.platform.active_popens, (proc,))
       self.assertEqual(self.host_platform.active_popens, ())
 
       self.platform.kill_all_popens()
       mock_local_send_signal.assert_not_called()
       self.assertEqual(
-          self.host_platform.sh_cmds[-1],
-          (self.adb._adb_bin, "-s", self.DEVICE_ID, "shell", "kill -9 4242"))
+        self.host_platform.sh_cmds[-1],
+        (self.adb._adb_bin, "-s", self.DEVICE_ID, "shell", "kill -9 4242"),
+      )
 
   def test_is_battery_powered(self):
     self.expect_sh("dumpsys battery --proto", result=AC_POWERED_OUTPUT)
@@ -275,23 +312,28 @@ class BaseAndroidAdbMockPlatformTestCase(BasePosixMockPlatformTestCase):
 
   def test_display_details(self):
     self.expect_sh(
-        "dumpsys window displays --proto",
-        result=DUMPSYS_WINDOW_DISPLAYS_OUTPUT)
+      "dumpsys window displays --proto", result=DUMPSYS_WINDOW_DISPLAYS_OUTPUT
+    )
     result = self.platform.display_details()
     self.assertEqual(len(result), 1)
-    self.assertDictEqual(result[0], {
+    self.assertDictEqual(
+      result[0],
+      {
         "resolution": DisplayResolution(1920, 1080),
         "refresh_rate": -1,
-    })
+      },
+    )
 
   def test_unique_name(self):
     platform_2 = AndroidAdbPlatform(
-        self.host_platform, "SomeDeviceId", adb=self.adb)
+      self.host_platform, "SomeDeviceId", adb=self.adb
+    )
     self.assertNotEqual(self.platform.unique_name, platform_2.unique_name)
 
   def _create_activities_proto(self, *tasks: tuple[int, int, str]) -> bytes:
     dump = (
-        activitymanagerservice_pb2.ActivityManagerServiceDumpActivitiesProto())
+      activitymanagerservice_pb2.ActivityManagerServiceDumpActivitiesProto()
+    )
     wc = dump.root_window_container.window_container
     for task_id, activity_type, real_activity in tasks:
       task = wc.children.add().task
@@ -303,14 +345,14 @@ class BaseAndroidAdbMockPlatformTestCase(BasePosixMockPlatformTestCase):
   @override
   def test_get_active_tasks(self) -> None:
     proto_out = self._create_activities_proto(
-        (1000154, 1, "com.google.android.calculator/.Calculator"),
-        (1000151, 1, "com.dropbox.android/.activity.DropboxBrowser"),
-        (1000001, 2, "com.google.android.apps.nexuslauncher/.Launcher"),
+      (1000154, 1, "com.google.android.calculator/.Calculator"),
+      (1000151, 1, "com.dropbox.android/.activity.DropboxBrowser"),
+      (1000001, 2, "com.google.android.apps.nexuslauncher/.Launcher"),
     )
     self.expect_sh("dumpsys activity --proto activities", result=proto_out)
     self.assertEqual(
-        self.platform.get_active_tasks(),
-        ["com.google.android.calculator", "com.dropbox.android"],
+      self.platform.get_active_tasks(),
+      ["com.google.android.calculator", "com.dropbox.android"],
     )
 
   @override
@@ -337,10 +379,12 @@ class AndroidAdbOnWinMockPlatformTestCase(BaseAndroidAdbMockPlatformTestCase):
   def test_host_platform(self):
     self.assertTrue(self.platform.host_platform.is_win)
     self.assertIsInstance(
-        self.platform.host_path("foo/bar"), pathlib.PureWindowsPath)
+      self.platform.host_path("foo/bar"), pathlib.PureWindowsPath
+    )
     self.assertNotEqual(
-        str(self.platform.host_path("foo/bar")),
-        str(self.platform.path("foo/bar")))
+      str(self.platform.host_path("foo/bar")),
+      str(self.platform.path("foo/bar")),
+    )
 
   def test_mktemp(self):
     self.assertTrue(self.platform.default_tmp_dir.is_absolute())
@@ -353,10 +397,13 @@ class AndroidAdbOnWinMockPlatformTestCase(BaseAndroidAdbMockPlatformTestCase):
     self.assertTrue(self.platform.default_tmp_dir.is_absolute())
     self.assertIsInstance(self.platform.default_tmp_dir, pathlib.PurePosixPath)
     self.expect_sh(
-        "mktemp -d /data/local/tmp/custom_prefix.XXXXXXXXXXX",
-        result="/data/local/tmp/custom_prefix.RANDOM")
-    self.expect_sh("mv /data/local/tmp/custom_prefix.RANDOM "
-                   "/data/local/tmp/custom_prefix.RANDOM.custom_suffix")
+      "mktemp -d /data/local/tmp/custom_prefix.XXXXXXXXXXX",
+      result="/data/local/tmp/custom_prefix.RANDOM",
+    )
+    self.expect_sh(
+      "mv /data/local/tmp/custom_prefix.RANDOM "
+      "/data/local/tmp/custom_prefix.RANDOM.custom_suffix"
+    )
     self.platform.mkdtemp(".custom_suffix", "custom_prefix.")
 
   def test_mktemp_suffix(self):
@@ -364,10 +411,11 @@ class AndroidAdbOnWinMockPlatformTestCase(BaseAndroidAdbMockPlatformTestCase):
     self.assertTrue(self.platform.default_tmp_dir.is_absolute())
     self.assertIsInstance(self.platform.default_tmp_dir, pathlib.PurePosixPath)
     self.expect_sh(
-        "mktemp -d /data/local/tmp/XXXXXXXXXXX",
-        result="/data/local/tmp/RANDOM")
+      "mktemp -d /data/local/tmp/XXXXXXXXXXX", result="/data/local/tmp/RANDOM"
+    )
     self.expect_sh(
-        "mv /data/local/tmp/RANDOM /data/local/tmp/RANDOM.custom_suffix")
+      "mv /data/local/tmp/RANDOM /data/local/tmp/RANDOM.custom_suffix"
+    )
     self.platform.mkdtemp(".custom_suffix")
 
   def test_push(self):
@@ -375,8 +423,9 @@ class AndroidAdbOnWinMockPlatformTestCase(BaseAndroidAdbMockPlatformTestCase):
     remote_path = self.platform.default_tmp_dir / "push.remote.data"
     self.assertIsInstance(local_path, pathlib.PureWindowsPath)
     self.fs.create_file(local_path, contents="some data")
-    self.expect_adb("push", "C:\\foo\\push.local.data",
-                    "/data/local/tmp/push.remote.data")
+    self.expect_adb(
+      "push", "C:\\foo\\push.local.data", "/data/local/tmp/push.remote.data"
+    )
     # Testing Windows PurePath handling on a mocked host platform.
     # pyrefly: ignore[bad-argument-type]
     self.platform.push(local_path, remote_path)
@@ -386,8 +435,9 @@ class AndroidAdbOnWinMockPlatformTestCase(BaseAndroidAdbMockPlatformTestCase):
     remote_path = self.platform.path("custom/push.remote.data")
     self.assertIsInstance(local_path, pathlib.PureWindowsPath)
     self.fs.create_file(local_path, contents="some data")
-    self.expect_adb("push", "C:\\foo\\push.local.data",
-                    "custom/push.remote.data")
+    self.expect_adb(
+      "push", "C:\\foo\\push.local.data", "custom/push.remote.data"
+    )
     # Testing Windows PurePath handling on a mocked host platform.
     # pyrefly: ignore[bad-argument-type]
     self.platform.push(local_path, remote_path)
@@ -433,27 +483,31 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     self.assertTrue(self.platform.is_remote)
     self.assertEqual(self.platform.name, "android")
     self.assertIs(self.platform.host_platform, self.host_platform)
-    self.assertEqual(self.platform.default_tmp_dir,
-                     pathlib.PurePosixPath("/data/local/tmp/"))
+    self.assertEqual(
+      self.platform.default_tmp_dir, pathlib.PurePosixPath("/data/local/tmp/")
+    )
 
   def test_adb_basic_properties(self):
     self.assertEqual(self.adb.serial_id, self.DEVICE_ID)
     self.assertEqual(
-        self.adb.device_info,
-        AndroidDeviceInfo(
-            device_id=self.DEVICE_ID,
-            name="generic_x86",
-            model="Android_SDK_built_for_x86",
-            product="sdk_google_phone_x86"))
+      self.adb.device_info,
+      AndroidDeviceInfo(
+        device_id=self.DEVICE_ID,
+        name="generic_x86",
+        model="Android_SDK_built_for_x86",
+        product="sdk_google_phone_x86",
+      ),
+    )
     self.assertIn(self.DEVICE_ID, str(self.adb))
 
   @contextlib.contextmanager
   def patch_getprop(
-      self,
-      return_value: Any = AndroidAdbPlatform.MIN_UINPUT_SDK_VERSION - 1,
+    self,
+    return_value: Any = AndroidAdbPlatform.MIN_UINPUT_SDK_VERSION - 1,
   ) -> Iterator[mock.MagicMock]:
     with mock.patch.object(
-        self.adb, "getprop", return_value=str(return_value)) as mock_getprop:
+      self.adb, "getprop", return_value=str(return_value)
+    ) as mock_getprop:
       yield mock_getprop
 
   def test_sdk_version(self) -> None:
@@ -467,21 +521,23 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
 
   @contextlib.contextmanager
   def _patch_uinput_setup(
-      self,
-      sdk_version: int = AndroidAdbPlatform.MIN_UINPUT_SDK_VERSION,
+    self,
+    sdk_version: int = AndroidAdbPlatform.MIN_UINPUT_SDK_VERSION,
   ) -> Iterator[tuple[mock.MagicMock, mock.MagicMock]]:
     mock_proc = mock.MagicMock()
     mock_proc.poll.return_value = None
     mock_proc.stdin = mock.MagicMock()
     with self.patch_getprop(sdk_version):
       with mock.patch.object(
-          self.platform, "popen", return_value=mock_proc) as mock_popen:
+        self.platform, "popen", return_value=mock_proc
+      ) as mock_popen:
         yield mock_popen, mock_proc
 
   def test_setup_virtual_devices(self) -> None:
     with self._patch_uinput_setup() as (mock_popen, mock_proc):
       self.platform.setup_virtual_devices(
-          (KeyboardVirtualDeviceConfig(name="kb1"),))
+        (KeyboardVirtualDeviceConfig(name="kb1"),)
+      )
       mock_popen.assert_called_once_with("uinput", "-", stdin=mock.ANY)
       self.assertIn("kb1", self.platform._virtual_devices)
       self.assertIs(self.platform._virtual_devices["kb1"].proc, mock_proc)
@@ -495,16 +551,23 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     with self._patch_uinput_setup(sdk_version=sdk_version) as (mock_popen, _):
       with self.assertLogs(level="WARNING") as cm:
         self.platform.setup_virtual_devices(
-            (KeyboardVirtualDeviceConfig(name="kb1"),))
+          (KeyboardVirtualDeviceConfig(name="kb1"),)
+        )
         mock_popen.assert_not_called()
         self.assertNotIn("kb1", self.platform._virtual_devices)
-        self.assertIn("uinput injection is only supported on Android SDK",
-                      cm.output[0])
+        self.assertIn(
+          "uinput injection is only supported on Android SDK", cm.output[0]
+        )
 
   def test_setup_virtual_devices_touchscreen(self) -> None:
     with self._patch_uinput_setup() as (mock_popen, mock_proc):
-      self.platform.setup_virtual_devices((TouchscreenVirtualDeviceConfig(
-          name="touch1", width=1080, height=2400),))
+      self.platform.setup_virtual_devices(
+        (
+          TouchscreenVirtualDeviceConfig(
+            name="touch1", width=1080, height=2400
+          ),
+        )
+      )
       mock_popen.assert_called_once_with("uinput", "-", stdin=mock.ANY)
       self.assertIn("touch1", self.platform._virtual_devices)
       self.assertIs(self.platform._virtual_devices["touch1"].proc, mock_proc)
@@ -519,11 +582,13 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
   def test_setup_virtual_devices_touchscreen_fallback_resolution(self) -> None:
     with self._patch_uinput_setup() as (mock_popen, mock_proc):
       with mock.patch.object(
-          self.platform,
-          "display_resolution",
-          return_value=DisplayResolution(1440, 3120)) as mock_res:
+        self.platform,
+        "display_resolution",
+        return_value=DisplayResolution(1440, 3120),
+      ) as mock_res:
         self.platform.setup_virtual_devices(
-            (TouchscreenVirtualDeviceConfig(name="touch1"),))
+          (TouchscreenVirtualDeviceConfig(name="touch1"),)
+        )
         mock_res.assert_called_once()
         mock_popen.assert_called_once_with("uinput", "-", stdin=mock.ANY)
         self.assertIn("touch1", self.platform._virtual_devices)
@@ -535,7 +600,8 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
   def test_setup_virtual_devices_mouse(self) -> None:
     with self._patch_uinput_setup() as (mock_popen, mock_proc):
       self.platform.setup_virtual_devices(
-          (MouseVirtualDeviceConfig(name="mouse1", width=1920, height=1080),))
+        (MouseVirtualDeviceConfig(name="mouse1", width=1920, height=1080),)
+      )
       mock_popen.assert_called_once_with("uinput", "-", stdin=mock.ANY)
       self.assertIn("mouse1", self.platform._virtual_devices)
       self.assertIs(self.platform._virtual_devices["mouse1"].proc, mock_proc)
@@ -550,11 +616,13 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
   def test_setup_virtual_devices_mouse_fallback_resolution(self) -> None:
     with self._patch_uinput_setup() as (mock_popen, mock_proc):
       with mock.patch.object(
-          self.platform,
-          "display_resolution",
-          return_value=DisplayResolution(1440, 3120)) as mock_res:
+        self.platform,
+        "display_resolution",
+        return_value=DisplayResolution(1440, 3120),
+      ) as mock_res:
         self.platform.setup_virtual_devices(
-            (MouseVirtualDeviceConfig(name="mouse1"),))
+          (MouseVirtualDeviceConfig(name="mouse1"),)
+        )
         mock_res.assert_called_once()
         mock_popen.assert_called_once_with("uinput", "-", stdin=mock.ANY)
         self.assertIn("mouse1", self.platform._virtual_devices)
@@ -569,8 +637,9 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     unsupported_config.name = "touch1"
 
     with self.patch_getprop(AndroidAdbPlatform.MIN_UINPUT_SDK_VERSION):
-      with self.assertRaisesRegex(ValueError,
-                                  "Unsupported virtual device type"):
+      with self.assertRaisesRegex(
+        ValueError, "Unsupported virtual device type"
+      ):
         self.platform.setup_virtual_devices((unsupported_config,))
 
   def test_execute_evemu_script(self) -> None:
@@ -582,130 +651,141 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     with self.patch_getprop(AndroidAdbPlatform.MIN_UINPUT_SDK_VERSION):
       self.platform._execute_evemu_script("kb1", "E: 0.000000 0001 001e 0001\n")
       mock_proc.stdin.write.assert_called_once_with(
-          b"E: 0.000000 0001 001e 0001\n")
+        b"E: 0.000000 0001 001e 0001\n"
+      )
       mock_proc.stdin.flush.assert_called_once()
 
   def test_inject_input_events_uinput_android_keycodes(self) -> None:
     self.assertTrue(
-        set(W3C_TO_LINUX.values()).isdisjoint(
-            AndroidAdbPlatform.ANDROID_KEYCODE_TO_LINUX.values()))
+      set(W3C_TO_LINUX.values()).isdisjoint(
+        AndroidAdbPlatform.ANDROID_KEYCODE_TO_LINUX.values()
+      )
+    )
     mock_proc = mock.MagicMock()
     mock_proc.poll.return_value = None
     mock_proc.stdin = mock.MagicMock()
     self.platform._virtual_devices["kb1"] = VirtualDeviceState(mock_proc)
 
     with (
-        self.patch_getprop(AndroidAdbPlatform.MIN_UINPUT_SDK_VERSION),
-        mock.patch.object(self.platform, "sleep"),
+      self.patch_getprop(AndroidAdbPlatform.MIN_UINPUT_SDK_VERSION),
+      mock.patch.object(self.platform, "sleep"),
     ):
       self.platform.inject_input_events(
-          "kb1",
-          (
-              KeyEvent("KEYCODE_APP_SWITCH", is_down=True),
-              KeyEvent("KEYCODE_APP_SWITCH", is_down=False),
-          ),
+        "kb1",
+        (
+          KeyEvent("KEYCODE_APP_SWITCH", is_down=True),
+          KeyEvent("KEYCODE_APP_SWITCH", is_down=False),
+        ),
       )
       mock_proc.stdin.write.assert_called_once_with(
-          b"E: 1.000000 0001 0244 0001\n"
-          b"E: 1.000000 0000 0000 0000\n"
-          b"E: 1.000000 0001 0244 0000\n"
-          b"E: 1.000000 0000 0000 0000\n"
-          b"E: 1.000000 0000 0000 0000\n")
+        b"E: 1.000000 0001 0244 0001\n"
+        b"E: 1.000000 0000 0000 0000\n"
+        b"E: 1.000000 0001 0244 0000\n"
+        b"E: 1.000000 0000 0000 0000\n"
+        b"E: 1.000000 0000 0000 0000\n"
+      )
 
   def test_execute_evemu_script_uninitialized(self) -> None:
     with self.patch_getprop(AndroidAdbPlatform.MIN_UINPUT_SDK_VERSION):
       with self.assertRaisesRegex(
-          RuntimeError, "Virtual device 'unknown' was not initialized"):
+        RuntimeError, "Virtual device 'unknown' was not initialized"
+      ):
         self.platform._execute_evemu_script("unknown", "E: ...")
 
   def test_execute_evemu_script_unsupported_sdk(self) -> None:
     with self.patch_getprop():
       with self.assertRaisesRegex(
-          NotImplementedError,
-          f"Virtual device uinput injection is only supported on Android SDK "
-          f"{AndroidAdbPlatform.MIN_UINPUT_SDK_VERSION}+"):
+        NotImplementedError,
+        f"Virtual device uinput injection is only supported on Android SDK "
+        f"{AndroidAdbPlatform.MIN_UINPUT_SDK_VERSION}+",
+      ):
         self.platform._execute_evemu_script("kb1", "E: ...")
 
   def test_inject_input_events_legacy_sdk_touch_tap(self) -> None:
     self.expect_sh("input tap 100 200")
     events = (
-        TouchEvent(Point(100, 200), is_down=True),
-        WaitEvent(dt.timedelta(milliseconds=50)),
-        TouchEvent(Point(100, 200), is_down=False),
+      TouchEvent(Point(100, 200), is_down=True),
+      WaitEvent(dt.timedelta(milliseconds=50)),
+      TouchEvent(Point(100, 200), is_down=False),
     )
     with self.patch_getprop():
       self.platform.inject_input_events("default_touchscreen", events)
 
   def test_inject_input_events_legacy_sdk_touch_long_press_raises(self) -> None:
     events = (
-        TouchEvent(Point(100, 200), is_down=True),
-        WaitEvent(dt.timedelta(milliseconds=500)),
-        TouchEvent(Point(100, 200), is_down=False),
+      TouchEvent(Point(100, 200), is_down=True),
+      WaitEvent(dt.timedelta(milliseconds=500)),
+      TouchEvent(Point(100, 200), is_down=False),
     )
     with self.patch_getprop():
       with self.assertRaisesRegex(
-          NotImplementedError,
-          "Non-zero click duration \\(long-press\\) is not supported"):
+        NotImplementedError,
+        "Non-zero click duration \\(long-press\\) is not supported",
+      ):
         self.platform.inject_input_events("default_touchscreen", events)
 
   def test_inject_input_events_legacy_sdk_touch_swipe(self) -> None:
     self.expect_sh("input swipe 100 200 300 400 500")
     events = (
-        TouchEvent(Point(100, 200), is_down=True),
-        WaitEvent(dt.timedelta(milliseconds=250)),
-        TouchEvent(Point(200, 300), is_down=True),
-        WaitEvent(dt.timedelta(milliseconds=250)),
-        TouchEvent(Point(300, 400), is_down=True),
-        TouchEvent(Point(300, 400), is_down=False),
+      TouchEvent(Point(100, 200), is_down=True),
+      WaitEvent(dt.timedelta(milliseconds=250)),
+      TouchEvent(Point(200, 300), is_down=True),
+      WaitEvent(dt.timedelta(milliseconds=250)),
+      TouchEvent(Point(300, 400), is_down=True),
+      TouchEvent(Point(300, 400), is_down=False),
     )
     with self.patch_getprop():
       self.platform.inject_input_events("default_touchscreen", events)
 
   def test_inject_input_events_legacy_sdk_mouse_raises(self) -> None:
     with self.patch_getprop():
-      with self.assertRaisesRegex(NotImplementedError,
-                                  "Mouse input injection is not supported"):
-        self.platform.inject_input_events("default_mouse",
-                                          (MouseMoveEvent(Point(10, 20)),))
-      with self.assertRaisesRegex(NotImplementedError,
-                                  "Mouse input injection is not supported"):
+      with self.assertRaisesRegex(
+        NotImplementedError, "Mouse input injection is not supported"
+      ):
         self.platform.inject_input_events(
-            "default_mouse",
-            (MouseButtonEvent(ButtonClick.LEFT, is_down=True),))
+          "default_mouse", (MouseMoveEvent(Point(10, 20)),)
+        )
+      with self.assertRaisesRegex(
+        NotImplementedError, "Mouse input injection is not supported"
+      ):
+        self.platform.inject_input_events(
+          "default_mouse", (MouseButtonEvent(ButtonClick.LEFT, is_down=True),)
+        )
 
   def test_inject_input_events_legacy_sdk_keyboard_text(self) -> None:
     self.expect_sh("input keyboard text Hi%s1")
     events = (
-        KeyEvent("ShiftLeft", is_down=True),
-        KeyEvent("KeyH", is_down=True),
-        KeyEvent("KeyH", is_down=False),
-        KeyEvent("ShiftLeft", is_down=False),
-        KeyEvent("KeyI", is_down=True),
-        KeyEvent("KeyI", is_down=False),
-        KeyEvent("Space", is_down=True),
-        KeyEvent("Space", is_down=False),
-        KeyEvent("Digit1", is_down=True),
-        KeyEvent("Digit1", is_down=False),
+      KeyEvent("ShiftLeft", is_down=True),
+      KeyEvent("KeyH", is_down=True),
+      KeyEvent("KeyH", is_down=False),
+      KeyEvent("ShiftLeft", is_down=False),
+      KeyEvent("KeyI", is_down=True),
+      KeyEvent("KeyI", is_down=False),
+      KeyEvent("Space", is_down=True),
+      KeyEvent("Space", is_down=False),
+      KeyEvent("Digit1", is_down=True),
+      KeyEvent("Digit1", is_down=False),
     )
     with self.patch_getprop():
       self.platform.inject_input_events("default_keyboard", events)
 
   def test_inject_input_events_legacy_sdk_keyboard_text_flushes_on_keyevent(
-      self) -> None:
+    self,
+  ) -> None:
     self.expect_sh("input keyboard text hi")
     self.expect_sh("input keyevent KEYCODE_ENTER")
     self.expect_sh("input keyboard text ok")
     events = (
-        KeyEvent("KeyH", is_down=True),
-        KeyEvent("KeyH", is_down=False),
-        KeyEvent("KeyI", is_down=True),
-        KeyEvent("KeyI", is_down=False),
-        KeyEvent("Enter", is_down=True),
-        KeyEvent("Enter", is_down=False),
-        KeyEvent("KeyO", is_down=True),
-        KeyEvent("KeyO", is_down=False),
-        KeyEvent("KeyK", is_down=True),
-        KeyEvent("KeyK", is_down=False),
+      KeyEvent("KeyH", is_down=True),
+      KeyEvent("KeyH", is_down=False),
+      KeyEvent("KeyI", is_down=True),
+      KeyEvent("KeyI", is_down=False),
+      KeyEvent("Enter", is_down=True),
+      KeyEvent("Enter", is_down=False),
+      KeyEvent("KeyO", is_down=True),
+      KeyEvent("KeyO", is_down=False),
+      KeyEvent("KeyK", is_down=True),
+      KeyEvent("KeyK", is_down=False),
     )
     with self.patch_getprop():
       self.platform.inject_input_events("default_keyboard", events)
@@ -714,14 +794,14 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     self.expect_sh("input keyboard text a")
     self.expect_sh("input keyboard text %s")
     events = (
-        KeyEvent("KeyA", is_down=True),
-        WaitEvent(dt.timedelta(milliseconds=200)),
-        KeyEvent("KeyA", is_down=False),
-        WaitEvent(dt.timedelta(milliseconds=300)),
-        KeyEvent("Space", is_down=True),
-        WaitEvent(dt.timedelta(milliseconds=200)),
-        KeyEvent("Space", is_down=False),
-        WaitEvent(dt.timedelta(milliseconds=300)),
+      KeyEvent("KeyA", is_down=True),
+      WaitEvent(dt.timedelta(milliseconds=200)),
+      KeyEvent("KeyA", is_down=False),
+      WaitEvent(dt.timedelta(milliseconds=300)),
+      KeyEvent("Space", is_down=True),
+      WaitEvent(dt.timedelta(milliseconds=200)),
+      KeyEvent("Space", is_down=False),
+      WaitEvent(dt.timedelta(milliseconds=300)),
     )
     with self.patch_getprop():
       with mock.patch.object(self.platform, "sleep") as mock_sleep:
@@ -732,10 +812,10 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     self.expect_sh("input keyevent KEYCODE_ENTER")
     self.expect_sh("input keyevent KEYCODE_BACK")
     events = (
-        KeyEvent("Enter", is_down=True),
-        KeyEvent("Enter", is_down=False),
-        KeyEvent("KEYCODE_BACK", is_down=True),
-        KeyEvent("KEYCODE_BACK", is_down=False),
+      KeyEvent("Enter", is_down=True),
+      KeyEvent("Enter", is_down=False),
+      KeyEvent("KEYCODE_BACK", is_down=True),
+      KeyEvent("KEYCODE_BACK", is_down=False),
     )
     with self.patch_getprop():
       self.platform.inject_input_events("default_keyboard", events)
@@ -778,8 +858,8 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     self.expect_sh("getprop ro.board.platform", result="msmnile")
     cpu_info = "processor       : 0\nprocessor       : 1"
     self.expect_sh(
-        "grep -E 'processor|core id|physical id' /proc/cpuinfo",
-        result=cpu_info)
+      "grep -E 'processor|core id|physical id' /proc/cpuinfo", result=cpu_info
+    )
     self.assertEqual(self.platform.cpu, "cortex-a999 msmnile 2 cores")
     # Subsequent calls are cached.
     self.assertEqual(self.platform.cpu, "cortex-a999 msmnile 2 cores")
@@ -789,8 +869,8 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     self.expect_sh("getprop ro.board.platform", result="msmnile")
     cpu_info = "processor       : 0\nprocessor       : 1"
     self.expect_sh(
-        "grep -E 'processor|core id|physical id' /proc/cpuinfo",
-        result=cpu_info)
+      "grep -E 'processor|core id|physical id' /proc/cpuinfo", result=cpu_info
+    )
     self.assertEqual(self.platform.cpu, "cortex-a999 msmnile 2 cores")
     # Subsequent calls are cached.
     self.assertEqual(self.platform.cpu, "cortex-a999 msmnile 2 cores")
@@ -800,60 +880,69 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
 
   def test_device_config(self):
     self.expect_sh(
-        "cmd device_config list",
-        result="accessibility/font_scale=1.0\ntop_level=true")
+      "cmd device_config list",
+      result="accessibility/font_scale=1.0\ntop_level=true",
+    )
     self.expect_sh(
-        "getprop",
-        result="[ro.product.model]: [Pixel 10]\n[ro.build.version.sdk]: [34]")
+      "getprop",
+      result="[ro.product.model]: [Pixel 10]\n[ro.build.version.sdk]: [34]",
+    )
     self.expect_sh(
-        "settings list global",
-        result="stay_on_while_plugged_in=3\nanimator_duration_scale=0.0")
+      "settings list global",
+      result="stay_on_while_plugged_in=3\nanimator_duration_scale=0.0",
+    )
     self.expect_sh(
-        "settings list secure",
-        result="immersive_mode_confirmations=confirmed\nlong_press_timeout=400")
+      "settings list secure",
+      result="immersive_mode_confirmations=confirmed\nlong_press_timeout=400",
+    )
     self.expect_sh(
-        "settings list system",
-        result="screen_brightness=100\nscreen_off_timeout=60000")
+      "settings list system",
+      result="screen_brightness=100\nscreen_off_timeout=60000",
+    )
     self.assertEqual(
-        self.platform.device_config(), {
-            "android": {
-                "device_config": {
-                    "accessibility/font_scale": "1.0",
-                    "top_level": "true",
-                },
-                "getprop": {
-                    "ro.product.model": "Pixel 10",
-                    "ro.build.version.sdk": "34",
-                },
-                "settings": {
-                    "global": {
-                        "stay_on_while_plugged_in": "3",
-                        "animator_duration_scale": "0.0",
-                    },
-                    "secure": {
-                        "immersive_mode_confirmations": "confirmed",
-                        "long_press_timeout": "400",
-                    },
-                    "system": {
-                        "screen_brightness": "100",
-                        "screen_off_timeout": "60000",
-                    },
-                },
+      self.platform.device_config(),
+      {
+        "android": {
+          "device_config": {
+            "accessibility/font_scale": "1.0",
+            "top_level": "true",
+          },
+          "getprop": {
+            "ro.product.model": "Pixel 10",
+            "ro.build.version.sdk": "34",
+          },
+          "settings": {
+            "global": {
+              "stay_on_while_plugged_in": "3",
+              "animator_duration_scale": "0.0",
             },
-        })
+            "secure": {
+              "immersive_mode_confirmations": "confirmed",
+              "long_press_timeout": "400",
+            },
+            "system": {
+              "screen_brightness": "100",
+              "screen_off_timeout": "60000",
+            },
+          },
+        },
+      },
+    )
 
   def test_is_installed(self):
     package_name = "com.example.app"
     self.expect_sh(
-        f"pm path {package_name}",
-        result=f"package:/data/app/{package_name}-1/base.apk\n")
+      f"pm path {package_name}",
+      result=f"package:/data/app/{package_name}-1/base.apk\n",
+    )
     self.assertTrue(self.adb.is_installed(package_name))
 
   def test_is_installed_false(self):
     package_name = "com.example.non_existent"
     # pm path returns returncode 1 if not found.
     self.expect_sh(
-        f"pm path {package_name}", result=ShResult(returncode=1, result=""))
+      f"pm path {package_name}", result=ShResult(returncode=1, result="")
+    )
     self.assertFalse(self.adb.is_installed(package_name))
 
   def test_machine_unknown(self):
@@ -897,9 +986,12 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
   def test_app_path_to_package_not_installed(self):
     with self.assertRaises(ValueError) as cm:
       self.expect_sh(
-          "cmd package list packages",
-          result=("package:com.google.android.wifi.resources\n"
-                  "package:com.google.android.GoogleCamera"))
+        "cmd package list packages",
+        result=(
+          "package:com.google.android.wifi.resources\n"
+          "package:com.google.android.GoogleCamera"
+        ),
+      )
       self.platform.app_path_to_package(pathlib.Path("com.custom.app"))
     self.assertIn("com.custom.app", str(cm.exception))
     self.assertIn("not installed", str(cm.exception))
@@ -907,9 +999,11 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
   def test_app_path_to_package(self):
     path = pathlib.Path("com.custom.app")
     self.expect_sh(
-        "cmd package list packages",
-        result=("package:com.google.android.wifi.resources\n"
-                "package:com.custom.app"))
+      "cmd package list packages",
+      result=(
+        "package:com.google.android.wifi.resources\npackage:com.custom.app"
+      ),
+    )
     self.assertEqual(self.platform.app_path_to_package(path), "com.custom.app")
 
   def test_app_path_to_package_apk(self):
@@ -917,25 +1011,29 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     aapt_bin = pathlib.Path("/usr/bin/aapt")
     self.fs.create_file(aapt_bin)
     self.host_platform.expect_sh(
-        aapt_bin,
-        "dump",
-        "badging",
-        path,
-        result=("package: name='com.example.app' "
-                "versionCode='1' versionName='1.0'"))
+      aapt_bin,
+      "dump",
+      "badging",
+      path,
+      result=(
+        "package: name='com.example.app' versionCode='1' versionName='1.0'"
+      ),
+    )
     with mock.patch(
-        "crossbench.plt.android_adb.Binaries.AAPT.search",
-        return_value=aapt_bin):
+      "crossbench.plt.android_adb.Binaries.AAPT.search", return_value=aapt_bin
+    ):
       self.assertEqual(
-          self.platform.app_path_to_package(path), "com.example.app")
+        self.platform.app_path_to_package(path), "com.example.app"
+      )
 
   def test_app_path_to_package_apk_fallback(self):
     # No aapt binary
     path = self.host_platform.path("test.apk")
     apk_data = io.BytesIO()
     with zipfile.ZipFile(apk_data, "w") as apk_zip:
-      apk_zip.writestr("AndroidManifest.xml",
-                       self._create_axml("com.example.app"))
+      apk_zip.writestr(
+        "AndroidManifest.xml", self._create_axml("com.example.app")
+      )
     self.fs.create_file(path, contents=apk_data.getvalue())
 
     self.assertEqual(self.platform.app_path_to_package(path), "com.example.app")
@@ -947,8 +1045,9 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     # Create a base.apk
     base_apk_buffer = io.BytesIO()
     with zipfile.ZipFile(base_apk_buffer, "w") as base_apk_zip:
-      base_apk_zip.writestr("AndroidManifest.xml",
-                            self._create_axml("com.example.apks"))
+      base_apk_zip.writestr(
+        "AndroidManifest.xml", self._create_axml("com.example.apks")
+      )
     base_apk_data = base_apk_buffer.getvalue()
 
     # Create the .apks bundle
@@ -960,19 +1059,22 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     self.fs.create_file(path, contents=apks_data)
 
     self.assertEqual(
-        self.platform.app_path_to_package(path), "com.example.apks")
+      self.platform.app_path_to_package(path), "com.example.apks"
+    )
 
   def test_app_path_to_package_apk_aapt_error(self):
     path = self.create_file("test.apk")
     aapt_bin = pathlib.Path("/usr/bin/aapt")
     self.fs.create_file(aapt_bin)
     self.host_platform.expect_sh(
-        aapt_bin, "dump", "badging", path, result="some other output")
+      aapt_bin, "dump", "badging", path, result="some other output"
+    )
     with mock.patch(
-        "crossbench.plt.android_adb.Binaries.AAPT.search",
-        return_value=aapt_bin):
-      with self.assertRaisesRegex(ValueError,
-                                  "Could not find package name in aapt output"):
+      "crossbench.plt.android_adb.Binaries.AAPT.search", return_value=aapt_bin
+    ):
+      with self.assertRaisesRegex(
+        ValueError, "Could not find package name in aapt output"
+      ):
         self.platform.app_path_to_package(path)
 
   def test_app_path_to_package_apk_all_fail(self):
@@ -983,8 +1085,9 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
       apk_zip.writestr("AndroidManifest.xml", b"no package name here")
     self.fs.create_file(path, contents=apk_buffer.getvalue())
 
-    with self.assertRaisesRegex(ValueError,
-                                "Invalid Android Binary XML header"):
+    with self.assertRaisesRegex(
+      ValueError, "Invalid Android Binary XML header"
+    ):
       self.platform.app_path_to_package(path)
 
   def test_app_path_to_package_apk_all_fail_invalid_pool(self):
@@ -992,8 +1095,9 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     path = self.host_platform.path("test.apk")
     # AXML header (8 bytes) + chunk header (8 bytes)
     # chunk: type=0xFFFF (invalid), header_size=8, chunk_size=8
-    invalid_axml = struct.pack("<HHL HH L", RES_XML_TYPE, 0x0008, 16, 0xFFFF, 8,
-                               8)
+    invalid_axml = struct.pack(
+      "<HHL HH L", RES_XML_TYPE, 0x0008, 16, 0xFFFF, 8, 8
+    )
     apk_buffer = io.BytesIO()
     with zipfile.ZipFile(apk_buffer, "w") as apk_zip:
       apk_zip.writestr("AndroidManifest.xml", invalid_axml)
@@ -1024,17 +1128,21 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     self.assertTrue(self.platform.check_autobrightness())
 
   def get_main_display_brightness(self):
-    display_info = ("BrightnessSynchronizer\n"
-                    "mLatestFloatBrightness=0.5\n"
-                    "mLatestIntBrightness=128\n"
-                    "mPendingUpdate=null")
+    display_info = (
+      "BrightnessSynchronizer\n"
+      "mLatestFloatBrightness=0.5\n"
+      "mLatestIntBrightness=128\n"
+      "mPendingUpdate=null"
+    )
     self.expect_sh("dumpsys", "display", result=display_info)
     self.assertEqual(self.platform.get_main_display_brightness(), 50)
     # Values are not cached
-    display_info = ("BrightnessSynchronizer\n"
-                    "mLatestFloatBrightness=1.0\n"
-                    "mLatestIntBrightness=255\n"
-                    "mPendingUpdate=null")
+    display_info = (
+      "BrightnessSynchronizer\n"
+      "mLatestFloatBrightness=1.0\n"
+      "mLatestIntBrightness=255\n"
+      "mPendingUpdate=null"
+    )
     self.expect_sh("dumpsys", "display", result=display_info)
     self.assertEqual(self.platform.get_main_display_brightness(), 100)
 
@@ -1078,7 +1186,8 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
 
     self.expect_sh("which com.google.chrome", result="")
     self.expect_sh(
-        "cmd package list packages", result="package:com.google.chrome")
+      "cmd package list packages", result="package:com.google.chrome"
+    )
     path = self.platform.search_binary("com.google.chrome")
     self.assertEqual(path, pathlib.PurePosixPath("com.google.chrome"))
 
@@ -1117,11 +1226,12 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     self.expect_sh("ls -1 parent_dir/child_dir", result="file1\nfile2\n")
 
     self.assertSetEqual(
-        set(self.platform.iterdir(pth.AnyWindowsPath("parent_dir\\child_dir"))),
-        {
-            pth.AnyPosixPath("parent_dir/child_dir/file1"),
-            pth.AnyPosixPath("parent_dir/child_dir/file2"),
-        })
+      set(self.platform.iterdir(pth.AnyWindowsPath("parent_dir\\child_dir"))),
+      {
+        pth.AnyPosixPath("parent_dir/child_dir/file1"),
+        pth.AnyPosixPath("parent_dir/child_dir/file2"),
+      },
+    )
 
   def test_cat_file(self):
     self.expect_sh("cat path/to/a/file")
@@ -1136,7 +1246,8 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
 
     self.expect_sh("cat", result=b"hello world bytes")
     hello_world_bytes = self.platform.sh_stdout_bytes(
-        "cat", input=b"hello world bytes")
+      "cat", input=b"hello world bytes"
+    )
     self.assertEqual(hello_world_bytes, b"hello world bytes")
 
   def test_sh_shell_invalid(self):
@@ -1149,21 +1260,23 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
 
     self.expect_sh("ls 'folder with space'", result="FOLDER\n")
     self.assertEqual(
-        self.platform.sh_stdout("ls", "folder with space"), "FOLDER\n")
+      self.platform.sh_stdout("ls", "folder with space"), "FOLDER\n"
+    )
 
     self.expect_sh("'ls foo && ls bar'", result="FILE1\nFILE2\n")
     self.assertEqual(
-        self.platform.sh_stdout("ls foo && ls bar"), "FILE1\nFILE2\n")
+      self.platform.sh_stdout("ls foo && ls bar"), "FILE1\nFILE2\n"
+    )
 
     self.expect_sh("ls foo && ls bar", result="FILE1\nFILE2\n")
     self.assertEqual(
-        self.platform.sh_stdout("ls foo && ls bar", shell=True),
-        "FILE1\nFILE2\n")
+      self.platform.sh_stdout("ls foo && ls bar", shell=True), "FILE1\nFILE2\n"
+    )
 
     self.expect_sh("ls foo '&&' ls bar", result="FILE1\nFILE2\n")
     self.assertEqual(
-        self.platform.sh_stdout("ls", "foo", "&&", "ls", "bar"),
-        "FILE1\nFILE2\n")
+      self.platform.sh_stdout("ls", "foo", "&&", "ls", "bar"), "FILE1\nFILE2\n"
+    )
 
   def test_port_forward_default(self):
     # Closing the default port-manager happens in the atexit handler.
@@ -1244,8 +1357,8 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
 
   def test_display_resolution(self):
     self.expect_sh(
-        "dumpsys window displays --proto",
-        result=DUMPSYS_WINDOW_DISPLAYS_OUTPUT)
+      "dumpsys window displays --proto", result=DUMPSYS_WINDOW_DISPLAYS_OUTPUT
+    )
     resolution = self.platform.display_resolution()
     self.assertEqual(resolution, DisplayResolution(1920, 1080))
     self.assertEqual(resolution.width, 1920)
@@ -1257,74 +1370,90 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
 
   def test_process_meminfo_no_process(self):
     self.expect_sh(
-        "dumpsys -T 10000 meminfo --proto --package com.android.chrome",
-        result=b"")
+      "dumpsys -T 10000 meminfo --proto --package com.android.chrome",
+      result=b"",
+    )
     meminfo = self.platform.process_meminfo("com.android.chrome")
     self.assertEqual(len(meminfo), 0)
 
   def test_process_meminfo(self):
     self.expect_sh(
-        "dumpsys -T 10000 meminfo --proto --package com.android.chrome",
-        result=DUMPSYS_MEMINFO_OUTPUT)
+      "dumpsys -T 10000 meminfo --proto --package com.android.chrome",
+      result=DUMPSYS_MEMINFO_OUTPUT,
+    )
     meminfo = self.platform.process_meminfo("com.android.chrome")
     self.assertEqual(len(meminfo), 4)
 
     privileged_process = "com.android.chrome:privileged_process0"
-    sandbox_prefix = ("com.android.chrome:sandboxed_process0:org.chromium."
-                      "content.app.SandboxedProcessService0:")
-    self.assertSequenceEqual(meminfo, [
+    sandbox_prefix = (
+      "com.android.chrome:sandboxed_process0:org.chromium."
+      "content.app.SandboxedProcessService0:"
+    )
+    self.assertSequenceEqual(
+      meminfo,
+      [
         ProcessMeminfo(20533, privileged_process, 37794, 186356, 203),
         ProcessMeminfo(20527, f"{sandbox_prefix}0", 49907, 184636, 245),
         ProcessMeminfo(20596, f"{sandbox_prefix}1", 30679, 156928, 244),
         ProcessMeminfo(20438, "com.android.chrome", 200986, 412436, 148),
-    ])
+      ],
+    )
 
   def test_process_meminfo_timeout(self):
     self.expect_sh(
-        "dumpsys -T 10000 meminfo --proto --package com.android.chrome",
-        result=DUMPSYS_MEMINFO_TIMEOUT_OUTPUT)
+      "dumpsys -T 10000 meminfo --proto --package com.android.chrome",
+      result=DUMPSYS_MEMINFO_TIMEOUT_OUTPUT,
+    )
 
     with self.assertRaises(TimeoutError):
       self.platform.process_meminfo("com.android.chrome")
 
   def test_system_meminfo(self):
     self.expect_sh(
-        "dumpsys -T 10000 meminfo", result=DUMPSYS_MEMINFO_SYSTEM_OUTPUT)
+      "dumpsys -T 10000 meminfo", result=DUMPSYS_MEMINFO_SYSTEM_OUTPUT
+    )
     meminfo = self.platform.system_meminfo()
     self.assertDictEqual(
-        meminfo, {
-            "total_ram_kb": 7698860.0,
-            "cached_pss_kb": 2345.0,
-            "cached_kernel_kb": 3456.0,
-            "free_kb": 4567.0,
-            "dma_buf_kb": 817715.0,
-            "dma_buf_mapped_kb": 152.0,
-            "dma_buf_unmapped_kb": 817563.0,
-        })
+      meminfo,
+      {
+        "total_ram_kb": 7698860.0,
+        "cached_pss_kb": 2345.0,
+        "cached_kernel_kb": 3456.0,
+        "free_kb": 4567.0,
+        "dma_buf_kb": 817715.0,
+        "dma_buf_mapped_kb": 152.0,
+        "dma_buf_unmapped_kb": 817563.0,
+      },
+    )
 
   def test_system_meminfo_no_dma_buf(self):
     self.expect_sh(
-        "dumpsys -T 10000 meminfo",
-        result=DUMPSYS_MEMINFO_SYSTEM_OUTPUT_NO_DMA_BUF)
+      "dumpsys -T 10000 meminfo",
+      result=DUMPSYS_MEMINFO_SYSTEM_OUTPUT_NO_DMA_BUF,
+    )
     meminfo = self.platform.system_meminfo()
     self.assertDictEqual(
-        meminfo, {
-            "total_ram_kb": 3486196.0,
-            "cached_pss_kb": 2345.0,
-            "cached_kernel_kb": 3456.0,
-            "free_kb": 4567.0,
-        })
+      meminfo,
+      {
+        "total_ram_kb": 3486196.0,
+        "cached_pss_kb": 2345.0,
+        "cached_kernel_kb": 3456.0,
+        "free_kb": 4567.0,
+      },
+    )
 
   def test_system_meminfo_timeout(self):
     self.expect_sh(
-        "dumpsys -T 10000 meminfo", result=DUMPSYS_MEMINFO_TIMEOUT_OUTPUT)
+      "dumpsys -T 10000 meminfo", result=DUMPSYS_MEMINFO_TIMEOUT_OUTPUT
+    )
 
     with self.assertRaises(TimeoutError):
       self.platform.system_meminfo()
 
   def test_system_memory_bytes(self):
     self.expect_sh(
-        "dumpsys -T 10000 meminfo", result=DUMPSYS_MEMINFO_SYSTEM_OUTPUT)
+      "dumpsys -T 10000 meminfo", result=DUMPSYS_MEMINFO_SYSTEM_OUTPUT
+    )
     self.assertEqual(self.platform.system_memory_bytes, 7698860 * 1024)
 
   def test_system_memory_bytes_missing(self):
@@ -1369,9 +1498,9 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
 
   def test_close_app(self) -> None:
     proto_out = self._create_activities_proto(
-        (101, 1, "com.android.settings/.Settings"),
-        (102, 1, "com.google.android.keep/.Browse"),
-        (1000001, 2, "com.google.android.apps.nexuslauncher/.Launcher"),
+      (101, 1, "com.android.settings/.Settings"),
+      (102, 1, "com.google.android.keep/.Browse"),
+      (1000001, 2, "com.google.android.apps.nexuslauncher/.Launcher"),
     )
     self.expect_sh("dumpsys activity --proto activities", result=proto_out)
     self.expect_sh("am stack remove 101")
@@ -1379,10 +1508,10 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
 
   def test_close_all_apps(self) -> None:
     proto_out = self._create_activities_proto(
-        (101, 1, "com.android.chrome/com.google.android.apps.chrome.Main"),
-        (102, 1, "com.android.settings/com.android.settings.Settings"),
-        (103, 1, "com.google.android.keep/.Browse"),
-        (1000001, 2, "com.google.android.apps.nexuslauncher/.Launcher"),
+      (101, 1, "com.android.chrome/com.google.android.apps.chrome.Main"),
+      (102, 1, "com.android.settings/com.android.settings.Settings"),
+      (103, 1, "com.google.android.keep/.Browse"),
+      (1000001, 2, "com.google.android.apps.nexuslauncher/.Launcher"),
     )
     self.expect_sh("dumpsys activity --proto activities", result=proto_out)
     self.expect_sh("am stack remove 101")
@@ -1390,12 +1519,14 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     self.expect_sh("am stack remove 103")
     self.platform.close_all_apps()
 
-
   def test_users(self):
     self.expect_sh(
-        "pm list users",
-        result=("Users:\n\tUserInfo{0:Owner:13} running\n\t"
-                "UserInfo{10:Guest:10} running"))
+      "pm list users",
+      result=(
+        "Users:\n\tUserInfo{0:Owner:13} running\n\t"
+        "UserInfo{10:Guest:10} running"
+      ),
+    )
     self.assertSequenceEqual(self.platform.adb.users(), ["0", "10"])
 
   def test_users_fallback(self):
@@ -1411,7 +1542,8 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
   def test_force_stop_error(self):
     self.expect_sh("pm list users", result="UserInfo{0:Owner:13}")
     self.expect_sh(
-        "am force-stop --user 0 com.example.app", result=ShResult(returncode=1))
+      "am force-stop --user 0 com.example.app", result=ShResult(returncode=1)
+    )
     self.platform.adb.force_stop("com.example.app")
 
   def test_force_clear(self):
@@ -1422,7 +1554,8 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
   def test_force_clear_error(self):
     self.expect_sh("pm list users", result="UserInfo{10:Owner:13}")
     self.expect_sh(
-        "pm clear --user 10 com.example.app", result=ShResult(returncode=1))
+      "pm clear --user 10 com.example.app", result=ShResult(returncode=1)
+    )
     self.platform.adb.force_clear("com.example.app")
 
   def test_killall(self):
@@ -1450,15 +1583,16 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
   def test_gpu_vram_used_adreno(self):
     self.expect_path_check("-e", "/sys/class/kgsl/kgsl-3d0/page_alloc")
     self.expect_sh(
-        "cat /sys/class/kgsl/kgsl-3d0/page_alloc",
-        result=str(1024 * 1024 * 512),
+      "cat /sys/class/kgsl/kgsl-3d0/page_alloc",
+      result=str(1024 * 1024 * 512),
     )
     vram = self.platform.gpu_vram_used()
     self.assertEqual(vram, {"adreno_gpu": 512.0})
 
   def test_gpu_vram_used_none(self):
     self.expect_path_check(
-        "-e", "/sys/class/kgsl/kgsl-3d0/page_alloc", exists=False)
+      "-e", "/sys/class/kgsl/kgsl-3d0/page_alloc", exists=False
+    )
     vram = self.platform.gpu_vram_used()
     self.assertEqual(vram, {})
 
@@ -1478,8 +1612,8 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     with zipfile.ZipFile(b, "r") as z:
       with z.open("AndroidManifest.xml") as manifest_file:
         self.assertEqual(
-            parse_binary_manifest_package_name(manifest_file.read()),
-            package_name)
+          parse_binary_manifest_package_name(manifest_file.read()), package_name
+        )
 
   def test_get_ui_element_rect(self) -> None:
     mock_ad = mock.MagicMock()
@@ -1498,8 +1632,8 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     mock_context.__exit__.return_value = None
 
     with mock.patch.object(
-        self.platform, "uiautomator_device",
-        return_value=mock_context) as mock_uiautomator:
+      self.platform, "uiautomator_device", return_value=mock_context
+    ) as mock_uiautomator:
       ui_selector = UiSelectorConfig(text="Click me")
       rect = self.platform.get_ui_element_rect(ui_selector)
       self.assertEqual(rect.origin, Point(10, 20))
@@ -1521,7 +1655,8 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     mock_context.__exit__.return_value = None
 
     with mock.patch.object(
-        self.platform, "uiautomator_device", return_value=mock_context):
+      self.platform, "uiautomator_device", return_value=mock_context
+    ):
       ui_selector = UiSelectorConfig(text="Click me")
       with self.assertRaises(ElementNotFoundError) as cm:
         self.platform.get_ui_element_rect(ui_selector)
@@ -1564,11 +1699,14 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     self.assertFalse(is_adb_tcp_endpoint("foo bar:5555"))
 
   def test_adb_devices_skips_offline_entries(self) -> None:
-    raw = ("List of devices attached\n"
-           "192.168.0.5:5555 offline transport_id:4\n"
-           "0a388e93 device usb:1-1 product:razor model:Nexus_7 device:flo\n")
+    raw = (
+      "List of devices attached\n"
+      "192.168.0.5:5555 offline transport_id:4\n"
+      "0a388e93 device usb:1-1 product:razor model:Nexus_7 device:flo\n"
+    )
     self.host_platform.expect_sh(
-        pathlib.Path("adb"), "devices", "-l", result=raw)
+      pathlib.Path("adb"), "devices", "-l", result=raw
+    )
     devices = adb_devices(self.host_platform)
     self.assertEqual(list(devices.keys()), ["0a388e93"])
 
@@ -1578,61 +1716,70 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
 
   def test_adb_connect_timeout(self) -> None:
     with (
-        mock.patch.object(
-            WaitRange,
-            "wait_with_backoff",
-            side_effect=TimeoutError("timeout"),
-        ),
-        self.assertRaises(TimeoutError),
+      mock.patch.object(
+        WaitRange,
+        "wait_with_backoff",
+        side_effect=TimeoutError("timeout"),
+      ),
+      self.assertRaises(TimeoutError),
     ):
       adb_connect(self.host_platform, "192.168.0.5:5555")
 
   def test_adb_connect_retries_offline_then_succeeds(self) -> None:
     serial = "192.168.0.5:5555"
-    offline_out = ("List of devices attached\n"
-                   f"{serial} offline transport_id:4\n")
-    online_out = ("List of devices attached\n"
-                  f"{serial} device product:brya model:mica device:mica\n")
+    offline_out = f"List of devices attached\n{serial} offline transport_id:4\n"
+    online_out = (
+      "List of devices attached\n"
+      f"{serial} device product:brya model:mica device:mica\n"
+    )
     self.host_platform.expect_sh(pathlib.Path("adb"), "connect", serial)
     self.host_platform.expect_sh(
-        pathlib.Path("adb"), "devices", "-l", result=offline_out)
+      pathlib.Path("adb"), "devices", "-l", result=offline_out
+    )
     self.host_platform.expect_sh(pathlib.Path("adb"), "disconnect", serial)
     self.host_platform.expect_sh(pathlib.Path("adb"), "connect", serial)
     self.host_platform.expect_sh(
-        pathlib.Path("adb"), "devices", "-l", result=online_out)
+      pathlib.Path("adb"), "devices", "-l", result=online_out
+    )
     devices = adb_connect(self.host_platform, serial)
     self.assertIn(serial, devices)
 
   def test_create_tcp_device_auto_connects(self) -> None:
     serial = "satlab-dut1:5555"
     empty_out = "List of devices attached\n"
-    online_out = ("List of devices attached\n"
-                  f"{serial} device product:brya model:mica device:mica\n")
+    online_out = (
+      "List of devices attached\n"
+      f"{serial} device product:brya model:mica device:mica\n"
+    )
     self.expect_startup_devices(empty_out)
     self.host_platform.expect_sh(pathlib.Path("adb"), "connect", serial)
     self.host_platform.expect_sh(
-        pathlib.Path("adb"), "devices", "-l", result=online_out)
+      pathlib.Path("adb"), "devices", "-l", result=online_out
+    )
     adb = Adb(self.host_platform, serial)
     self.assertEqual(adb.serial_id, serial)
 
   def test_root_tcp_reconnects(self) -> None:
     serial = "satlab-dut1:5555"
-    online_out = ("List of devices attached\n"
-                  f"{serial} device product:brya model:mica device:mica\n")
+    online_out = (
+      "List of devices attached\n"
+      f"{serial} device product:brya model:mica device:mica\n"
+    )
     self.expect_startup_devices(online_out)
     adb = Adb(self.host_platform, serial)
     self.host_platform.expect_sh(
-        pathlib.Path("adb"),
-        "-s",
-        serial,
-        "shell",
-        "id",
-        result="uid=2000(shell)",
+      pathlib.Path("adb"),
+      "-s",
+      serial,
+      "shell",
+      "id",
+      result="uid=2000(shell)",
     )
     self.host_platform.expect_sh(pathlib.Path("adb"), "-s", serial, "root")
     self.host_platform.expect_sh(pathlib.Path("adb"), "connect", serial)
     self.host_platform.expect_sh(
-        pathlib.Path("adb"), "devices", "-l", result=online_out)
+      pathlib.Path("adb"), "devices", "-l", result=online_out
+    )
     adb.root()
 
   def test_setup_hsum_switches_user_timeout(self) -> None:
@@ -1640,17 +1787,20 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     self.expect_sh("getprop ro.build.version.sdk", result="36")
     self.expect_sh("cmd user is-headless-system-user-mode", result="true\n")
     self.expect_sh(
-        "cmd user list -v",
-        result=("0: id=0, name=System, type=system.HEADLESS\n"
-                "1: id=10, name=Owner, type=full.MAIN\n"),
+      "cmd user list -v",
+      result=(
+        "0: id=0, name=System, type=system.HEADLESS\n"
+        "1: id=10, name=Owner, type=full.MAIN\n"
+      ),
     )
     self.expect_sh("am switch-user 10")
     with (
-        mock.patch.object(
-            WaitRange, "wait_with_backoff",
-            side_effect=TimeoutError("timeout")),
-        self.assertRaisesRegex(TimeoutError,
-                               "Timed out waiting for foreground user 10"),
+      mock.patch.object(
+        WaitRange, "wait_with_backoff", side_effect=TimeoutError("timeout")
+      ),
+      self.assertRaisesRegex(
+        TimeoutError, "Timed out waiting for foreground user 10"
+      ),
     ):
       self.platform.setup()
 
@@ -1659,9 +1809,11 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     self.expect_sh("getprop ro.build.version.sdk", result="36")
     self.expect_sh("cmd user is-headless-system-user-mode", result="true\n")
     self.expect_sh(
-        "cmd user list -v",
-        result=("0: id=0, name=System, type=system.HEADLESS\n"
-                "1: id=10, name=Owner, type=full.MAIN\n"),
+      "cmd user list -v",
+      result=(
+        "0: id=0, name=System, type=system.HEADLESS\n"
+        "1: id=10, name=Owner, type=full.MAIN\n"
+      ),
     )
     self.expect_sh("am switch-user 10")
     self.expect_sh("am get-current-user", result="0\n")
@@ -1692,7 +1844,8 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     with self.assertLogs(level="WARNING") as cm:
       self.platform.setup()
     self.assertTrue(
-        any("does not support 'adb root'" in msg for msg in cm.output))
+      any("does not support 'adb root'" in msg for msg in cm.output)
+    )
 
   def test_setup_unprovisioned_root_failure_skips_oobe(self) -> None:
     self.expect_sh("am get-current-user", result="10\n")
@@ -1706,11 +1859,13 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     with self.assertLogs(level="WARNING") as cm:
       self.platform.setup()
     self.assertTrue(
-        any("did not acquire root privileges" in msg for msg in cm.output))
+      any("did not acquire root privileges" in msg for msg in cm.output)
+    )
 
   def test_setup_skips_oobe_bypass_when_disabled(self) -> None:
     platform = AndroidAdbPlatform(
-        self.host_platform, self.DEVICE_ID, adb=self.adb, bypass_oobe=False)
+      self.host_platform, self.DEVICE_ID, adb=self.adb, bypass_oobe=False
+    )
     self.assertFalse(platform.bypass_oobe)
     self.expect_sh("am get-current-user", result="10\n")
     platform.setup()
@@ -1737,10 +1892,17 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     string_offset = header_size + len(strings) * 4
     style_offset = 0
 
-    string_pool_chunk = struct.pack("<HHL LLLLL", RES_STRING_POOL_TYPE,
-                                    header_size, chunk_size, len(strings),
-                                    style_count, flags, string_offset,
-                                    style_offset)
+    string_pool_chunk = struct.pack(
+      "<HHL LLLLL",
+      RES_STRING_POOL_TYPE,
+      header_size,
+      chunk_size,
+      len(strings),
+      style_count,
+      flags,
+      string_offset,
+      style_offset,
+    )
     for offset in str_offsets:
       string_pool_chunk += struct.pack("<L", offset)
     string_pool_chunk += pool_data
@@ -1752,13 +1914,15 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     attr_raw = 2  # package_name index in string pool
     attr_type = 0
     attr_data = 2  # package_name index in string pool
-    attr_data_bytes = struct.pack("<LLLLL", attr_ns, attr_name, attr_raw,
-                                  attr_type, attr_data)
+    attr_data_bytes = struct.pack(
+      "<LLLLL", attr_ns, attr_name, attr_raw, attr_type, attr_data
+    )
 
     element_header_size = 16
     element_ext_size = 20
-    element_chunk_size = element_header_size + element_ext_size + len(
-        attr_data_bytes)
+    element_chunk_size = (
+      element_header_size + element_ext_size + len(attr_data_bytes)
+    )
 
     line_number = 0
     comment_idx = 0xFFFFFFFF
@@ -1771,36 +1935,51 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     class_idx = 0
     style_idx = 0
 
-    start_element_chunk = struct.pack("<HHL LLLL HH HHHH",
-                                      RES_XML_START_ELEMENT_TYPE,
-                                      element_header_size, element_chunk_size,
-                                      line_number, comment_idx, ns_idx,
-                                      name_idx, attr_start, attr_size,
-                                      attr_count, id_idx, class_idx, style_idx)
+    start_element_chunk = struct.pack(
+      "<HHL LLLL HH HHHH",
+      RES_XML_START_ELEMENT_TYPE,
+      element_header_size,
+      element_chunk_size,
+      line_number,
+      comment_idx,
+      ns_idx,
+      name_idx,
+      attr_start,
+      attr_size,
+      attr_count,
+      id_idx,
+      class_idx,
+      style_idx,
+    )
     start_element_chunk += attr_data_bytes
 
     axml_header = struct.pack(
-        "<HHL", RES_XML_TYPE, 0x0008,
-        8 + len(string_pool_chunk) + len(start_element_chunk))
+      "<HHL",
+      RES_XML_TYPE,
+      0x0008,
+      8 + len(string_pool_chunk) + len(start_element_chunk),
+    )
     return axml_header + string_pool_chunk + start_element_chunk
 
 
 class AndroidBuildTypeTestCase(unittest.TestCase):
-
   def test_parse_set_wildcard(self) -> None:
     self.assertIsNone(AndroidBuildType.parse_set("*"))
 
   def test_parse_set_single(self) -> None:
     self.assertEqual(
-        AndroidBuildType.parse_set("user"), frozenset({AndroidBuildType.USER}))
+      AndroidBuildType.parse_set("user"), frozenset({AndroidBuildType.USER})
+    )
     self.assertEqual(
-        AndroidBuildType.parse_set("USERDEBUG"),
-        frozenset({AndroidBuildType.USERDEBUG}))
+      AndroidBuildType.parse_set("USERDEBUG"),
+      frozenset({AndroidBuildType.USERDEBUG}),
+    )
 
   def test_parse_set_list(self) -> None:
     self.assertEqual(
-        AndroidBuildType.parse_set("user, eng,user"),
-        frozenset({AndroidBuildType.USER, AndroidBuildType.ENG}))
+      AndroidBuildType.parse_set("user, eng,user"),
+      frozenset({AndroidBuildType.USER, AndroidBuildType.ENG}),
+    )
 
   def test_parse_set_invalid(self) -> None:
     with self.assertRaisesRegex(argparse.ArgumentTypeError, "debug"):

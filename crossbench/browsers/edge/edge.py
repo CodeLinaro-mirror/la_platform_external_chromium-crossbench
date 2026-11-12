@@ -13,14 +13,14 @@ from crossbench.browsers.edge.base import EdgeBaseMixin
 
 class Edge(EdgeBaseMixin, ChromiumBased):
   DEFAULT_FLAGS = (
-      "--enable-benchmarking",
-      "--disable-extensions",
-      "--no-first-run",
+    "--enable-benchmarking",
+    "--disable-extensions",
+    "--no-first-run",
   )
 
   @classmethod
   @override
   def attributes(cls) -> BrowserAttributes:
-    return (super().attributes()
-            | BrowserAttributes.EDGE
-            | BrowserAttributes.DESKTOP)
+    return (
+      super().attributes() | BrowserAttributes.EDGE | BrowserAttributes.DESKTOP
+    )

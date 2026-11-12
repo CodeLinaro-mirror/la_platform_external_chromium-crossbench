@@ -9,8 +9,13 @@ import subprocess
 from typing import TYPE_CHECKING, ClassVar, Final, Self, override
 
 import crossbench.path as pth
-from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext, \
-    ProbeIncompatibleBrowser, ProbeKeyT
+from crossbench.probes.probe import (
+  Probe,
+  ProbeConfigParser,
+  ProbeContext,
+  ProbeIncompatibleBrowser,
+  ProbeKeyT,
+)
 from crossbench.str_enum_with_help import StrEnumWithHelp
 
 if TYPE_CHECKING:
@@ -20,7 +25,8 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
 
 _TMU_PATH: Final[pth.AnyPath] = pth.AnyPath(
-    "/sys/kernel/metrics/thermal/tr_by_group/tmu")
+  "/sys/kernel/metrics/thermal/tr_by_group/tmu"
+)
 _STATS_RESET_PATH: Final[pth.AnyPath] = _TMU_PATH / "stats_reset"
 _STATS_PATH: Final[pth.AnyPath] = _TMU_PATH / "stats"
 
@@ -28,6 +34,7 @@ _STATS_PATH: Final[pth.AnyPath] = _TMU_PATH / "stats"
 @enum.unique
 class JunctionTemperatureMode(StrEnumWithHelp):
   """Measurement mode for JunctionTemperatureProbe."""
+
   RUN = ("run", "Measure the whole run")
   STORY = ("story", "Measure only the core story run")
 
@@ -42,6 +49,7 @@ class JunctionTemperatureProbe(Probe):
   internal silicon temperature of the chip itself) spends within specific
   temperature brackets.
   """
+
   NAME: ClassVar[str] = "junction_temperature"
 
   @classmethod
@@ -57,10 +65,11 @@ class JunctionTemperatureProbe(Probe):
   def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     parser.add_default_argument(
-        "mode",
-        type=_JtMode,
-        default=_JtMode.STORY,
-        help="Timeframe during which TMU statistics are collected.")
+      "mode",
+      type=_JtMode,
+      default=_JtMode.STORY,
+      help="Timeframe during which TMU statistics are collected.",
+    )
     return parser
 
   def __init__(self, mode: _JtMode = _JtMode.STORY) -> None:
@@ -92,11 +101,13 @@ class JunctionTemperatureProbe(Probe):
     try:
       output = browser.platform.sh_stdout("su", "0", "id")
     except (subprocess.SubprocessError, RuntimeError) as e:
-      raise ProbeIncompatibleBrowser(self, browser,
-                                     "Can't use root on this device.") from e
+      raise ProbeIncompatibleBrowser(
+        self, browser, "Can't use root on this device."
+      ) from e
     if "uid=0(root)" not in output:
-      raise ProbeIncompatibleBrowser(self, browser,
-                                     "Can't use root on this device.")
+      raise ProbeIncompatibleBrowser(
+        self, browser, "Can't use root on this device."
+      )
 
     # Verify the thermal metrics directory exists on the device.
     # For simplicity's sake, we assume all relevant files exist under this
@@ -112,7 +123,6 @@ class JunctionTemperatureProbe(Probe):
 
 
 class JunctionTemperatureProbeContext(ProbeContext[JunctionTemperatureProbe]):
-
   def __init__(self, probe: JunctionTemperatureProbe, run: Run) -> None:
     super().__init__(probe, run)
 

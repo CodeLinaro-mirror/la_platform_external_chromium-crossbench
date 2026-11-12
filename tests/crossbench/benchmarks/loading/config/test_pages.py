@@ -18,15 +18,17 @@ from crossbench.action_runner.action.click import ClickAction
 from crossbench.action_runner.action.get import GetAction
 from crossbench.benchmarks.loading.config.login.google import GoogleLogin
 from crossbench.benchmarks.loading.config.page import PageConfig
-from crossbench.benchmarks.loading.config.pages import \
-    DevToolsRecorderPagesConfig, ListPagesConfig, PagesConfig
+from crossbench.benchmarks.loading.config.pages import (
+  DevToolsRecorderPagesConfig,
+  ListPagesConfig,
+  PagesConfig,
+)
 from crossbench.cli.config.secrets import GoogleUsernamePassword, Secrets
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 
 
 class PagesConfigTestCase(CrossbenchFakeFsTestCase):
-
   def test_parse_unknown_type(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       PagesConfig.parse(self)
@@ -81,12 +83,15 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(page_config.duration.total_seconds(), 123)
 
   def test_parse_single_url_with_comma_and_duration(self):
-    url_1 = ("https://www.google.com/maps/place/Japan/"
-             "@33.33,44.4,55m/data=!3m2,123s")
+    url_1 = (
+      "https://www.google.com/maps/place/Japan/@33.33,44.4,55m/data=!3m2,123s"
+    )
     with self.assertRaisesRegex(argparse.ArgumentTypeError, "Invalid"):
       PagesConfig.parse(url_1)
-    url_2 = ("https://www.google.com/maps/place/Japan/"
-             "@33.33,44.4,55m/data=!3m2,123s/http.google.com")
+    url_2 = (
+      "https://www.google.com/maps/place/Japan/"
+      "@33.33,44.4,55m/data=!3m2,123s/http.google.com"
+    )
     with self.assertRaisesRegex(argparse.ArgumentTypeError, "Invalid"):
       PagesConfig.parse(url_2)
 
@@ -160,34 +165,36 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse_empty_actions(self):
     config_data: dict[str, dict] = {"pages": {"Google Story": []}}
-    with self.assertRaisesRegex(argparse.ArgumentTypeError,
-                                r"(?i)non-empty sequence"):
+    with self.assertRaisesRegex(
+      argparse.ArgumentTypeError, r"(?i)non-empty sequence"
+    ):
       PagesConfig.parse(config_data)
 
     config_data = {"pages": {"Google Story": {}}}
-    with self.assertRaisesRegex(argparse.ArgumentTypeError,
-                                r"(?i)non-empty dict"):
+    with self.assertRaisesRegex(
+      argparse.ArgumentTypeError, r"(?i)non-empty dict"
+    ):
       PagesConfig.parse(config_data)
 
   def test_example(self):
     config_data: dict[str, dict] = {
-        "pages": {
-            "Google Story": [
-                {
-                    "action": "get",
-                    "url": "https://www.google.com",
-                },
-                {
-                    "action": "wait",
-                    "duration": 5,
-                },
-                {
-                    "action": "scroll",
-                    "direction": "down",
-                    "duration": 3,
-                },
-            ],
-        },
+      "pages": {
+        "Google Story": [
+          {
+            "action": "get",
+            "url": "https://www.google.com",
+          },
+          {
+            "action": "wait",
+            "duration": 5,
+          },
+          {
+            "action": "scroll",
+            "direction": "down",
+            "duration": 3,
+          },
+        ],
+      },
     }
     config = PagesConfig.parse(config_data)
     self.assert_single_google_story(config.pages)
@@ -207,29 +214,31 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
 
   def test_example_with_login(self):
     config_data = {
-        "pages": {
-            "Google Story": {
-                "login": [{
-                    "action": "get",
-                    "url": "https://www.google.com/login",
-                }],
-                "actions": [
-                    {
-                        "action": "get",
-                        "url": "https://www.google.com",
-                    },
-                    {
-                        "action": "wait",
-                        "duration": 5,
-                    },
-                    {
-                        "action": "scroll",
-                        "direction": "down",
-                        "duration": 3,
-                    },
-                ],
+      "pages": {
+        "Google Story": {
+          "login": [
+            {
+              "action": "get",
+              "url": "https://www.google.com/login",
+            }
+          ],
+          "actions": [
+            {
+              "action": "get",
+              "url": "https://www.google.com",
             },
+            {
+              "action": "wait",
+              "duration": 5,
+            },
+            {
+              "action": "scroll",
+              "direction": "down",
+              "duration": 3,
+            },
+          ],
         },
+      },
     }
     config = PagesConfig.parse(config_data)
     self.assert_single_google_story(config.pages)
@@ -241,26 +250,25 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
 
   def test_example_with_login_preset(self):
     config_data = {
-        "pages": {
-            "Google Story": {
-                "login":
-                    "google",
-                "actions": [
-                    {
-                        "action": "get",
-                        "url": "https://www.google.com",
-                    },
-                    {
-                        "action": "wait",
-                        "duration": 5,
-                    },
-                    {
-                        "action": "scroll",
-                        "duration": 3,
-                    },
-                ],
+      "pages": {
+        "Google Story": {
+          "login": "google",
+          "actions": [
+            {
+              "action": "get",
+              "url": "https://www.google.com",
             },
+            {
+              "action": "wait",
+              "duration": 5,
+            },
+            {
+              "action": "scroll",
+              "duration": 3,
+            },
+          ],
         },
+      },
     }
     config = PagesConfig.parse(config_data)
     self.assert_single_google_story(config.pages)
@@ -275,20 +283,21 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(page.first_url, "https://www.google.com")
     self.assertEqual(len(page.blocks), 1)
     block = page.blocks[0]
-    self.assertSequenceEqual([str(action.TYPE) for action in block],
-                             ["get", "wait", "scroll"])
+    self.assertSequenceEqual(
+      [str(action.TYPE) for action in block], ["get", "wait", "scroll"]
+    )
 
   def test_secrets(self):
     config_data = {
-        "secrets": {
-            "google": {
-                "username": "test",
-                "password": "s3cr3t",
-            },
+      "secrets": {
+        "google": {
+          "username": "test",
+          "password": "s3cr3t",
         },
-        "pages": {
-            "Google Story": ["http://google.com"],
-        },
+      },
+      "pages": {
+        "Google Story": ["http://google.com"],
+      },
     }
     pages = PagesConfig.parse(config_data)
     secret = GoogleUsernamePassword("test", "s3cr3t")
@@ -312,24 +321,31 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
   def test_missing_action(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       PagesConfig.parse_dict(
-          {"pages": {
-              "TEST": [{
-                  "action___": "wait",
-                  "duration": 5.0,
-              }],
-          }})
+        {
+          "pages": {
+            "TEST": [
+              {
+                "action___": "wait",
+                "duration": 5.0,
+              }
+            ],
+          }
+        }
+      )
     self.assertIn("Invalid data:", str(cm.exception))
 
   def test_invalid_action(self):
     invalid_actions: list[Any] = [None, "", [], {}, "unknown action name", 12]
     for invalid_action in invalid_actions:
       config_dict: dict[str, object] = {
-          "pages": {
-              "TEST": [{
-                  "action": invalid_action,
-                  "duration": 5.0,
-              }],
-          },
+        "pages": {
+          "TEST": [
+            {
+              "action": invalid_action,
+              "duration": 5.0,
+            }
+          ],
+        },
       }
       with self.subTest(invalid_action=invalid_action):
         with self.assertRaises(argparse.ArgumentTypeError):
@@ -337,48 +353,50 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
 
   def test_get_action_durations(self):
     durations = [
-        ("5", 5),
-        ("5.5", 5.5),
-        (6, 6),
-        (6.1, 6.1),
-        ("5.5", 5.5),
-        ("170ms", 0.17),
-        ("170milliseconds", 0.17),
-        ("170.4ms", 0.1704),
-        ("170.4 millis", 0.1704),
-        ("8s", 8),
-        ("8.1s", 8.1),
-        ("8.1seconds", 8.1),
-        ("1 second", 1),
-        ("1.1 seconds", 1.1),
-        ("9m", 9 * 60),
-        ("9.5m", 9.5 * 60),
-        ("9.5 minutes", 9.5 * 60),
-        ("9.5 mins", 9.5 * 60),
-        ("1 minute", 60),
-        ("1 min", 60),
-        ("1h", 3600),
-        ("1 h", 3600),
-        ("1 hour", 3600),
-        ("0.5h", 1800),
-        ("0.5 hours", 1800),
+      ("5", 5),
+      ("5.5", 5.5),
+      (6, 6),
+      (6.1, 6.1),
+      ("5.5", 5.5),
+      ("170ms", 0.17),
+      ("170milliseconds", 0.17),
+      ("170.4ms", 0.1704),
+      ("170.4 millis", 0.1704),
+      ("8s", 8),
+      ("8.1s", 8.1),
+      ("8.1seconds", 8.1),
+      ("1 second", 1),
+      ("1.1 seconds", 1.1),
+      ("9m", 9 * 60),
+      ("9.5m", 9.5 * 60),
+      ("9.5 minutes", 9.5 * 60),
+      ("9.5 mins", 9.5 * 60),
+      ("1 minute", 60),
+      ("1 min", 60),
+      ("1h", 3600),
+      ("1 h", 3600),
+      ("1 hour", 3600),
+      ("0.5h", 1800),
+      ("0.5 hours", 1800),
     ]
     for input_value, duration in durations:
       with self.subTest(duration=duration):
-        page_config = PagesConfig.parse_dict({
+        page_config = PagesConfig.parse_dict(
+          {
             "pages": {
-                "TEST": [
-                    {
-                        "action": "get",
-                        "url": "google.com",
-                    },
-                    {
-                        "action": "wait",
-                        "duration": input_value,
-                    },
-                ],
+              "TEST": [
+                {
+                  "action": "get",
+                  "url": "google.com",
+                },
+                {
+                  "action": "wait",
+                  "duration": input_value,
+                },
+              ],
             },
-        })
+          }
+        )
         self.assertEqual(len(page_config.pages), 1)
         page = page_config.pages[0]
         self.assertEqual(len(page.blocks), 1)
@@ -388,83 +406,107 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
 
   def test_action_invalid_duration(self):
     invalid_durations: list[Any] = [
-        "1.1.1",
-        None,
-        "",
-        -1,
-        "-1",
-        "-1ms",
-        "1msss",
-        "1ss",
-        "2hh",
-        "asdfasd",
-        "---",
-        "1.1.1",
-        "1_123ms",
-        "1'200h",
-        (),
-        [],
-        {},
-        "-1h",
+      "1.1.1",
+      None,
+      "",
+      -1,
+      "-1",
+      "-1ms",
+      "1msss",
+      "1ss",
+      "2hh",
+      "asdfasd",
+      "---",
+      "1.1.1",
+      "1_123ms",
+      "1'200h",
+      (),
+      [],
+      {},
+      "-1h",
     ]
     for invalid_duration in invalid_durations:
-      with self.subTest(duration=invalid_duration), self.assertRaises(
-          (AssertionError, ValueError, argparse.ArgumentTypeError)):
-        PagesConfig.parse_dict({
+      with (
+        self.subTest(duration=invalid_duration),
+        self.assertRaises(
+          (AssertionError, ValueError, argparse.ArgumentTypeError)
+        ),
+      ):
+        PagesConfig.parse_dict(
+          {
             "pages": {
-                "TEST": [
-                    {
-                        "action": "get",
-                        "url": "google.com",
-                    },
-                    {
-                        "action": "wait",
-                        "duration": invalid_duration,
-                    },
-                ],
+              "TEST": [
+                {
+                  "action": "get",
+                  "url": "google.com",
+                },
+                {
+                  "action": "wait",
+                  "duration": invalid_duration,
+                },
+              ],
             },
-        })
+          }
+        )
 
   def test_start_stop_browser_across_page_blocks_invalid(self) -> None:
-    with self.assertRaisesRegex(argparse.ArgumentTypeError,
-                                "two 'start_browser' actions"):
-      PagesConfig.parse_dict({
+    with self.assertRaisesRegex(
+      argparse.ArgumentTypeError, "two 'start_browser' actions"
+    ):
+      PagesConfig.parse_dict(
+        {
           "pages": {
-              "TEST": {
-                  "setup": [{
-                      "action": "start_browser",
-                  }],
-                  "actions": [{
-                      "action": "start_browser",
-                  }],
-              },
+            "TEST": {
+              "setup": [
+                {
+                  "action": "start_browser",
+                }
+              ],
+              "actions": [
+                {
+                  "action": "start_browser",
+                }
+              ],
+            },
           },
-      })
+        }
+      )
 
-    with self.assertRaisesRegex(argparse.ArgumentTypeError,
-                                "two 'stop_browser' actions"):
-      PagesConfig.parse_dict({
+    with self.assertRaisesRegex(
+      argparse.ArgumentTypeError, "two 'stop_browser' actions"
+    ):
+      PagesConfig.parse_dict(
+        {
           "pages": {
-              "TEST": {
-                  "actions": [{
-                      "action": "stop_browser",
-                  }],
-                  "teardown": [{
-                      "action": "stop_browser",
-                  }],
-              },
+            "TEST": {
+              "actions": [
+                {
+                  "action": "stop_browser",
+                }
+              ],
+              "teardown": [
+                {
+                  "action": "stop_browser",
+                }
+              ],
+            },
           },
-      })
+        }
+      )
 
   def test_page_config_first_url_from_start_browser(self) -> None:
-    pages_config = PagesConfig.parse_dict({
+    pages_config = PagesConfig.parse_dict(
+      {
         "pages": {
-            "google_startup": [{
-                "action": "start_browser",
-                "startup_urls": ["https://www.google.com/"],
-            }],
+          "google_startup": [
+            {
+              "action": "start_browser",
+              "startup_urls": ["https://www.google.com/"],
+            }
+          ],
         },
-    })
+      }
+    )
     self.assertEqual(len(pages_config.pages), 1)
     page = pages_config.pages[0]
     self.assertEqual(page.first_url, "https://www.google.com/")
@@ -472,54 +514,53 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
 
 
 DEVTOOLS_RECORDER_EXAMPLE = {
-    "title":
-        "cnn load",
-    "steps": [
+  "title": "cnn load",
+  "steps": [
+    {
+      "type": "setViewport",
+      "width": 1628,
+      "height": 397,
+      "deviceScaleFactor": 1,
+      "isMobile": False,
+      "hasTouch": False,
+      "isLandscape": False,
+    },
+    {
+      "type": "navigate",
+      "url": "https://edition.cnn.com/",
+      "assertedEvents": [
         {
-            "type": "setViewport",
-            "width": 1628,
-            "height": 397,
-            "deviceScaleFactor": 1,
-            "isMobile": False,
-            "hasTouch": False,
-            "isLandscape": False,
-        },
-        {
-            "type":
-                "navigate",
-            "url":
-                "https://edition.cnn.com/",
-            "assertedEvents": [{
-                "type": "navigation",
-                "url": "https://edition.cnn.com/",
-                "title": "",
-            }],
-        },
-        {
-            "type": "click",
-            "target": "main",
-            "selectors": [["aria/Opinion"],
-                          [
-                              "#pageHeader > div > div > "
-                              "div.header__container div:nth-of-type(5) > a",
-                          ],
-                          [
-                              'xpath///*[@id="pageHeader"]/'
-                              "div/div/div[1]/div[1]/nav/div/div[5]/a",
-                          ],
-                          [
-                              "pierce/#pageHeader > div > div > "
-                              "div.header__container div:nth-of-type(5) > a",
-                          ]],
-            "offsetY": 17,
-            "offsetX": 22.515625,
-        },
-    ],
+          "type": "navigation",
+          "url": "https://edition.cnn.com/",
+          "title": "",
+        }
+      ],
+    },
+    {
+      "type": "click",
+      "target": "main",
+      "selectors": [
+        ["aria/Opinion"],
+        [
+          "#pageHeader > div > div > "
+          "div.header__container div:nth-of-type(5) > a",
+        ],
+        [
+          'xpath///*[@id="pageHeader"]/div/div/div[1]/div[1]/nav/div/div[5]/a',
+        ],
+        [
+          "pierce/#pageHeader > div > div > "
+          "div.header__container div:nth-of-type(5) > a",
+        ],
+      ],
+      "offsetY": 17,
+      "offsetX": 22.515625,
+    },
+  ],
 }
 
 
 class DevToolsRecorderPageConfigTestCase(CrossbenchFakeFsTestCase):
-
   def test_invalid(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       DevToolsRecorderPagesConfig.parse({})
@@ -549,9 +590,9 @@ class DevToolsRecorderPageConfigTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse_click_step(self):
     config = {
-        "type": "click",
-        "target": "main",
-        "selectors": [["aria/Search Google"]],
+      "type": "click",
+      "target": "main",
+      "selectors": [["aria/Search Google"]],
     }
     # DevToolsRecorderStep marks url as Required and omits target.
     # pyrefly: ignore[bad-argument-type]
@@ -561,13 +602,17 @@ class DevToolsRecorderPageConfigTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(action.TYPE, ActionType.CLICK)
     assert isinstance(action, ClickAction)
     self.assertIsNotNone(action.position.selector)
-    self.assertEqual(action.position.selector.selector,
-                     "[aria-label='Search Google']")
+    self.assertEqual(
+      action.position.selector.selector, "[aria-label='Search Google']"
+    )
 
-    config["selectors"] = [["aria/SIMPLE"], ["#rso > div:nth-of-type(3) h3"],
-                           ['xpath///*[@id="rso"]'],
-                           ["pierce/#rso > div:nth-of-type(3) h3"],
-                           ["text/SIMPLE"]]
+    config["selectors"] = [
+      ["aria/SIMPLE"],
+      ["#rso > div:nth-of-type(3) h3"],
+      ['xpath///*[@id="rso"]'],
+      ["pierce/#rso > div:nth-of-type(3) h3"],
+      ["text/SIMPLE"],
+    ]
     # DevToolsRecorderStep marks url as Required and omits target.
     # pyrefly: ignore[bad-argument-type]
     action = DevToolsRecorderPagesConfig.parse_step(config)[0]
@@ -576,54 +621,57 @@ class DevToolsRecorderPageConfigTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(action.position.selector.selector, 'xpath///*[@id="rso"]')
 
     config["selectors"] = [
-        ["aria/SIMPLE"],
-        ["css/#rso > div:nth-of-type(3) h3"],
+      ["aria/SIMPLE"],
+      ["css/#rso > div:nth-of-type(3) h3"],
     ]
     # DevToolsRecorderStep marks url as Required and omits target.
     # pyrefly: ignore[bad-argument-type]
     action = DevToolsRecorderPagesConfig.parse_step(config)[0]
     assert isinstance(action, ClickAction)
     self.assertIsNotNone(action.position.selector)
-    self.assertEqual(action.position.selector.selector,
-                     "#rso > div:nth-of-type(3) h3")
+    self.assertEqual(
+      action.position.selector.selector, "#rso > div:nth-of-type(3) h3"
+    )
 
     config["selectors"] = [
-        ["#rso > div:nth-of-type(3) h3"],
+      ["#rso > div:nth-of-type(3) h3"],
     ]
     # DevToolsRecorderStep marks url as Required and omits target.
     # pyrefly: ignore[bad-argument-type]
     action = DevToolsRecorderPagesConfig.parse_step(config)[0]
     assert isinstance(action, ClickAction)
     self.assertIsNotNone(action.position.selector)
-    self.assertEqual(action.position.selector.selector,
-                     "#rso > div:nth-of-type(3) h3")
+    self.assertEqual(
+      action.position.selector.selector, "#rso > div:nth-of-type(3) h3"
+    )
 
     config["selectors"] = [
-        ["aria/SIMPLE", "area/OTHER"],
-        ["#rso > div:nth-of-type(3) h3"],
+      ["aria/SIMPLE", "area/OTHER"],
+      ["#rso > div:nth-of-type(3) h3"],
     ]
     # DevToolsRecorderStep marks url as Required and omits target.
     # pyrefly: ignore[bad-argument-type]
     action = DevToolsRecorderPagesConfig.parse_step(config)[0]
     assert isinstance(action, ClickAction)
     self.assertIsNotNone(action.position.selector)
-    self.assertEqual(action.position.selector.selector,
-                     "#rso > div:nth-of-type(3) h3")
+    self.assertEqual(
+      action.position.selector.selector, "#rso > div:nth-of-type(3) h3"
+    )
 
     config["selectors"] = [
-        ["text/Content"],
+      ["text/Content"],
     ]
     # DevToolsRecorderStep marks url as Required and omits target.
     # pyrefly: ignore[bad-argument-type]
     action = DevToolsRecorderPagesConfig.parse_step(config)[0]
     assert isinstance(action, ClickAction)
     self.assertIsNotNone(action.position.selector)
-    self.assertEqual(action.position.selector.selector,
-                     "xpath///*[text()='Content']")
+    self.assertEqual(
+      action.position.selector.selector, "xpath///*[text()='Content']"
+    )
 
 
 class ListPageConfigTestCase(CrossbenchFakeFsTestCase):
-
   def test_invalid(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       ListPagesConfig.parse({})
@@ -648,7 +696,8 @@ class ListPageConfigTestCase(CrossbenchFakeFsTestCase):
   def test_direct_string_single_dict(self):
     config_dict = ListPagesConfig.parse({"pages": "http://foo.bar.com,23s"})
     config_str = PagesConfig(
-        pages=(PageConfig.parse("http://foo.bar.com,23s"),))
+      pages=(PageConfig.parse("http://foo.bar.com,23s"),)
+    )
     self.assertIsInstance(config_dict, ListPagesConfig)
     self.assertIsInstance(config_str, PagesConfig)
     self.assertEqual(config_dict, config_str)
@@ -656,7 +705,8 @@ class ListPageConfigTestCase(CrossbenchFakeFsTestCase):
   @unittest.skip("Combined pages per line not supported yet")
   def test_direct_string_multiple(self):
     config = ListPagesConfig.parse_dict(
-        {"pages": "http://a.com,12s,http://b.com,13s"})
+      {"pages": "http://a.com,12s,http://b.com,13s"}
+    )
     pages = config.pages
     self.assertEqual(len(pages), 2)
     story_1 = pages[0]

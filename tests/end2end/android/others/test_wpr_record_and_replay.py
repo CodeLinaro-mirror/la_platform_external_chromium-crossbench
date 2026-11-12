@@ -23,41 +23,49 @@ def tmp_dir() -> Iterator[pathlib.Path]:
 
 
 def _network_replay_config(archive) -> str:
-  return json.dumps({
+  return json.dumps(
+    {
       "type": "wpr",
       "path": str(archive),
       "run_on_device": True,
-  })
+    }
+  )
 
 
 def test_wpr_record_and_replay(browser_config, tmp_dir, test_env) -> None:
   cli = CrossBenchCLI()
   result_record_dir = tmp_dir / "result_record"
   target_url = "https://www.google.com/search?q=cats"
-  cli.run([
+  cli.run(
+    [
       "loading",
       f"--url={target_url}",
       f"--browser={browser_config}",
       "--probe=wpr:{}",
       f"--out-dir={result_record_dir}",
       *list(test_env.cq_flags),
-  ])
+    ]
+  )
 
   archives = list(
-      result_record_dir.glob("*/stories/*/0/0_default/archive.wprgo"))
+    result_record_dir.glob("*/stories/*/0/0_default/archive.wprgo")
+  )
   assert len(archives) == 1
   assert archives[0].stat().st_size > 0
 
   result_replay_dir = tmp_dir / "result_replay"
-  cli.run([
+  cli.run(
+    [
       "loading",
       f"--url={target_url}",
       f"--browser={browser_config}",
       f"--network={_network_replay_config(archives[0])}",
       f"--out-dir={result_replay_dir}",
-  ])
+    ]
+  )
   wpr_logs = list(
-      result_replay_dir.glob("*/stories/*/0/0_default/network.wpr.log"))
+    result_replay_dir.glob("*/stories/*/0/0_default/network.wpr.log")
+  )
   assert len(wpr_logs) == 1
   with wpr_logs[0].open() as wpr_log:
     lines = wpr_log.readlines()

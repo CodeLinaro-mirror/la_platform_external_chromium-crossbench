@@ -18,17 +18,20 @@ from tests.crossbench.base import CrossbenchFakeFsTestCase
 from tests.crossbench.mock_helper import MockPlatform, MockPlatformMixin
 
 GCS_URL: Final[str] = (
-    "gs://chrome-partner-loadline/archive_phone_20260331.wprgo")
+  "gs://chrome-partner-loadline/archive_phone_20260331.wprgo"
+)
 GCS_FILE_SIZE: Final[int] = 45678
 
 
 class FakeGcsBlob:
   """Minimal stand-in for google.cloud.storage.blob.Blob."""
 
-  def __init__(self,
-               size: int,
-               download_size: int,
-               download_error: BaseException | None = None) -> None:
+  def __init__(
+    self,
+    size: int,
+    download_size: int,
+    download_error: BaseException | None = None,
+  ) -> None:
     # Size reported by the object metadata.
     self.size: int = size
     # Number of bytes written by a download.
@@ -70,8 +73,9 @@ class BaseMockPlatformTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
   def tearDown(self):
     expected_sh_cmds = self.host_platform.expected_sh_cmds
     if expected_sh_cmds is not None:
-      self.assertSequenceEqual(expected_sh_cmds, [],
-                               "Got additional unused shell cmds.")
+      self.assertSequenceEqual(
+        expected_sh_cmds, [], "Got additional unused shell cmds."
+      )
     self.assertTrue(self.platform.ports.is_empty)
     super().tearDown()
 
@@ -123,11 +127,12 @@ class BaseMockPlatformTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
     p2 = self.platform.path("baz/qux")
     self.assertEqual(self.platform.join_path_list(p1), str(p1))
     self.assertEqual(
-        self.platform.join_path_list([p1, p2]),
-        f"{p1}{self.platform.pathsep}{p2}")
+      self.platform.join_path_list([p1, p2]), f"{p1}{self.platform.pathsep}{p2}"
+    )
     self.assertEqual(
-        self.platform.join_path_list([p1, "", p2]),
-        f"{p1}{self.platform.pathsep}{p2}")
+      self.platform.join_path_list([p1, "", p2]),
+      f"{p1}{self.platform.pathsep}{p2}",
+    )
 
   def test_split_path_list(self):
     self.assertEqual(self.platform.split_path_list(""), ())
@@ -149,8 +154,9 @@ class BaseMockPlatformTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
   def test_is_remote_desktop_no_script(self):
     if not self.platform.is_local and self.platform.is_linux:
       self.expect_sh(
-          "'[' -e /opt/google/chrome-remote-desktop/is-remoting-session ']'",
-          returncode=1)
+        "'[' -e /opt/google/chrome-remote-desktop/is-remoting-session ']'",
+        returncode=1,
+      )
     self.assertFalse(self.platform.is_remote_desktop)
 
   def test_open_url(self):
@@ -207,12 +213,12 @@ class BaseMockPlatformTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
       with self.subTest(download_size=download_size):
         with self.assertRaisesRegex(OSError, "Size mismatch"):
           self._download_gcs_file(
-              FakeGcsBlob(GCS_FILE_SIZE, download_size), dest)
+            FakeGcsBlob(GCS_FILE_SIZE, download_size), dest
+          )
         self._assert_gcs_nothing_cached(dest)
 
 
 class BaseLocalMockPlatformTestMixin(BaseMockPlatformTestCase):
-
   def test_local_port_forward_invalid(self):
     with self.platform.ports.nested() as ports:
       with self.assertRaisesRegex(ValueError, "local platform"):
@@ -250,13 +256,16 @@ class BasePosixMockPlatformTestCase(BaseMockPlatformTestCase):
   def test_path_conversion(self):
     self.assertIsInstance(self.platform.path("foo/bar"), pathlib.PurePosixPath)
     self.assertIsInstance(
-        self.platform.path(pathlib.PurePath("foo/bar")), pathlib.PurePosixPath)
+      self.platform.path(pathlib.PurePath("foo/bar")), pathlib.PurePosixPath
+    )
     self.assertIsInstance(
-        self.platform.path(pathlib.PureWindowsPath("foo/bar")),
-        pathlib.PurePosixPath)
+      self.platform.path(pathlib.PureWindowsPath("foo/bar")),
+      pathlib.PurePosixPath,
+    )
     self.assertIsInstance(
-        self.platform.path(pathlib.PurePosixPath("foo/bar")),
-        pathlib.PurePosixPath)
+      self.platform.path(pathlib.PurePosixPath("foo/bar")),
+      pathlib.PurePosixPath,
+    )
 
   def test_win_absolute_path_conversion(self):
     if not plt.PLATFORM.is_win:
@@ -280,35 +289,42 @@ class BasePosixMockPlatformTestCase(BaseMockPlatformTestCase):
 
   def test_uptime(self):
     self.expect_sh(
-        "uptime",
-        result="12:25  up  3:26, 2 users, load averages: 4.27 4.29 4.80\n")
+      "uptime",
+      result="12:25  up  3:26, 2 users, load averages: 4.27 4.29 4.80\n",
+    )
     uptime = self.platform.uptime()
     self.assertEqual(uptime, dt.timedelta(hours=3, minutes=26))
     self.expect_sh(
-        "uptime",
-        result=("12:54:27 up 5 days,  2:48,  3 users,  "
-                "load average: 1.62, 2.15, 2.07\n"))
+      "uptime",
+      result=(
+        "12:54:27 up 5 days,  2:48,  3 users,  load average: 1.62, 2.15, 2.07\n"
+      ),
+    )
     uptime = self.platform.uptime()
     self.assertEqual(uptime, dt.timedelta(days=5, hours=2, minutes=48))
     self.expect_sh(
-        "uptime",
-        result="12:25  up 3 hrs, 2 users, load averages: 4.27 4.29 4.80\n")
+      "uptime",
+      result="12:25  up 3 hrs, 2 users, load averages: 4.27 4.29 4.80\n",
+    )
     uptime = self.platform.uptime()
     self.assertEqual(uptime, dt.timedelta(hours=3))
     self.expect_sh(
-        "uptime",
-        result="12:25  up 5 days, 1 hr, 2 users, load averages: 4.27 4.29\n")
+      "uptime",
+      result="12:25  up 5 days, 1 hr, 2 users, load averages: 4.27 4.29\n",
+    )
     uptime = self.platform.uptime()
     self.assertEqual(uptime, dt.timedelta(days=5, hours=1))
     self.expect_sh(
-        "uptime",
-        result="12:25  up 45 secs, 2 users, load averages: 4.27 4.29 4.80\n")
+      "uptime",
+      result="12:25  up 45 secs, 2 users, load averages: 4.27 4.29 4.80\n",
+    )
     uptime = self.platform.uptime()
     self.assertEqual(uptime, dt.timedelta(seconds=45))
 
 
 class PlatformClipboardTestCase(
-    CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
+  CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta
+):
   __test__ = False
 
   @abc.abstractmethod
@@ -317,7 +333,8 @@ class PlatformClipboardTestCase(
 
   @abc.abstractmethod
   def clipboard_tool_configs(
-      self) -> list[tuple[str, pth.LocalPath, list[str]]]:
+    self,
+  ) -> list[tuple[str, pth.LocalPath, list[str]]]:
     pass
 
   def test_clipboard_not_found(self) -> None:
@@ -338,18 +355,18 @@ class PlatformClipboardTestCase(
           self._test_set_clipboard(platform, bin_path, extra_args)
 
   def _test_set_clipboard(
-      self,
-      platform: plt.Platform,
-      bin_path: pth.LocalPath,
-      extra_args: list[str],
+    self,
+    platform: plt.Platform,
+    bin_path: pth.LocalPath,
+    extra_args: list[str],
   ) -> None:
     self.assertTrue(platform.has_clipboard)
     with mock.patch.object(platform, "sh") as mock_sh:
       platform.set_clipboard("hello")
 
       mock_sh.assert_called_once_with(
-          bin_path,
-          *extra_args,
-          input=b"hello",
-          check=True,
+        bin_path,
+        *extra_args,
+        input=b"hello",
+        check=True,
       )

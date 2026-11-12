@@ -39,23 +39,25 @@ def _default_success_condition(js_result: object) -> bool:
 
 
 class Actions(TimeScope):
-
   _max_end_datetime: dt.datetime
   _performance_mark: str
 
-  def __init__(self,
-               message: str,
-               run: Run,
-               runner: Runner | None = None,
-               browser: Browser | None = None,
-               verbose: bool = False,
-               measure: bool = True,
-               timeout: dt.timedelta = dt.timedelta(),
-               performance_mark: str = "") -> None:
+  def __init__(
+    self,
+    message: str,
+    run: Run,
+    runner: Runner | None = None,
+    browser: Browser | None = None,
+    verbose: bool = False,
+    measure: bool = True,
+    timeout: dt.timedelta = dt.timedelta(),
+    performance_mark: str = "",
+  ) -> None:
     assert message, "Actions need a name"
     super().__init__(message)
-    self._exception_annotation: Final[
-        ExceptionAnnotationScope] = run.exceptions.info(f"Action: {message}")
+    self._exception_annotation: Final[ExceptionAnnotationScope] = (
+      run.exceptions.info(f"Action: {message}")
+    )
     self._run: Final[Run] = run
     self._browser: Final[Browser] = browser or run.browser
     self._runner: Final[Runner] = runner or run.runner
@@ -63,8 +65,9 @@ class Actions(TimeScope):
     self._verbose: Final[bool] = verbose
     self._measure: Final[bool] = measure
     if timeout:
-      self._max_end_datetime = min(dt.datetime.now() + timeout,
-                                   run.max_end_datetime())
+      self._max_end_datetime = min(
+        dt.datetime.now() + timeout, run.max_end_datetime()
+      )
     else:
       self._max_end_datetime = run.max_end_datetime()
     self._performance_mark: str = performance_mark
@@ -91,9 +94,12 @@ class Actions(TimeScope):
       self._run.performance_mark(f"{self._performance_mark}-start")
     return self
 
-  def __exit__(self, exc_type: type[BaseException] | None,
-               exc_value: BaseException | None,
-               traceback: TracebackType | None) -> None:
+  def __exit__(
+    self,
+    exc_type: type[BaseException] | None,
+    exc_value: BaseException | None,
+    traceback: TracebackType | None,
+  ) -> None:
     self._is_active = False
     if self._performance_mark:
       self._run.performance_mark(f"{self._performance_mark}-stop")
@@ -112,12 +118,14 @@ class Actions(TimeScope):
   def switch_window(self, window_id: str) -> None:
     self._browser.switch_window(window_id)
 
-  def js(self,
-         js_code: str,
-         timeout: AnyTimeUnit = 10,
-         absolute_time: bool = False,
-         arguments: Sequence[object] = (),
-         **kwargs: object) -> object:
+  def js(
+    self,
+    js_code: str,
+    timeout: AnyTimeUnit = 10,
+    absolute_time: bool = False,
+    arguments: Sequence[object] = (),
+    **kwargs: object,
+  ) -> object:
     self._assert_is_active()
     assert js_code, "js_code must be a valid JS script"
     if kwargs:
@@ -126,14 +134,14 @@ class Actions(TimeScope):
     return self._browser.js(js_code, delta, arguments=arguments)
 
   def wait_js_condition(
-      self,
-      js_code: str,
-      min_interval: AnyTimeUnit,
-      timeout: AnyTimeUnit,
-      delay: AnyTimeUnit = 0,
-      absolute_time: bool = False,
-      arguments: Sequence[object] = (),
-      success_condition: Callable[..., bool] = _default_success_condition,
+    self,
+    js_code: str,
+    min_interval: AnyTimeUnit,
+    timeout: AnyTimeUnit,
+    delay: AnyTimeUnit = 0,
+    absolute_time: bool = False,
+    arguments: Sequence[object] = (),
+    success_condition: Callable[..., bool] = _default_success_condition,
   ) -> None:
     """
     Runs the `js_code` at a regular interval until either the `timeout` is
@@ -147,32 +155,40 @@ class Actions(TimeScope):
     """
     wait_range: WaitRange = self._run.wait_range(min_interval, timeout, delay)
     assert "return" in js_code, (
-        f"Missing return statement in js-wait code: {js_code}")
+      f"Missing return statement in js-wait code: {js_code}"
+    )
     for step in wait_range.wait_with_backoff():
       time_units = self.timing.units(step.time_left, absolute_time)
       result = self.js(
-          js_code,
-          timeout=time_units,
-          absolute_time=absolute_time,
-          arguments=arguments)
+        js_code,
+        timeout=time_units,
+        absolute_time=absolute_time,
+        arguments=arguments,
+      )
       if success_condition(result):
         return
 
-  def wait_for_ready_state(self, ready_state: ReadyState,
-                           timeout: dt.timedelta) -> None:
+  def wait_for_ready_state(
+    self, ready_state: ReadyState, timeout: dt.timedelta
+  ) -> None:
     # Make sure we also finish if readyState jumps directly
     # from "loading" to "complete"
     self.wait_js_condition(
-        f"""
+      f"""
           let state = document.readyState;
           return state === '{ready_state}' || state === "complete";
-        """, 0.2, timeout)
+        """,
+      0.2,
+      timeout,
+    )
 
-  def wait_for_url_matches(self,
-                           url_pattern: re.Pattern[str],
-                           min_interval: AnyTimeUnit,
-                           timeout: AnyTimeUnit,
-                           delay: AnyTimeUnit = 0) -> None:
+  def wait_for_url_matches(
+    self,
+    url_pattern: re.Pattern[str],
+    min_interval: AnyTimeUnit,
+    timeout: AnyTimeUnit,
+    delay: AnyTimeUnit = 0,
+  ) -> None:
     """
     Waits until the browser's current URL matches the given pattern.
 
@@ -193,18 +209,21 @@ class Actions(TimeScope):
         continue
 
   def show_url(
-      self,
-      url: str,
-      target: WindowTarget = WindowTarget.SELF,
-      ready_state: ReadyState = ReadyState.ANY,
-      timeout: dt.timedelta = dt.timedelta(),
+    self,
+    url: str,
+    target: WindowTarget = WindowTarget.SELF,
+    ready_state: ReadyState = ReadyState.ANY,
+    timeout: dt.timedelta = dt.timedelta(),
   ) -> None:
     self._assert_is_active()
     if target in (WindowTarget.BLANK, WindowTarget.PARENT, WindowTarget.TOP):
       # TODO: use target in the driver instead.
       self.js(f"window.open('{url}','{target.value}');")
-    elif target in (WindowTarget.SELF, WindowTarget.NEW_TAB,
-                    WindowTarget.NEW_WINDOW):
+    elif target in (
+      WindowTarget.SELF,
+      WindowTarget.NEW_TAB,
+      WindowTarget.NEW_WINDOW,
+    ):
       self._browser.show_url(url, target=target)
     else:
       raise ValueError(f"Unknown window target: {target}")
@@ -215,10 +234,12 @@ class Actions(TimeScope):
   def current_url(self) -> str:
     return str(self.js("return document.URL;"))
 
-  def wait(self,
-           time: AnyTimeUnit = dt.timedelta(seconds=1),
-           absolute_time: bool = False) -> None:
-    """"Wait for a fixed timeout. If you need to wait until a certain
+  def wait(
+    self,
+    time: AnyTimeUnit = dt.timedelta(seconds=1),
+    absolute_time: bool = False,
+  ) -> None:
+    """ "Wait for a fixed timeout. If you need to wait until a certain
     timeout passed independent of a previous action, use wait_until(...).
 
     | action 2s | wait 2s | => total time is 4s
@@ -230,9 +251,11 @@ class Actions(TimeScope):
       self._runner.wait(time, absolute_time=absolute_time)
 
   @contextlib.contextmanager
-  def wait_until(self,
-                 timeout: AnyTimeUnit = dt.timedelta(seconds=1),
-                 absolute_time: bool = False) -> Iterator[None]:
+  def wait_until(
+    self,
+    timeout: AnyTimeUnit = dt.timedelta(seconds=1),
+    absolute_time: bool = False,
+  ) -> Iterator[None]:
     """Wait until the given timeout elapsed.
     Unlike wait(...), this takes into account the time spent in the the
     wrapped block.
@@ -256,5 +279,7 @@ class Actions(TimeScope):
       else:
         run_duration = dt.timedelta(seconds=py_time.time() - start_time)
         logging.info(
-            "Action took longer (%s) than expected action duration (%s).",
-            run_duration, delta)
+          "Action took longer (%s) than expected action duration (%s).",
+          run_duration,
+          delta,
+        )

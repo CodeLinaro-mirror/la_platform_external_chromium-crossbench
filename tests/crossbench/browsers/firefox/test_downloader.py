@@ -7,16 +7,22 @@ from __future__ import annotations
 import abc
 
 from crossbench import path as pth
-from crossbench.browsers.firefox.downloader import FirefoxDownloader, \
-    FirefoxDownloaderLinux, FirefoxDownloaderMacOS, FirefoxDownloaderWin
+from crossbench.browsers.firefox.downloader import (
+  FirefoxDownloader,
+  FirefoxDownloaderLinux,
+  FirefoxDownloaderMacOS,
+  FirefoxDownloaderWin,
+)
 from crossbench.plt.arch import MachineArch
 from tests import test_helper
-from tests.crossbench.browsers.downloader_helper import \
-    AbstractDownloaderTestCase
+from tests.crossbench.browsers.downloader_helper import (
+  AbstractDownloaderTestCase,
+)
 
 
 class AbstractFirefoxDownloaderTestCase(
-    AbstractDownloaderTestCase, metaclass=abc.ABCMeta):
+  AbstractDownloaderTestCase, metaclass=abc.ABCMeta
+):
   __test__ = False
 
   def test_name(self) -> None:
@@ -42,29 +48,34 @@ class AbstractFirefoxDownloaderTestCase(
     self.assertFalse(FirefoxDownloader.is_valid("124.0.2", self.platform))
     self.assertTrue(FirefoxDownloader.is_valid("ff-124.0.2", self.platform))
     self.assertTrue(
-        FirefoxDownloader.is_valid("firefox-124.0.2", self.platform))
+      FirefoxDownloader.is_valid("firefox-124.0.2", self.platform)
+    )
 
   def test_valid_versions_beta(self):
     self.assertTrue(FirefoxDownloader.is_valid("104.0b9", self.platform))
     self.assertTrue(FirefoxDownloader.is_valid("ff-104.0b9", self.platform))
     self.assertTrue(
-        FirefoxDownloader.is_valid("firefox-104.0b9", self.platform))
+      FirefoxDownloader.is_valid("firefox-104.0b9", self.platform)
+    )
 
     self.assertFalse(FirefoxDownloader.is_valid("104.0ab9", self.platform))
     self.assertFalse(FirefoxDownloader.is_valid("ff-104.0ab9", self.platform))
     self.assertFalse(
-        FirefoxDownloader.is_valid("firefox-104.0ab9", self.platform))
+      FirefoxDownloader.is_valid("firefox-104.0ab9", self.platform)
+    )
 
   def test_valid_versions_esr(self):
     self.assertTrue(FirefoxDownloader.is_valid("115.0.3esr", self.platform))
     self.assertTrue(FirefoxDownloader.is_valid("ff-115.0.3esr", self.platform))
     self.assertTrue(
-        FirefoxDownloader.is_valid("firefox-115.0.3esr", self.platform))
+      FirefoxDownloader.is_valid("firefox-115.0.3esr", self.platform)
+    )
 
     self.assertFalse(FirefoxDownloader.is_valid("115.0a3esr", self.platform))
     self.assertFalse(FirefoxDownloader.is_valid("ff-115.0a3esr", self.platform))
     self.assertFalse(
-        FirefoxDownloader.is_valid("firefox-115.0a3esr", self.platform))
+      FirefoxDownloader.is_valid("firefox-115.0a3esr", self.platform)
+    )
 
   def test_empty_path(self) -> None:
     with self.assertRaises(ValueError):
@@ -78,9 +89,12 @@ class BasicFirefoxDownloaderLinuxTestCase(AbstractFirefoxDownloaderTestCase):
   MACHINE = MachineArch.X64
 
   def test_is_valid_archive(self) -> None:
-    self._assert_valid_archive("archive.tar.bz2", FirefoxDownloader,
-                               FirefoxDownloaderLinux,
-                               (FirefoxDownloaderMacOS, FirefoxDownloaderWin))
+    self._assert_valid_archive(
+      "archive.tar.bz2",
+      FirefoxDownloader,
+      FirefoxDownloaderLinux,
+      (FirefoxDownloaderMacOS, FirefoxDownloaderWin),
+    )
 
 
 class BasicFirefoxDownloaderMacOSTestCase(AbstractFirefoxDownloaderTestCase):
@@ -90,9 +104,12 @@ class BasicFirefoxDownloaderMacOSTestCase(AbstractFirefoxDownloaderTestCase):
   MACHINE = MachineArch.ARM_64
 
   def test_is_valid_archive(self) -> None:
-    self._assert_valid_archive("archive.dmg", FirefoxDownloader,
-                               FirefoxDownloaderMacOS,
-                               (FirefoxDownloaderLinux, FirefoxDownloaderWin))
+    self._assert_valid_archive(
+      "archive.dmg",
+      FirefoxDownloader,
+      FirefoxDownloaderMacOS,
+      (FirefoxDownloaderLinux, FirefoxDownloaderWin),
+    )
 
 
 if __name__ == "__main__":

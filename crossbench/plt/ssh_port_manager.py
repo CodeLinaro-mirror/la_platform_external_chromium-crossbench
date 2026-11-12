@@ -17,7 +17,6 @@ if TYPE_CHECKING:
 
 
 class SshPortManager(SubprocessPortManager):
-
   def __init__(self, platform: Platform) -> None:
     assert isinstance(platform, SshPlatformMixin)
     super().__init__(platform)
@@ -27,15 +26,19 @@ class SshPortManager(SubprocessPortManager):
     return self.platform.build_ssh_cmd(*args, shell=shell)
 
   @override
-  def _popen_forward(self, local_port: int,
-                     remote_port: int) -> subprocess.Popen:
+  def _popen_forward(
+    self, local_port: int, remote_port: int
+  ) -> subprocess.Popen:
     return self.host_platform.popen(
-        *self._build_ssh_cmd("-NL", f"{local_port}:localhost:{remote_port}"))
+      *self._build_ssh_cmd("-NL", f"{local_port}:localhost:{remote_port}")
+    )
 
   @override
-  def _popen_reverse_forward(self, remote_port: int,
-                             local_port: int) -> subprocess.Popen:
+  def _popen_reverse_forward(
+    self, remote_port: int, local_port: int
+  ) -> subprocess.Popen:
     # TODO: this should likely match with adb, where we support 0
     # for auto-allocating a remote_port
     return self.host_platform.popen(
-        *self._build_ssh_cmd("-NR", f"{remote_port}:localhost:{local_port}"))
+      *self._build_ssh_cmd("-NR", f"{remote_port}:localhost:{local_port}")
+    )

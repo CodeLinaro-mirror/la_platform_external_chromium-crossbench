@@ -11,17 +11,19 @@ from crossbench.helper.size import Size
 
 if TYPE_CHECKING:
   from crossbench import path as pth
+
   PathT = TypeVar("PathT", bound=pth.AnyPath)
 
 
-def sort_by_file_size(files: Iterable[PathT],
-                      platform: plt.Platform | None = None) -> list[PathT]:
+def sort_by_file_size(
+  files: Iterable[PathT], platform: plt.Platform | None = None
+) -> list[PathT]:
   real_platform = platform or plt.PLATFORM
   return sorted(files, key=lambda f: (real_platform.file_size(f), f.name))
 
 
-def get_file_size(file: pth.AnyPath,
-                  digits: int = 2,
-                  platform: plt.Platform | None = None) -> str:
+def get_file_size(
+  file: pth.AnyPath, digits: int = 2, platform: plt.Platform | None = None
+) -> str:
   real_platform = platform or plt.PLATFORM
   return Size.format(real_platform.file_size(file), digits=digits)

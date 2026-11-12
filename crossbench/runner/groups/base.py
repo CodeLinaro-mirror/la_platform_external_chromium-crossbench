@@ -18,7 +18,6 @@ if TYPE_CHECKING:
 
 
 class RunGroup(abc.ABC):
-
   def __init__(self, throw: bool = False) -> None:
     self._exceptions: Final[exception.Annotator] = exception.Annotator(throw)
     self._path: pth.LocalPath | None = None
@@ -82,22 +81,23 @@ class RunGroup(abc.ABC):
   @property
   def info(self) -> JsonMapping:
     return {
-        "runs": len(tuple(self.runs)),
-        "failed runs": len(tuple(self.failed_runs)),
+      "runs": len(tuple(self.runs)),
+      "failed runs": len(tuple(self.failed_runs)),
     }
 
-  def get_local_probe_result_path(self,
-                                  probe: Probe,
-                                  exists_ok: bool = False) -> pth.LocalPath:
+  def get_local_probe_result_path(
+    self, probe: Probe, exists_ok: bool = False
+  ) -> pth.LocalPath:
     new_file = self.path / probe.result_path_name
     if not exists_ok:
       assert not new_file.exists(), (
-          f"Merged file {new_file} for {self.__class__} exists already.")
+        f"Merged file {new_file} for {self.__class__} exists already."
+      )
     return new_file
 
-  def get_local_probe_result_dir(self,
-                                 probe: Probe,
-                                 exists_ok: bool = True) -> pth.LocalPath:
+  def get_local_probe_result_dir(
+    self, probe: Probe, exists_ok: bool = True
+  ) -> pth.LocalPath:
     path = self.get_local_probe_result_path(probe, exists_ok)
     path.mkdir(parents=True, exist_ok=exists_ok)
     return path

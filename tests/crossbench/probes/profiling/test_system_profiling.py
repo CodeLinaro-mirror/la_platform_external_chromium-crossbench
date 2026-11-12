@@ -18,30 +18,53 @@ from crossbench.plt.android_adb import Adb
 from crossbench.plt.bin import Binaries
 from crossbench.plt.linux import PERF_EVENT_PARANOID_PATH
 from crossbench.probes import all as all_probes
-from crossbench.probes.probe_error import ProbeIncompatibleBrowser, \
-    ProbeValidationError
-from crossbench.probes.profiling.context.android import \
-    AndroidProfilingContext, generate_simpleperf_command_line
-from crossbench.probes.profiling.context.linux import LinuxProfilingContext, \
-    linux_perf_probe_pprof
-from crossbench.probes.profiling.context.macos import MAC_INSTRUMENT_PATH, \
-    MacOSProfilingContext
-from crossbench.probes.profiling.enum import CallGraphMode, CleanupMode, \
-    PprofMode, TargetMode, TraceconvMode
-from crossbench.probes.profiling.system_profiling import RENDERER_CMD_PATH, \
-    ProfilingProbe
-from crossbench.probes.xcode_instruments.instrument_package import \
-    InstrumentPackage
+from crossbench.probes.probe_error import (
+  ProbeIncompatibleBrowser,
+  ProbeValidationError,
+)
+from crossbench.probes.profiling.context.android import (
+  AndroidProfilingContext,
+  generate_simpleperf_command_line,
+)
+from crossbench.probes.profiling.context.linux import (
+  LinuxProfilingContext,
+  linux_perf_probe_pprof,
+)
+from crossbench.probes.profiling.context.macos import (
+  MAC_INSTRUMENT_PATH,
+  MacOSProfilingContext,
+)
+from crossbench.probes.profiling.enum import (
+  CallGraphMode,
+  CleanupMode,
+  PprofMode,
+  TargetMode,
+  TraceconvMode,
+)
+from crossbench.probes.profiling.system_profiling import (
+  RENDERER_CMD_PATH,
+  ProfilingProbe,
+)
+from crossbench.probes.xcode_instruments.instrument_package import (
+  InstrumentPackage,
+)
 from tests import test_helper
-from tests.crossbench.mock_browser import MockChromeStable, MockFirefox, \
-    MockSafari
-from tests.crossbench.mock_helper import AndroidAdbMockPlatform, \
-    LinuxMockPlatform, MacOsMockPlatform, MockPopen, MockPopenState
+from tests.crossbench.mock_browser import (
+  MockChromeStable,
+  MockFirefox,
+  MockSafari,
+)
+from tests.crossbench.mock_helper import (
+  AndroidAdbMockPlatform,
+  LinuxMockPlatform,
+  MacOsMockPlatform,
+  MockPopen,
+  MockPopenState,
+)
 from tests.crossbench.probes.helper import GenericProbeTestCase
 
 
 class SystemProfilingProbeTestCase(GenericProbeTestCase):
-
   @override
   def setUp(self):
     super().setUp()
@@ -50,293 +73,323 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
   def test_simpleperf_command_line_with_tid(self):
     output_path = pathlib.Path("simpleperf.perf.data")
     self.assertSequenceEqual(
-        generate_simpleperf_command_line(
-            target=TargetMode.RENDERER_MAIN_ONLY,
-            app_name="com.android.chrome",
-            renderer_pid=1234,
-            renderer_main_tid=5678,
-            call_graph_mode=CallGraphMode.DWARF,
-            frequency=None,
-            count=None,
-            cpus=(),
-            events=(),
-            grouped_events=(),
-            add_counters=(),
-            output_path=output_path), [
-                "simpleperf",
-                "record",
-                "-t",
-                "5678",
-                "--call-graph",
-                "dwarf",
-                "--post-unwind=yes",
-                "-o",
-                output_path,
-            ])
+      generate_simpleperf_command_line(
+        target=TargetMode.RENDERER_MAIN_ONLY,
+        app_name="com.android.chrome",
+        renderer_pid=1234,
+        renderer_main_tid=5678,
+        call_graph_mode=CallGraphMode.DWARF,
+        frequency=None,
+        count=None,
+        cpus=(),
+        events=(),
+        grouped_events=(),
+        add_counters=(),
+        output_path=output_path,
+      ),
+      [
+        "simpleperf",
+        "record",
+        "-t",
+        "5678",
+        "--call-graph",
+        "dwarf",
+        "--post-unwind=yes",
+        "-o",
+        output_path,
+      ],
+    )
 
   def test_simpleperf_command_line_with_pid(self):
     output_path = pathlib.Path("simpleperf.perf.data")
     self.assertSequenceEqual(
-        generate_simpleperf_command_line(
-            target=TargetMode.RENDERER_PROCESS_ONLY,
-            app_name="com.android.chrome",
-            renderer_pid=1234,
-            renderer_main_tid=5678,
-            call_graph_mode=CallGraphMode.DWARF,
-            frequency=None,
-            count=None,
-            cpus=(),
-            events=(),
-            grouped_events=(),
-            add_counters=(),
-            output_path=output_path), [
-                "simpleperf",
-                "record",
-                "-p",
-                "1234",
-                "--call-graph",
-                "dwarf",
-                "--post-unwind=yes",
-                "-o",
-                output_path,
-            ])
+      generate_simpleperf_command_line(
+        target=TargetMode.RENDERER_PROCESS_ONLY,
+        app_name="com.android.chrome",
+        renderer_pid=1234,
+        renderer_main_tid=5678,
+        call_graph_mode=CallGraphMode.DWARF,
+        frequency=None,
+        count=None,
+        cpus=(),
+        events=(),
+        grouped_events=(),
+        add_counters=(),
+        output_path=output_path,
+      ),
+      [
+        "simpleperf",
+        "record",
+        "-p",
+        "1234",
+        "--call-graph",
+        "dwarf",
+        "--post-unwind=yes",
+        "-o",
+        output_path,
+      ],
+    )
 
   def test_simpleperf_command_line_with_app(self):
     output_path = pathlib.Path("simpleperf.perf.data")
     self.assertSequenceEqual(
-        generate_simpleperf_command_line(
-            target=TargetMode.BROWSER_APP_ONLY,
-            app_name="com.chrome.beta",
-            renderer_pid=None,
-            renderer_main_tid=None,
-            call_graph_mode=CallGraphMode.DWARF,
-            frequency=None,
-            count=None,
-            cpus=(),
-            events=(),
-            grouped_events=(),
-            add_counters=(),
-            output_path=output_path), [
-                "simpleperf",
-                "record",
-                "--app",
-                "com.chrome.beta",
-                "--call-graph",
-                "dwarf",
-                "--post-unwind=yes",
-                "-o",
-                output_path,
-            ])
+      generate_simpleperf_command_line(
+        target=TargetMode.BROWSER_APP_ONLY,
+        app_name="com.chrome.beta",
+        renderer_pid=None,
+        renderer_main_tid=None,
+        call_graph_mode=CallGraphMode.DWARF,
+        frequency=None,
+        count=None,
+        cpus=(),
+        events=(),
+        grouped_events=(),
+        add_counters=(),
+        output_path=output_path,
+      ),
+      [
+        "simpleperf",
+        "record",
+        "--app",
+        "com.chrome.beta",
+        "--call-graph",
+        "dwarf",
+        "--post-unwind=yes",
+        "-o",
+        output_path,
+      ],
+    )
 
   def test_simpleperf_command_line_systemwide(self):
     output_path = pathlib.Path("simpleperf.perf.data")
     self.assertSequenceEqual(
-        generate_simpleperf_command_line(
-            target=TargetMode.SYSTEM_WIDE,
-            app_name="org.chromium.chrome",
-            renderer_pid=None,
-            renderer_main_tid=None,
-            call_graph_mode=CallGraphMode.DWARF,
-            frequency=None,
-            count=None,
-            cpus=(),
-            events=(),
-            grouped_events=(),
-            add_counters=(),
-            output_path=output_path), [
-                "simpleperf",
-                "record",
-                "-a",
-                "--call-graph",
-                "dwarf",
-                "--post-unwind=yes",
-                "-o",
-                output_path,
-            ])
+      generate_simpleperf_command_line(
+        target=TargetMode.SYSTEM_WIDE,
+        app_name="org.chromium.chrome",
+        renderer_pid=None,
+        renderer_main_tid=None,
+        call_graph_mode=CallGraphMode.DWARF,
+        frequency=None,
+        count=None,
+        cpus=(),
+        events=(),
+        grouped_events=(),
+        add_counters=(),
+        output_path=output_path,
+      ),
+      [
+        "simpleperf",
+        "record",
+        "-a",
+        "--call-graph",
+        "dwarf",
+        "--post-unwind=yes",
+        "-o",
+        output_path,
+      ],
+    )
 
   def test_simpleperf_command_line_with_frequency(self):
     output_path = pathlib.Path("simpleperf.perf.data")
     self.assertSequenceEqual(
-        generate_simpleperf_command_line(
-            target=TargetMode.SYSTEM_WIDE,
-            app_name="org.chromium.chrome",
-            renderer_pid=None,
-            renderer_main_tid=None,
-            call_graph_mode=CallGraphMode.FRAME_POINTER,
-            frequency=1234,
-            count=None,
-            cpus=(),
-            events=(),
-            grouped_events=(),
-            add_counters=(),
-            output_path=output_path), [
-                "simpleperf",
-                "record",
-                "-a",
-                "--call-graph",
-                "fp",
-                "-f",
-                "1234",
-                "-o",
-                output_path,
-            ])
+      generate_simpleperf_command_line(
+        target=TargetMode.SYSTEM_WIDE,
+        app_name="org.chromium.chrome",
+        renderer_pid=None,
+        renderer_main_tid=None,
+        call_graph_mode=CallGraphMode.FRAME_POINTER,
+        frequency=1234,
+        count=None,
+        cpus=(),
+        events=(),
+        grouped_events=(),
+        add_counters=(),
+        output_path=output_path,
+      ),
+      [
+        "simpleperf",
+        "record",
+        "-a",
+        "--call-graph",
+        "fp",
+        "-f",
+        "1234",
+        "-o",
+        output_path,
+      ],
+    )
 
   def test_simpleperf_command_line_with_count(self):
     output_path = pathlib.Path("simpleperf.perf.data")
     self.assertSequenceEqual(
-        generate_simpleperf_command_line(
-            target=TargetMode.SYSTEM_WIDE,
-            app_name="org.chromium.chrome",
-            renderer_pid=None,
-            renderer_main_tid=None,
-            call_graph_mode=CallGraphMode.FRAME_POINTER,
-            frequency=None,
-            count=5,
-            cpus=(),
-            events=(),
-            grouped_events=(),
-            add_counters=(),
-            output_path=output_path), [
-                "simpleperf",
-                "record",
-                "-a",
-                "--call-graph",
-                "fp",
-                "-c",
-                "5",
-                "-o",
-                output_path,
-            ])
+      generate_simpleperf_command_line(
+        target=TargetMode.SYSTEM_WIDE,
+        app_name="org.chromium.chrome",
+        renderer_pid=None,
+        renderer_main_tid=None,
+        call_graph_mode=CallGraphMode.FRAME_POINTER,
+        frequency=None,
+        count=5,
+        cpus=(),
+        events=(),
+        grouped_events=(),
+        add_counters=(),
+        output_path=output_path,
+      ),
+      [
+        "simpleperf",
+        "record",
+        "-a",
+        "--call-graph",
+        "fp",
+        "-c",
+        "5",
+        "-o",
+        output_path,
+      ],
+    )
 
   def test_simpleperf_command_line_with_cpu(self):
     output_path = pathlib.Path("simpleperf.perf.data")
     self.assertSequenceEqual(
-        generate_simpleperf_command_line(
-            target=TargetMode.SYSTEM_WIDE,
-            app_name="org.chromium.chrome",
-            renderer_pid=None,
-            renderer_main_tid=None,
-            call_graph_mode=CallGraphMode.FRAME_POINTER,
-            frequency=None,
-            count=None,
-            cpus=(
-                0,
-                1,
-                2,
-            ),
-            events=(),
-            grouped_events=(),
-            add_counters=(),
-            output_path=output_path), [
-                "simpleperf",
-                "record",
-                "-a",
-                "--call-graph",
-                "fp",
-                "--cpu",
-                "0,1,2",
-                "-o",
-                output_path,
-            ])
+      generate_simpleperf_command_line(
+        target=TargetMode.SYSTEM_WIDE,
+        app_name="org.chromium.chrome",
+        renderer_pid=None,
+        renderer_main_tid=None,
+        call_graph_mode=CallGraphMode.FRAME_POINTER,
+        frequency=None,
+        count=None,
+        cpus=(
+          0,
+          1,
+          2,
+        ),
+        events=(),
+        grouped_events=(),
+        add_counters=(),
+        output_path=output_path,
+      ),
+      [
+        "simpleperf",
+        "record",
+        "-a",
+        "--call-graph",
+        "fp",
+        "--cpu",
+        "0,1,2",
+        "-o",
+        output_path,
+      ],
+    )
 
   def test_simpleperf_command_line_with_events(self):
     output_path = pathlib.Path("simpleperf.perf.data")
     self.assertSequenceEqual(
-        generate_simpleperf_command_line(
-            target=TargetMode.SYSTEM_WIDE,
-            app_name="org.chromium.chrome",
-            renderer_pid=None,
-            renderer_main_tid=None,
-            call_graph_mode=CallGraphMode.NO_CALL_GRAPH,
-            frequency=1234,
-            count=5,
-            cpus=(),
-            events=(
-                "cpu-cycles",
-                "instructions",
-            ),
-            grouped_events=(),
-            add_counters=(),
-            output_path=output_path), [
-                "simpleperf",
-                "record",
-                "-a",
-                "-f",
-                "1234",
-                "-c",
-                "5",
-                "-e",
-                "cpu-cycles,instructions",
-                "-o",
-                output_path,
-            ])
+      generate_simpleperf_command_line(
+        target=TargetMode.SYSTEM_WIDE,
+        app_name="org.chromium.chrome",
+        renderer_pid=None,
+        renderer_main_tid=None,
+        call_graph_mode=CallGraphMode.NO_CALL_GRAPH,
+        frequency=1234,
+        count=5,
+        cpus=(),
+        events=(
+          "cpu-cycles",
+          "instructions",
+        ),
+        grouped_events=(),
+        add_counters=(),
+        output_path=output_path,
+      ),
+      [
+        "simpleperf",
+        "record",
+        "-a",
+        "-f",
+        "1234",
+        "-c",
+        "5",
+        "-e",
+        "cpu-cycles,instructions",
+        "-o",
+        output_path,
+      ],
+    )
 
   def test_simpleperf_command_line_with_grouped_events(self):
     output_path = pathlib.Path("simpleperf.perf.data")
     self.assertSequenceEqual(
-        generate_simpleperf_command_line(
-            target=TargetMode.SYSTEM_WIDE,
-            app_name="org.chromium.chrome",
-            renderer_pid=None,
-            renderer_main_tid=None,
-            call_graph_mode=CallGraphMode.NO_CALL_GRAPH,
-            frequency=1234,
-            count=5,
-            cpus=(),
-            events=(),
-            grouped_events=(
-                "cpu-cycles",
-                "instructions",
-            ),
-            add_counters=(),
-            output_path=output_path), [
-                "simpleperf",
-                "record",
-                "-a",
-                "-f",
-                "1234",
-                "-c",
-                "5",
-                "--group",
-                "cpu-cycles,instructions",
-                "-o",
-                output_path,
-            ])
+      generate_simpleperf_command_line(
+        target=TargetMode.SYSTEM_WIDE,
+        app_name="org.chromium.chrome",
+        renderer_pid=None,
+        renderer_main_tid=None,
+        call_graph_mode=CallGraphMode.NO_CALL_GRAPH,
+        frequency=1234,
+        count=5,
+        cpus=(),
+        events=(),
+        grouped_events=(
+          "cpu-cycles",
+          "instructions",
+        ),
+        add_counters=(),
+        output_path=output_path,
+      ),
+      [
+        "simpleperf",
+        "record",
+        "-a",
+        "-f",
+        "1234",
+        "-c",
+        "5",
+        "--group",
+        "cpu-cycles,instructions",
+        "-o",
+        output_path,
+      ],
+    )
 
   def test_simpleperf_command_line_with_add_counters(self):
     output_path = pathlib.Path("simpleperf.perf.data")
     self.assertSequenceEqual(
-        generate_simpleperf_command_line(
-            target=TargetMode.SYSTEM_WIDE,
-            app_name="org.chromium.chrome",
-            renderer_pid=None,
-            renderer_main_tid=None,
-            call_graph_mode=CallGraphMode.NO_CALL_GRAPH,
-            frequency=1234,
-            count=5,
-            cpus=(),
-            events=("sched:sched_switch",),
-            grouped_events=(),
-            add_counters=(
-                "cpu-cycles",
-                "instructions",
-            ),
-            output_path=output_path), [
-                "simpleperf",
-                "record",
-                "-a",
-                "-f",
-                "1234",
-                "-c",
-                "5",
-                "-e",
-                "sched:sched_switch",
-                "--add-counter",
-                "cpu-cycles,instructions",
-                "--no-inherit",
-                "-o",
-                output_path,
-            ])
+      generate_simpleperf_command_line(
+        target=TargetMode.SYSTEM_WIDE,
+        app_name="org.chromium.chrome",
+        renderer_pid=None,
+        renderer_main_tid=None,
+        call_graph_mode=CallGraphMode.NO_CALL_GRAPH,
+        frequency=1234,
+        count=5,
+        cpus=(),
+        events=("sched:sched_switch",),
+        grouped_events=(),
+        add_counters=(
+          "cpu-cycles",
+          "instructions",
+        ),
+        output_path=output_path,
+      ),
+      [
+        "simpleperf",
+        "record",
+        "-a",
+        "-f",
+        "1234",
+        "-c",
+        "5",
+        "-e",
+        "sched:sched_switch",
+        "--add-counter",
+        "cpu-cycles,instructions",
+        "--no-inherit",
+        "-o",
+        output_path,
+      ],
+    )
 
   def test_parse_target_preset(self):
     probe = ProfilingProbe()
@@ -391,8 +444,9 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
     mock_browser.platform = LinuxMockPlatform(fake_fs=self.fs)
     mock_browser.platform.install_mock_binary("pprof", "/usr/bin/pprof")
     mock_browser.platform.install_mock_binary("gcert", "/usr/bin/gcert")
-    mock_browser.platform.install_mock_binary("gcertstatus",
-                                              "/usr/bin/gcertstatus")
+    mock_browser.platform.install_mock_binary(
+      "gcertstatus", "/usr/bin/gcertstatus"
+    )
     mock_browser.platform.install_mock_binary("perf", "/usr/bin/perf")
     mock_browser.platform.expect_sh("/usr/bin/gcertstatus")
     mock_browser.host_platform = mock_browser.platform
@@ -414,8 +468,9 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
 
     mock_browser.platform.rm(PERF_EVENT_PARANOID_PATH)
     self.fs.create_file(PERF_EVENT_PARANOID_PATH, contents="4\n")
-    with self.assertRaisesRegex(ProbeValidationError,
-                                "kernel.perf_event_paranoid=4"):
+    with self.assertRaisesRegex(
+      ProbeValidationError, "kernel.perf_event_paranoid=4"
+    ):
       probe.validate_browser(mock_env, mock_browser)
 
   def test_resolve_target_mode(self):
@@ -425,27 +480,33 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
     macos_platform = MacOsMockPlatform()
     MockChromeStable.setup_fs(self.fs, macos_platform)
     macos_browser = MockChromeStable(
-        "macos_chrome", settings=Settings(platform=macos_platform))
+      "macos_chrome", settings=Settings(platform=macos_platform)
+    )
     self.assertEqual(
-        probe.resolve_target_mode(macos_browser),
-        TargetMode.RENDERER_PROCESS_ONLY)
+      probe.resolve_target_mode(macos_browser), TargetMode.RENDERER_PROCESS_ONLY
+    )
 
     linux_platform = LinuxMockPlatform()
     MockChromeStable.setup_fs(self.fs, linux_platform)
     linux_browser = MockChromeStable(
-        "linux_chrome", settings=Settings(platform=linux_platform))
+      "linux_chrome", settings=Settings(platform=linux_platform)
+    )
     self.assertEqual(
-        probe.resolve_target_mode(linux_browser), TargetMode.BROWSER_APP_ONLY)
+      probe.resolve_target_mode(linux_browser), TargetMode.BROWSER_APP_ONLY
+    )
 
     # For explicitly set targets, it should always return that target
     probe = ProfilingProbe(target=TargetMode.SYSTEM_WIDE)
     self.assertEqual(
-        probe.resolve_target_mode(macos_browser), TargetMode.SYSTEM_WIDE)
+      probe.resolve_target_mode(macos_browser), TargetMode.SYSTEM_WIDE
+    )
     self.assertEqual(
-        probe.resolve_target_mode(linux_browser), TargetMode.SYSTEM_WIDE)
+      probe.resolve_target_mode(linux_browser), TargetMode.SYSTEM_WIDE
+    )
 
   def test_create_non_defaults(self):
-    probe = ProfilingProbe.parse_dict({
+    probe = ProfilingProbe.parse_dict(
+      {
         "js": False,
         "browser_process": True,
         "spare_renderer_process": True,
@@ -461,7 +522,8 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
         "events": ["instructions", "cache-misses"],
         "grouped_events": ["cache-references", "cache-misses"],
         "add_counters": ["aa", "bb"],
-    })
+      }
+    )
     self.assertTrue(probe.key)
     self.assertFalse(probe.sample_js)
     self.assertTrue(probe.sample_browser_process)
@@ -475,8 +537,9 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
     self.assertEqual(probe.count, 430)
     self.assertSequenceEqual(probe.cpu, (1, 2, 3))
     self.assertSequenceEqual(probe.events, ("instructions", "cache-misses"))
-    self.assertSequenceEqual(probe.grouped_events,
-                             ("cache-references", "cache-misses"))
+    self.assertSequenceEqual(
+      probe.grouped_events, ("cache-references", "cache-misses")
+    )
     self.assertSequenceEqual(probe.add_counters, ("aa", "bb"))
 
   def test_v8_interpreted_frames_default(self):
@@ -489,8 +552,9 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
     probe = ProfilingProbe(js=True, v8_interpreted_frames=False)
     self.assertFalse(probe.expose_v8_interpreted_frames)
 
-    with self.assertRaisesRegex(AssertionError,
-                                "Cannot expose V8 interpreted frames"):
+    with self.assertRaisesRegex(
+      AssertionError, "Cannot expose V8 interpreted frames"
+    ):
       ProfilingProbe(js=False, v8_interpreted_frames=True)
 
     probe = ProfilingProbe.parse_dict({"js": False})
@@ -517,8 +581,9 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
 
     probe_spare = ProfilingProbe(spare_renderer_process=True)
     browser_a.attach_probe(probe_spare)
-    self.assertNotIn("SpareRendererForSitePerProcess",
-                     browser_b.features.disabled)
+    self.assertNotIn(
+      "SpareRendererForSitePerProcess", browser_b.features.disabled
+    )
 
     probe_no_spare = ProfilingProbe(spare_renderer_process=False)
     browser_b.attach_probe(probe_no_spare)
@@ -533,18 +598,19 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
       browser_cls.setup_fs(self.fs, macos_platform)
       name = browser_cls.__name__
       browser_cls(
-          name, settings=Settings(platform=macos_platform)).attach_probe(probe)
+        name, settings=Settings(platform=macos_platform)
+      ).attach_probe(probe)
 
     linux_platform = LinuxMockPlatform()
     for browser_cls in test_browsers:
       browser_cls.setup_fs(self.fs, linux_platform)
     with self.assertRaises(AssertionError):
       MockFirefox(
-          "firefox",
-          settings=Settings(platform=linux_platform)).attach_probe(probe)
+        "firefox", settings=Settings(platform=linux_platform)
+      ).attach_probe(probe)
     MockChromeStable(
-        "chrome",
-        settings=Settings(platform=linux_platform)).attach_probe(probe)
+      "chrome", settings=Settings(platform=linux_platform)
+    ).attach_probe(probe)
 
   def test_validate_linux_auto_pprof_no_fail(self) -> None:
     probe = ProfilingProbe(pprof=PprofMode.AUTO)
@@ -563,7 +629,8 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
     browser.platform.install_mock_binary("perf", "/usr/bin/perf")
     probe._validate_linux(env, browser)
     env.check_installed.assert_called_once_with(
-        binaries=[Binaries.PPROF], platform=browser.platform)
+      binaries=[Binaries.PPROF], platform=browser.platform
+    )
 
   def test_validate_linux_always_traceconv_checks_binary(self) -> None:
     probe = ProfilingProbe(traceconv=TraceconvMode.ALWAYS)
@@ -573,7 +640,8 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
     browser.platform.install_mock_binary("perf", "/usr/bin/perf")
     probe._validate_linux(env, browser)
     env.check_installed.assert_called_once_with(
-        binaries=[Binaries.TRACE_PROCESSOR_SHELL], platform=browser.platform)
+      binaries=[Binaries.TRACE_PROCESSOR_SHELL], platform=browser.platform
+    )
 
   def test_validate_non_linux_pprof_traceconv(self) -> None:
     env = mock.Mock(repetitions=1)
@@ -601,11 +669,13 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
     browser = mock.Mock()
     browser.host_platform = host_platform
     browser.platform = AndroidAdbMockPlatform(
-        host_platform, adb=adb, fake_fs=self.fs)
+      host_platform, adb=adb, fake_fs=self.fs
+    )
     browser.platform.which = mock.Mock(return_value="/system/bin/simpleperf")
     probe._validate_android(env, browser)
     env.check_installed.assert_called_once_with(
-        binaries=[Binaries.TRACE_PROCESSOR_SHELL], platform=host_platform)
+      binaries=[Binaries.TRACE_PROCESSOR_SHELL], platform=host_platform
+    )
 
   def test_run_traceconv_android(self) -> None:
     probe = ProfilingProbe(traceconv=TraceconvMode.AUTO)
@@ -614,17 +684,20 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
     browser1 = mock.Mock()
     browser1.host_platform = host_platform1
     browser1.platform = AndroidAdbMockPlatform(
-        host_platform1, adb=adb1, fake_fs=self.fs)
+      host_platform1, adb=adb1, fake_fs=self.fs
+    )
     self.assertFalse(probe.run_traceconv(browser1))
 
     host_platform2 = LinuxMockPlatform(fake_fs=self.fs)
-    host_platform2.install_mock_binary("trace_processor_shell",
-                                       "/usr/bin/trace_processor_shell")
+    host_platform2.install_mock_binary(
+      "trace_processor_shell", "/usr/bin/trace_processor_shell"
+    )
     adb2 = mock.Mock(spec=Adb, host_platform=host_platform2, serial_id="777")
     browser2 = mock.Mock()
     browser2.host_platform = host_platform2
     browser2.platform = AndroidAdbMockPlatform(
-        host_platform2, adb=adb2, fake_fs=self.fs)
+      host_platform2, adb=adb2, fake_fs=self.fs
+    )
     self.assertTrue(probe.run_traceconv(browser2))
 
   def test_macos_context_setup_builds_instrument(self) -> None:
@@ -634,13 +707,13 @@ class SystemProfilingProbeTestCase(GenericProbeTestCase):
     run.browser_platform = platform
     run.browser.platform = platform
     run.get_default_probe_result_path.return_value = pth.LocalPath(
-        "/tmp/result/profiling")
+      "/tmp/result/profiling"
+    )
     context = MacOSProfilingContext(probe, run)
     with mock.patch.object(InstrumentPackage, "build") as build:
       context.setup()
     build.assert_called_once_with(platform, MAC_INSTRUMENT_PATH)
     self.assertIs(context._package, build.return_value)
-
 
 
 class LinuxProfilingContextTestCase(GenericProbeTestCase):
@@ -673,7 +746,8 @@ class LinuxProfilingContextTestCase(GenericProbeTestCase):
     self.run.session.extra_js_flags = {}
     self.run.actions = mock.MagicMock()
     self.run.get_default_probe_result_path = mock.Mock(
-        return_value=pth.LocalPath("/tmp/test_result"))
+      return_value=pth.LocalPath("/tmp/test_result")
+    )
 
   def test_auto_infer_pprof_true(self) -> None:
     self.platform.install_mock_binary("pprof", "/usr/bin/pprof")
@@ -712,25 +786,29 @@ class LinuxProfilingContextTestCase(GenericProbeTestCase):
     self.fs.create_file(context.run.out_dir / "jit-1234.dump", contents="jit")
     debug_dir = context.result_path / "debug"
     self.platform.expect_sh(
-        f"perf --buildid-dir {debug_dir} script -i {other_perf} -F pid"
-        " | head -n1",
-        result="9999\n")
+      f"perf --buildid-dir {debug_dir} script -i {other_perf} -F pid"
+      " | head -n1",
+      result="9999\n",
+    )
     self.platform.expect_sh(
-        f"perf --buildid-dir {debug_dir} script -i {renderer_perf} -F pid"
-        " | head -n1",
-        result="1234\n")
+      f"perf --buildid-dir {debug_dir} script -i {renderer_perf} -F pid"
+      " | head -n1",
+      result="1234\n",
+    )
 
   def test_run_renderer_process_only(self) -> None:
     self.platform.install_mock_binary("perf", "/usr/bin/perf")
     self.fs.create_file(PERF_EVENT_PARANOID_PATH, contents="2\n")
-    probe = ProfilingProbe.parse_dict({
+    probe = ProfilingProbe.parse_dict(
+      {
         "js": False,
         "pprof": False,
         "cleanup": True,
         "frequency": 100,
         "call_graph_mode": "no_call_graph",
         "target": "renderer_process_only",
-    })
+      }
+    )
     for browser in self.browsers:
       browser._version = ChromiumVersion((125, 0, 0, 0))
       browser.get_renderer_pid = mock.Mock(return_value=1234)
@@ -738,7 +816,8 @@ class LinuxProfilingContextTestCase(GenericProbeTestCase):
 
     stories = [LivePage("google", "https://google.com")]
     runner = self.create_runner(
-        stories, js_side_effects=[], repetitions=1, throw=True)
+      stories, js_side_effects=[], repetitions=1, throw=True
+    )
     runner.attach_probe(probe)
 
     for browser in self.browsers:
@@ -750,10 +829,8 @@ class LinuxProfilingContextTestCase(GenericProbeTestCase):
       self.assertIn("--perf-call-graph=no_call_graph", cmd_prefix)
 
     with mock.patch.object(
-        LinuxProfilingContext,
-        "stop",
-        autospec=True,
-        side_effect=self._mock_stop):
+      LinuxProfilingContext, "stop", autospec=True, side_effect=self._mock_stop
+    ):
       runner.run()
 
     self.assertTrue(runner.is_success)
@@ -766,7 +843,8 @@ class LinuxProfilingContextTestCase(GenericProbeTestCase):
 
   def test_browser_process_profiling(self) -> None:
     probe = ProfilingProbe(
-        js=False, pprof=PprofMode.NEVER, browser_process=True, frequency=100)
+      js=False, pprof=PprofMode.NEVER, browser_process=True, frequency=100
+    )
     self.run.browser.pid = 4321
     self.run.out_dir = pth.LocalPath("/tmp")
     self.run.probes = ()
@@ -778,9 +856,15 @@ class LinuxProfilingContextTestCase(GenericProbeTestCase):
     context.setup()
     self.assertEqual(perf_proc.state, MockPopenState.UNUSED)
 
-    self.platform.expect_sh("perf", "record", "--call-graph=fp", "--freq=100",
-                            "--clockid=mono", f"--output={perf_file}",
-                            "--pid=4321")
+    self.platform.expect_sh(
+      "perf",
+      "record",
+      "--call-graph=fp",
+      "--freq=100",
+      "--clockid=mono",
+      f"--output={perf_file}",
+      "--pid=4321",
+    )
     context.start()
     self.assertEqual(perf_proc.state, MockPopenState.RUNNING)
 
@@ -793,8 +877,9 @@ class LinuxProfilingContextTestCase(GenericProbeTestCase):
     self.assertSequenceEqual(result.file_list, [perf_file])
 
   def test_auto_infer_traceconv_true(self) -> None:
-    self.platform.install_mock_binary("trace_processor_shell",
-                                      "/usr/bin/trace_processor_shell")
+    self.platform.install_mock_binary(
+      "trace_processor_shell", "/usr/bin/trace_processor_shell"
+    )
     context = LinuxProfilingContext(self.probe, self.run)
     context.setup_v8_log_path = mock.Mock()
     context.setup()
@@ -807,8 +892,9 @@ class LinuxProfilingContextTestCase(GenericProbeTestCase):
     self.assertFalse(context.run_traceconv)
 
   def test_explicit_traceconv_true(self) -> None:
-    self.platform.install_mock_binary("trace_processor_shell",
-                                      "/usr/bin/trace_processor_shell")
+    self.platform.install_mock_binary(
+      "trace_processor_shell", "/usr/bin/trace_processor_shell"
+    )
     self.probe = ProfilingProbe(traceconv=TraceconvMode.ALWAYS)
     context = LinuxProfilingContext(self.probe, self.run)
     context.setup_v8_log_path = mock.Mock()
@@ -824,10 +910,12 @@ class LinuxProfilingContextTestCase(GenericProbeTestCase):
       context.setup()
 
   def test_teardown_auto_cleanup_with_exported_profile(self) -> None:
-    self.platform.install_mock_binary("trace_processor_shell",
-                                      "/usr/bin/trace_processor_shell")
+    self.platform.install_mock_binary(
+      "trace_processor_shell", "/usr/bin/trace_processor_shell"
+    )
     self.probe = ProfilingProbe(
-        traceconv=TraceconvMode.ALWAYS, cleanup=CleanupMode.AUTO, js=False)
+      traceconv=TraceconvMode.ALWAYS, cleanup=CleanupMode.AUTO, js=False
+    )
     result_path = self.run.result_path
     perf_file = result_path / "test.perf.data"
     self.fs.create_file(perf_file)
@@ -845,7 +933,8 @@ class LinuxProfilingContextTestCase(GenericProbeTestCase):
       if "trace_processor_shell" in str(args[0]):
         out_dir = pth.LocalPath(args[args.index("--output-dir") + 1])
         self.fs.create_file(
-            out_dir / "profile.1.pid.123.pb", contents="mock_pprof")
+          out_dir / "profile.1.pid.123.pb", contents="mock_pprof"
+        )
 
     self.platform.sh = mock.Mock(side_effect=mock_sh)
     context = LinuxProfilingContext(self.probe, self.run)
@@ -861,10 +950,12 @@ class LinuxProfilingContextTestCase(GenericProbeTestCase):
     self.assertFalse(self.platform.exists(so_file))
 
   def test_teardown_export_to_traceconv(self) -> None:
-    self.platform.install_mock_binary("trace_processor_shell",
-                                      "/usr/bin/trace_processor_shell")
+    self.platform.install_mock_binary(
+      "trace_processor_shell", "/usr/bin/trace_processor_shell"
+    )
     self.probe = ProfilingProbe(
-        traceconv=TraceconvMode.ALWAYS, cleanup=CleanupMode.NEVER, js=False)
+      traceconv=TraceconvMode.ALWAYS, cleanup=CleanupMode.NEVER, js=False
+    )
     perf_file = self.run.result_path / "test.perf.data"
     pprof_file = perf_file.with_suffix(".pprof")
     self.fs.create_file(perf_file)
@@ -874,7 +965,8 @@ class LinuxProfilingContextTestCase(GenericProbeTestCase):
       if "trace_processor_shell" in str(args[0]):
         out_dir = pth.LocalPath(args[args.index("--output-dir") + 1])
         self.fs.create_file(
-            out_dir / "profile.1.pid.123.pb", contents="mock_pprof")
+          out_dir / "profile.1.pid.123.pb", contents="mock_pprof"
+        )
 
     self.platform.sh = mock.Mock(side_effect=mock_sh)
     context = LinuxProfilingContext(self.probe, self.run)
@@ -888,10 +980,11 @@ class LinuxProfilingContextTestCase(GenericProbeTestCase):
 
   def test_teardown_always_cleanup_without_exported_profile(self) -> None:
     self.probe = ProfilingProbe(
-        pprof=PprofMode.NEVER,
-        traceconv=TraceconvMode.NEVER,
-        cleanup=CleanupMode.ALWAYS,
-        js=True)
+      pprof=PprofMode.NEVER,
+      traceconv=TraceconvMode.NEVER,
+      cleanup=CleanupMode.ALWAYS,
+      js=True,
+    )
     perf_file = self.run.result_path / "test.perf.data"
     jitted_file = self.run.result_path / "test.perf.data.jitted"
     self.fs.create_file(perf_file, contents="raw_perf")
@@ -905,8 +998,10 @@ class LinuxProfilingContextTestCase(GenericProbeTestCase):
     context = LinuxProfilingContext(self.probe, self.run)
     context.setup_v8_log_path = mock.Mock()
     context.setup()
-    with mock.patch("time.sleep"), mock.patch(
-        "multiprocessing.Pool") as mock_pool:
+    with (
+      mock.patch("time.sleep"),
+      mock.patch("multiprocessing.Pool") as mock_pool,
+    ):
       mock_pool.return_value.__enter__.return_value.imap.side_effect = map
       result = context.teardown()
     self.assertFalse(self.platform.exists(jitted_file))
@@ -917,7 +1012,8 @@ class LinuxProfilingContextTestCase(GenericProbeTestCase):
     pprof_file = self.run.result_path / "test.pprof"
     self.fs.create_file(pprof_file, contents="data")
     self.platform.sh_stdout = mock.Mock(
-        return_value="https://pprof.example.com")
+      return_value="https://pprof.example.com"
+    )
     url = linux_perf_probe_pprof(pprof_file, "run_info", platform=self.platform)
     self.assertEqual(url, "https://pprof.example.com")
     self.platform.sh_stdout.assert_called_once()
@@ -925,8 +1021,9 @@ class LinuxProfilingContextTestCase(GenericProbeTestCase):
     self.assertNotIn("-symbolize=force", called_args)
 
   def test_android_teardown_export_to_traceconv(self) -> None:
-    self.platform.install_mock_binary("trace_processor_shell",
-                                      "/usr/bin/trace_processor_shell")
+    self.platform.install_mock_binary(
+      "trace_processor_shell", "/usr/bin/trace_processor_shell"
+    )
     adb = mock.Mock(spec=Adb, host_platform=self.platform, serial_id="777")
     android_platform = AndroidAdbMockPlatform(self.platform, adb=adb)
     self.run.browser.platform = android_platform
@@ -946,7 +1043,8 @@ class LinuxProfilingContextTestCase(GenericProbeTestCase):
       if "trace_processor_shell" in str(args[0]):
         out_dir = pth.LocalPath(args[args.index("--output-dir") + 1])
         self.fs.create_file(
-            out_dir / "profile.1.pid.123.pb", contents="mock_pprof")
+          out_dir / "profile.1.pid.123.pb", contents="mock_pprof"
+        )
 
     self.platform.sh = mock.Mock(side_effect=mock_sh)
     with mock.patch.object(context, "_stop_existing_simpleperf"):
@@ -957,7 +1055,6 @@ class LinuxProfilingContextTestCase(GenericProbeTestCase):
 
 
 class EnumTestCase(unittest.TestCase):
-
   def test_cleanup_mode(self):
     self.assertIs(CleanupMode(True), CleanupMode.ALWAYS)
     self.assertIs(CleanupMode(False), CleanupMode.NEVER)
@@ -968,9 +1065,11 @@ class EnumTestCase(unittest.TestCase):
 
   def test_target_mode(self):
     self.assertIs(
-        TargetMode("renderer_main_only"), TargetMode.RENDERER_MAIN_ONLY)
+      TargetMode("renderer_main_only"), TargetMode.RENDERER_MAIN_ONLY
+    )
     self.assertIs(
-        TargetMode("RENDERER_MAIN_ONLY"), TargetMode.RENDERER_MAIN_ONLY)
+      TargetMode("RENDERER_MAIN_ONLY"), TargetMode.RENDERER_MAIN_ONLY
+    )
 
   def test_call_graph_mode(self):
     self.assertIs(CallGraphMode("fp"), CallGraphMode.FRAME_POINTER)
@@ -1000,7 +1099,6 @@ class EnumTestCase(unittest.TestCase):
     self.assertIs(probe.traceconv_mode, TraceconvMode.ALWAYS)
     probe = ProfilingProbe.parse_dict({"traceconv": "never"})
     self.assertIs(probe.traceconv_mode, TraceconvMode.NEVER)
-
 
 
 # Remove import that's used to avoid circular import issues.

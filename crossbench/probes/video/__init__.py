@@ -4,7 +4,10 @@
 
 from __future__ import annotations
 
-from crossbench.probes.video.video import Orientation, VideoProbe, \
-    VideoProbeContext
+from crossbench.probes.video.video import (
+  Orientation,
+  VideoProbe,
+  VideoProbeContext,
+)
 
 __all__ = ["Orientation", "VideoProbe", "VideoProbeContext"]

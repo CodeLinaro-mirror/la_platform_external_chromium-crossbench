@@ -16,7 +16,6 @@ from tests.crossbench.benchmarks.helper import BaseBenchmarkTestCase
 
 
 class TestManualBenchmark(BaseBenchmarkTestCase):
-
   @property
   @override
   def benchmark_cls(self):
@@ -32,10 +31,10 @@ class TestManualBenchmark(BaseBenchmarkTestCase):
 
   def test_run_auto_start(self):
     with (
-        mock.patch("builtins.input", lambda *args: "y"),
-        mock.patch(
-            "crossbench.helper.input_helper.input_with_timeout",
-            return_value="y"),
+      mock.patch("builtins.input", lambda *args: "y"),
+      mock.patch(
+        "crossbench.helper.input_helper.input_with_timeout", return_value="y"
+      ),
     ):
       self._test_run(start_after=dt.timedelta(seconds=0.2))
     for browser in self.browsers:
@@ -45,10 +44,10 @@ class TestManualBenchmark(BaseBenchmarkTestCase):
 
   def test_run_custom_duration(self):
     with (
-        mock.patch("builtins.input", lambda *args: "y"),
-        mock.patch(
-            "crossbench.helper.input_helper.input_with_timeout",
-            return_value="y"),
+      mock.patch("builtins.input", lambda *args: "y"),
+      mock.patch(
+        "crossbench.helper.input_helper.input_with_timeout", return_value="y"
+      ),
     ):
       self._test_run(run_for=dt.timedelta(seconds=0.2))
     for browser in self.browsers:
@@ -56,22 +55,25 @@ class TestManualBenchmark(BaseBenchmarkTestCase):
       # No automatic URLS.
       self.assertFalse(urls)
 
-  def _test_run(self,
-                start_after: dt.timedelta | None = None,
-                run_for: dt.timedelta | None = None):
+  def _test_run(
+    self,
+    start_after: dt.timedelta | None = None,
+    run_for: dt.timedelta | None = None,
+  ):
     repetitions = 3
     benchmark = ManualBenchmark(None, start_after, run_for)
     self.assertTrue(len(benchmark.describe()) > 0)
     runner = Runner(
-        self.out_dir,
-        self.browsers,
-        benchmark,
-        env_config=EnvConfig(),
-        env_validation_mode=ValidationMode.SKIP,
-        platform=self.platform,
-        repetitions=repetitions,
-        throw=True,
-        in_memory_result_db=True)
+      self.out_dir,
+      self.browsers,
+      benchmark,
+      env_config=EnvConfig(),
+      env_validation_mode=ValidationMode.SKIP,
+      platform=self.platform,
+      repetitions=repetitions,
+      throw=True,
+      in_memory_result_db=True,
+    )
 
     with self.assertLogs(level="INFO") as cm:
       runner.run()

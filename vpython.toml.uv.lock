@@ -197,9 +197,6 @@ iniconfig==2.3.0 ; python_full_version < '3.15' \
     --hash=sha256:e6ae3625a739878eeb4baf25f17a0b4e9d985421e45b897d1332ed7478f822d9 \
     --hash=sha256:f631c04d2c48c52b84d0d0549c99ff3859c98df65b3101406327ecc7d53fbf12
     # via pytest
-isort==6.0.1 ; python_full_version < '3.15' \
-    --hash=sha256:2dc5d7f65c9678d94c88dfc29161a320eec67328bc97aad576874cb4be1e9615 \
-    --hash=sha256:51e6976a2de576b502ebe816acf4be14ea47a9ffe19dabd79301f7b86c3630af
 mcp==1.9.4 ; python_full_version < '3.15' \
     --hash=sha256:78959d9958e78edfea30c9d1ea6da5d07ef17fdf0f64655dec2a8207700a5013 \
     --hash=sha256:7fcf36b62936adb8e63f89346bccca1268eeca9bf6dfb562ee10b1dfbda9dac0

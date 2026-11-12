@@ -10,8 +10,9 @@ from crossbench import plt
 from crossbench.plt.android_adb import Adb, AndroidAdbPlatform
 from crossbench.plt.remote import RemotePopen
 from tests import test_helper
-from tests.crossbench.plt.test_native_platform import \
-    PosixNativePlatformTestCase
+from tests.crossbench.plt.test_native_platform import (
+  PosixNativePlatformTestCase,
+)
 
 
 @pytest.fixture(scope="class")
@@ -22,7 +23,6 @@ def adb_unittest_fixtures(request, device_id, adb_path):
 
 @pytest.mark.usefixtures("adb_unittest_fixtures")
 class AndroidAdbPlatformTestCase(PosixNativePlatformTestCase):
-
   def setUp(self):
     super().setUp()
     assert hasattr(self, "device_id")
@@ -30,7 +30,8 @@ class AndroidAdbPlatformTestCase(PosixNativePlatformTestCase):
     self.adb = Adb(plt.PLATFORM, self.device_id, self.adb_path)
     self.host_platform = plt.PLATFORM
     self.platform: AndroidAdbPlatform = AndroidAdbPlatform(
-        self.host_platform, adb=self.adb)
+      self.host_platform, adb=self.adb
+    )
     assert self.platform.is_android
     self.known_binary = "dumpsys"
 
@@ -49,8 +50,10 @@ class AndroidAdbPlatformTestCase(PosixNativePlatformTestCase):
 
   def test_binary_lookup_override_home_dir(self):
     if not self.adb.has_root():
-      self.skipTest("AndroidAdbPlatform requires ADB root privileges "
-                    "to access the user home directory (~).")
+      self.skipTest(
+        "AndroidAdbPlatform requires ADB root privileges "
+        "to access the user home directory (~)."
+      )
     super().test_binary_lookup_override_home_dir()
 
   def test_cpu_usage(self):

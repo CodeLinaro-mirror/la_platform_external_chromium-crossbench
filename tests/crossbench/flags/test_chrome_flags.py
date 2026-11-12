@@ -38,10 +38,12 @@ class TestChromeFlags(TestFlags):
       self.assertEqual(type(flags), ChromeFlags)
 
   def test_js_flags(self):
-    flags = self.CLASS({
+    flags = self.CLASS(
+      {
         "--foo": None,
         "--bar": "v1",
-    })
+      }
+    )
     self.assertIsNone(flags["--foo"])
     self.assertEqual(flags["--bar"], "v1")
     self.assertTrue(flags)
@@ -59,10 +61,12 @@ class TestChromeFlags(TestFlags):
     self.assertIsNone(js_flags["--no-js-bar"])
 
   def test_set_empty_js_flags(self):
-    flags = self.CLASS({
+    flags = self.CLASS(
+      {
         "--foo": None,
         "--bar": "v1",
-    })
+      }
+    )
     self.assertNotIn("--js-flags", flags)
     self.assertTrue(flags)
     flags["--js-flags"] = None
@@ -91,17 +95,24 @@ class TestChromeFlags(TestFlags):
           flags["--js-flags"] = invalid
         self.assertNotIn("--js-flags", flags)
         self.assertIn(invalid, str(cm.exception))
-    for invalid in ("--foo=", "--foo,--bar=,--baz", "---foo", "--foo,--,--bar",
-                    "--foo;;;,;;;--bar"):
+    for invalid in (
+      "--foo=",
+      "--foo,--bar=,--baz",
+      "---foo",
+      "--foo,--,--bar",
+      "--foo;;;,;;;--bar",
+    ):
       with self.subTest(js_flag=invalid):
         with self.assertRaises(ValueError) as cm:
           flags["--js-flags"] = invalid
         self.assertNotIn("--js-flags", flags)
 
   def test_js_flags_initial_data(self):
-    flags = self.CLASS({
+    flags = self.CLASS(
+      {
         "--js-flags": "--foo=v1,--no-bar",
-    })
+      }
+    )
     js_flags = flags.js_flags
     self.assertEqual(js_flags["--foo"], "v1")
     self.assertIsNone(js_flags["--no-bar"])
@@ -223,7 +234,9 @@ class TestChromeFlags(TestFlags):
     flags["--enable-blink-features"] = "BLINK_F1,BLINK_F2"
     flags["--disable-blink-features"] = "BLINK_F3,BLINK_F4"
     flags_list = list(flags)
-    self.assertSequenceEqual(flags_list, [
+    self.assertSequenceEqual(
+      flags_list,
+      [
         "--user-data-dir=/test/user-data",
         "--single-process",
         "--js-flags=--js-foo=v3,--no-js-bar",
@@ -231,7 +244,8 @@ class TestChromeFlags(TestFlags):
         "--disable-features=F3,F4",
         "--enable-blink-features=BLINK_F1,BLINK_F2",
         "--disable-blink-features=BLINK_F3,BLINK_F4",
-    ])
+      ],
+    )
 
   def test_to_dict(self):
     flags = self.CLASS()
@@ -243,15 +257,17 @@ class TestChromeFlags(TestFlags):
     flags["--enable-blink-features"] = "BLINK_F1,BLINK_F2"
     flags["--disable-blink-features"] = "BLINK_F3,BLINK_F4"
     self.assertDictEqual(
-        flags.to_dict(), {
-            "--user-data-dir": "/test/user-data",
-            "--single-process": None,
-            "--js-flags": "--js-foo=v3,--no-js-bar",
-            "--enable-features": "F1,F2",
-            "--disable-features": "F3,F4",
-            "--enable-blink-features": "BLINK_F1,BLINK_F2",
-            "--disable-blink-features": "BLINK_F3,BLINK_F4",
-        })
+      flags.to_dict(),
+      {
+        "--user-data-dir": "/test/user-data",
+        "--single-process": None,
+        "--js-flags": "--js-foo=v3,--no-js-bar",
+        "--enable-features": "F1,F2",
+        "--disable-features": "F3,F4",
+        "--enable-blink-features": "BLINK_F1,BLINK_F2",
+        "--disable-blink-features": "BLINK_F3,BLINK_F4",
+      },
+    )
 
   def test_initial_data_empty(self):
     flags = self.CLASS()
@@ -358,15 +374,26 @@ class TestChromeFlags(TestFlags):
   def test_set_invalid_js_flags(self):
     flags = self.CLASS()
     flags["--js-flags"] = "--foo=1--bar"
-    for invalid in ("--bar,=", "-bar=1", "--bar,,", "--", "-", "a=b",
-                    "--bar==1", "--bar==--bar", "--bar='1\", --foo=1",
-                    "--foo='1'--bar", "--bar='a b c'"):
+    for invalid in (
+      "--bar,=",
+      "-bar=1",
+      "--bar,,",
+      "--",
+      "-",
+      "a=b",
+      "--bar==1",
+      "--bar==--bar",
+      "--bar='1\", --foo=1",
+      "--foo='1'--bar",
+      "--bar='a b c'",
+    ):
       with self.subTest(invalid=invalid):
         with self.assertRaises(ValueError):
           flags["--js-flags"] = invalid
 
   def test_merge(self):
-    flags = self.CLASS({
+    flags = self.CLASS(
+      {
         "--foo": "v1",
         "--bar": None,
         "--js-flags": "--log-maps,--log-ic",
@@ -374,7 +401,8 @@ class TestChromeFlags(TestFlags):
         "--disable-features": "feature_3",
         "--enable-blink-features": "blink_feature_1,blink_feature_2",
         "--disable-blink-features": "blink_feature_3",
-    })
+      }
+    )
     with self.assertRaises(ValueError):
       flags.merge({"--bar": "v2"})
     with self.assertRaises(ValueError):
@@ -385,64 +413,85 @@ class TestChromeFlags(TestFlags):
       flags.merge({"--enable-features": "feature_3"})
     with self.assertRaises(ValueError):
       flags.merge({"--enable-blink-features": "blink_feature_3"})
-    flags.merge({
+    flags.merge(
+      {
         "--js-flags": "--log-all",
         "--enable-features": "feature_x",
         "--disable-features": "feature_y,feature_z",
         "--enable-blink-features": "blink_feature_x",
         "--disable-blink-features": "blink_feature_y,blink_feature_z",
-    })
+      }
+    )
     self.assertSequenceEqual(
-        list(flags.js_flags), ["--log-maps", "--log-ic", "--log-all"])
+      list(flags.js_flags), ["--log-maps", "--log-ic", "--log-all"]
+    )
     self.assertSequenceEqual(
-        list(flags.features), [
-            "--enable-features=feature_1,feature_2,feature_x",
-            "--disable-features=feature_3,feature_y,feature_z",
-        ])
+      list(flags.features),
+      [
+        "--enable-features=feature_1,feature_2,feature_x",
+        "--disable-features=feature_3,feature_y,feature_z",
+      ],
+    )
     self.assertSequenceEqual(
-        list(flags.blink_features), [
-            "--enable-blink-features="
-            "blink_feature_1,blink_feature_2,blink_feature_x",
-            "--disable-blink-features="
-            "blink_feature_3,blink_feature_y,blink_feature_z",
-        ])
+      list(flags.blink_features),
+      [
+        "--enable-blink-features="
+        "blink_feature_1,blink_feature_2,blink_feature_x",
+        "--disable-blink-features="
+        "blink_feature_3,blink_feature_y,blink_feature_z",
+      ],
+    )
 
   def test_flag_typos_enable_features(self):
     # Check misspelled flags warnings
-    for invalid_flag in ("--enable-feature", "--enabled-feature",
-                         "--enabled-features"):
+    for invalid_flag in (
+      "--enable-feature",
+      "--enabled-feature",
+      "--enabled-features",
+    ):
       with self.assertLogs(level="ERROR") as cm:
         self.CLASS({invalid_flag: "feature_1"})
       output = "\n".join(cm.output)
       self.assertIn(invalid_flag, output)
       self.assertIn("--enable-features", output)
 
-    for invalid_flag in ("--disable-feature", "--disabled-feature",
-                         "--disabled-features"):
+    for invalid_flag in (
+      "--disable-feature",
+      "--disabled-feature",
+      "--disabled-features",
+    ):
       with self.assertLogs(level="ERROR") as cm:
         self.CLASS({invalid_flag: "feature_1"})
       output = "\n".join(cm.output)
       self.assertIn(invalid_flag, output)
       self.assertIn("--disable-features", output)
 
-    for invalid_flag in ("--enable-blink-feature", "--enabled-blink-feature",
-                         "--enabled-blink-features"):
+    for invalid_flag in (
+      "--enable-blink-feature",
+      "--enabled-blink-feature",
+      "--enabled-blink-features",
+    ):
       with self.assertLogs(level="ERROR") as cm:
         self.CLASS({invalid_flag: "feature_1"})
       output = "\n".join(cm.output)
       self.assertIn(invalid_flag, output)
       self.assertIn("--enable-blink-features", output)
 
-    for invalid_flag in ("--disable-blink-feature", "--disabled-blink-feature",
-                         "--disabled-blink-features"):
+    for invalid_flag in (
+      "--disable-blink-feature",
+      "--disabled-blink-feature",
+      "--disabled-blink-features",
+    ):
       with self.assertLogs(level="ERROR") as cm:
         self.CLASS({invalid_flag: "feature_1"})
       output = "\n".join(cm.output)
       self.assertIn(invalid_flag, output)
       self.assertIn("--disable-blink-features", output)
 
-    for invalid_flag in ("--enable-field-trials",
-                         "--enable-field-trials-config"):
+    for invalid_flag in (
+      "--enable-field-trials",
+      "--enable-field-trials-config",
+    ):
       with self.assertLogs(level="ERROR") as cm:
         self.CLASS({invalid_flag: ""})
       output = "\n".join(cm.output)
@@ -450,16 +499,22 @@ class TestChromeFlags(TestFlags):
       self.assertIn("--enable-field-trial-config", output)
 
   def test_flag_typos_enable_blink_features(self):
-    for invalid_flag in ("--enable-blink-feature", "--enabled-blink-feature",
-                         "--enabled-blink-features"):
+    for invalid_flag in (
+      "--enable-blink-feature",
+      "--enabled-blink-feature",
+      "--enabled-blink-features",
+    ):
       with self.assertLogs(level="ERROR") as cm:
         self.CLASS({invalid_flag: "feature_1"})
       output = "\n".join(cm.output)
       self.assertIn(invalid_flag, output)
       self.assertIn("--enable-blink-features", output)
 
-    for invalid_flag in ("--disable-blink-feature", "--disabled-blink-feature",
-                         "--disabled-blink-features"):
+    for invalid_flag in (
+      "--disable-blink-feature",
+      "--disabled-blink-feature",
+      "--disabled-blink-features",
+    ):
       with self.assertLogs(level="ERROR") as cm:
         self.CLASS({invalid_flag: "feature_1"})
       output = "\n".join(cm.output)
@@ -490,17 +545,17 @@ class TestChromeFlags(TestFlags):
     self.assertFalse(some_flags.field_trial_enable_flags)
     field_trials = self.CLASS(("--enable-field-trial-config", "--foo"))
     self.assertEqual(
-        str(field_trials.field_trial_enable_flags),
-        "--enable-field-trial-config")
+      str(field_trials.field_trial_enable_flags), "--enable-field-trial-config"
+    )
     # Post M139 --enable-benchmarking does not affect field trials.
     field_trials.set("--enable-benchmarking")
     self.assertEqual(
-        str(field_trials.field_trial_enable_flags),
-        "--enable-field-trial-config")
+      str(field_trials.field_trial_enable_flags), "--enable-field-trial-config"
+    )
     field_trials.set("--enable-benchmarking", should_override=True)
     self.assertEqual(
-        str(field_trials.field_trial_enable_flags),
-        "--enable-field-trial-config")
+      str(field_trials.field_trial_enable_flags), "--enable-field-trial-config"
+    )
 
   def test_disable_field_trials_flags(self):
     empty = self.CLASS()
@@ -509,16 +564,19 @@ class TestChromeFlags(TestFlags):
     self.assertFalse(some_flags.field_trial_disable_flags)
     field_trials = self.CLASS(("--disable-field-trial-config", "--foo"))
     self.assertEqual(
-        str(field_trials.field_trial_disable_flags),
-        "--disable-field-trial-config")
+      str(field_trials.field_trial_disable_flags),
+      "--disable-field-trial-config",
+    )
     field_trials.set("--enable-benchmarking")
     self.assertEqual(
-        str(field_trials.field_trial_disable_flags),
-        "--disable-field-trial-config")
+      str(field_trials.field_trial_disable_flags),
+      "--disable-field-trial-config",
+    )
     field_trials.set("--enable-benchmarking", should_override=True)
     self.assertEqual(
-        str(field_trials.field_trial_disable_flags),
-        "--disable-field-trial-config")
+      str(field_trials.field_trial_disable_flags),
+      "--disable-field-trial-config",
+    )
 
   def test_set_enable_benchmarking_extension(self):
     flags = self.CLASS()
@@ -536,20 +594,25 @@ class TestChromeFlags(TestFlags):
     flags = self.CLASS.parse("--enable-benchmarking=enable-field-trial-config")
     flags.enable_benchmarking_api()
     self.assertEqual(
-        str(flags), ("--enable-benchmarking=enable-field-trial-config "
-                     "--enable-benchmarking-api"))
+      str(flags),
+      (
+        "--enable-benchmarking=enable-field-trial-config "
+        "--enable-benchmarking-api"
+      ),
+    )
 
     flags = self.CLASS.parse("--enable-field-trial-config")
     flags.enable_benchmarking_api()
     self.assertEqual(
-        str(flags), "--enable-field-trial-config "
-        "--enable-benchmarking-api")
+      str(flags), "--enable-field-trial-config --enable-benchmarking-api"
+    )
 
     flags = self.CLASS.parse("--foo --enable-field-trial-config --bar")
     flags.enable_benchmarking_api()
     self.assertEqual(
-        str(flags), "--foo --enable-field-trial-config --bar "
-        "--enable-benchmarking-api")
+      str(flags),
+      "--foo --enable-field-trial-config --bar --enable-benchmarking-api",
+    )
 
   def test_load_extensions(self):
     flags = self.CLASS()
@@ -596,7 +659,8 @@ class TestChromeFlags(TestFlags):
     flags["--load-extension"] = "extension_a,extension_b"
     self.assertEqual(str(flags), "--load-extension=extension_a,extension_b")
     self.assertEqual(
-        str(flags.extensions), "--load-extension=extension_a,extension_b")
+      str(flags.extensions), "--load-extension=extension_a,extension_b"
+    )
     # setting the same twice is allowed
     flags["--load-extension"] = "extension_a,extension_b"
     # Switching modes is not allowed.
@@ -615,7 +679,8 @@ class TestChromeFlags(TestFlags):
     flags_b["--load-extension"] = "extension_b,extension_c"
     flags_a.merge(flags_b)
     self.assertEqual(
-        str(flags_a), "--load-extension=extension_a,extension_b,extension_c")
+      str(flags_a), "--load-extension=extension_a,extension_b,extension_c"
+    )
 
   def test_extensions_invalid_empty(self):
     flags = self.CLASS()
@@ -639,9 +704,8 @@ class TestChromeFlags(TestFlags):
     flags.set("--enable-benchmarking")
     flags.validate()
     flags.set(
-        "--enable-benchmarking",
-        "enable-field-trial-config",
-        should_override=True)
+      "--enable-benchmarking", "enable-field-trial-config", should_override=True
+    )
     flags.validate()
 
 
@@ -656,19 +720,21 @@ class TestChromePreM139Flags(TestChromeFlags):
     self.assertFalse(some_flags.field_trial_disable_flags)
     field_trials = self.CLASS(("--disable-field-trial-config", "--foo"))
     self.assertEqual(
-        str(field_trials.field_trial_disable_flags),
-        "--disable-field-trial-config")
+      str(field_trials.field_trial_disable_flags),
+      "--disable-field-trial-config",
+    )
     field_trials.set("--enable-benchmarking")
     self.assertEqual(
-        str(field_trials.field_trial_disable_flags),
-        "--disable-field-trial-config --enable-benchmarking")
+      str(field_trials.field_trial_disable_flags),
+      "--disable-field-trial-config --enable-benchmarking",
+    )
     field_trials.set(
-        "--enable-benchmarking",
-        "enable-field-trial-config",
-        should_override=True)
+      "--enable-benchmarking", "enable-field-trial-config", should_override=True
+    )
     self.assertEqual(
-        str(field_trials.field_trial_disable_flags),
-        "--disable-field-trial-config")
+      str(field_trials.field_trial_disable_flags),
+      "--disable-field-trial-config",
+    )
 
   @override
   def test_set_enable_benchmarking_extension(self):
@@ -687,19 +753,24 @@ class TestChromePreM139Flags(TestChromeFlags):
     flags = self.CLASS.parse("--enable-benchmarking=enable-field-trial-config")
     flags.enable_benchmarking_api()
     self.assertEqual(
-        str(flags), "--enable-benchmarking=enable-field-trial-config")
+      str(flags), "--enable-benchmarking=enable-field-trial-config"
+    )
 
     flags = self.CLASS.parse("--enable-field-trial-config")
     flags.enable_benchmarking_api()
     self.assertEqual(
-        str(flags), "--enable-field-trial-config "
-        "--enable-benchmarking=enable-field-trial-config")
+      str(flags),
+      "--enable-field-trial-config "
+      "--enable-benchmarking=enable-field-trial-config",
+    )
 
     flags = self.CLASS.parse("--foo --enable-field-trial-config --bar")
     flags.enable_benchmarking_api()
     self.assertEqual(
-        str(flags), "--foo --enable-field-trial-config --bar "
-        "--enable-benchmarking=enable-field-trial-config")
+      str(flags),
+      "--foo --enable-field-trial-config --bar "
+      "--enable-benchmarking=enable-field-trial-config",
+    )
 
   @override
   def test_field_trial_flags(self):
@@ -709,20 +780,20 @@ class TestChromePreM139Flags(TestChromeFlags):
     self.assertFalse(some_flags.field_trial_enable_flags)
     field_trials = self.CLASS(("--enable-field-trial-config", "--foo"))
     self.assertEqual(
-        str(field_trials.field_trial_enable_flags),
-        "--enable-field-trial-config")
+      str(field_trials.field_trial_enable_flags), "--enable-field-trial-config"
+    )
     field_trials.set("--enable-benchmarking")
     self.assertEqual(
-        str(field_trials.field_trial_enable_flags),
-        "--enable-field-trial-config")
+      str(field_trials.field_trial_enable_flags), "--enable-field-trial-config"
+    )
     field_trials.set(
-        "--enable-benchmarking",
-        "enable-field-trial-config",
-        should_override=True)
+      "--enable-benchmarking", "enable-field-trial-config", should_override=True
+    )
     self.assertEqual(
-        str(field_trials.field_trial_enable_flags),
-        "--enable-field-trial-config "
-        "--enable-benchmarking=enable-field-trial-config")
+      str(field_trials.field_trial_enable_flags),
+      "--enable-field-trial-config "
+      "--enable-benchmarking=enable-field-trial-config",
+    )
 
   @override
   def test_conflict_field_trials_enable_benchmarking(self):
@@ -732,9 +803,8 @@ class TestChromePreM139Flags(TestChromeFlags):
     with self.assertRaisesRegex(argparse.ArgumentTypeError, "field-trial"):
       flags.validate()
     flags.set(
-        "--enable-benchmarking",
-        "enable-field-trial-config",
-        should_override=True)
+      "--enable-benchmarking", "enable-field-trial-config", should_override=True
+    )
     flags.validate()
 
 

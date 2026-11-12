@@ -35,31 +35,31 @@ class CdpAndroidBrowser(ChromiumBased):
   """Android Chrome browser controlled via Chrome DevTools Protocol over ADB."""
 
   UNSUPPORTED_FLAGS: tuple[str, ...] = (
-      "--disable-sync",
-      "--window-size",
-      "--window-position",
+    "--disable-sync",
+    "--window-size",
+    "--window-position",
   )
 
   # On other platforms, chromedriver sets these flags. We are bypassing
   # chromedriver here, so we set these ourselves.
   CHROMEDRIVER_FLAGS: dict[str, str | None] = {
-      "--disable-popup-blocking": None,
-      "--enable-automation": None,
-      "--allow-pre-commit-input": None,
-      "--disable-features": "IgnoreDuplicateNavs,Prewarm",
-      "--disable-background-networking": None,
-      "--disable-background-timer-throttling": None,
-      "--disable-backgrounding-occluded-windows": None,
-      "--disable-fre": None,
-      "--enable-remote-debugging": None,
-      "--remote-allow-origins": "*",
+    "--disable-popup-blocking": None,
+    "--enable-automation": None,
+    "--allow-pre-commit-input": None,
+    "--disable-features": "IgnoreDuplicateNavs,Prewarm",
+    "--disable-background-networking": None,
+    "--disable-background-timer-throttling": None,
+    "--disable-backgrounding-occluded-windows": None,
+    "--disable-fre": None,
+    "--enable-remote-debugging": None,
+    "--remote-allow-origins": "*",
   }
 
   def __init__(
-      self,
-      label: str,
-      path: pth.AnyPath,
-      settings: Settings | None = None,
+    self,
+    label: str,
+    path: pth.AnyPath,
+    settings: Settings | None = None,
   ) -> None:
     super().__init__(label=label, path=path, settings=settings)
     self.flags.update(self.CHROMEDRIVER_FLAGS)
@@ -70,10 +70,12 @@ class CdpAndroidBrowser(ChromiumBased):
   @classmethod
   @override
   def attributes(cls) -> BrowserAttributes:
-    return (super().attributes()
-            | BrowserAttributes.CHROME
-            | BrowserAttributes.MOBILE
-            | BrowserAttributes.REMOTE)
+    return (
+      super().attributes()
+      | BrowserAttributes.CHROME
+      | BrowserAttributes.MOBILE
+      | BrowserAttributes.REMOTE
+    )
 
   @classmethod
   @override
@@ -86,8 +88,9 @@ class CdpAndroidBrowser(ChromiumBased):
     return ChromiumVersion
 
   @override
-  def _resolve_binary(self,
-                      path: pth.AnyPath) -> tuple[pth.AnyPath, pth.AnyPath]:
+  def _resolve_binary(
+    self, path: pth.AnyPath
+  ) -> tuple[pth.AnyPath, pth.AnyPath]:
     return path, path
 
   @property
@@ -115,7 +118,7 @@ class CdpAndroidBrowser(ChromiumBased):
 
   def _backup_chrome_flags(self) -> None:
     assert self._previous_command_line_contents is None, (
-        f"Got unexpected previous flags: {self._previous_command_line_contents}"
+      f"Got unexpected previous flags: {self._previous_command_line_contents}"
     )
     self._previous_command_line_contents = self._read_device_flags()
     assert not self._needs_restore_chrome_flags, "Invalid flag restore state."
@@ -138,20 +141,20 @@ class CdpAndroidBrowser(ChromiumBased):
       logging.debug("current: %s", current_flags)
     if self._previous_command_line_contents is None:
       logging.debug(
-          "%s: deleting chrome flags file: %s",
-          self,
-          self._chrome_command_line_path,
+        "%s: deleting chrome flags file: %s",
+        self,
+        self._chrome_command_line_path,
       )
       self.platform.rm(self._chrome_command_line_path, missing_ok=True)
     else:
       logging.debug(
-          "%s: restoring previous flags file contents in %s",
-          self,
-          self._chrome_command_line_path,
+        "%s: restoring previous flags file contents in %s",
+        self,
+        self._chrome_command_line_path,
       )
       self.platform.write_text(
-          self._chrome_command_line_path,
-          self._previous_command_line_contents,
+        self._chrome_command_line_path,
+        self._previous_command_line_contents,
       )
     self._needs_restore_chrome_flags = False
     self._previous_command_line_contents = None
@@ -163,8 +166,9 @@ class CdpAndroidBrowser(ChromiumBased):
       if flag not in flags:
         continue
       flag_value = flags.pop(flag, None)
-      logging.debug("Chromium: Removed unsupported flag: %s=%s", flag,
-                    flag_value)
+      logging.debug(
+        "Chromium: Removed unsupported flag: %s=%s", flag, flag_value
+      )
     return flags
 
   def _setup_binary_permissions(self) -> None:
@@ -174,40 +178,45 @@ class CdpAndroidBrowser(ChromiumBased):
       logging.warning("Error setting app permissions: %s", e)
 
   def _set_debug_app(self) -> None:
-    self.platform.sh("am", "set-debug-app", "--persistent",
-                     self.android_package)
+    self.platform.sh(
+      "am", "set-debug-app", "--persistent", self.android_package
+    )
 
   @override
-  def start(self,
-            session: BrowserSessionRunGroup,
-            startup_urls: Sequence[str] = ()) -> None:
+  def start(
+    self, session: BrowserSessionRunGroup, startup_urls: Sequence[str] = ()
+  ) -> None:
     super().start(session, startup_urls=startup_urls)
     assert not startup_urls
     self.adb_force_stop()
     if not self._has_started_in_session:
-      if (session and
-          session.browser.wipe_system_user_data) or self.clear_cache_dir:
+      if (
+        session and session.browser.wipe_system_user_data
+      ) or self.clear_cache_dir:
         self.adb_force_clear()
         self._setup_binary_permissions()
       self._has_started_in_session = True
     self._backup_chrome_flags()
     self._set_debug_app()
     flags = tuple(
-        sorted(
-            self._get_browser_flags_for_session(session) if session else tuple(
-                self._filter_flags_for_run(self.flags.copy()))))
+      sorted(
+        self._get_browser_flags_for_session(session)
+        if session
+        else tuple(self._filter_flags_for_run(self.flags.copy()))
+      )
+    )
     self._log_browser_start(flags)
     flags_str = f"_ {shlex.join(flags)}"
     self.platform.write_text(self._chrome_command_line_path, flags_str)
     self.platform.chmod(self._chrome_command_line_path, 0o666)
     package_name = self.android_package
     self.platform.sh(
-        "am",
-        "start",
-        "-W",
-        "-n",
-        f"{package_name}/com.google.android.apps.chrome.Main",
-        stdout=subprocess.DEVNULL,
+      "am",
+      "start",
+      "-W",
+      "-n",
+      f"{package_name}/com.google.android.apps.chrome.Main",
+      stdout=subprocess.DEVNULL,
     )
     self.platform.start_devtools()
     self._is_running = True
@@ -237,15 +246,15 @@ class CdpAndroidBrowser(ChromiumBased):
     return self.platform.send_cdp_command(method, params)
 
   @override
-  def show_url(self,
-               url: str,
-               target: WindowTarget = WindowTarget.SELF) -> None:
+  def show_url(
+    self, url: str, target: WindowTarget = WindowTarget.SELF
+  ) -> None:
     if target == WindowTarget.SELF:
       self._send_cdp("Page.navigate", {"url": url})
     elif target in (
-        WindowTarget.NEW_TAB,
-        WindowTarget.NEW_WINDOW,
-        WindowTarget.BLANK,
+      WindowTarget.NEW_TAB,
+      WindowTarget.NEW_WINDOW,
+      WindowTarget.BLANK,
     ):
       self.platform.switch_to_new_tab(url)
     else:
@@ -257,18 +266,21 @@ class CdpAndroidBrowser(ChromiumBased):
 
   @override
   def js(
-      self,
-      script: str,
-      timeout: dt.timedelta | None = None,
-      arguments: Sequence[object] = (),
+    self,
+    script: str,
+    timeout: dt.timedelta | None = None,
+    arguments: Sequence[object] = (),
   ) -> object:
     del timeout
     args_json = json.dumps(arguments)
     expression = f"(function(){{{script}}}).apply(window, {args_json})"
-    res = self._send_cdp("Runtime.evaluate", {
+    res = self._send_cdp(
+      "Runtime.evaluate",
+      {
         "expression": expression,
         "returnByValue": True,
-    })
+      },
+    )
     result = res.get("result")
     assert isinstance(result, dict), f"Invalid Runtime.evaluate result: {res}"
     if "exceptionDetails" in result:

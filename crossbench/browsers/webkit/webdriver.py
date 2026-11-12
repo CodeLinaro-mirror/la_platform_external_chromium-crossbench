@@ -11,10 +11,11 @@ from crossbench.browsers.safari.webdriver import SafariWebDriver
 
 
 class WebKitWebDriver(SafariWebDriver):
-  """Basic implementation for "raw" WebKit builds """
+  """Basic implementation for "raw" WebKit builds"""
 
   @classmethod
   @override
   def attributes(cls) -> BrowserAttributes:
-    return ((super().attributes() & ~BrowserAttributes.SAFARI)
-            | BrowserAttributes.WEBKIT)
+    return (
+      super().attributes() & ~BrowserAttributes.SAFARI
+    ) | BrowserAttributes.WEBKIT

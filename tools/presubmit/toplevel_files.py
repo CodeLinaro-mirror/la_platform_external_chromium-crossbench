@@ -16,7 +16,8 @@ if TYPE_CHECKING:
 BYPASS_KEY: Final[str] = "ALLOW_TOPLEVEL_FILE"
 
 _ERROR_MESSAGE: Final[str] = (
-    "Found newly added file(s) in a top-level directory:")
+  "Found newly added file(s) in a top-level directory:"
+)
 
 _ERROR_LONG_TEXT: Final[str] = f"""\
 Adding new files directly to top-level directories is discouraged in
@@ -29,12 +30,14 @@ check:
   {BYPASS_KEY}=<REASON>
 """
 
-PROTECTED_TOPLEVEL_DIRS: Final[frozenset[pathlib.Path]] = frozenset({
+PROTECTED_TOPLEVEL_DIRS: Final[frozenset[pathlib.Path]] = frozenset(
+  {
     pathlib.Path(),
     pathlib.Path("crossbench"),
     pathlib.Path("tests"),
     pathlib.Path("tests/crossbench"),
-})
+  }
+)
 
 
 class FileAction(enum.StrEnum):
@@ -52,14 +55,15 @@ def _is_toplevel_path(file_path: str) -> bool:
 
 def _find_new_toplevel_files(input_api: InputApi) -> list[str]:
   return sorted(
-      f.LocalPath()
-      for f in input_api.AffectedFiles(include_deletes=False)
-      if f.Action() == FileAction.ADD and _is_toplevel_path(f.LocalPath()))
+    f.LocalPath()
+    for f in input_api.AffectedFiles(include_deletes=False)
+    if f.Action() == FileAction.ADD and _is_toplevel_path(f.LocalPath())
+  )
 
 
 def CheckNoNewToplevelFiles(
-    input_api: InputApi,
-    output_api: OutputApi,
+  input_api: InputApi,
+  output_api: OutputApi,
 ) -> list[object]:
   new_toplevel_files = _find_new_toplevel_files(input_api)
   if not new_toplevel_files:
@@ -68,12 +72,14 @@ def CheckNoNewToplevelFiles(
   presubmit = PresubmitCheck(input_api, output_api)
   if reason := presubmit.bypass_reason(BYPASS_KEY):
     return [
-        output_api.PresubmitNotifyResult(
-            f"Bypassing top-level file check ({', '.join(new_toplevel_files)}) "
-            f"via commit message tag: {BYPASS_KEY}={reason}"),
+      output_api.PresubmitNotifyResult(
+        f"Bypassing top-level file check ({', '.join(new_toplevel_files)}) "
+        f"via commit message tag: {BYPASS_KEY}={reason}"
+      ),
     ]
 
   return [
-      output_api.PresubmitError(
-          _ERROR_MESSAGE, items=new_toplevel_files, long_text=_ERROR_LONG_TEXT),
+    output_api.PresubmitError(
+      _ERROR_MESSAGE, items=new_toplevel_files, long_text=_ERROR_LONG_TEXT
+    ),
   ]

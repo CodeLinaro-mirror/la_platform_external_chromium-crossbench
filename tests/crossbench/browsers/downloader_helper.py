@@ -14,8 +14,13 @@ from crossbench.browsers.downloader import ZipArchiveHelper
 from crossbench.plt.android_adb import Adb
 from crossbench.plt.arch import MachineArch
 from tests.crossbench.base import BaseCrossbenchTestCase
-from tests.crossbench.mock_helper import AndroidAdbMockPlatform, \
-    LinuxMockPlatform, MacOsMockPlatform, MockPlatformMixin, WinMockPlatform
+from tests.crossbench.mock_helper import (
+  AndroidAdbMockPlatform,
+  LinuxMockPlatform,
+  MacOsMockPlatform,
+  MockPlatformMixin,
+  WinMockPlatform,
+)
 
 if TYPE_CHECKING:
   from crossbench.browsers.downloader import Downloader
@@ -52,7 +57,8 @@ class AbstractDownloaderTestCase(BaseCrossbenchTestCase, metaclass=abc.ABCMeta):
         return WinMockPlatform()
       case "android":
         return AndroidAdbMockPlatform(
-            host_platform=LinuxMockPlatform(), adb=self._create_mock_adb())
+          host_platform=LinuxMockPlatform(), adb=self._create_mock_adb()
+        )
     raise ValueError(f"Unsupported OS_NAME: {self.OS_NAME!r}")
 
   @property
@@ -83,11 +89,11 @@ class AbstractDownloaderTestCase(BaseCrossbenchTestCase, metaclass=abc.ABCMeta):
     return response
 
   def _assert_valid_archive(
-      self,
-      archive_name: str,
-      base_cls: type[Downloader],
-      valid_cls: type[Downloader],
-      invalid_classes: Iterable[type[Downloader]] = (),
+    self,
+    archive_name: str,
+    base_cls: type[Downloader],
+    valid_cls: type[Downloader],
+    invalid_classes: Iterable[type[Downloader]] = (),
   ) -> None:
     path = pth.LocalPath("download") / archive_name
     self.fs.create_file(path)
@@ -96,17 +102,20 @@ class AbstractDownloaderTestCase(BaseCrossbenchTestCase, metaclass=abc.ABCMeta):
     for invalid_cls in invalid_classes:
       self.assertFalse(invalid_cls.is_valid(path, self.platform))
 
-  def _setup_fake_zip_download(self, expected_url: str, zip_entry: str,
-                               app_version: str) -> None:
+  def _setup_fake_zip_download(
+    self, expected_url: str, zip_entry: str, app_version: str
+  ) -> None:
     self._fake_download_url = expected_url
     self._fake_zip_entry = zip_entry
     self.platform.search_app = self._search_existing_app
     self.platform.host_platform.download_to = mock.Mock(
-        side_effect=self._fake_zip_download)
+      side_effect=self._fake_zip_download
+    )
     self.platform.app_version = mock.Mock(return_value=app_version)
 
   def _search_existing_app(
-      self, app_or_bin: pth.AnyPathLike) -> pth.AnyPath | None:
+    self, app_or_bin: pth.AnyPathLike
+  ) -> pth.AnyPath | None:
     app_path = self.platform.path(app_or_bin)
     if self.platform.exists(app_path):
       return app_path
@@ -116,6 +125,8 @@ class AbstractDownloaderTestCase(BaseCrossbenchTestCase, metaclass=abc.ABCMeta):
     self.assertEqual(url, self._fake_download_url)
     with zipfile.ZipFile(dst, "w") as zip_file:
       zip_file.writestr(
-          ZipArchiveHelper.create_zip_info(self._fake_zip_entry,
-                                           ZipArchiveHelper.EXECUTABLE_MODE),
-          "binary")
+        ZipArchiveHelper.create_zip_info(
+          self._fake_zip_entry, ZipArchiveHelper.EXECUTABLE_MODE
+        ),
+        "binary",
+      )

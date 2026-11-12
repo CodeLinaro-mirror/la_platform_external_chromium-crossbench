@@ -14,7 +14,6 @@ from tests.crossbench.base import BaseCrossbenchTestCase
 
 
 class GoogleCloudStorageUploaderTestCase(BaseCrossbenchTestCase):
-
   @override
   def setUp(self) -> None:
     super().setUp()
@@ -29,21 +28,23 @@ class GoogleCloudStorageUploaderTestCase(BaseCrossbenchTestCase):
     test_file = self.out_dir / "test_uuid.gz"
     test_file.write_text("data", encoding="utf-8")
 
-    with mock.patch("crossbench.plt.PLATFORM.which") as mock_which, \
-         mock.patch("crossbench.plt.PLATFORM.sh") as mock_sh:
+    with (
+      mock.patch("crossbench.plt.PLATFORM.which") as mock_which,
+      mock.patch("crossbench.plt.PLATFORM.sh") as mock_sh,
+    ):
       mock_which.return_value = pth.LocalPath("/usr/bin/gcloud")
       mock_sh.return_value.returncode = 0
       url = uploader.upload(test_file)
       self.assertEqual(url, "gs://my-bucket/test/test_uuid.gz")
       mock_which.assert_called_once_with("gcloud")
       mock_sh.assert_called_once_with(
-          pth.LocalPath("/usr/bin/gcloud"),
-          "storage",
-          "cp",
-          test_file,
-          "gs://my-bucket/test/test_uuid.gz",
-          capture_output=True,
-          check=False,
+        pth.LocalPath("/usr/bin/gcloud"),
+        "storage",
+        "cp",
+        test_file,
+        "gs://my-bucket/test/test_uuid.gz",
+        capture_output=True,
+        check=False,
       )
 
   def test_upload_missing_gcloud(self) -> None:
@@ -59,8 +60,10 @@ class GoogleCloudStorageUploaderTestCase(BaseCrossbenchTestCase):
     uploader = GoogleCloudStorageUploader("gs://my-bucket/test/")
     test_file = self.out_dir / "test_uuid.gz"
 
-    with mock.patch("crossbench.plt.PLATFORM.which") as mock_which, \
-         mock.patch("crossbench.plt.PLATFORM.sh") as mock_sh:
+    with (
+      mock.patch("crossbench.plt.PLATFORM.which") as mock_which,
+      mock.patch("crossbench.plt.PLATFORM.sh") as mock_sh,
+    ):
       mock_which.return_value = pth.LocalPath("/usr/bin/gcloud")
       mock_sh.return_value.returncode = 1
       mock_sh.return_value.stderr = "Permission denied"

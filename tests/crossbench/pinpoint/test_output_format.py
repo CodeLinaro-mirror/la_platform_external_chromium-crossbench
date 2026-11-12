@@ -6,24 +6,26 @@ from __future__ import annotations
 
 import io
 
-from crossbench.pinpoint.output_format import OutputFormat, format_delimited, \
-    write_delimited
+from crossbench.pinpoint.output_format import (
+  OutputFormat,
+  format_delimited,
+  write_delimited,
+)
 from tests import test_helper
 from tests.crossbench.base import BaseCrossbenchTestCase
 
 
 class OutputFormatTest(BaseCrossbenchTestCase):
-
   def test_output_format_all(self):
     self.assertEqual(
-        OutputFormat.all(),
-        (
-            OutputFormat.TABLE,
-            OutputFormat.JSON,
-            OutputFormat.YAML,
-            OutputFormat.CSV,
-            OutputFormat.TSV,
-        ),
+      OutputFormat.all(),
+      (
+        OutputFormat.TABLE,
+        OutputFormat.JSON,
+        OutputFormat.YAML,
+        OutputFormat.CSV,
+        OutputFormat.TSV,
+      ),
     )
 
   def test_output_format_delimiter(self):
@@ -41,13 +43,13 @@ class OutputFormatTest(BaseCrossbenchTestCase):
     rows = [["a", "b"], ["c", "d"]]
     formatted_csv = format_delimited(headers, rows, delimiter=",")
     self.assertEqual(
-        formatted_csv.splitlines(),
-        ["Col1,Col2", "a,b", "c,d"],
+      formatted_csv.splitlines(),
+      ["Col1,Col2", "a,b", "c,d"],
     )
     formatted_tsv = format_delimited(headers, rows, delimiter="\t")
     self.assertEqual(
-        formatted_tsv.splitlines(),
-        ["Col1\tCol2", "a\tb", "c\td"],
+      formatted_tsv.splitlines(),
+      ["Col1\tCol2", "a\tb", "c\td"],
     )
 
   def test_write_delimited(self):

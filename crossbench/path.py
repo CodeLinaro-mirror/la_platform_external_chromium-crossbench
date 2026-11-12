@@ -34,7 +34,8 @@ LATEST_RESULT_DIR: Final[LocalPath] = RESULTS_DIR / "latest"
 MAX_PART_LEN: Final[int] = 255
 
 _UNSAFE_FILENAME_CHARS_RE: Final[re.Pattern[str]] = re.compile(
-    r"[^a-zA-Z0-9+\-_.]")
+  r"[^a-zA-Z0-9+\-_.]"
+)
 
 
 def safe_filename(name: str, strict_len: bool = False) -> str:
@@ -66,12 +67,13 @@ def check_hash(file_path: LocalPath, file_hash: str) -> bool:
   return sha1.hexdigest() == file_hash
 
 
-def get_out_dir(cwd: LocalPath,
-                suffix: str = "",
-                test: bool = False) -> LocalPath:
+def get_out_dir(
+  cwd: LocalPath, suffix: str = "", test: bool = False
+) -> LocalPath:
   if test:
     return cwd / "results" / "test"
   if suffix:
     suffix = "_" + suffix
-  return (cwd / "results" /
-          f"{dt.datetime.now().strftime('%Y-%m-%d_%H%M%S')}{suffix}")
+  return (
+    cwd / "results" / f"{dt.datetime.now().strftime('%Y-%m-%d_%H%M%S')}{suffix}"
+  )

@@ -75,17 +75,18 @@ class TestEnv:
     assert not tuple(self.output_dir.glob("**/*"))
 
 
-DEFAULT_PYTEST_FLAGS: Final[Flags] = Flags({
+DEFAULT_PYTEST_FLAGS: Final[Flags] = Flags(
+  {
     "-vv": None,
     "--log-file-level": "DEBUG",
     "--durations": "5",
     "--no-fold-skipped": None,
     "-r": "s",
-}).freeze()
+  }
+).freeze()
 
 
 class DurationPlugin:
-
   @pytest.hookimpl(hookwrapper=True)
   def pytest_runtest_makereport(self, item, call):
     outcome = yield
@@ -100,7 +101,8 @@ def build_retry_args(extra_args: SequenceCmdArgs) -> ListCmdArgs:
   if "--last-failed" not in retry_args:
     retry_args.extend(["--last-failed", "--last-failed-no-failures=none"])
   has_cov = any(
-      arg == "--cov" or str(arg).startswith("--cov=") for arg in retry_args)
+    arg == "--cov" or str(arg).startswith("--cov=") for arg in retry_args
+  )
   if has_cov and "--cov-append" not in retry_args:
     retry_args.append("--cov-append")
   return retry_args
@@ -113,12 +115,12 @@ def _make_plugins(plugins: Sequence[object] | None) -> Sequence[object]:
 
 
 def run_pytest(
-    path: pth.LocalPathLike,
-    *args: CmdArg,
-    plugins: Sequence[object] | None = None,
-    use_default_flags: bool = True,
-    check: bool = True,
-    retries: int = 0,
+  path: pth.LocalPathLike,
+  *args: CmdArg,
+  plugins: Sequence[object] | None = None,
+  use_default_flags: bool = True,
+  check: bool = True,
+  retries: int = 0,
 ) -> int | pytest.ExitCode:
   assert retries >= 0, f"Expected non-negative retries, got {retries}"
   sys.excepthook = exception_formatter.excepthook
@@ -128,21 +130,26 @@ def run_pytest(
   pass_through_args: list[str] = sys.argv[1:]
   extra_args.extend(pass_through_args)
   # Run tests single-threaded by default when running the test file directly.
-  if not any(arg == "-n" or str(arg).startswith(("-n=", "--numprocesses="))
-             for arg in extra_args):
+  if not any(
+    arg == "-n" or str(arg).startswith(("-n=", "--numprocesses="))
+    for arg in extra_args
+  ):
     extra_args.append("-n=0")
   if not any(arg == "-r" or str(arg).startswith("-r") for arg in extra_args):
     extra_args.append("-rs")
 
   pytest_args: list[str] = [str(path), *map(str, extra_args)]
   return_code: int | pytest.ExitCode = pytest.main(
-      pytest_args, plugins=_make_plugins(plugins))
+    pytest_args, plugins=_make_plugins(plugins)
+  )
   retry_args: ListCmdArgs = build_retry_args(extra_args)
   for attempt in range(retries):
     if return_code != pytest.ExitCode.TESTS_FAILED:
       break
-    sys.stdout.write(f"\n[run_pytest] Retrying failed tests "
-                     f"(attempt {attempt + 1}/{retries})...\n")
+    sys.stdout.write(
+      f"\n[run_pytest] Retrying failed tests "
+      f"(attempt {attempt + 1}/{retries})...\n"
+    )
     sys.stdout.flush()
     retry_pytest_args: list[str] = [str(path), *map(str, retry_args)]
     return_code = pytest.main(retry_pytest_args, plugins=_make_plugins(plugins))

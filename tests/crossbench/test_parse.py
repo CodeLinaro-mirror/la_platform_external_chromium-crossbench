@@ -19,8 +19,15 @@ from immutabledict import immutabledict
 
 from crossbench import path as pth
 from crossbench.helper.class_helper import get_all_subclasses
-from crossbench.parse import BaseParser, DurationParseError, DurationParser, \
-    NumberParser, ObjectParser, PathParser, TimeUnit
+from crossbench.parse import (
+  BaseParser,
+  DurationParseError,
+  DurationParser,
+  NumberParser,
+  ObjectParser,
+  PathParser,
+  TimeUnit,
+)
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 from tests.crossbench.mock_helper import MockPlatform, RemoteLinuxMockPlatform
@@ -31,7 +38,6 @@ if TYPE_CHECKING:
 
 
 class DurationParserTestCase(unittest.TestCase):
-
   def test_parse_negative(self):
     with self.assertRaises(argparse.ArgumentTypeError):
       DurationParser.positive_duration(-1)
@@ -53,10 +59,18 @@ class DurationParserTestCase(unittest.TestCase):
     self.assertEqual(DurationParser.any_duration("0s").total_seconds(), 0)
     self.assertEqual(DurationParser.any_duration("0.0").total_seconds(), 0)
     self.assertEqual(
-        DurationParser.positive_or_zero_duration("0.0").total_seconds(), 0)
+      DurationParser.positive_or_zero_duration("0.0").total_seconds(), 0
+    )
     invalid: Any
-    for invalid in (-1, 0, "-1", "0", "invalid", dt.timedelta(0),
-                    dt.timedelta(seconds=-1)):
+    for invalid in (
+      -1,
+      0,
+      "-1",
+      "0",
+      "invalid",
+      dt.timedelta(0),
+      dt.timedelta(seconds=-1),
+    ):
       with self.assertRaises(argparse.ArgumentTypeError) as cm:
         DurationParser.positive_duration(invalid)
       self.assertIn(str(invalid), str(cm.exception))
@@ -85,15 +99,17 @@ class DurationParserTestCase(unittest.TestCase):
 
   def test_no_unit(self):
     self.assertEqual(
-        DurationParser.positive_duration("200"), dt.timedelta(seconds=200))
+      DurationParser.positive_duration("200"), dt.timedelta(seconds=200)
+    )
     self.assertEqual(
-        DurationParser.positive_duration(200), dt.timedelta(seconds=200))
+      DurationParser.positive_duration(200), dt.timedelta(seconds=200)
+    )
     self.assertEqual(
-        DurationParser.positive_duration_ms("200"),
-        dt.timedelta(milliseconds=200))
+      DurationParser.positive_duration_ms("200"), dt.timedelta(milliseconds=200)
+    )
     self.assertEqual(
-        DurationParser.positive_duration_ms(200),
-        dt.timedelta(milliseconds=200))
+      DurationParser.positive_duration_ms(200), dt.timedelta(milliseconds=200)
+    )
 
   def test_help(self):
     help_str = DurationParser.help()
@@ -102,64 +118,83 @@ class DurationParserTestCase(unittest.TestCase):
 
   def test_positive_duration_ms(self):
     self.assertEqual(
-        DurationParser.positive_duration_ms("200"),
-        dt.timedelta(milliseconds=200))
+      DurationParser.positive_duration_ms("200"), dt.timedelta(milliseconds=200)
+    )
     self.assertEqual(
-        DurationParser.positive_duration_ms(200),
-        dt.timedelta(milliseconds=200))
+      DurationParser.positive_duration_ms(200), dt.timedelta(milliseconds=200)
+    )
     self.assertEqual(
-        DurationParser.positive_duration_ms("2s"), dt.timedelta(seconds=2))
+      DurationParser.positive_duration_ms("2s"), dt.timedelta(seconds=2)
+    )
     for invalid in (0, -1, "0", "-1", "0ms", "-1ms", "", "invalid"):
       with self.assertRaises(argparse.ArgumentTypeError):
         DurationParser.positive_duration_ms(invalid)
 
   def test_positive_duration(self):
     self.assertEqual(
-        DurationParser.positive_duration("200"), dt.timedelta(seconds=200))
+      DurationParser.positive_duration("200"), dt.timedelta(seconds=200)
+    )
     self.assertEqual(
-        DurationParser.positive_duration(200), dt.timedelta(seconds=200))
+      DurationParser.positive_duration(200), dt.timedelta(seconds=200)
+    )
     self.assertEqual(
-        DurationParser.positive_duration("27.5s"), dt.timedelta(seconds=27.5))
+      DurationParser.positive_duration("27.5s"), dt.timedelta(seconds=27.5)
+    )
     self.assertEqual(
-        DurationParser.positive_duration(dt.timedelta(seconds=5)),
-        dt.timedelta(seconds=5))
+      DurationParser.positive_duration(dt.timedelta(seconds=5)),
+      dt.timedelta(seconds=5),
+    )
     with self.assertRaises(argparse.ArgumentTypeError):
       DurationParser.positive_duration("")
     invalid: object
-    for invalid in (-1, 0, "-1", "0", "invalid", dt.timedelta(0),
-                    dt.timedelta(seconds=-1)):
+    for invalid in (
+      -1,
+      0,
+      "-1",
+      "0",
+      "invalid",
+      dt.timedelta(0),
+      dt.timedelta(seconds=-1),
+    ):
       with self.assertRaises(argparse.ArgumentTypeError) as cm:
         DurationParser.positive_duration(invalid)
       self.assertIn(str(invalid), str(cm.exception))
 
   def test_positive_or_zero_duration(self):
     self.assertEqual(
-        DurationParser.positive_or_zero_duration(0), dt.timedelta(0))
+      DurationParser.positive_or_zero_duration(0), dt.timedelta(0)
+    )
     self.assertEqual(
-        DurationParser.positive_or_zero_duration("0"), dt.timedelta(0))
+      DurationParser.positive_or_zero_duration("0"), dt.timedelta(0)
+    )
     self.assertEqual(
-        DurationParser.positive_or_zero_duration("0.0"), dt.timedelta(0))
+      DurationParser.positive_or_zero_duration("0.0"), dt.timedelta(0)
+    )
     self.assertEqual(
-        DurationParser.positive_or_zero_duration("0.0s"), dt.timedelta(0))
+      DurationParser.positive_or_zero_duration("0.0s"), dt.timedelta(0)
+    )
     self.assertEqual(
-        DurationParser.positive_or_zero_duration("10s"),
-        dt.timedelta(seconds=10))
+      DurationParser.positive_or_zero_duration("10s"), dt.timedelta(seconds=10)
+    )
     for invalid in (-1, "-1", "-1s", "", "invalid", dt.timedelta(seconds=-1)):
       with self.assertRaises(argparse.ArgumentTypeError):
         DurationParser.positive_or_zero_duration(invalid)
 
   def test_any_duration(self):
     self.assertEqual(
-        DurationParser.any_duration("-1.5"), dt.timedelta(seconds=-1.5))
+      DurationParser.any_duration("-1.5"), dt.timedelta(seconds=-1.5)
+    )
     self.assertEqual(DurationParser.any_duration("0"), dt.timedelta(0))
     self.assertEqual(DurationParser.any_duration("0s"), dt.timedelta(0))
     self.assertEqual(DurationParser.any_duration("0.0"), dt.timedelta(0))
     self.assertEqual(DurationParser.any_duration(0), dt.timedelta(0))
     self.assertEqual(
-        DurationParser.any_duration("10s"), dt.timedelta(seconds=10))
+      DurationParser.any_duration("10s"), dt.timedelta(seconds=10)
+    )
     self.assertEqual(
-        DurationParser.any_duration(dt.timedelta(seconds=-5)),
-        dt.timedelta(seconds=-5))
+      DurationParser.any_duration(dt.timedelta(seconds=-5)),
+      dt.timedelta(seconds=-5),
+    )
     invalid: object
     for invalid in ("", None, [], "10x", "100XXX", "inf", "nan"):
       with self.assertRaises(argparse.ArgumentTypeError):
@@ -168,7 +203,8 @@ class DurationParserTestCase(unittest.TestCase):
   def test_time_unit(self):
     self.assertEqual(DurationParser.time_unit("10x"), dt.timedelta(seconds=10))
     self.assertEqual(
-        DurationParser.time_unit("0.5x"), dt.timedelta(seconds=0.5))
+      DurationParser.time_unit("0.5x"), dt.timedelta(seconds=0.5)
+    )
     self.assertEqual(DurationParser.time_unit("10s"), dt.timedelta(seconds=10))
     with self.assertRaises(argparse.ArgumentTypeError):
       DurationParser.any_duration("10x")
@@ -177,83 +213,107 @@ class DurationParserTestCase(unittest.TestCase):
 
   def test_milliseconds(self):
     self.assertEqual(
-        DurationParser.positive_duration("27.5ms"),
-        dt.timedelta(milliseconds=27.5))
+      DurationParser.positive_duration("27.5ms"),
+      dt.timedelta(milliseconds=27.5),
+    )
     self.assertEqual(
-        DurationParser.positive_duration(dt.timedelta(milliseconds=27.5)),
-        dt.timedelta(milliseconds=27.5))
+      DurationParser.positive_duration(dt.timedelta(milliseconds=27.5)),
+      dt.timedelta(milliseconds=27.5),
+    )
     self.assertEqual(
-        DurationParser.positive_duration("27.5 millis"),
-        dt.timedelta(milliseconds=27.5))
+      DurationParser.positive_duration("27.5 millis"),
+      dt.timedelta(milliseconds=27.5),
+    )
     self.assertEqual(
-        DurationParser.positive_duration("27.5 milliseconds"),
-        dt.timedelta(milliseconds=27.5))
+      DurationParser.positive_duration("27.5 milliseconds"),
+      dt.timedelta(milliseconds=27.5),
+    )
 
   def test_seconds(self):
     self.assertEqual(
-        DurationParser.positive_duration("27.5s"), dt.timedelta(seconds=27.5))
+      DurationParser.positive_duration("27.5s"), dt.timedelta(seconds=27.5)
+    )
     self.assertEqual(
-        DurationParser.positive_duration("1 sec"), dt.timedelta(seconds=1))
+      DurationParser.positive_duration("1 sec"), dt.timedelta(seconds=1)
+    )
     self.assertEqual(
-        DurationParser.positive_duration("27.5 secs"),
-        dt.timedelta(seconds=27.5))
+      DurationParser.positive_duration("27.5 secs"), dt.timedelta(seconds=27.5)
+    )
     self.assertEqual(
-        DurationParser.positive_duration("1 second"), dt.timedelta(seconds=1))
+      DurationParser.positive_duration("1 second"), dt.timedelta(seconds=1)
+    )
     self.assertEqual(
-        DurationParser.positive_duration("27.5 seconds"),
-        dt.timedelta(seconds=27.5))
+      DurationParser.positive_duration("27.5 seconds"),
+      dt.timedelta(seconds=27.5),
+    )
 
   def test_minutes(self):
     self.assertEqual(
-        DurationParser.positive_duration("27.5m"), dt.timedelta(minutes=27.5))
+      DurationParser.positive_duration("27.5m"), dt.timedelta(minutes=27.5)
+    )
     self.assertEqual(
-        DurationParser.positive_duration("1 min"), dt.timedelta(minutes=1))
+      DurationParser.positive_duration("1 min"), dt.timedelta(minutes=1)
+    )
     self.assertEqual(
-        DurationParser.positive_duration("27.5 mins"),
-        dt.timedelta(minutes=27.5))
+      DurationParser.positive_duration("27.5 mins"), dt.timedelta(minutes=27.5)
+    )
     self.assertEqual(
-        DurationParser.positive_duration("1 minute"), dt.timedelta(minutes=1))
+      DurationParser.positive_duration("1 minute"), dt.timedelta(minutes=1)
+    )
     self.assertEqual(
-        DurationParser.positive_duration("27.5 minutes"),
-        dt.timedelta(minutes=27.5))
+      DurationParser.positive_duration("27.5 minutes"),
+      dt.timedelta(minutes=27.5),
+    )
 
   def test_duration_or_user_input(self):
     self.assertEqual(
-        DurationParser.duration_or_user_input("input"), dt.timedelta.max)
+      DurationParser.duration_or_user_input("input"), dt.timedelta.max
+    )
     self.assertEqual(
-        DurationParser.duration_or_user_input("10s"), dt.timedelta(seconds=10))
+      DurationParser.duration_or_user_input("10s"), dt.timedelta(seconds=10)
+    )
     with self.assertRaises(argparse.ArgumentTypeError):
       DurationParser.duration_or_user_input("-1s")
 
   def test_hours(self):
     self.assertEqual(
-        DurationParser.positive_duration("27.5h"), dt.timedelta(hours=27.5))
+      DurationParser.positive_duration("27.5h"), dt.timedelta(hours=27.5)
+    )
     self.assertEqual(
-        DurationParser.positive_duration("0.1 h"), dt.timedelta(hours=0.1))
+      DurationParser.positive_duration("0.1 h"), dt.timedelta(hours=0.1)
+    )
     self.assertEqual(
-        DurationParser.positive_duration("27.5 hrs"), dt.timedelta(hours=27.5))
+      DurationParser.positive_duration("27.5 hrs"), dt.timedelta(hours=27.5)
+    )
     self.assertEqual(
-        DurationParser.positive_duration("1 hour"), dt.timedelta(hours=1))
+      DurationParser.positive_duration("1 hour"), dt.timedelta(hours=1)
+    )
     self.assertEqual(
-        DurationParser.positive_duration("27.5 hours"),
-        dt.timedelta(hours=27.5))
+      DurationParser.positive_duration("27.5 hours"), dt.timedelta(hours=27.5)
+    )
 
   def test_duration_range(self):
     self.assertEqual(DurationParser.duration_range()(0), dt.timedelta())
-    self.assertEqual(DurationParser.duration_range()("-10s"),
-                     dt.timedelta(seconds=-10))
-    self.assertEqual(DurationParser.duration_range()("10s"),
-                     dt.timedelta(seconds=10))
-    self.assertEqual(DurationParser.duration_range()(dt.timedelta(hours=1)),
-                     dt.timedelta(hours=1))
+    self.assertEqual(
+      DurationParser.duration_range()("-10s"), dt.timedelta(seconds=-10)
+    )
+    self.assertEqual(
+      DurationParser.duration_range()("10s"), dt.timedelta(seconds=10)
+    )
+    self.assertEqual(
+      DurationParser.duration_range()(dt.timedelta(hours=1)),
+      dt.timedelta(hours=1),
+    )
 
     range_1_to_10 = DurationParser.duration_range(
-        min=dt.timedelta(seconds=1), max=dt.timedelta(seconds=10))
+      min=dt.timedelta(seconds=1), max=dt.timedelta(seconds=10)
+    )
     self.assertEqual(range_1_to_10("1s"), dt.timedelta(seconds=1))
     self.assertEqual(range_1_to_10("5.5s"), dt.timedelta(seconds=5.5))
     self.assertEqual(range_1_to_10("10s"), dt.timedelta(seconds=10))
     self.assertEqual(
-        range_1_to_10(dt.timedelta(seconds=1)), dt.timedelta(seconds=1))
+      range_1_to_10(dt.timedelta(seconds=1)), dt.timedelta(seconds=1)
+    )
 
     range_str = DurationParser.duration_range(min="1s", max="10s")
     self.assertEqual(range_str("5s"), dt.timedelta(seconds=5))
@@ -262,7 +322,8 @@ class DurationParserTestCase(unittest.TestCase):
     self.assertEqual(range_int(50), dt.timedelta(seconds=50))
 
     range_ms = DurationParser.duration_range(
-        min=100, max=500, default_time_unit=TimeUnit.MILLISECOND)
+      min=100, max=500, default_time_unit=TimeUnit.MILLISECOND
+    )
     self.assertEqual(range_ms(250), dt.timedelta(milliseconds=250))
     self.assertEqual(range_ms("250ms"), dt.timedelta(milliseconds=250))
 
@@ -288,11 +349,14 @@ class DurationParserTestCase(unittest.TestCase):
     self.assertEqual(range_none_min(10), dt.timedelta(seconds=10))
 
     self.assertEqual(
-        DurationParser._duration_range("5s", dt.timedelta(seconds=1),
-                                       dt.timedelta(seconds=10)),
-        dt.timedelta(seconds=5))
+      DurationParser._duration_range(
+        "5s", dt.timedelta(seconds=1), dt.timedelta(seconds=10)
+      ),
+      dt.timedelta(seconds=5),
+    )
     self.assertEqual(
-        DurationParser._duration_range("-10s"), dt.timedelta(seconds=-10))
+      DurationParser._duration_range("-10s"), dt.timedelta(seconds=-10)
+    )
     self.assertEqual(DurationParser._duration_range("0s"), dt.timedelta())
 
   def test_duration_range_invalid(self):
@@ -319,8 +383,9 @@ class DurationParserTestCase(unittest.TestCase):
     with self.assertRaises(argparse.ArgumentTypeError):
       DurationParser.duration_range(min=10, max=math.inf)(5)
     with self.assertRaises(argparse.ArgumentTypeError):
-      DurationParser._duration_range("0.5s", dt.timedelta(seconds=1),
-                                     dt.timedelta(seconds=10))
+      DurationParser._duration_range(
+        "0.5s", dt.timedelta(seconds=1), dt.timedelta(seconds=10)
+      )
     with self.assertRaises(argparse.ArgumentTypeError):
       DurationParser.duration_range(min="invalid", max=10)
     with self.assertRaises(argparse.ArgumentTypeError):
@@ -329,8 +394,9 @@ class DurationParserTestCase(unittest.TestCase):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       DurationParser.duration_range(min=1, max=10, name="custom_dur")(0.5)
     self.assertIn(
-        "Expected 0:00:01 <= custom_dur <= 0:00:10, but got: 0:00:00.500000",
-        str(cm.exception))
+      "Expected 0:00:01 <= custom_dur <= 0:00:10, but got: 0:00:00.500000",
+      str(cm.exception),
+    )
 
     with self.assertRaises(AssertionError):
       DurationParser.duration_range(min=1, max=1)
@@ -338,11 +404,11 @@ class DurationParserTestCase(unittest.TestCase):
       DurationParser.duration_range(min=10, max=1)
     with self.assertRaises(AssertionError):
       DurationParser.duration_range(
-          min=dt.timedelta(seconds=5), max=dt.timedelta(seconds=2))
+        min=dt.timedelta(seconds=5), max=dt.timedelta(seconds=2)
+      )
 
 
 class NumberParserTestCase(CrossbenchFakeFsTestCase):
-
   def test_any_int(self):
     self.assertEqual(NumberParser.any_int("-123456"), -123456)
     self.assertEqual(NumberParser.any_int(-123456), -123456)
@@ -386,17 +452,45 @@ class NumberParserTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse_any_int_invalid(self):
     invalid: Any
-    for invalid in ("", "-1.2", -1.2, "1.2", 1.2, "100.001", 100.001, "Nan",
-                    math.nan, "inf", math.inf, "-inf", -math.inf, "invalid",
-                    None):
+    for invalid in (
+      "",
+      "-1.2",
+      -1.2,
+      "1.2",
+      1.2,
+      "100.001",
+      100.001,
+      "Nan",
+      math.nan,
+      "inf",
+      math.inf,
+      "-inf",
+      -math.inf,
+      "invalid",
+      None,
+    ):
       with self.assertRaises(argparse.ArgumentTypeError):
         _ = NumberParser.any_int(invalid)
 
   def test_parse_any_int_invalid_strict(self):
     invalid: Any
-    for invalid in ("", "-1.2", -1.2, "1.2", 1.2, "100.001", 100.001, "Nan",
-                    math.nan, "inf", math.inf, "-inf", -math.inf, "invalid",
-                    None):
+    for invalid in (
+      "",
+      "-1.2",
+      -1.2,
+      "1.2",
+      1.2,
+      "100.001",
+      100.001,
+      "Nan",
+      math.nan,
+      "inf",
+      math.inf,
+      "-inf",
+      -math.inf,
+      "invalid",
+      None,
+    ):
       with self.assertRaises(argparse.ArgumentTypeError):
         _ = NumberParser.any_int(invalid, parse_str=False)
 
@@ -412,10 +506,20 @@ class NumberParserTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse_optional_int_invalid(self):
     invalid: Any
-    for invalid in ("1.2", 1.2, "Nan", math.nan, "inf", math.inf, "-inf",
-                    -math.inf, "invalid"):
+    for invalid in (
+      "1.2",
+      1.2,
+      "Nan",
+      math.nan,
+      "inf",
+      math.inf,
+      "-inf",
+      -math.inf,
+      "invalid",
+    ):
       with self.assertRaises(
-          argparse.ArgumentTypeError, msg=f"invalid={invalid!r}"):
+        argparse.ArgumentTypeError, msg=f"invalid={invalid!r}"
+      ):
         _ = NumberParser.optional_int(invalid)
 
   def test_optional_positive_int(self):
@@ -428,10 +532,26 @@ class NumberParserTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse_optional_positive_int_invalid(self):
     invalid: Any
-    for invalid in ("0", 0, "-1", -1, "-1.2", -1.2, "1.2", 1.2, "Nan",
-                    math.nan, "inf", math.inf, "-inf", -math.inf, "invalid"):
+    for invalid in (
+      "0",
+      0,
+      "-1",
+      -1,
+      "-1.2",
+      -1.2,
+      "1.2",
+      1.2,
+      "Nan",
+      math.nan,
+      "inf",
+      math.inf,
+      "-inf",
+      -math.inf,
+      "invalid",
+    ):
       with self.assertRaises(
-          argparse.ArgumentTypeError, msg=f"invalid={invalid!r}"):
+        argparse.ArgumentTypeError, msg=f"invalid={invalid!r}"
+      ):
         _ = NumberParser.optional_positive_int(invalid)
 
   def test_positive_int(self):
@@ -442,11 +562,28 @@ class NumberParserTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse_positive_int_invalid(self):
     invalid: Any
-    for invalid in ("", "0", 0, "-1", -1, "-1.2", -1.2, "1.2", 1.2, "Nan",
-                    math.nan, "inf", math.inf, "-inf", -math.inf, "invalid",
-                    None):
+    for invalid in (
+      "",
+      "0",
+      0,
+      "-1",
+      -1,
+      "-1.2",
+      -1.2,
+      "1.2",
+      1.2,
+      "Nan",
+      math.nan,
+      "inf",
+      math.inf,
+      "-inf",
+      -math.inf,
+      "invalid",
+      None,
+    ):
       with self.assertRaises(
-          argparse.ArgumentTypeError, msg=f"invalid={invalid!r}"):
+        argparse.ArgumentTypeError, msg=f"invalid={invalid!r}"
+      ):
         _ = NumberParser.positive_int(invalid)
 
   def test_int_range(self):
@@ -469,11 +606,30 @@ class NumberParserTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse_positive_int_invalid_strict(self):
     invalid: Any
-    for invalid in ("", "0", 0, "1", "-1", -1, float(-1), "-1.2", -1.2, "1.2",
-                    1.2, "Nan", math.nan, "inf", math.inf, "-inf", -math.inf,
-                    "invalid", None):
+    for invalid in (
+      "",
+      "0",
+      0,
+      "1",
+      "-1",
+      -1,
+      float(-1),
+      "-1.2",
+      -1.2,
+      "1.2",
+      1.2,
+      "Nan",
+      math.nan,
+      "inf",
+      math.inf,
+      "-inf",
+      -math.inf,
+      "invalid",
+      None,
+    ):
       with self.assertRaises(
-          argparse.ArgumentTypeError, msg=f"invalid={invalid!r}"):
+        argparse.ArgumentTypeError, msg=f"invalid={invalid!r}"
+      ):
         _ = NumberParser.positive_int(invalid, parse_str=False)
 
   def test_positive_zero_int(self):
@@ -485,10 +641,26 @@ class NumberParserTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse_positive_zero_int_invalid(self):
     invalid: Any
-    for invalid in ("", "-1", -1, "-1.2", -1.2, "1.2", 1.2, "NaN", math.nan,
-                    "inf", math.inf, "-inf", -math.inf, "invalid", None):
+    for invalid in (
+      "",
+      "-1",
+      -1,
+      "-1.2",
+      -1.2,
+      "1.2",
+      1.2,
+      "NaN",
+      math.nan,
+      "inf",
+      math.inf,
+      "-inf",
+      -math.inf,
+      "invalid",
+      None,
+    ):
       with self.assertRaises(
-          argparse.ArgumentTypeError, msg=f"invalid={invalid!r}"):
+        argparse.ArgumentTypeError, msg=f"invalid={invalid!r}"
+      ):
         _ = NumberParser.positive_zero_int(invalid)
 
   def test_any_float(self):
@@ -529,8 +701,20 @@ class NumberParserTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse_positive_float_invalid(self):
     invalid: Any
-    for invalid in ("", "0", 0, "0.0", 0.0, "-1", -1, "-1.2", "NaN", "inf",
-                    "-inf", "invalid"):
+    for invalid in (
+      "",
+      "0",
+      0,
+      "0.0",
+      0.0,
+      "-1",
+      -1,
+      "-1.2",
+      "NaN",
+      "inf",
+      "-inf",
+      "invalid",
+    ):
       with self.assertRaises(argparse.ArgumentTypeError):
         _ = NumberParser.positive_float(invalid)
 
@@ -568,8 +752,9 @@ class NumberParserTestCase(CrossbenchFakeFsTestCase):
       NumberParser._float_range(0.9, 1.0, 2.0)
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       NumberParser.float_range(1, 10, name="custom_float")(0.5)
-    self.assertIn("Expected 1 <= custom_float <= 10, but got: 0.5",
-                  str(cm.exception))
+    self.assertIn(
+      "Expected 1 <= custom_float <= 10, but got: 0.5", str(cm.exception)
+    )
     with self.assertRaises(argparse.ArgumentTypeError):
       NumberParser.int_range(-1.1, 10.1)(-1.2)
     with self.assertRaises(argparse.ArgumentTypeError):
@@ -595,21 +780,31 @@ class NumberParserTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse_port_number_invalid(self):
     invalid: Any
-    for invalid in ("", "-1", "-1.2", "6553500", 6553500, "inf", "-inf",
-                    "invalid", 0, "0"):
+    for invalid in (
+      "",
+      "-1",
+      "-1.2",
+      "6553500",
+      6553500,
+      "inf",
+      "-inf",
+      "invalid",
+      0,
+      "0",
+    ):
       with self.assertRaises(argparse.ArgumentTypeError):
         _ = NumberParser.port_number(invalid)
 
   def test_parse_port_number_invalid_zero(self):
     invalid: Any
     for invalid in (
-        "",
-        "-1",
-        "-1.2",
-        "6553500",
-        "inf",
-        "-inf",
-        "invalid",
+      "",
+      "-1",
+      "-1.2",
+      "6553500",
+      "inf",
+      "-inf",
+      "invalid",
     ):
       with self.assertRaises(argparse.ArgumentTypeError):
         _ = NumberParser.port_number_zero(invalid)
@@ -632,7 +827,6 @@ class NumberParserTestCase(CrossbenchFakeFsTestCase):
 
 
 class BaseFileParserTestCase(CrossbenchFakeFsTestCase):
-
   @override
   def setUp(self) -> None:
     super().setUp()
@@ -679,7 +873,6 @@ class BaseFileParserTestCase(CrossbenchFakeFsTestCase):
 
 
 class PathParserTestCase(BaseFileParserTestCase):
-
   def test_existing_path(self):
     path = pth.LocalPath("foo.txt")
     self.assertFalse(path.exists())
@@ -747,9 +940,9 @@ class PathParserTestCase(BaseFileParserTestCase):
     self.assertEqual(file, PathParser.file_path(file))
 
   def _binary_path_test_helper(
-      self,
-      parser: Callable,
-      platform: MockPlatform | RemoteLinuxMockPlatform,
+    self,
+    parser: Callable,
+    platform: MockPlatform | RemoteLinuxMockPlatform,
   ) -> None:
     with self.assertRaises(argparse.ArgumentTypeError):
       parser(None, platform)
@@ -773,8 +966,9 @@ class PathParserTestCase(BaseFileParserTestCase):
     platform = MockPlatform(fake_fs=self.fs)
     self._binary_path_test_helper(PathParser.local_binary_path, platform)
     remote_platform = RemoteLinuxMockPlatform(platform, fake_fs=self.fs)
-    bin_path = remote_platform.install_mock_binary("remote_bin",
-                                                   "/usr/bin/remote_bin")
+    bin_path = remote_platform.install_mock_binary(
+      "remote_bin", "/usr/bin/remote_bin"
+    )
     with self.assertRaises(argparse.ArgumentTypeError):
       PathParser.local_binary_path(None, remote_platform)
     with self.assertRaises(argparse.ArgumentTypeError):
@@ -858,8 +1052,9 @@ class PathParserTestCase(BaseFileParserTestCase):
     with self.assertRaisesRegex(argparse.ArgumentTypeError, "empty"):
       PathParser.path("")
     for invalid in (0, [], {}, 123):
-      with self.assertRaisesRegex(argparse.ArgumentTypeError,
-                                  "expected str or PathLike"):
+      with self.assertRaisesRegex(
+        argparse.ArgumentTypeError, "expected str or PathLike"
+      ):
         PathParser.path(invalid)
     folder = pathlib.Path("folder")
     folder.mkdir()
@@ -898,7 +1093,6 @@ class PathParserTestCase(BaseFileParserTestCase):
 
 
 class ObjectParserTestCase(BaseFileParserTestCase):
-
   def test_any_str(self):
     self.assertEqual(ObjectParser.any_str(""), "")
     self.assertEqual(ObjectParser.any_str("1234"), "1234")
@@ -928,11 +1122,13 @@ class ObjectParserTestCase(BaseFileParserTestCase):
         ObjectParser.optional_str(invalid)
 
   def test_str_or_file_contents(self):
-    with self.assertRaisesRegex(argparse.ArgumentTypeError,
-                                r"(?i)non-empty string"):
+    with self.assertRaisesRegex(
+      argparse.ArgumentTypeError, r"(?i)non-empty string"
+    ):
       ObjectParser.str_or_file_contents("")
     self.assertEqual(
-        ObjectParser.str_or_file_contents("some data"), "some data")
+      ObjectParser.str_or_file_contents("some data"), "some data"
+    )
     self.assertEqual(ObjectParser.str_or_file_contents("test.txt"), "test.txt")
 
   def test_parse_str_or_file_contents_file(self):
@@ -943,10 +1139,12 @@ class ObjectParserTestCase(BaseFileParserTestCase):
       ObjectParser.str_or_file_contents("./test.txt")
     self.fs.create_file(path, contents="test file contents")
     self.assertEqual(
-        ObjectParser.str_or_file_contents(path), "test file contents")
+      ObjectParser.str_or_file_contents(path), "test file contents"
+    )
     self.assertEqual(ObjectParser.str_or_file_contents(str(path)), "test.txt")
     self.assertEqual(
-        ObjectParser.str_or_file_contents("./test.txt"), "test file contents")
+      ObjectParser.str_or_file_contents("./test.txt"), "test file contents"
+    )
 
   def test_httpx_url_str(self):
     for valid in ("http://foo.com", "https://foo.com", "http://localhost:800"):
@@ -994,8 +1192,9 @@ class ObjectParserTestCase(BaseFileParserTestCase):
     self.assertFalse(ObjectParser.is_hjson_like({}))
 
   def test_inline_hjson(self):
-    with self.assertRaisesRegex(argparse.ArgumentTypeError,
-                                r"(?i)non-empty string"):
+    with self.assertRaisesRegex(
+      argparse.ArgumentTypeError, r"(?i)non-empty string"
+    ):
       ObjectParser.inline_hjson("")
     with self.assertRaisesRegex(argparse.ArgumentTypeError, "braces"):
       ObjectParser.inline_hjson("{")
@@ -1059,24 +1258,24 @@ class ObjectParserTestCase(BaseFileParserTestCase):
     date = dt.date(2024, 1, 1)
     self.assertEqual(ObjectParser.datetime(date), dt.datetime(2024, 1, 1, 0, 0))
     self.assertEqual(
-        ObjectParser.datetime("2024-01-01T12:00:00Z"),
-        dt.datetime(2024, 1, 1, 12, 0, 0, tzinfo=dt.UTC),
+      ObjectParser.datetime("2024-01-01T12:00:00Z"),
+      dt.datetime(2024, 1, 1, 12, 0, 0, tzinfo=dt.UTC),
     )
     self.assertEqual(
-        ObjectParser.datetime("2024-01-01T12:00:00+00:00"),
-        dt.datetime(2024, 1, 1, 12, 0, 0, tzinfo=dt.UTC),
+      ObjectParser.datetime("2024-01-01T12:00:00+00:00"),
+      dt.datetime(2024, 1, 1, 12, 0, 0, tzinfo=dt.UTC),
     )
     self.assertEqual(
-        ObjectParser.datetime("2024-01-01 12:00:00"),
-        dt.datetime(2024, 1, 1, 12, 0, 0),
+      ObjectParser.datetime("2024-01-01 12:00:00"),
+      dt.datetime(2024, 1, 1, 12, 0, 0),
     )
     self.assertEqual(
-        ObjectParser.datetime("2024-01-01"),
-        dt.datetime(2024, 1, 1, 0, 0),
+      ObjectParser.datetime("2024-01-01"),
+      dt.datetime(2024, 1, 1, 0, 0),
     )
     self.assertEqual(
-        ObjectParser.datetime("  2024-01-01 12:00:00  "),
-        dt.datetime(2024, 1, 1, 12, 0, 0),
+      ObjectParser.datetime("  2024-01-01 12:00:00  "),
+      dt.datetime(2024, 1, 1, 12, 0, 0),
     )
 
   def test_parse_datetime_invalid(self):
@@ -1089,8 +1288,8 @@ class ObjectParserTestCase(BaseFileParserTestCase):
     self.assertIsNone(ObjectParser.optional_datetime(None))
     self.assertIsNone(ObjectParser.optional_datetime(""))
     self.assertEqual(
-        ObjectParser.optional_datetime("2024-01-01 12:00:00"),
-        dt.datetime(2024, 1, 1, 12, 0, 0),
+      ObjectParser.optional_datetime("2024-01-01 12:00:00"),
+      dt.datetime(2024, 1, 1, 12, 0, 0),
     )
 
   def test_parse_optional_datetime_invalid(self):
@@ -1101,13 +1300,17 @@ class ObjectParserTestCase(BaseFileParserTestCase):
 
   def test_sh_cmd(self):
     self.assertSequenceEqual(
-        ObjectParser.sh_cmd("ls -al ."), ["ls", "-al", "."])
+      ObjectParser.sh_cmd("ls -al ."), ["ls", "-al", "."]
+    )
     self.assertSequenceEqual(
-        ObjectParser.sh_cmd("ls -al '.'"), ["ls", "-al", "."])
+      ObjectParser.sh_cmd("ls -al '.'"), ["ls", "-al", "."]
+    )
     self.assertSequenceEqual(
-        ObjectParser.sh_cmd(";ls -al '.'"), [";ls", "-al", "."])
+      ObjectParser.sh_cmd(";ls -al '.'"), [";ls", "-al", "."]
+    )
     self.assertSequenceEqual(
-        ObjectParser.sh_cmd(("ls", "-al", ".")), ["ls", "-al", "."])
+      ObjectParser.sh_cmd(("ls", "-al", ".")), ["ls", "-al", "."]
+    )
 
   def test_parse_sh_cmd_invalid(self):
     invalid: Any
@@ -1167,7 +1370,8 @@ class ObjectParserTestCase(BaseFileParserTestCase):
     self.assertSequenceEqual(ObjectParser.str_list("a,b, c"), ["a", "b", "c"])
     self.assertSequenceEqual(ObjectParser.str_list("a"), ["a"])
     self.assertSequenceEqual(
-        ObjectParser.str_list(["a", "b, c"]), ["a", "b, c"])
+      ObjectParser.str_list(["a", "b, c"]), ["a", "b, c"]
+    )
     self.assertSequenceEqual(ObjectParser.str_list([1, 2]), ["1", "2"])
     self.assertSequenceEqual(ObjectParser.str_list((1, "2, 3")), ["1", "2, 3"])
 
@@ -1240,44 +1444,45 @@ class ObjectParserTestCase(BaseFileParserTestCase):
 
   def test_fuzzy_url_str(self):
     self.assertEqual(
-        ObjectParser.fuzzy_url_str("test.com/bar"), "https://test.com/bar")
+      ObjectParser.fuzzy_url_str("test.com/bar"), "https://test.com/bar"
+    )
     self.assertEqual(
-        ObjectParser.fuzzy_url_str("test.com", default_scheme="http"),
-        "http://test.com")
+      ObjectParser.fuzzy_url_str("test.com", default_scheme="http"),
+      "http://test.com",
+    )
     with self.assertRaises(argparse.ArgumentTypeError):
       ObjectParser.fuzzy_url_str("foo")
 
   def test_fuzzy_url(self):
     expected = (
-        ("/foo/bar", "file:///foo/bar"),
-        ("C:/foo/bar", "file://C:/foo/bar"),
-        ("1234.com", "https://1234.com"),
-        ("http://1234.com", "http://1234.com"),
-        ("http://127.0.0.1", "http://127.0.0.1"),
-        ("http://localhost", "http://localhost"),
-        ("127.0.0.1", "https://127.0.0.1"),
-        ("localhost", "https://localhost"),
-        ("test.com", "https://test.com"),
-        ("test.com/", "https://test.com/"),
-        ("test.com/1234", "https://test.com/1234"),
-        ("test.com/bar", "https://test.com/bar"),
-        ("test.com/bar?x=1", "https://test.com/bar?x=1"),
-        ("test.com:1234", "https://test.com:1234"),
-        ("test.com:1234/", "https://test.com:1234/"),
-        ("test.com:1234/56", "https://test.com:1234/56"),
-        ("test.com:1234/56/", "https://test.com:1234/56/"),
-        ("test.com:1234/bar", "https://test.com:1234/bar"),
-        ("test.com:1234/bar?x=1", "https://test.com:1234/bar?x=1"),
-        ("localhost:8123", "https://localhost:8123"),
-        ("localhost:8123", "https://localhost:8123"),
-        ("localhost:8123/", "https://localhost:8123/"),
-        ("localhost:8123/77", "https://localhost:8123/77"),
-        ("localhost:8123/77/", "https://localhost:8123/77/"),
-        ("localhost:8123/bar", "https://localhost:8123/bar"),
-        ("localhost:8123/bar?x=1", "https://localhost:8123/bar?x=1"),
-        ("data:text/html,this is some data",
-         "data:text/html,this is some data"),
-        ("chrome://extensions", "chrome://extensions"),
+      ("/foo/bar", "file:///foo/bar"),
+      ("C:/foo/bar", "file://C:/foo/bar"),
+      ("1234.com", "https://1234.com"),
+      ("http://1234.com", "http://1234.com"),
+      ("http://127.0.0.1", "http://127.0.0.1"),
+      ("http://localhost", "http://localhost"),
+      ("127.0.0.1", "https://127.0.0.1"),
+      ("localhost", "https://localhost"),
+      ("test.com", "https://test.com"),
+      ("test.com/", "https://test.com/"),
+      ("test.com/1234", "https://test.com/1234"),
+      ("test.com/bar", "https://test.com/bar"),
+      ("test.com/bar?x=1", "https://test.com/bar?x=1"),
+      ("test.com:1234", "https://test.com:1234"),
+      ("test.com:1234/", "https://test.com:1234/"),
+      ("test.com:1234/56", "https://test.com:1234/56"),
+      ("test.com:1234/56/", "https://test.com:1234/56/"),
+      ("test.com:1234/bar", "https://test.com:1234/bar"),
+      ("test.com:1234/bar?x=1", "https://test.com:1234/bar?x=1"),
+      ("localhost:8123", "https://localhost:8123"),
+      ("localhost:8123", "https://localhost:8123"),
+      ("localhost:8123/", "https://localhost:8123/"),
+      ("localhost:8123/77", "https://localhost:8123/77"),
+      ("localhost:8123/77/", "https://localhost:8123/77/"),
+      ("localhost:8123/bar", "https://localhost:8123/bar"),
+      ("localhost:8123/bar?x=1", "https://localhost:8123/bar?x=1"),
+      ("data:text/html,this is some data", "data:text/html,this is some data"),
+      ("chrome://extensions", "chrome://extensions"),
     )
     for url, result in expected:
       with self.subTest(url=url):
@@ -1286,10 +1491,20 @@ class ObjectParserTestCase(BaseFileParserTestCase):
         self.assertEqual(urlparse.urlunparse(parsed), result)
 
   def test_parse_fuzzy_url_default_scheme(self):
-    expected = ("test.com", "test.com/", "test.com/bar", "test.com/bar?x=1",
-                "test.com:1234", "test.com:1234/", "test.com:1234/bar",
-                "test.com:1234/bar?x=1", "localhost:8123", "localhost:8123/",
-                "localhost:8123/bar", "localhost:8123/bar?x1")
+    expected = (
+      "test.com",
+      "test.com/",
+      "test.com/bar",
+      "test.com/bar?x=1",
+      "test.com:1234",
+      "test.com:1234/",
+      "test.com:1234/bar",
+      "test.com:1234/bar?x=1",
+      "localhost:8123",
+      "localhost:8123/",
+      "localhost:8123/bar",
+      "localhost:8123/bar?x1",
+    )
     for url in expected:
       with self.subTest(url=url):
         result_default = f"https://{url}"
@@ -1298,16 +1513,18 @@ class ObjectParserTestCase(BaseFileParserTestCase):
         self.assertEqual(urlparse.urlunparse(parsed), result_default)
         result_custom = f"ftp://{url}"
         self.assertEqual(
-            ObjectParser.fuzzy_url_str(url, default_scheme="ftp"),
-            result_custom)
+          ObjectParser.fuzzy_url_str(url, default_scheme="ftp"), result_custom
+        )
         parsed = ObjectParser.fuzzy_url(url, default_scheme="ftp")
         self.assertEqual(urlparse.urlunparse(parsed), result_custom)
 
   def test_url_str(self):
     self.assertEqual(
-        ObjectParser.url_str("https://test.com/bar"), "https://test.com/bar")
+      ObjectParser.url_str("https://test.com/bar"), "https://test.com/bar"
+    )
     self.assertEqual(
-        ObjectParser.url_str("http://localhost:8080"), "http://localhost:8080")
+      ObjectParser.url_str("http://localhost:8080"), "http://localhost:8080"
+    )
     with self.assertRaises(argparse.ArgumentTypeError):
       ObjectParser.url_str("invalid")
     with self.assertRaises(argparse.ArgumentTypeError):
@@ -1315,24 +1532,23 @@ class ObjectParserTestCase(BaseFileParserTestCase):
 
   def test_url(self):
     expected = (
-        ("file:///foo/bar", "file:///foo/bar"),
-        ("about:blank", "about:blank"),
-        ("http://test.com/bar", "http://test.com/bar"),
-        ("https://test.com/bar", "https://test.com/bar"),
-        ("http://test.com", "http://test.com"),
-        ("https://test.com/", "https://test.com/"),
-        ("http://test.com/bar", "http://test.com/bar"),
-        ("https://test.com/bar?x=1", "https://test.com/bar?x=1"),
-        ("http://test.com:1234", "http://test.com:1234"),
-        ("https://test.com:1234/", "https://test.com:1234/"),
-        ("http://test.com:1234/bar", "http://test.com:1234/bar"),
-        ("https://test.com:1234/bar?x=1", "https://test.com:1234/bar?x=1"),
-        ("http://localhost:8123", "http://localhost:8123"),
-        ("https://localhost:8123/", "https://localhost:8123/"),
-        ("http://localhost:8123/bar", "http://localhost:8123/bar"),
-        ("https://localhost:8123/bar?x=1", "https://localhost:8123/bar?x=1"),
-        ("data:text/html,this is some data",
-         "data:text/html,this is some data"),
+      ("file:///foo/bar", "file:///foo/bar"),
+      ("about:blank", "about:blank"),
+      ("http://test.com/bar", "http://test.com/bar"),
+      ("https://test.com/bar", "https://test.com/bar"),
+      ("http://test.com", "http://test.com"),
+      ("https://test.com/", "https://test.com/"),
+      ("http://test.com/bar", "http://test.com/bar"),
+      ("https://test.com/bar?x=1", "https://test.com/bar?x=1"),
+      ("http://test.com:1234", "http://test.com:1234"),
+      ("https://test.com:1234/", "https://test.com:1234/"),
+      ("http://test.com:1234/bar", "http://test.com:1234/bar"),
+      ("https://test.com:1234/bar?x=1", "https://test.com:1234/bar?x=1"),
+      ("http://localhost:8123", "http://localhost:8123"),
+      ("https://localhost:8123/", "https://localhost:8123/"),
+      ("http://localhost:8123/bar", "http://localhost:8123/bar"),
+      ("https://localhost:8123/bar?x=1", "https://localhost:8123/bar?x=1"),
+      ("data:text/html,this is some data", "data:text/html,this is some data"),
     )
     for url, result in expected:
       with self.subTest(url=url):
@@ -1345,8 +1561,14 @@ class ObjectParserTestCase(BaseFileParserTestCase):
 
   def test_parse_url_invalid(self):
     invalid: Any
-    for invalid in (None, "", {}, "http:// foo .com/bar", "htt p://foo.com",
-                    "http://foo.com:-123/bar"):
+    for invalid in (
+      None,
+      "",
+      {},
+      "http:// foo .com/bar",
+      "htt p://foo.com",
+      "http://foo.com:-123/bar",
+    ):
       with self.subTest(invalid=invalid):
         with self.assertRaises(argparse.ArgumentTypeError):
           _ = ObjectParser.url(invalid)
@@ -1373,10 +1595,12 @@ class ObjectParserTestCase(BaseFileParserTestCase):
     with self.assertRaises(argparse.ArgumentTypeError):
       _ = ObjectParser.url(url, schemes=("https",))
     parsed = ObjectParser.url(
-        url, schemes=(
-            "https",
-            "ftp",
-        ))
+      url,
+      schemes=(
+        "https",
+        "ftp",
+      ),
+    )
     self.assertEqual(urlparse.urlunparse(parsed), url)
 
   def test_regexp(self):
@@ -1407,9 +1631,11 @@ class ObjectParserTestCase(BaseFileParserTestCase):
   def test_safe_filename(self):
     self.assertEqual(ObjectParser.safe_filename("simple_name"), "simple_name")
     self.assertEqual(
-        ObjectParser.safe_filename("name with spaces"), "name_with_spaces")
+      ObjectParser.safe_filename("name with spaces"), "name_with_spaces"
+    )
     self.assertEqual(
-        ObjectParser.safe_filename("name/with:chars?"), "name_with_chars_")
+      ObjectParser.safe_filename("name/with:chars?"), "name_with_chars_"
+    )
     with self.assertRaises(argparse.ArgumentTypeError):
       ObjectParser.safe_filename("")
     with self.assertRaises(argparse.ArgumentTypeError):
@@ -1497,49 +1723,59 @@ class ObjectParserTestCase(BaseFileParserTestCase):
   def test_parse_text_or_binary_proto_file(self):
     text_proto_file = pth.LocalPath("trace_config.textproto")
     text_proto_file.write_text(
-        "buffers: { size_kb: 123456 fill_policy: DISCARD }", encoding="utf-8")
+      "buffers: { size_kb: 123456 fill_policy: DISCARD }", encoding="utf-8"
+    )
     proto = ObjectParser.parse_text_or_binary_proto_file(
-        trace_config_pb2.TraceConfig(), text_proto_file)
+      trace_config_pb2.TraceConfig(), text_proto_file
+    )
     self.assertEqual(proto.buffers[0].size_kb, 123456)
 
     binary_proto_file = pth.LocalPath("trace_config.proto")
     binary_proto_file.write_bytes(proto.SerializeToString())
     proto_bin = ObjectParser.parse_text_or_binary_proto_file(
-        trace_config_pb2.TraceConfig(), binary_proto_file)
+      trace_config_pb2.TraceConfig(), binary_proto_file
+    )
     self.assertEqual(proto, proto_bin)
 
   def test_parse_text_or_binary_proto(self):
     text_data = b"buffers: { size_kb: 123456 fill_policy: DISCARD }"
     proto = ObjectParser.parse_text_or_binary_proto(
-        trace_config_pb2.TraceConfig(), text_data)
+      trace_config_pb2.TraceConfig(), text_data
+    )
     self.assertEqual(proto.buffers[0].size_kb, 123456)
 
     proto_bin = ObjectParser.parse_text_or_binary_proto(
-        trace_config_pb2.TraceConfig(), proto.SerializeToString())
+      trace_config_pb2.TraceConfig(), proto.SerializeToString()
+    )
     self.assertEqual(proto, proto_bin)
 
     with self.assertRaises(argparse.ArgumentTypeError):
-      ObjectParser.parse_text_or_binary_proto(trace_config_pb2.TraceConfig(),
-                                              b"invalid: {")
+      ObjectParser.parse_text_or_binary_proto(
+        trace_config_pb2.TraceConfig(), b"invalid: {"
+      )
 
   def test_parse_text_proto(self):
     proto = ObjectParser.parse_text_proto(
-        trace_config_pb2.TraceConfig(),
-        "buffers: { size_kb: 123456 fill_policy: DISCARD }")
+      trace_config_pb2.TraceConfig(),
+      "buffers: { size_kb: 123456 fill_policy: DISCARD }",
+    )
     self.assertEqual(proto.buffers[0].size_kb, 123456)
     with self.assertRaises(argparse.ArgumentTypeError):
-      ObjectParser.parse_text_proto(trace_config_pb2.TraceConfig(),
-                                    "invalid: {")
+      ObjectParser.parse_text_proto(
+        trace_config_pb2.TraceConfig(), "invalid: {"
+      )
 
   def test_parse_binary_proto(self):
     source_proto = trace_config_pb2.TraceConfig()
     source_proto.buffers.add(size_kb=123456)
-    proto = ObjectParser.parse_binary_proto(trace_config_pb2.TraceConfig(),
-                                            source_proto.SerializeToString())
+    proto = ObjectParser.parse_binary_proto(
+      trace_config_pb2.TraceConfig(), source_proto.SerializeToString()
+    )
     self.assertEqual(proto.buffers[0].size_kb, 123456)
     with self.assertRaises(argparse.ArgumentTypeError):
-      ObjectParser.parse_binary_proto(trace_config_pb2.TraceConfig(),
-                                      b"invalid binary data")
+      ObjectParser.parse_binary_proto(
+        trace_config_pb2.TraceConfig(), b"invalid binary data"
+      )
 
   def test_enum(self):
 
@@ -1548,10 +1784,12 @@ class ObjectParserTestCase(BaseFileParserTestCase):
       B = "b"
 
     self.assertIs(
-        ObjectParser.enum("DummyEnum", DummyEnum, "a", DummyEnum), DummyEnum.A)
+      ObjectParser.enum("DummyEnum", DummyEnum, "a", DummyEnum), DummyEnum.A
+    )
     self.assertIs(
-        ObjectParser.enum("DummyEnum", DummyEnum, DummyEnum.B, DummyEnum),
-        DummyEnum.B)
+      ObjectParser.enum("DummyEnum", DummyEnum, DummyEnum.B, DummyEnum),
+      DummyEnum.B,
+    )
     with self.assertRaises(argparse.ArgumentTypeError):
       ObjectParser.enum("DummyEnum", DummyEnum, "invalid_value", DummyEnum)
     with self.assertRaises(argparse.ArgumentTypeError):
@@ -1565,17 +1803,22 @@ class ObjectParserTestCase(BaseFileParserTestCase):
       C = "c"
 
     self.assertSequenceEqual(
-        ObjectParser.enum_list("DummyEnum", DummyEnum, "a,b,c"),
-        [DummyEnum.A, DummyEnum.B, DummyEnum.C])
+      ObjectParser.enum_list("DummyEnum", DummyEnum, "a,b,c"),
+      [DummyEnum.A, DummyEnum.B, DummyEnum.C],
+    )
     self.assertSequenceEqual(
-        ObjectParser.enum_list("DummyEnum", DummyEnum, ["a", "b", "c"]),
-        [DummyEnum.A, DummyEnum.B, DummyEnum.C])
+      ObjectParser.enum_list("DummyEnum", DummyEnum, ["a", "b", "c"]),
+      [DummyEnum.A, DummyEnum.B, DummyEnum.C],
+    )
     self.assertSequenceEqual(
-        ObjectParser.enum_list("DummyEnum", DummyEnum,
-                               (DummyEnum.A, DummyEnum.B)),
-        [DummyEnum.A, DummyEnum.B])
+      ObjectParser.enum_list(
+        "DummyEnum", DummyEnum, (DummyEnum.A, DummyEnum.B)
+      ),
+      [DummyEnum.A, DummyEnum.B],
+    )
     self.assertSequenceEqual(
-        ObjectParser.enum_list("DummyEnum", DummyEnum, ""), [])
+      ObjectParser.enum_list("DummyEnum", DummyEnum, ""), []
+    )
     with self.assertRaises(argparse.ArgumentTypeError):
       ObjectParser.enum_list("DummyEnum", DummyEnum, "invalid_value")
     with self.assertRaises(argparse.ArgumentTypeError):
@@ -1600,40 +1843,44 @@ class ObjectParserTestCase(BaseFileParserTestCase):
   def test_env_dict(self):
     self.assertEqual(ObjectParser.env_dict({}), immutabledict())
     self.assertEqual(
-        ObjectParser.env_dict({
-            "JSC_useBaselineJIT": "false",
-            "_FOO_123": "",
-        }),
-        immutabledict({
-            "JSC_useBaselineJIT": "false",
-            "_FOO_123": "",
-        }),
+      ObjectParser.env_dict(
+        {
+          "JSC_useBaselineJIT": "false",
+          "_FOO_123": "",
+        }
+      ),
+      immutabledict(
+        {
+          "JSC_useBaselineJIT": "false",
+          "_FOO_123": "",
+        }
+      ),
     )
 
   def test_env_dict_invalid(self):
     for invalid in (
-        "FOO=1",
-        {
-            "": "1",
-        },
-        {
-            "1FOO": "1",
-        },
-        {
-            "FOO-BAR": "1",
-        },
-        {
-            "FOO BAR": "1",
-        },
-        {
-            "FOO=BAR": "1",
-        },
-        {
-            "FOO": 1,
-        },
-        {
-            "FOO": None,
-        },
+      "FOO=1",
+      {
+        "": "1",
+      },
+      {
+        "1FOO": "1",
+      },
+      {
+        "FOO-BAR": "1",
+      },
+      {
+        "FOO BAR": "1",
+      },
+      {
+        "FOO=BAR": "1",
+      },
+      {
+        "FOO": 1,
+      },
+      {
+        "FOO": None,
+      },
     ):
       with self.subTest(invalid=invalid):
         with self.assertRaises(argparse.ArgumentTypeError):
@@ -1641,7 +1888,6 @@ class ObjectParserTestCase(BaseFileParserTestCase):
 
 
 class TimeUnitTestCase(unittest.TestCase):
-
   def test_parse_microseconds(self):
     for unit in ("us", "micros", "microseconds"):
       self.assertIs(TimeUnit.parse(unit), TimeUnit.MICROSECOND)
@@ -1678,9 +1924,11 @@ class TimeUnitTestCase(unittest.TestCase):
 
   def test_to_timedelta(self):
     self.assertEqual(
-        TimeUnit.MICROSECOND.timedelta(123), dt.timedelta(microseconds=123))
+      TimeUnit.MICROSECOND.timedelta(123), dt.timedelta(microseconds=123)
+    )
     self.assertEqual(
-        TimeUnit.MILLISECOND.timedelta(123), dt.timedelta(milliseconds=123))
+      TimeUnit.MILLISECOND.timedelta(123), dt.timedelta(milliseconds=123)
+    )
     self.assertEqual(TimeUnit.SECOND.timedelta(123), dt.timedelta(seconds=123))
     self.assertEqual(TimeUnit.MINUTE.timedelta(123), dt.timedelta(minutes=123))
     self.assertEqual(TimeUnit.HOUR.timedelta(123), dt.timedelta(hours=123))
@@ -1688,17 +1936,17 @@ class TimeUnitTestCase(unittest.TestCase):
     self.assertEqual(TimeUnit.WEEK.timedelta(123), dt.timedelta(weeks=123))
 
 
-PARSER_TEST_CASES: Final[tuple[tuple[type[BaseParser], type[unittest.TestCase]],
-                               ...]] = (
-                                   (PathParser, PathParserTestCase),
-                                   (ObjectParser, ObjectParserTestCase),
-                                   (NumberParser, NumberParserTestCase),
-                                   (DurationParser, DurationParserTestCase),
-                               )
+PARSER_TEST_CASES: Final[
+  tuple[tuple[type[BaseParser], type[unittest.TestCase]], ...]
+] = (
+  (PathParser, PathParserTestCase),
+  (ObjectParser, ObjectParserTestCase),
+  (NumberParser, NumberParserTestCase),
+  (DurationParser, DurationParserTestCase),
+)
 
 
 class ParserMetaTestCase(unittest.TestCase):
-
   def test_all_parser_classes_covered(self):
     tested_parsers = {parser_cls for parser_cls, _ in PARSER_TEST_CASES}
     self.assertSetEqual(tested_parsers, get_all_subclasses(BaseParser))
@@ -1710,8 +1958,9 @@ class ParserMetaTestCase(unittest.TestCase):
       with self.subTest(parser=parser_cls.__name__):
         self._check_parser_methods_tested(parser_cls, test_cls)
 
-  def _check_parser_methods_tested(self, parser_cls: type[BaseParser],
-                                   test_cls: type[unittest.TestCase]) -> None:
+  def _check_parser_methods_tested(
+    self, parser_cls: type[BaseParser], test_cls: type[unittest.TestCase]
+  ) -> None:
     public_methods = self._get_public_methods(parser_cls)
     self.assertTrue(public_methods)
     test_methods = self._get_public_methods(test_cls)
@@ -1719,16 +1968,17 @@ class ParserMetaTestCase(unittest.TestCase):
       with self.subTest(method=method_name):
         test_name = f"test_{method_name}"
         self.assertIn(
-            test_name,
-            test_methods,
-            f"Missing {test_cls.__name__}.{test_name} for "
-            f"{parser_cls.__name__}.{method_name}",
+          test_name,
+          test_methods,
+          f"Missing {test_cls.__name__}.{test_name} for "
+          f"{parser_cls.__name__}.{method_name}",
         )
 
   def _get_public_methods(self, cls: type) -> set[str]:
     return {
-        name for name, member in cls.__dict__.items()
-        if not name.startswith("_") and inspect.isroutine(member)
+      name
+      for name, member in cls.__dict__.items()
+      if not name.startswith("_") and inspect.isroutine(member)
     }
 
 

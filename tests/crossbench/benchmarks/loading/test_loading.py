@@ -17,18 +17,24 @@ from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.get import GetAction
 from crossbench.action_runner.action.wait import WaitAction
 from crossbench.action_runner.action_runner import SCRIPTS_DIR
-from crossbench.benchmarks.loading.config.blocks import ActionBlock, \
-    ActionBlockListConfig
+from crossbench.benchmarks.loading.config.blocks import (
+  ActionBlock,
+  ActionBlockListConfig,
+)
 from crossbench.benchmarks.loading.config.login.google import GOOGLE_LOGIN_URL
-from crossbench.benchmarks.loading.loading_benchmark import LoadingBenchmark, \
-    LoadingPageFilter
+from crossbench.benchmarks.loading.loading_benchmark import (
+  LoadingBenchmark,
+  LoadingPageFilter,
+)
 from crossbench.benchmarks.loading.page.base import Page
 from crossbench.benchmarks.loading.page.combined import CombinedPage
 from crossbench.benchmarks.loading.page.interactive import InteractivePage
-from crossbench.benchmarks.loading.page.live import PAGE_LIST, \
-    PAGE_LIST_SMALL, LivePage
-from crossbench.benchmarks.loading.playback_controller import \
-    PlaybackController
+from crossbench.benchmarks.loading.page.live import (
+  PAGE_LIST,
+  PAGE_LIST_SMALL,
+  LivePage,
+)
+from crossbench.benchmarks.loading.playback_controller import PlaybackController
 from crossbench.benchmarks.loading.tab_controller import TabController
 from crossbench.browsers.settings import Settings
 from crossbench.cli.config.secrets import Secrets
@@ -44,7 +50,6 @@ if TYPE_CHECKING:
 
 
 class LoadingBenchmarkCliTestCaseMixin(SubStoryTestCase):
-
   def test_parser_defaults(self):
     args = self.parse_args()
     self.assertEqual(args.tabs, TabController.default())
@@ -135,15 +140,20 @@ class LoadingBenchmarkCliTestCaseMixin(SubStoryTestCase):
   def test_config_not_supported(self):
     config_file = pathlib.Path("pages.json")
     self.fs.create_file(
-        config_file,
-        contents=json.dumps({
-            "pages": {
-                "p": [{
-                    "action": "get",
-                    "url": "https://example.com",
-                }],
-            },
-        }))
+      config_file,
+      contents=json.dumps(
+        {
+          "pages": {
+            "p": [
+              {
+                "action": "get",
+                "url": "https://example.com",
+              }
+            ],
+          },
+        }
+      ),
+    )
     args = self.parse_args(f"--page-config={config_file}")
     args.config = pathlib.Path("config.hjson")
     with self.assertRaisesRegex(argparse.ArgumentTypeError, "config"):
@@ -158,7 +168,6 @@ class LoadingBenchmarkCliTestCaseMixin(SubStoryTestCase):
 
 
 class TestPageLoadBenchmark(LoadingBenchmarkCliTestCaseMixin, SubStoryTestCase):
-
   @override
   def setUp(self) -> None:
     super().setUp()
@@ -192,14 +201,16 @@ class TestPageLoadBenchmark(LoadingBenchmarkCliTestCaseMixin, SubStoryTestCase):
   @override
   # Narrows SubStoryTestCase.story_filter with loading-specific parameters.
   # pyrefly: ignore[bad-override]
-  def story_filter(self,
-                   patterns: Sequence[str],
-                   separate: bool = True,
-                   playback: PlaybackController = PlaybackController.default(),
-                   tabs: TabController = TabController.default(),
-                   about_blank_duration: dt.timedelta = dt.timedelta(),
-                   run_login: bool = True,
-                   run_setup: bool = True) -> LoadingPageFilter:
+  def story_filter(
+    self,
+    patterns: Sequence[str],
+    separate: bool = True,
+    playback: PlaybackController = PlaybackController.default(),
+    tabs: TabController = TabController.default(),
+    about_blank_duration: dt.timedelta = dt.timedelta(),
+    run_login: bool = True,
+    run_setup: bool = True,
+  ) -> LoadingPageFilter:
     args = self.mock_args()
     args.about_blank_duration = about_blank_duration
     args.playback = playback
@@ -234,31 +245,37 @@ class TestPageLoadBenchmark(LoadingBenchmarkCliTestCaseMixin, SubStoryTestCase):
     get_1 = GetAction.create("http://test.com/1")
     get_2 = GetAction.create("http://test.com/2")
     get_3 = GetAction.create("http://test.com/3")
-    setup = ActionBlock.from_url("http://test.com/setup",
-                                 dt.timedelta(seconds=1))
+    setup = ActionBlock.from_url(
+      "http://test.com/setup", dt.timedelta(seconds=1)
+    )
     page = InteractivePage(
-        "test",
-        blocks=(
-            ActionBlock(actions=(wait,)),
-            ActionBlock(actions=(wait, get_1, get_2)),
-            ActionBlock(actions=(get_3,)),
-        ),
-        setup=setup)
+      "test",
+      blocks=(
+        ActionBlock(actions=(wait,)),
+        ActionBlock(actions=(wait, get_1, get_2)),
+        ActionBlock(actions=(get_3,)),
+      ),
+      setup=setup,
+    )
     self.assertEqual(page.first_url, "http://test.com/1")
 
   def test_interactive_page_first_url_missing(self):
     wait = WaitAction.create(duration=dt.timedelta(seconds=1))
-    setup = ActionBlock.from_url("http://test.com/setup",
-                                 dt.timedelta(seconds=1))
+    setup = ActionBlock.from_url(
+      "http://test.com/setup", dt.timedelta(seconds=1)
+    )
     setup_only = InteractivePage("test", setup=setup)
-    with self.assertRaisesRegex(RuntimeError,
-                                "No GET action with an URL found."):
+    with self.assertRaisesRegex(
+      RuntimeError, "No GET action with an URL found."
+    ):
       _ = setup_only.first_url
 
     non_get = InteractivePage(
-        "test", blocks=(ActionBlock(actions=(wait,)),), setup=setup)
-    with self.assertRaisesRegex(RuntimeError,
-                                "No GET action with an URL found."):
+      "test", blocks=(ActionBlock(actions=(wait,)),), setup=setup
+    )
+    with self.assertRaisesRegex(
+      RuntimeError, "No GET action with an URL found."
+    ):
       _ = non_get.first_url
 
   def test_all_stories(self):
@@ -294,14 +311,16 @@ class TestPageLoadBenchmark(LoadingBenchmarkCliTestCaseMixin, SubStoryTestCase):
         self.assertIsInstance(p, LivePage)
         urls.append(p.url)
       self.assertSequenceEqual(urls, [preset_page.url])
-    with self.assertRaisesRegex(argparse.ArgumentTypeError,
-                                r"(?i)non-empty string"):
+    with self.assertRaisesRegex(
+      argparse.ArgumentTypeError, r"(?i)non-empty string"
+    ):
       self.story_filter([])
 
   def test_filter_by_name_with_duration(self):
     pages = PAGE_LIST
-    filtered_pages = self.story_filter([pages[0].name, pages[1].name,
-                                        "1001"]).stories
+    filtered_pages = self.story_filter(
+      [pages[0].name, pages[1].name, "1001"]
+    ).stories
     self.assertIsInstance(pages[0], LivePage)
     self.assertIsInstance(pages[1], LivePage)
     urls = []
@@ -351,8 +370,9 @@ class TestPageLoadBenchmark(LoadingBenchmarkCliTestCaseMixin, SubStoryTestCase):
 
   def test_substories_combined(self):
     page = CombinedPage(PAGE_LIST)
-    self.assertSequenceEqual(page.substories,
-                             [story.name for story in PAGE_LIST])
+    self.assertSequenceEqual(
+      page.substories, [story.name for story in PAGE_LIST]
+    )
     page_0 = LivePage("test_0", "https://test.com/1", dt.timedelta(seconds=5))
     page_1 = LivePage("test_1", "https://test.com/1", dt.timedelta(seconds=5))
     page = CombinedPage([page_0, page_1])
@@ -368,80 +388,103 @@ class TestPageLoadBenchmark(LoadingBenchmarkCliTestCaseMixin, SubStoryTestCase):
 
   def test_substories_combined_conflicting_secrets(self):
     secrets1 = Secrets.parse(
-        {"google": {
-            "password": "pw1",
-            "account": "user1@test.com",
-        }})
+      {
+        "google": {
+          "password": "pw1",
+          "account": "user1@test.com",
+        }
+      }
+    )
     secrets2 = Secrets.parse(
-        {"google": {
-            "password": "pw2",
-            "account": "user2@test.com",
-        }})
+      {
+        "google": {
+          "password": "pw2",
+          "account": "user2@test.com",
+        }
+      }
+    )
     page_0 = InteractivePage(
-        "test_0",
-        setup=ActionBlock.from_url("http://test.com", dt.timedelta(seconds=1)),
-        secrets=secrets1)
+      "test_0",
+      setup=ActionBlock.from_url("http://test.com", dt.timedelta(seconds=1)),
+      secrets=secrets1,
+    )
     page_1 = InteractivePage(
-        "test_1",
-        setup=ActionBlock.from_url("http://test.com", dt.timedelta(seconds=1)),
-        secrets=secrets2)
+      "test_1",
+      setup=ActionBlock.from_url("http://test.com", dt.timedelta(seconds=1)),
+      secrets=secrets2,
+    )
     with self.assertRaisesRegex(ValueError, "Conflicting Google secrets"):
       CombinedPage([page_0, page_1])
 
   def test_substories_combined_same_secrets(self):
     secrets1 = Secrets.parse(
-        {"google": {
-            "password": "pw1",
-            "account": "user1@test.com",
-        }})
+      {
+        "google": {
+          "password": "pw1",
+          "account": "user1@test.com",
+        }
+      }
+    )
     secrets2 = Secrets.parse(
-        {"google": {
-            "password": "pw1",
-            "account": "user1@test.com",
-        }})
+      {
+        "google": {
+          "password": "pw1",
+          "account": "user1@test.com",
+        }
+      }
+    )
     self.assertEqual(secrets1, secrets2)
     page_0 = InteractivePage(
-        "test_0",
-        setup=ActionBlock.from_url("http://test.com", dt.timedelta(seconds=1)),
-        secrets=secrets1)
+      "test_0",
+      setup=ActionBlock.from_url("http://test.com", dt.timedelta(seconds=1)),
+      secrets=secrets1,
+    )
     page_1 = InteractivePage(
-        "test_1",
-        setup=ActionBlock.from_url("http://test.com", dt.timedelta(seconds=1)),
-        secrets=secrets2)
+      "test_1",
+      setup=ActionBlock.from_url("http://test.com", dt.timedelta(seconds=1)),
+      secrets=secrets2,
+    )
     combined = CombinedPage([page_0, page_1])
     self.assertEqual(combined.secrets, secrets1)
     self.assertEqual(combined.secrets, secrets2)
 
   def test_substories_combined_compatible_secrets(self):
     secrets1 = Secrets.parse(
-        {"google": {
-            "password": "pw1",
-            "account": "user1@test.com",
-        }})
-    secrets2 = Secrets.parse({
+      {
+        "google": {
+          "password": "pw1",
+          "account": "user1@test.com",
+        }
+      }
+    )
+    secrets2 = Secrets.parse(
+      {
         "bond": {
-            "type": "service_account",
-            "project_id": "my-project",
-            "private_key_id": "0BADC0DE",
-            "private_key": "-----BEGIN PRIVATE KEY-----\n...",
-            "client_email": "name@example.com",
-            "client_id": "7",
-            "auth_uri": "https://example.com/oauth",
-            "token_uri": "https://example.com/token",
-            "auth_provider_x509_cert_url": "https://example.com/certs",
-            "client_x509_cert_url": "https://example.com/x509/my-project.cert",
-            "universe_domain": "example.com",
+          "type": "service_account",
+          "project_id": "my-project",
+          "private_key_id": "0BADC0DE",
+          "private_key": "-----BEGIN PRIVATE KEY-----\n...",
+          "client_email": "name@example.com",
+          "client_id": "7",
+          "auth_uri": "https://example.com/oauth",
+          "token_uri": "https://example.com/token",
+          "auth_provider_x509_cert_url": "https://example.com/certs",
+          "client_x509_cert_url": "https://example.com/x509/my-project.cert",
+          "universe_domain": "example.com",
         },
-    })
+      }
+    )
     self.assertNotEqual(secrets1, secrets2)
     page_0 = InteractivePage(
-        "test_0",
-        setup=ActionBlock.from_url("http://test.com", dt.timedelta(seconds=1)),
-        secrets=secrets1)
+      "test_0",
+      setup=ActionBlock.from_url("http://test.com", dt.timedelta(seconds=1)),
+      secrets=secrets1,
+    )
     page_1 = InteractivePage(
-        "test_1",
-        setup=ActionBlock.from_url("http://test.com", dt.timedelta(seconds=1)),
-        secrets=secrets2)
+      "test_1",
+      setup=ActionBlock.from_url("http://test.com", dt.timedelta(seconds=1)),
+      secrets=secrets2,
+    )
     combined = CombinedPage([page_0, page_1])
     self.assertNotEqual(combined.secrets, secrets1)
     self.assertNotEqual(combined.secrets, secrets2)
@@ -462,9 +505,8 @@ class TestPageLoadBenchmark(LoadingBenchmarkCliTestCaseMixin, SubStoryTestCase):
     url1 = "https://www.example.com/test1"
     url2 = "https://www.example.com/test2"
     stories = self.story_filter(
-        [url1, url2],
-        separate=False,
-        about_blank_duration=dt.timedelta(seconds=1)).stories
+      [url1, url2], separate=False, about_blank_duration=dt.timedelta(seconds=1)
+    ).stories
     self._test_run(stories)
     urls = [url1, "about:blank", url2, "about:blank"]
     self._assert_urls_loaded(urls)
@@ -473,9 +515,8 @@ class TestPageLoadBenchmark(LoadingBenchmarkCliTestCaseMixin, SubStoryTestCase):
     url1 = "https://www.example.com/test1"
     url2 = "https://www.example.com/test2"
     stories = self.story_filter(
-        [url1, url2],
-        separate=True,
-        about_blank_duration=dt.timedelta(seconds=1)).stories
+      [url1, url2], separate=True, about_blank_duration=dt.timedelta(seconds=1)
+    ).stories
     self._test_run(stories)
     urls = [url1, "about:blank", url2, "about:blank"]
     self._assert_urls_loaded(urls)
@@ -483,9 +524,9 @@ class TestPageLoadBenchmark(LoadingBenchmarkCliTestCaseMixin, SubStoryTestCase):
   def test_run_repeat(self):
     url1 = "https://www.example.com/test1"
     url2 = "https://www.example.com/test2"
-    stories = self.story_filter([url1, url2],
-                                separate=False,
-                                playback=PlaybackController.repeat(3)).stories
+    stories = self.story_filter(
+      [url1, url2], separate=False, playback=PlaybackController.repeat(3)
+    ).stories
     self._test_run(stories)
     urls = [url1, url2] * 3
     self._assert_urls_loaded(urls)
@@ -493,39 +534,39 @@ class TestPageLoadBenchmark(LoadingBenchmarkCliTestCaseMixin, SubStoryTestCase):
   def test_iteration_performance_marks_single_run(self):
     url1 = "https://www.example.com/test1"
     url2 = "https://www.example.com/test2"
-    stories = self.story_filter([url1, url2],
-                                separate=False,
-                                playback=PlaybackController.repeat(1)).stories
+    stories = self.story_filter(
+      [url1, url2], separate=False, playback=PlaybackController.repeat(1)
+    ).stories
     self._test_run(stories)
 
     for browser in self.browsers:
       # one mark for iteration start, one for iteration end
       self.assertSequenceEqual(
-          browser.performance_marks,
-          ["crossbench-iteration-start", "crossbench-iteration-end"])
+        browser.performance_marks,
+        ["crossbench-iteration-start", "crossbench-iteration-end"],
+      )
 
   def test_iteration_performance_marks_repeat_run(self):
     repeats: int = 3
     url1 = "https://www.example.com/test1"
     url2 = "https://www.example.com/test2"
     stories = self.story_filter(
-        [url1, url2],
-        separate=False,
-        playback=PlaybackController.repeat(repeats)).stories
+      [url1, url2], separate=False, playback=PlaybackController.repeat(repeats)
+    ).stories
     self._test_run(stories)
 
     for browser in self.browsers:
       self.assertSequenceEqual(
-          browser.performance_marks,
-          (["crossbench-iteration-start", "crossbench-iteration-end"] *
-           repeats))
+        browser.performance_marks,
+        (["crossbench-iteration-start", "crossbench-iteration-end"] * repeats),
+      )
 
   def test_run_repeat_separate(self):
     url1 = "https://www.example.com/test1"
     url2 = "https://www.example.com/test2"
-    stories = self.story_filter([url1, url2],
-                                separate=True,
-                                playback=PlaybackController.repeat(3)).stories
+    stories = self.story_filter(
+      [url1, url2], separate=True, playback=PlaybackController.repeat(3)
+    ).stories
     self._test_run(stories)
     urls = [url1] * 3 + [url2] * 3
     self._assert_urls_loaded(urls)
@@ -538,14 +579,15 @@ class TestPageLoadBenchmark(LoadingBenchmarkCliTestCaseMixin, SubStoryTestCase):
 
     self.assertTrue(len(benchmark.describe()) > 0)
     runner = Runner(
-        self.out_dir,
-        self.browsers,
-        benchmark,
-        env_config=EnvConfig(),
-        env_validation_mode=ValidationMode.SKIP,
-        platform=self.platform,
-        throw=throw,
-        in_memory_result_db=True)
+      self.out_dir,
+      self.browsers,
+      benchmark,
+      env_config=EnvConfig(),
+      env_validation_mode=ValidationMode.SKIP,
+      platform=self.platform,
+      throw=throw,
+      in_memory_result_db=True,
+    )
     runner.run()
     self.assertTrue(runner.is_success)
     self.assertTrue(self.browsers[0].did_run)
@@ -557,7 +599,6 @@ class TestPageLoadBenchmark(LoadingBenchmarkCliTestCaseMixin, SubStoryTestCase):
     browser_2_urls = self.filter_splashscreen_urls(self.browsers[1].url_list)
     self.assertEqual(browser_2_urls, story_urls)
 
-
   def test_tab_flags_mutually_exclusive(self):
     with self.assertRaises(argparse.ArgumentError):
       self.parse_args("--single-tab", "--multiple-tab")
@@ -568,12 +609,15 @@ class TestPageLoadBenchmark(LoadingBenchmarkCliTestCaseMixin, SubStoryTestCase):
 
   def test_playback_flag_with_interval(self):
     args = self.parse_args("--playback=2x every 3s")
-    self.assertEqual(args.playback,
-                     PlaybackController.periodic(2, dt.timedelta(seconds=3)))
+    self.assertEqual(
+      args.playback, PlaybackController.periodic(2, dt.timedelta(seconds=3))
+    )
     benchmark = self.benchmark_cls.from_cli_args(args)
     (combined_story,) = benchmark.stories
-    self.assertEqual(combined_story.playback,
-                     PlaybackController.periodic(2, dt.timedelta(seconds=3)))
+    self.assertEqual(
+      combined_story.playback,
+      PlaybackController.periodic(2, dt.timedelta(seconds=3)),
+    )
 
   def test_playback_flags_mutually_exclusive(self):
     with self.assertRaises(argparse.ArgumentError):
@@ -590,19 +634,22 @@ class TestPageLoadBenchmark(LoadingBenchmarkCliTestCaseMixin, SubStoryTestCase):
   def test_skip_login_flag(self):
     config_file = pathlib.Path("page_config.json")
     config = {
-        "pages": {
-            "test_page": {
-                "login": "google",
-                "actions": [{
-                    "action": "get",
-                    "url": "https://example.com",
-                }],
-            },
+      "pages": {
+        "test_page": {
+          "login": "google",
+          "actions": [
+            {
+              "action": "get",
+              "url": "https://example.com",
+            }
+          ],
         },
+      },
     }
     self.fs.create_file(config_file, contents=json.dumps(config))
-    args = self.parse_args(f"--page-config={config_file}", "--skip-login",
-                           "--separate")
+    args = self.parse_args(
+      f"--page-config={config_file}", "--skip-login", "--separate"
+    )
     self.assertFalse(args.run_login)
     benchmark = self.benchmark_cls.from_cli_args(args)
     (story,) = benchmark.stories
@@ -613,22 +660,27 @@ class TestPageLoadBenchmark(LoadingBenchmarkCliTestCaseMixin, SubStoryTestCase):
   def test_skip_setup_flag(self):
     config_file = pathlib.Path("page_config.json")
     config = {
-        "pages": {
-            "test_page": {
-                "setup": [{
-                    "action": "js",
-                    "script": "console.log(1);",
-                }],
-                "actions": [{
-                    "action": "get",
-                    "url": "https://example.com",
-                }],
-            },
+      "pages": {
+        "test_page": {
+          "setup": [
+            {
+              "action": "js",
+              "script": "console.log(1);",
+            }
+          ],
+          "actions": [
+            {
+              "action": "get",
+              "url": "https://example.com",
+            }
+          ],
         },
+      },
     }
     self.fs.create_file(config_file, contents=json.dumps(config))
-    args = self.parse_args(f"--page-config={config_file}", "--skip-setup",
-                           "--separate")
+    args = self.parse_args(
+      f"--page-config={config_file}", "--skip-setup", "--separate"
+    )
     self.assertFalse(args.run_setup)
     benchmark = self.benchmark_cls.from_cli_args(args)
     (story,) = benchmark.stories
@@ -653,16 +705,17 @@ class TestPageLoadBenchmark(LoadingBenchmarkCliTestCaseMixin, SubStoryTestCase):
 
   def test_stories_named_urls(self):
     args = self.parse_args(
-        "--stories=https://example.com/one,https://example.com/two",
-        "--separate")
+      "--stories=https://example.com/one,https://example.com/two", "--separate"
+    )
     benchmark = self.benchmark_cls.from_cli_args(args)
     self.assertEqual(len(benchmark.stories), 2)
     self.assertEqual(benchmark.stories[0].first_url, "https://example.com/one")
     self.assertEqual(benchmark.stories[1].first_url, "https://example.com/two")
 
   def test_stories_custom_duration(self):
-    args = self.parse_args("--stories=https://example.com/one,12s",
-                           "--separate")
+    args = self.parse_args(
+      "--stories=https://example.com/one,12s", "--separate"
+    )
     benchmark = self.benchmark_cls.from_cli_args(args)
     self.assertEqual(len(benchmark.stories), 1)
     self.assertEqual(benchmark.stories[0].first_url, "https://example.com/one")
@@ -685,16 +738,20 @@ class TestPageLoadBenchmark(LoadingBenchmarkCliTestCaseMixin, SubStoryTestCase):
   def test_page_config_flag(self):
     config_file = pathlib.Path("pages.json")
     config = {
-        "pages": {
-            "page1": [{
-                "action": "get",
-                "url": "https://example.com/1",
-            }],
-            "page2": [{
-                "action": "get",
-                "url": "https://example.com/2",
-            }],
-        },
+      "pages": {
+        "page1": [
+          {
+            "action": "get",
+            "url": "https://example.com/1",
+          }
+        ],
+        "page2": [
+          {
+            "action": "get",
+            "url": "https://example.com/2",
+          }
+        ],
+      },
     }
     self.fs.create_file(config_file, contents=json.dumps(config))
     args = self.parse_args(f"--page-config={config_file}", "--separate")
@@ -708,14 +765,17 @@ class TestPageLoadBenchmark(LoadingBenchmarkCliTestCaseMixin, SubStoryTestCase):
     config_file = pathlib.Path("pages.json")
     self.fs.create_file(config_file, contents='{"pages": {}}')
     with self.assertRaises(argparse.ArgumentError):
-      self.parse_args(f"--page-config={config_file}",
-                      "--urls=https://example.com")
+      self.parse_args(
+        f"--page-config={config_file}", "--urls=https://example.com"
+      )
     with self.assertRaises(argparse.ArgumentError):
-      self.parse_args(f"--page-config={config_file}",
-                      f"--url-file={config_file}")
+      self.parse_args(
+        f"--page-config={config_file}", f"--url-file={config_file}"
+      )
     with self.assertRaises(argparse.ArgumentError):
-      self.parse_args(f"--page-config={config_file}",
-                      f"--devtools-recorder={config_file}")
+      self.parse_args(
+        f"--page-config={config_file}", f"--devtools-recorder={config_file}"
+      )
 
   def test_cli_flag_aliases(self):
     args_playback = self.parse_args("--playback=10x")
@@ -732,54 +792,77 @@ class TestPageLoadBenchmark(LoadingBenchmarkCliTestCaseMixin, SubStoryTestCase):
 
 
 class LoadingBenchmarkCliTestCase(BaseCliTestCase):
-
   def test_invalid_duplicate_urls_stories(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       with self._patch_get_browser():
         url = "http://test.com"
-        self.run_cli("loading", "run", f"--urls={url}", f"--stories={url}",
-                     "--env-validation=skip", "--throw")
+        self.run_cli(
+          "loading",
+          "run",
+          f"--urls={url}",
+          f"--stories={url}",
+          "--env-validation=skip",
+          "--throw",
+        )
     self.assertIn("--urls", str(cm.exception))
     self.assertIn("--stories", str(cm.exception))
 
   def test_invalid_duplicate_urls_config(self):
     with self.assertRaises(argparse.ArgumentError) as cm:
       with self._patch_get_browser():
-        self.run_cli("loading", "run", "--urls=https://test.com",
-                     "--page-config=config.hjson", "--env-validation=skip",
-                     "--throw")
+        self.run_cli(
+          "loading",
+          "run",
+          "--urls=https://test.com",
+          "--page-config=config.hjson",
+          "--env-validation=skip",
+          "--throw",
+        )
     self.assertIn("--urls", str(cm.exception))
     self.assertIn("--page-config", str(cm.exception))
 
   def test_invalid_duplicate_stories_config(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       with self._patch_get_browser():
-        self.run_cli("loading", "run", "--stories=https://test.com",
-                     "--page-config=config.hjson", "--env-validation=skip",
-                     "--throw")
+        self.run_cli(
+          "loading",
+          "run",
+          "--stories=https://test.com",
+          "--page-config=config.hjson",
+          "--env-validation=skip",
+          "--throw",
+        )
     self.assertIn("--stories", str(cm.exception))
     self.assertIn("page config", str(cm.exception).lower())
 
   def test_conflicting_global_config(self):
     config_data = {
-        "browsers": {
-            "chrome": "chrome-stable",
-        },
-        "pages": {
-            "google_search_result": [{
-                "action": "get",
-                "url": "https://www.google.com/search?q=cats",
-            }],
-        },
+      "browsers": {
+        "chrome": "chrome-stable",
+      },
+      "pages": {
+        "google_search_result": [
+          {
+            "action": "get",
+            "url": "https://www.google.com/search?q=cats",
+          }
+        ],
+      },
     }
     config_file = pathlib.Path("config.hjson")
     with config_file.open("w", encoding="utf-8") as f:
       json.dump(config_data, f)
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       with self._patch_get_browser():
-        self.run_cli("loading", "run", "--stories=https://test.com",
-                     "--config=config.hjson", "--page-config=config.hjson",
-                     "--env-validation=skip", "--throw")
+        self.run_cli(
+          "loading",
+          "run",
+          "--stories=https://test.com",
+          "--config=config.hjson",
+          "--page-config=config.hjson",
+          "--env-validation=skip",
+          "--throw",
+        )
     error_message = str(cm.exception).lower()
     self.assertIn("conflict", error_message)
     self.assertIn("--config", error_message)
@@ -793,11 +876,17 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
     with config.open("w", encoding="utf-8") as f:
       f.write(f"{url_1}\n{url_2}")
     with self._patch_get_browser():
-      self.run_cli("loading", "run", f"--urls-file={config}",
-                   "--env-validation=skip", "--throw")
+      self.run_cli(
+        "loading",
+        "run",
+        f"--urls-file={config}",
+        "--env-validation=skip",
+        "--throw",
+      )
       for browser in self.browsers:
-        self.assertSequenceEqual([url_1, url_2],
-                                 browser.url_list[self.SPLASH_URLS_LEN:])
+        self.assertSequenceEqual(
+          [url_1, url_2], browser.url_list[self.SPLASH_URLS_LEN :]
+        )
 
   def test_page_list_file_separate(self):
     config = pathlib.Path("test/pages.txt")
@@ -807,8 +896,14 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
     with config.open("w", encoding="utf-8") as f:
       f.write(f"{url_1}\n{url_2}")
     with self._patch_get_browser():
-      self.run_cli("loading", "run", f"--urls-file={config}",
-                   "--env-validation=skip", "--separate", "--throw")
+      self.run_cli(
+        "loading",
+        "run",
+        f"--urls-file={config}",
+        "--env-validation=skip",
+        "--separate",
+        "--throw",
+      )
       for browser in self.browsers:
         self.assertEqual(len(browser.url_list), (self.SPLASH_URLS_LEN + 1) * 2)
         self.assertEqual(url_1, browser.url_list[self.SPLASH_URLS_LEN])
@@ -817,27 +912,42 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
   def test_urls_single(self):
     with self._patch_get_browser():
       url = "http://test.com"
-      self.run_cli("loading", "run", f"--urls={url}", "--env-validation=skip",
-                   "--throw")
+      self.run_cli(
+        "loading", "run", f"--urls={url}", "--env-validation=skip", "--throw"
+      )
       for browser in self.browsers:
-        self.assertSequenceEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
+        self.assertSequenceEqual(
+          [url], browser.url_list[self.SPLASH_URLS_LEN :]
+        )
 
   def test_urls_multiple(self):
     with self._patch_get_browser():
       url_1 = "http://one.test.com"
       url_2 = "http://two.test.com"
-      self.run_cli("loading", "run", f"--urls={url_1},{url_2}",
-                   "--env-validation=skip", "--throw")
+      self.run_cli(
+        "loading",
+        "run",
+        f"--urls={url_1},{url_2}",
+        "--env-validation=skip",
+        "--throw",
+      )
       for browser in self.browsers:
-        self.assertSequenceEqual([url_1, url_2],
-                                 browser.url_list[self.SPLASH_URLS_LEN:])
+        self.assertSequenceEqual(
+          [url_1, url_2], browser.url_list[self.SPLASH_URLS_LEN :]
+        )
 
   def test_urls_multiple_separate(self):
     with self._patch_get_browser():
       url_1 = "http://one.test.com"
       url_2 = "http://two.test.com"
-      self.run_cli("loading", "run", f"--urls={url_1},{url_2}",
-                   "--env-validation=skip", "--separate", "--throw")
+      self.run_cli(
+        "loading",
+        "run",
+        f"--urls={url_1},{url_2}",
+        "--env-validation=skip",
+        "--separate",
+        "--throw",
+      )
       for browser in self.browsers:
         self.assertEqual(len(browser.url_list), (self.SPLASH_URLS_LEN + 1) * 2)
         self.assertEqual(url_1, browser.url_list[self.SPLASH_URLS_LEN])
@@ -847,39 +957,58 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
     with self._patch_get_browser():
       url_1 = "http://one.test.com"
       url_2 = "http://two.test.com"
-      self.run_cli("loading", "run", f"--urls={url_1},{url_2}", "--playback=2x",
-                   "--env-validation=skip", "--throw")
+      self.run_cli(
+        "loading",
+        "run",
+        f"--urls={url_1},{url_2}",
+        "--playback=2x",
+        "--env-validation=skip",
+        "--throw",
+      )
       for browser in self.browsers:
-        self.assertSequenceEqual([url_1, url_2, url_1, url_2],
-                                 browser.url_list[self.SPLASH_URLS_LEN:])
+        self.assertSequenceEqual(
+          [url_1, url_2, url_1, url_2], browser.url_list[self.SPLASH_URLS_LEN :]
+        )
 
   def test_repeat_playback_separate(self):
     with self._patch_get_browser():
       url_1 = "http://one.test.com"
       url_2 = "http://two.test.com"
-      self.run_cli("loading", "run", f"--urls={url_1},{url_2}", "--playback=2x",
-                   "--separate", "--env-validation=skip", "--throw")
+      self.run_cli(
+        "loading",
+        "run",
+        f"--urls={url_1},{url_2}",
+        "--playback=2x",
+        "--separate",
+        "--env-validation=skip",
+        "--throw",
+      )
       for browser in self.browsers:
         self.assertEqual(len(browser.url_list), (self.SPLASH_URLS_LEN + 2) * 2)
         self.assertSequenceEqual(
-            [url_1, url_1],
-            browser.url_list[self.SPLASH_URLS_LEN:self.SPLASH_URLS_LEN + 2])
+          [url_1, url_1],
+          browser.url_list[self.SPLASH_URLS_LEN : self.SPLASH_URLS_LEN + 2],
+        )
         self.assertSequenceEqual(
-            [url_2, url_2], browser.url_list[self.SPLASH_URLS_LEN * 2 + 2:])
+          [url_2, url_2], browser.url_list[self.SPLASH_URLS_LEN * 2 + 2 :]
+        )
 
   def simple_pages_config(self):
     url_1 = "http://one.test.com"
     url_2 = "http://two.test.com"
     config = {
-        "pages": {
-            "test_one": [{
-                "action": "get",
-                "url": url_1,
-            }, {
-                "action": "get",
-                "url": url_2,
-            }],
-        },
+      "pages": {
+        "test_one": [
+          {
+            "action": "get",
+            "url": url_1,
+          },
+          {
+            "action": "get",
+            "url": url_2,
+          },
+        ],
+      },
     }
     return url_1, url_2, config
 
@@ -888,44 +1017,62 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
     config_file = pathlib.Path("test/page_config.json")
     self.fs.create_file(config_file, contents=json.dumps(config))
     with self._patch_get_browser():
-      self.run_cli("loading", "run", f"--page-config={config_file}",
-                   "--env-validation=skip", "--throw")
+      self.run_cli(
+        "loading",
+        "run",
+        f"--page-config={config_file}",
+        "--env-validation=skip",
+        "--throw",
+      )
       for browser in self.browsers:
-        self.assertSequenceEqual([url_1, url_2],
-                                 browser.url_list[self.SPLASH_URLS_LEN:])
+        self.assertSequenceEqual(
+          [url_1, url_2], browser.url_list[self.SPLASH_URLS_LEN :]
+        )
 
   def multiple_pages_with_setup_and_teardown_blocks_config(self):
     config = {
-        "pages": {
-            "first_page": {
-                "setup": [{
-                    "action": "js",
-                    "script": "SETUP ONE",
-                }],
-                "actions": [{
-                    "action": "wait",
-                    "duration": "1s",
-                }],
-                "teardown": [{
-                    "action": "js",
-                    "script": "TEARDOWN ONE",
-                }],
-            },
-            "second_page": {
-                "setup": [{
-                    "action": "js",
-                    "script": "SETUP TWO",
-                }],
-                "actions": [{
-                    "action": "wait",
-                    "duration": "1s",
-                }],
-                "teardown": [{
-                    "action": "js",
-                    "script": "TEARDOWN TWO",
-                }],
-            },
+      "pages": {
+        "first_page": {
+          "setup": [
+            {
+              "action": "js",
+              "script": "SETUP ONE",
+            }
+          ],
+          "actions": [
+            {
+              "action": "wait",
+              "duration": "1s",
+            }
+          ],
+          "teardown": [
+            {
+              "action": "js",
+              "script": "TEARDOWN ONE",
+            }
+          ],
         },
+        "second_page": {
+          "setup": [
+            {
+              "action": "js",
+              "script": "SETUP TWO",
+            }
+          ],
+          "actions": [
+            {
+              "action": "wait",
+              "duration": "1s",
+            }
+          ],
+          "teardown": [
+            {
+              "action": "js",
+              "script": "TEARDOWN TWO",
+            }
+          ],
+        },
+      },
     }
     return config
 
@@ -940,29 +1087,42 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
     config_file = pathlib.Path("test/page_config.json")
     self.fs.create_file(config_file, contents=json.dumps(config))
     with self._patch_get_browser():
-      self.run_cli("loading", "run", f"--page-config={config_file}",
-                   "--env-validation=skip", "--throw")
+      self.run_cli(
+        "loading",
+        "run",
+        f"--page-config={config_file}",
+        "--env-validation=skip",
+        "--throw",
+      )
 
     for browser in self.browsers:
       self.assertEqual(
-          browser.performance_marks,
-          ["crossbench-setup-start", "crossbench-setup-end"] * 2 +  # 2 pages
-          ["crossbench-iteration-start", "crossbench-iteration-end"] +
-          ["crossbench-teardown-start", "crossbench-teardown-end"] * 2)
-      self.assertEqual(browser.performance_marks_details,
-                       ["first_page"] * 2 + ["second_page"] * 2 + [0, 0] +
-                       ["first_page"] * 2 + ["second_page"] * 2)
+        browser.performance_marks,
+        ["crossbench-setup-start", "crossbench-setup-end"] * 2  # 2 pages
+        + ["crossbench-iteration-start", "crossbench-iteration-end"]
+        + ["crossbench-teardown-start", "crossbench-teardown-end"] * 2,
+      )
+      self.assertEqual(
+        browser.performance_marks_details,
+        ["first_page"] * 2
+        + ["second_page"] * 2
+        + [0, 0]
+        + ["first_page"] * 2
+        + ["second_page"] * 2,
+      )
 
   def multiple_pages_with_setup_only_config(self):
     config = {
-        "pages": {
-            "setup_only_page": {
-                "setup": [{
-                    "action": "js",
-                    "script": "SETUP ONLY",
-                }],
-            },
+      "pages": {
+        "setup_only_page": {
+          "setup": [
+            {
+              "action": "js",
+              "script": "SETUP ONLY",
+            }
+          ],
         },
+      },
     }
     return config
 
@@ -974,40 +1134,44 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
     config_file = pathlib.Path("test/page_config.json")
     self.fs.create_file(config_file, contents=json.dumps(config))
     with self._patch_get_browser():
-      self.run_cli("loading", "run", f"--page-config={config_file}",
-                   "--env-validation=skip", "--throw")
+      self.run_cli(
+        "loading",
+        "run",
+        f"--page-config={config_file}",
+        "--env-validation=skip",
+        "--throw",
+      )
 
     for browser in self.browsers:
       self.assertEqual(
-          browser.performance_marks,
-          ["crossbench-setup-start", "crossbench-setup-end"] +
-          ["crossbench-iteration-start", "crossbench-iteration-end"])
-      self.assertEqual(browser.performance_marks_details,
-                       ["setup_only_page"] * 2 + [0, 0])
+        browser.performance_marks,
+        ["crossbench-setup-start", "crossbench-setup-end"]
+        + ["crossbench-iteration-start", "crossbench-iteration-end"],
+      )
+      self.assertEqual(
+        browser.performance_marks_details, ["setup_only_page"] * 2 + [0, 0]
+      )
 
   def setup_expected_google_login_js(self):
     expected_scripts: list[JsInvocation] = [
-        # Wait for readystate interactive
-        JsInvocation(True),
-
-        # Wait for email field
-        JsInvocation(True, re.compile(r".*Email or phone.*")),
-        # Click submit email
-        JsInvocation(None, re.compile(r".*user@test.com.*")),
-
-        # Wait for password field
-        JsInvocation(True, re.compile(r".*passwordNext.*")),
-        # Click submit password
-        JsInvocation(None, re.compile(r".*s3cr3t.*")),
-
-        # Wait for redirect after password
-        JsInvocation(True, re.compile(r".*signin/challenge/pwd.*")),
-        # Wait for readystate complete
-        JsInvocation(True),
-        # Return successful login URL
-        JsInvocation("https://myaccount.google.com", re.compile(r".*URL.*")),
-        # No suspicious activity
-        JsInvocation(False),
+      # Wait for readystate interactive
+      JsInvocation(True),
+      # Wait for email field
+      JsInvocation(True, re.compile(r".*Email or phone.*")),
+      # Click submit email
+      JsInvocation(None, re.compile(r".*user@test.com.*")),
+      # Wait for password field
+      JsInvocation(True, re.compile(r".*passwordNext.*")),
+      # Click submit password
+      JsInvocation(None, re.compile(r".*s3cr3t.*")),
+      # Wait for redirect after password
+      JsInvocation(True, re.compile(r".*signin/challenge/pwd.*")),
+      # Wait for readystate complete
+      JsInvocation(True),
+      # Return successful login URL
+      JsInvocation("https://myaccount.google.com", re.compile(r".*URL.*")),
+      # No suspicious activity
+      JsInvocation(False),
     ]
     for browser in self.browsers:
       for script in expected_scripts:
@@ -1017,66 +1181,84 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
     url_1 = "http://one.test.com"
     url_2 = "http://two.test.com"
     config = {
-        "pages": {
-            "test_one": {
-                "login":
-                    "google",
-                "actions": [{
-                    "action": "get",
-                    "url": url_1,
-                }, {
-                    "action": "get",
-                    "url": url_2,
-                }],
+      "pages": {
+        "test_one": {
+          "login": "google",
+          "actions": [
+            {
+              "action": "get",
+              "url": url_1,
             },
+            {
+              "action": "get",
+              "url": url_2,
+            },
+          ],
         },
+      },
     }
     return url_1, url_2, config
 
   def test_actions_config_with_login_preset(self):
     url_1, url_2, config = self.simple_pages_with_login_config()
-    config.update({
+    config.update(
+      {
         "secrets": {
-            "google": {
-                "username": "user@test.com",
-                "password": "s3cr3t",
-            },
+          "google": {
+            "username": "user@test.com",
+            "password": "s3cr3t",
+          },
         },
-    })
+      }
+    )
     config_file = pathlib.Path("test/page_config.json")
     self.fs.create_file(config_file, contents=json.dumps(config))
     self.setup_expected_google_login_js()
     with self._patch_get_browser():
-      self.run_cli("loading", "run", f"--page-config={config_file}",
-                   "--env-validation=skip", "--throw")
+      self.run_cli(
+        "loading",
+        "run",
+        f"--page-config={config_file}",
+        "--env-validation=skip",
+        "--throw",
+      )
       for browser in self.browsers:
-        self.assertSequenceEqual([GOOGLE_LOGIN_URL, url_1, url_2],
-                                 browser.url_list[self.SPLASH_URLS_LEN:])
+        self.assertSequenceEqual(
+          [GOOGLE_LOGIN_URL, url_1, url_2],
+          browser.url_list[self.SPLASH_URLS_LEN :],
+        )
 
   def test_actions_config_with_login_preset_global_secrets(self):
     url_1, url_2, config = self.simple_pages_with_login_config()
     config_file = pathlib.Path("test/page_config.json")
     self.fs.create_file(config_file, contents=json.dumps(config))
     secrets_data = {
-        "google": {
-            "username": "user@test.com",
-            "password": "s3cr3t",
-        },
+      "google": {
+        "username": "user@test.com",
+        "password": "s3cr3t",
+      },
     }
     secrets = Secrets.parse(secrets_data)
     self.setup_expected_google_login_js()
     with self._patch_get_browser():
       with mock.patch.object(
-          Settings, "secrets",
-          new_callable=mock.PropertyMock) as mock_get_secrets:
+        Settings, "secrets", new_callable=mock.PropertyMock
+      ) as mock_get_secrets:
         mock_get_secrets.return_value = secrets
-        self.run_cli("loading", "run", f"--page-config={config_file}",
-                     "--env-validation=skip", "--throw",
-                     f"--secrets={json.dumps(secrets_data)}")
+        self.run_cli(
+          "loading",
+          "run",
+          f"--page-config={config_file}",
+          "--env-validation=skip",
+          "--throw",
+          f"--secrets={json.dumps(secrets_data)}",
+        )
         self.assertEqual(mock_get_secrets.call_count, 2)
       for browser in self.browsers:
-        self.assertSequenceEqual([GOOGLE_LOGIN_URL, url_1, url_2],
-                                 browser.url_list[self.SPLASH_URLS_LEN:])
+        self.assertSequenceEqual(
+          [GOOGLE_LOGIN_URL, url_1, url_2],
+          browser.url_list[self.SPLASH_URLS_LEN :],
+        )
 
   def test_actions_config_with_login_preset_missing_secrets(self):
     _, _, config = self.simple_pages_with_login_config()
@@ -1085,8 +1267,13 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
     self.setup_expected_google_login_js()
     with self._patch_get_browser():
       with self.assertRaises(Exception) as cm:
-        self.run_cli("loading", "run", f"--page-config={config_file}",
-                     "--env-validation=skip", "--throw")
+        self.run_cli(
+          "loading",
+          "run",
+          f"--page-config={config_file}",
+          "--env-validation=skip",
+          "--throw",
+        )
       self.assertIn("google", str(cm.exception))
 
   def test_global_config_actions_config(self):
@@ -1094,32 +1281,40 @@ class LoadingBenchmarkCliTestCase(BaseCliTestCase):
     url_2 = "http://two.test.com"
     global_config_file = pathlib.Path("config.hjson")
     global_config_data = {
-        # Dummy entry, not actually used by the test
-        "browsers": {
-            "chrome": "chrome-stable",
-        },
-        "pages": {
-            "test_one": [{
-                "action": "get",
-                "url": url_1,
-            }, {
-                "action": "get",
-                "url": url_2,
-            }],
-        },
+      # Dummy entry, not actually used by the test
+      "browsers": {
+        "chrome": "chrome-stable",
+      },
+      "pages": {
+        "test_one": [
+          {
+            "action": "get",
+            "url": url_1,
+          },
+          {
+            "action": "get",
+            "url": url_2,
+          },
+        ],
+      },
     }
     with global_config_file.open("w", encoding="utf-8") as f:
       json.dump(global_config_data, f)
     with self._patch_get_browser():
-      self.run_cli("loading", "run", f"--config={global_config_file}",
-                   "--env-validation=skip", "--throw")
+      self.run_cli(
+        "loading",
+        "run",
+        f"--config={global_config_file}",
+        "--env-validation=skip",
+        "--throw",
+      )
       for browser in self.browsers:
-        self.assertSequenceEqual([url_1, url_2],
-                                 browser.url_list[self.SPLASH_URLS_LEN:])
+        self.assertSequenceEqual(
+          [url_1, url_2], browser.url_list[self.SPLASH_URLS_LEN :]
+        )
 
 
 class ActionBlockListConfigTestCase(unittest.TestCase):
-
   def test_parse_invalid(self):
     invalid: Any
     for invalid in ("", (), {}, 1):
@@ -1128,11 +1323,15 @@ class ActionBlockListConfigTestCase(unittest.TestCase):
           ActionBlockListConfig.parse(invalid)
 
   def test_parse_default_action_list(self):
-    config = ActionBlockListConfig.parse([{
-        "action": "get",
-        "url": "http://test.com",
-        "duration": "12.5s",
-    }])
+    config = ActionBlockListConfig.parse(
+      [
+        {
+          "action": "get",
+          "url": "http://test.com",
+          "duration": "12.5s",
+        }
+      ]
+    )
     self.assertEqual(len(config.blocks), 1)
     block = config.blocks[0]
     self.assertEqual(block.label, "default")
@@ -1141,14 +1340,19 @@ class ActionBlockListConfigTestCase(unittest.TestCase):
     self.assertEqual(block.duration, dt.timedelta(seconds=12.5))
 
   def test_parse_default_action_list_2(self):
-    config = ActionBlockListConfig.parse([{
-        "action": "get",
-        "url": "http://test.com",
-        "duration": "12.5s",
-    }, {
-        "action": "wait",
-        "duration": "100s",
-    }])
+    config = ActionBlockListConfig.parse(
+      [
+        {
+          "action": "get",
+          "url": "http://test.com",
+          "duration": "12.5s",
+        },
+        {
+          "action": "wait",
+          "duration": "100s",
+        },
+      ]
+    )
     self.assertEqual(len(config.blocks), 1)
     block = config.blocks[0]
     self.assertEqual(block.label, "default")
@@ -1158,13 +1362,19 @@ class ActionBlockListConfigTestCase(unittest.TestCase):
     self.assertEqual(block.duration, dt.timedelta(seconds=112.5))
 
   def test_parse_single_block_action_list(self):
-    config = ActionBlockListConfig.parse([{
-        "label": "block 1",
-        "actions": [{
-            "action": "get",
-            "url": "http://test.com",
-        }],
-    }])
+    config = ActionBlockListConfig.parse(
+      [
+        {
+          "label": "block 1",
+          "actions": [
+            {
+              "action": "get",
+              "url": "http://test.com",
+            }
+          ],
+        }
+      ]
+    )
     self.assertEqual(len(config.blocks), 1)
     block = config.blocks[0]
     self.assertEqual(block.label, "block 1")
@@ -1172,23 +1382,30 @@ class ActionBlockListConfigTestCase(unittest.TestCase):
     self.assertEqual(block.actions[0].TYPE, ActionType.GET)
 
   def test_parse_multi_block_action_list(self):
-    config = ActionBlockListConfig.parse([{
-        "label":
-            "block 0",
-        "actions": [{
-            "action": "get",
-            "url": "http://test.com/0",
-            "duration": "10s",
-        }],
-    }, {
-        "label":
-            "block 1",
-        "actions": [{
-            "action": "get",
-            "url": "http://test.com/1",
-            "duration": "11s",
-        }],
-    }])
+    config = ActionBlockListConfig.parse(
+      [
+        {
+          "label": "block 0",
+          "actions": [
+            {
+              "action": "get",
+              "url": "http://test.com/0",
+              "duration": "10s",
+            }
+          ],
+        },
+        {
+          "label": "block 1",
+          "actions": [
+            {
+              "action": "get",
+              "url": "http://test.com/1",
+              "duration": "11s",
+            }
+          ],
+        },
+      ]
+    )
     self.assertEqual(len(config.blocks), 2)
     for index, block in enumerate(config.blocks):
       self.assertEqual(block.label, f"block {index}")
@@ -1199,14 +1416,18 @@ class ActionBlockListConfigTestCase(unittest.TestCase):
       self.assertEqual(block.duration, dt.timedelta(seconds=10 + index))
 
   def test_parse_single_block_dict(self):
-    config = ActionBlockListConfig.parse({
+    config = ActionBlockListConfig.parse(
+      {
         "block 1": {
-            "actions": [{
-                "action": "get",
-                "url": "http://test.com",
-            }],
+          "actions": [
+            {
+              "action": "get",
+              "url": "http://test.com",
+            }
+          ],
         },
-    })
+      }
+    )
     self.assertEqual(len(config.blocks), 1)
     block = config.blocks[0]
     self.assertEqual(block.label, "block 1")
@@ -1214,15 +1435,20 @@ class ActionBlockListConfigTestCase(unittest.TestCase):
     self.assertEqual(block.actions[0].TYPE, ActionType.GET)
 
   def test_parse_block_dict_action_list_2(self):
-    config = ActionBlockListConfig.parse({
-        "block 1": [{
+    config = ActionBlockListConfig.parse(
+      {
+        "block 1": [
+          {
             "action": "get",
             "url": "http://test.com",
-        }, {
+          },
+          {
             "action": "wait",
             "duration": "2s",
-        }],
-    })
+          },
+        ],
+      }
+    )
     self.assertEqual(len(config.blocks), 1)
     block = config.blocks[0]
     self.assertEqual(block.label, "block 1")
@@ -1231,19 +1457,24 @@ class ActionBlockListConfigTestCase(unittest.TestCase):
     self.assertEqual(block.actions[1].TYPE, ActionType.WAIT)
 
   def test_parse_single_block_multi_action_dict(self):
-    config = ActionBlockListConfig.parse({
+    config = ActionBlockListConfig.parse(
+      {
         "block 1": {
-            "actions": [{
-                "action": "get",
-                "url": "http://test.com/0",
-                "duration": "1s",
-            }, {
-                "action": "get",
-                "url": "http://test.com/1",
-                "duration": "20s",
-            }],
+          "actions": [
+            {
+              "action": "get",
+              "url": "http://test.com/0",
+              "duration": "1s",
+            },
+            {
+              "action": "get",
+              "url": "http://test.com/1",
+              "duration": "20s",
+            },
+          ],
         },
-    })
+      }
+    )
     self.assertEqual(len(config.blocks), 1)
     block = config.blocks[0]
     self.assertEqual(block.label, "block 1")
@@ -1271,20 +1502,26 @@ class ActionBlockListConfigTestCase(unittest.TestCase):
     self.assertEqual(len(block.actions), 0)
 
   def test_parse_multi_block_actions_dict(self):
-    config = ActionBlockListConfig.parse({
+    config = ActionBlockListConfig.parse(
+      {
         "block 0": {
-            "actions": [{
-                "action": "get",
-                "url": "http://test.com/0",
-            }],
+          "actions": [
+            {
+              "action": "get",
+              "url": "http://test.com/0",
+            }
+          ],
         },
         "block 1": {
-            "actions": [{
-                "action": "get",
-                "url": "http://test.com/1",
-            }],
+          "actions": [
+            {
+              "action": "get",
+              "url": "http://test.com/1",
+            }
+          ],
         },
-    })
+      }
+    )
     self.assertEqual(len(config.blocks), 2)
     for index, block in enumerate(config.blocks):
       self.assertEqual(block.label, f"block {index}")
@@ -1294,16 +1531,22 @@ class ActionBlockListConfigTestCase(unittest.TestCase):
       self.assertEqual(block.actions[0].url, f"http://test.com/{index}")
 
   def test_parse_multi_block_actions_list(self):
-    config = ActionBlockListConfig.parse({
-        "block 0": [{
+    config = ActionBlockListConfig.parse(
+      {
+        "block 0": [
+          {
             "action": "get",
             "url": "http://test.com/0",
-        }],
-        "block 1": [{
+          }
+        ],
+        "block 1": [
+          {
             "action": "get",
             "url": "http://test.com/1",
-        }],
-    })
+          }
+        ],
+      }
+    )
     self.assertEqual(len(config.blocks), 2)
     for index, block in enumerate(config.blocks):
       self.assertEqual(block.label, f"block {index}")
@@ -1314,15 +1557,19 @@ class ActionBlockListConfigTestCase(unittest.TestCase):
 
   def test_parse_dict_label_conflict(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      ActionBlockListConfig.parse({
+      ActionBlockListConfig.parse(
+        {
           "block 1": {
-              "label": "block 2",
-              "actions": [{
-                  "action": "get",
-                  "url": "http://test.com",
-              }],
+            "label": "block 2",
+            "actions": [
+              {
+                "action": "get",
+                "url": "http://test.com",
+              }
+            ],
           },
-      })
+        }
+      )
     self.assertIn("block 2", str(cm.exception))
 
   def test_parse_invalid_dict_missing_actions(self):
@@ -1332,16 +1579,22 @@ class ActionBlockListConfigTestCase(unittest.TestCase):
 
   def test_parse_logins(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      _ = ActionBlockListConfig.parse({
-          "login": [{
+      _ = ActionBlockListConfig.parse(
+        {
+          "login": [
+            {
               "action": "get",
               "url": "http://test.com/login",
-          }],
-          "block 0": [{
+            }
+          ],
+          "block 0": [
+            {
               "action": "get",
               "url": "http://test.com/1",
-          }],
-      })
+            }
+          ],
+        }
+      )
     self.assertIn("login", str(cm.exception))
 
 

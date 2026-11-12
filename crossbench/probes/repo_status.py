@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 
 class RepoStatusProbe(InternalProbe):
   """Probe that generates a git patch diff of repository modifications."""
+
   NAME: ClassVar[str] = "cb.repo_status"
 
   @override
@@ -38,11 +39,12 @@ class RepoStatusProbe(InternalProbe):
     try:
       with patch_file.open("w", encoding="utf-8") as f:
         runner.platform.sh(
-            "git",
-            "diff",
-            canonical_parent_hash,
-            stdout=f,
-            cwd=pth.ROOT_DIR,
-            check=False)
+          "git",
+          "diff",
+          canonical_parent_hash,
+          stdout=f,
+          cwd=pth.ROOT_DIR,
+          check=False,
+        )
     except (RuntimeError, ValueError, OSError) as e:
       logging.warning("Failed to generate git patch: %s", e)

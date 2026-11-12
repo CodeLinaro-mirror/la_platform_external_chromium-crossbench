@@ -4,13 +4,13 @@
 
 from __future__ import annotations
 
-from typing import Iterable, Mapping, MutableMapping, Sequence, TypeAlias, \
-    Union
+from typing import Iterable, Mapping, MutableMapping, Sequence, TypeAlias, Union
 
 from immutabledict import immutabledict
 
-Json: TypeAlias = Union["JsonMapping", "JsonSequence", str, int, float, bool,
-                        None]
+Json: TypeAlias = Union[
+  "JsonMapping", "JsonSequence", str, int, float, bool, None
+]
 JsonMapping: TypeAlias = Mapping[str, Json]
 JsonMutableMapping: TypeAlias = MutableMapping[str, Json]
 JsonDict: TypeAlias = dict[str, Json]

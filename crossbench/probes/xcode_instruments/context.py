@@ -10,15 +10,17 @@ from crossbench.plt.ios import IOSPlatform
 from crossbench.plt.macos import MacOSPlatform
 from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.profiling.enum import TargetMode
-from crossbench.probes.xcode_instruments.instrument_package import \
-    InstrumentPackage
+from crossbench.probes.xcode_instruments.instrument_package import (
+  InstrumentPackage,
+)
 from crossbench.probes.xcode_instruments.recorder import XctraceRecorder
 
 if TYPE_CHECKING:
   from crossbench import path as pth
   from crossbench.probes.results import ProbeResult
-  from crossbench.probes.xcode_instruments.xcode_instruments import \
-      XcodeInstrumentsProbe
+  from crossbench.probes.xcode_instruments.xcode_instruments import (
+    XcodeInstrumentsProbe,
+  )
   from crossbench.runner.run import Run
 
 
@@ -55,14 +57,16 @@ class XcodeInstrumentsContext(ProbeContext["XcodeInstrumentsProbe"]):
         if pid := self.browser.pid:
           return pid
         raise ValueError(
-            "Couldn't perform browser-app tracing. Maybe this browser "
-            "doesn't support this? Choose a different target mode.")
+          "Couldn't perform browser-app tracing. Maybe this browser "
+          "doesn't support this? Choose a different target mode."
+        )
       case TargetMode.RENDERER_PROCESS_ONLY:
         if pid := self.browser.get_renderer_pid():
           return pid
         raise ValueError(
-            "Couldn't perform renderer-only tracing. Maybe this browser "
-            "doesn't support this? Choose a different target mode.")
+          "Couldn't perform renderer-only tracing. Maybe this browser "
+          "doesn't support this? Choose a different target mode."
+        )
       case _:
         raise ValueError(f"Invalid target: {self._target}")
 
@@ -92,11 +96,12 @@ class XcodeInstrumentsContext(ProbeContext["XcodeInstrumentsProbe"]):
       device_udid = browser_platform.udid
     attach_pid = self.get_attach_pid()
     self._recorder = XctraceRecorder(
-        self._host,
-        self.package,
-        self.local_result_path,
-        attach_pid=attach_pid,
-        device_udid=device_udid)
+      self._host,
+      self.package,
+      self.local_result_path,
+      attach_pid=attach_pid,
+      device_udid=device_udid,
+    )
     self._recorder.start()
 
   @override

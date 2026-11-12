@@ -6,16 +6,19 @@ from __future__ import annotations
 
 from typing import override
 
-from crossbench.benchmarks.jetstream.jetstream_3_0 import \
-    JetStream30Benchmark, JetStream30Probe, JetStream30ProbeContext, \
-    JetStream30Story
+from crossbench.benchmarks.jetstream.jetstream_3_0 import (
+  JetStream30Benchmark,
+  JetStream30Probe,
+  JetStream30ProbeContext,
+  JetStream30Story,
+)
 from tests import test_helper
+
 # Only import module to avoid exposing the abstract test classes to the runner.
 from tests.crossbench.benchmarks.jetstream import jetstream_helper
 
 
 class JetStream30TestCase(jetstream_helper.JetStream3BaseTestCase):
-
   @property
   @override
   def benchmark_cls(self):

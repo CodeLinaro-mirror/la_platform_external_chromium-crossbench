@@ -12,12 +12,12 @@ from typing import TYPE_CHECKING, override
 if TYPE_CHECKING:
   from crossbench import path as pth
 
-from crossbench.browsers.chromium_based.crash.minidump_symbolizer import \
-    MinidumpSymbolizer
+from crossbench.browsers.chromium_based.crash.minidump_symbolizer import (
+  MinidumpSymbolizer,
+)
 
 
 class CrOSMinidumpSymbolizer(MinidumpSymbolizer):
-
   @override
   def symbolize_minidump(self, minidump: pth.LocalPath) -> str | None:
     if not self._platform.is_posix:

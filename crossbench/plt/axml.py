@@ -56,8 +56,10 @@ def _manifest_package_name_from_zip(apk_zip: ZipFile) -> str:
 def parse_binary_manifest_package_name(data: bytes) -> str:
   # Minimal Android Binary XML (AXML) parser.
   # 1. Verify AXML Header
-  if len(data) < RES_CHUNK_HEADER_SIZE or struct.unpack_from(
-      "<H", data, 0)[0] != RES_XML_TYPE:
+  if (
+    len(data) < RES_CHUNK_HEADER_SIZE
+    or struct.unpack_from("<H", data, 0)[0] != RES_XML_TYPE
+  ):
     raise ValueError("Invalid Android Binary XML header")
 
   # 2. Parse String Pool Chunk (0x00010001)
@@ -67,15 +69,17 @@ def parse_binary_manifest_package_name(data: bytes) -> str:
     raise ValueError("Expected String Pool chunk")
 
   string_count, _, flags, string_offset, _ = struct.unpack_from(
-      "<LLLLL", data, pos + RES_CHUNK_HEADER_SIZE)
+    "<LLLLL", data, pos + RES_CHUNK_HEADER_SIZE
+  )
   is_utf8 = (flags & RES_STRING_POOL_UTF8_FLAG) != 0
   strings_start = pos + string_offset
 
   # Extract all strings
   strings: list[str] = []
   for i in range(string_count):
-    offset = struct.unpack_from("<L", data,
-                                pos + RES_STRING_POOL_HEADER_SIZE + i * 4)[0]
+    offset = struct.unpack_from(
+      "<L", data, pos + RES_STRING_POOL_HEADER_SIZE + i * 4
+    )[0]
     str_pos = strings_start + offset
     if is_utf8:
       # UTF-8 encoded: skip lengths (1-2 bytes each) and read until null
@@ -97,17 +101,20 @@ def parse_binary_manifest_package_name(data: bytes) -> str:
     package_idx = strings.index("package")
   except ValueError as e:
     raise ValueError(
-        "Missing 'manifest' or 'package' tags in string pool") from e
+      "Missing 'manifest' or 'package' tags in string pool"
+    ) from e
 
   # 3. Scan Element Chunks for the <manifest> Start Element (0x0102)
   pos += chunk_size
   while pos + RES_CHUNK_HEADER_SIZE <= len(data):
     chunk_type, chunk_header_size, chunk_size = struct.unpack_from(
-        "<HHL", data, pos)
+      "<HHL", data, pos
+    )
     if chunk_type == RES_XML_START_ELEMENT_TYPE:
       # Ext: ns_idx, name_idx, attr_start, attr_size, attr_count, ...
       _, name_idx, attr_start, attr_size, attr_count = struct.unpack_from(
-          "<LLHHH", data, pos + chunk_header_size)
+        "<LLHHH", data, pos + chunk_header_size
+      )
 
       # Found the <manifest> tag
       if name_idx == manifest_idx:
@@ -116,7 +123,8 @@ def parse_binary_manifest_package_name(data: bytes) -> str:
         for _ in range(attr_count):
           # Attr: ns_idx, name_idx, val_str_idx, type, data
           _, a_name_idx, a_val_str_idx, _, _ = struct.unpack_from(
-              "<LLLLL", data, attr_pos)
+            "<LLLLL", data, attr_pos
+          )
           if a_name_idx == package_idx:
             return strings[a_val_str_idx]
           attr_pos += attr_size

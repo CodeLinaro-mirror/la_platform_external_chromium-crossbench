@@ -28,8 +28,9 @@ class SetupCommandsConfig(ConfigObject):
     super().validate()
     for index, command in enumerate(self.commands):
       assert isinstance(command, SetupCommandConfig), (
-          f"commands[{index}] is not an SetupCommandConfig "
-          f"but {type(command).__name__}")
+        f"commands[{index}] is not an SetupCommandConfig "
+        f"but {type(command).__name__}"
+      )
 
   @classmethod
   @override
@@ -47,9 +48,11 @@ class SetupCommandsConfig(ConfigObject):
     with exception.annotate_argparsing("Parsing setup commands"):
       if "setup_commands" not in config:
         raise argparse.ArgumentTypeError(
-            "Config does not provide a 'setup_commands' dict.")
-      commands_config = ObjectParser.non_empty_dict(config["setup_commands"],
-                                                    "setup_commands")
+          "Config does not provide a 'setup_commands' dict."
+        )
+      commands_config = ObjectParser.non_empty_dict(
+        config["setup_commands"], "setup_commands"
+      )
       with exception.annotate_argparsing("Parsing config 'setup_commands'"):
         commands = cls._parse_commands(commands_config)
         return cls(commands)
@@ -57,12 +60,14 @@ class SetupCommandsConfig(ConfigObject):
 
   @classmethod
   def _parse_commands(
-      cls, data: Mapping[str, object]) -> tuple[SetupCommandConfig, ...]:
+    cls, data: Mapping[str, object]
+  ) -> tuple[SetupCommandConfig, ...]:
     commands = []
     for name, command_config in data.items():
       with exception.annotate_argparsing(f"Parsing command ...['{name}']"):
         command_list = ObjectParser.sequence(command_config, "command")
         command = SetupCommandConfig(
-            label=name, command=tuple(str(s) for s in command_list))
+          label=name, command=tuple(str(s) for s in command_list)
+        )
         commands.append(command)
     return tuple(commands)

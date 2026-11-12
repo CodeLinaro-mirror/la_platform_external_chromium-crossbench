@@ -47,34 +47,36 @@ def browser_config(test_chrome_name: str) -> str:
 
 @pytest.mark.xdist_group("end2end-benchmark")
 class TestDesktopLoading:
-
   def get_test_platform(self, browser_config: str) -> plt.Platform:
     return BrowserConfig.parse(browser_config).get_platform()
 
   def supports_native_input(self, platform: plt.Platform) -> bool:
     return platform.is_linux or platform.is_android or platform.is_chromeos
 
-  def check_input_source_supported(self, browser_config: str,
-                                   input_source: InputSource) -> None:
+  def check_input_source_supported(
+    self, browser_config: str, input_source: InputSource
+  ) -> None:
     if input_source not in DEFAULT_VIRTUAL_DEVICES:
       return
     platform = self.get_test_platform(browser_config)
     if not self.supports_native_input(platform):
       pytest.skip(
-          f"Native input injection ('{input_source}') is not supported on "
-          f"{platform}")
+        f"Native input injection ('{input_source}') is not supported on "
+        f"{platform}"
+      )
     if platform.is_headless:
       pytest.skip(
-          f"Native input injection ('{input_source}') requires a display on "
-          f"{platform}")
+        f"Native input injection ('{input_source}') requires a display on "
+        f"{platform}"
+      )
 
   def run_loading_test(
-      self,
-      browser_config: str,
-      page_config: Mapping[str, object],
-      test_env: TestEnv,
-      probe_config: Mapping[str, object] | None = None,
-      extra_args: Sequence[str] = (),
+    self,
+    browser_config: str,
+    page_config: Mapping[str, object],
+    test_env: TestEnv,
+    probe_config: Mapping[str, object] | None = None,
+    extra_args: Sequence[str] = (),
   ) -> None:
     with tempfile.TemporaryDirectory() as tmp_dir:
       tmp_path = pth.LocalPath(tmp_dir)
@@ -84,14 +86,14 @@ class TestDesktopLoading:
       cli = CrossBenchCLI()
 
       args = [
-          "loading",
-          f"--browser={browser_config}",
-          f"--page-config={page_config_file}",
-          f"--out-dir={test_env.results_dir}",
-          "--env-validation=skip",
-          "--throw",
-          *list(test_env.cq_flags),
-          *extra_args,
+        "loading",
+        f"--browser={browser_config}",
+        f"--page-config={page_config_file}",
+        f"--out-dir={test_env.results_dir}",
+        "--env-validation=skip",
+        "--throw",
+        *list(test_env.cq_flags),
+        *extra_args,
       ]
       if probe_config is not None:
         probe_config_file = tmp_path / "probe.config.json"
@@ -117,49 +119,52 @@ class TestDesktopLoading:
     assert not result["errors"]
     return result
 
-  @pytest.mark.parametrize("input_source", [
+  @pytest.mark.parametrize(
+    "input_source",
+    [
       InputSource.JS,
       InputSource.TOUCH,
       InputSource.MOUSE,
       InputSource.DRIVER,
-  ])
-  def test_click(self, browser_config: str, input_source: InputSource,
-                 test_env: TestEnv) -> None:
+    ],
+  )
+  def test_click(
+    self, browser_config: str, input_source: InputSource, test_env: TestEnv
+  ) -> None:
     self.check_input_source_supported(browser_config, input_source)
     page_config = {
-        "pages": {
-            "ClickTest": {
-                "actions": [
-                    {
-                        "action":
-                            "get",
-                        "url":
-                            f"data:text/html;charset=utf-8,{CLICK_TEST_PAGE}",
-                        "ready_state":
-                            "complete",
-                    },
-                    {
-                        "action": "click",
-                        "position": {
-                            "selector": "button[id='button']",
-                            "required": True,
-                            "scroll_into_view": True,
-                            "wait": True,
-                        },
-                        "verify": "button[id='clicked-button']",
-                        "source": str(input_source),
-                    },
-                ],
+      "pages": {
+        "ClickTest": {
+          "actions": [
+            {
+              "action": "get",
+              "url": f"data:text/html;charset=utf-8,{CLICK_TEST_PAGE}",
+              "ready_state": "complete",
             },
+            {
+              "action": "click",
+              "position": {
+                "selector": "button[id='button']",
+                "required": True,
+                "scroll_into_view": True,
+                "wait": True,
+              },
+              "verify": "button[id='clicked-button']",
+              "source": str(input_source),
+            },
+          ],
         },
+      },
     }
 
     self.run_loading_test(browser_config, page_config, test_env)
 
-  @pytest.mark.parametrize("input_source",
-                           [InputSource.KEYBOARD, InputSource.JS])
-  def test_keyboard(self, browser_config: str, input_source: InputSource,
-                    test_env: TestEnv) -> None:
+  @pytest.mark.parametrize(
+    "input_source", [InputSource.KEYBOARD, InputSource.JS]
+  )
+  def test_keyboard(
+    self, browser_config: str, input_source: InputSource, test_env: TestEnv
+  ) -> None:
     self.check_input_source_supported(browser_config, input_source)
     test_text = "abcd"
     expected_text_json = json.dumps(test_text)
@@ -223,43 +228,44 @@ class TestDesktopLoading:
 """)
 
     page_config = {
-        "pages": {
-            "KeyboardTest": {
-                "actions": [
-                    {
-                        "action": "get",
-                        "url": f"data:text/html;charset=utf-8,{test_page}",
-                        "ready_state": "complete",
-                    },
-                    {
-                        "action": "js",
-                        "script": "document.getElementById('input').focus();",
-                    },
-                    {
-                        "action": "wait",
-                        "duration": "1s",
-                    },
-                    {
-                        "action": "text_input",
-                        "text": test_text,
-                        "duration": "2s",
-                        "source": str(input_source),
-                    },
-                    {
-                        "action": "wait_for_element",
-                        "selector": "textarea[id='typed-input']",
-                        "timeout": "15s",
-                    },
-                ],
+      "pages": {
+        "KeyboardTest": {
+          "actions": [
+            {
+              "action": "get",
+              "url": f"data:text/html;charset=utf-8,{test_page}",
+              "ready_state": "complete",
             },
+            {
+              "action": "js",
+              "script": "document.getElementById('input').focus();",
+            },
+            {
+              "action": "wait",
+              "duration": "1s",
+            },
+            {
+              "action": "text_input",
+              "text": test_text,
+              "duration": "2s",
+              "source": str(input_source),
+            },
+            {
+              "action": "wait_for_element",
+              "selector": "textarea[id='typed-input']",
+              "timeout": "15s",
+            },
+          ],
         },
+      },
     }
 
     self.run_loading_test(browser_config, page_config, test_env)
 
   @pytest.mark.parametrize("input_source", [InputSource.TOUCH, InputSource.JS])
-  def test_scroll(self, browser_config: str, input_source: InputSource,
-                  test_env: TestEnv) -> None:
+  def test_scroll(
+    self, browser_config: str, input_source: InputSource, test_env: TestEnv
+  ) -> None:
     self.check_input_source_supported(browser_config, input_source)
     test_page = urllib.parse.quote("""
 <!DOCTYPE html>
@@ -293,42 +299,39 @@ class TestDesktopLoading:
 """)
 
     page_config = {
-        "pages": {
-            "ScrollTest": {
-                "actions": [
-                    {
-                        "action": "get",
-                        "url": f"data:text/html;charset=utf-8,{test_page}",
-                        "ready_state": "complete",
-                    },
-                    {
-                        "action": "wait_for_element",
-                        "selector": "div[id='scrollable-area']",
-                        "timeout": "10s",
-                    },
-                    {
-                        "action": "scroll",
-                        "selector": "div[id='scrollable-area']",
-                        "required": True,
-                        "source": str(input_source),
-                        "distance": 50,
-                    },
-                    {
-                        "action": "wait_for_element",
-                        "selector": "div[id='yes-scroll']",
-                        "timeout": "1s",
-                    },
-                    {
-                        "action":
-                            "wait_for_condition",
-                        "condition":
-                            "return !!document.getElementById('yes-scroll')",
-                        "timeout":
-                            "1s",
-                    },
-                ],
+      "pages": {
+        "ScrollTest": {
+          "actions": [
+            {
+              "action": "get",
+              "url": f"data:text/html;charset=utf-8,{test_page}",
+              "ready_state": "complete",
             },
+            {
+              "action": "wait_for_element",
+              "selector": "div[id='scrollable-area']",
+              "timeout": "10s",
+            },
+            {
+              "action": "scroll",
+              "selector": "div[id='scrollable-area']",
+              "required": True,
+              "source": str(input_source),
+              "distance": 50,
+            },
+            {
+              "action": "wait_for_element",
+              "selector": "div[id='yes-scroll']",
+              "timeout": "1s",
+            },
+            {
+              "action": "wait_for_condition",
+              "condition": "return !!document.getElementById('yes-scroll')",
+              "timeout": "1s",
+            },
+          ],
         },
+      },
     }
 
     self.run_loading_test(browser_config, page_config, test_env)
@@ -355,66 +358,71 @@ class TestDesktopLoading:
 </html>
 """)
     page_config = {
-        "pages": {
-            "MouseMoveTest": {
-                "actions": [
-                    {
-                        "action": "get",
-                        "url": f"data:text/html;charset=utf-8,{test_page}",
-                        "ready_state": "complete",
-                    },
-                    {
-                        "action": "mouse_move",
-                        "waypoints": [
-                            {
-                                "x": 150,
-                                "y": 400,
-                            },
-                            {
-                                "x": 350,
-                                "y": 400,
-                            },
-                            {
-                                "x": 350,
-                                "y": 600,
-                            },
-                        ],
-                        "duration": "300ms",
-                    },
-                    {
-                        "action": "wait_for_element",
-                        "selector": "body[id='mouse-moved']",
-                        "timeout": "5s",
-                    },
-                ],
+      "pages": {
+        "MouseMoveTest": {
+          "actions": [
+            {
+              "action": "get",
+              "url": f"data:text/html;charset=utf-8,{test_page}",
+              "ready_state": "complete",
             },
+            {
+              "action": "mouse_move",
+              "waypoints": [
+                {
+                  "x": 150,
+                  "y": 400,
+                },
+                {
+                  "x": 350,
+                  "y": 400,
+                },
+                {
+                  "x": 350,
+                  "y": 600,
+                },
+              ],
+              "duration": "300ms",
+            },
+            {
+              "action": "wait_for_element",
+              "selector": "body[id='mouse-moved']",
+              "timeout": "5s",
+            },
+          ],
         },
+      },
     }
 
     self.run_loading_test(browser_config, page_config, test_env)
 
-  def test_loading_without_open_browser(self, browser_config: str,
-                                        test_env: TestEnv) -> None:
+  def test_loading_without_open_browser(
+    self, browser_config: str, test_env: TestEnv
+  ) -> None:
     page_config = {
-        "pages": {
-            "NoBrowserTest": {
-                "actions": [{
-                    "action": "wait",
-                    "duration": "0.5s",
-                }],
-            },
+      "pages": {
+        "NoBrowserTest": {
+          "actions": [
+            {
+              "action": "wait",
+              "duration": "0.5s",
+            }
+          ],
         },
+      },
     }
 
     self.run_loading_test(
-        browser_config,
-        page_config,
-        test_env,
-        extra_args=["--start-browser=false", "--no-splash"])
+      browser_config,
+      page_config,
+      test_env,
+      extra_args=["--start-browser=false", "--no-splash"],
+    )
     self.assert_run_succeeded(test_env)
 
-  def test_loading_begins_without_open_browser(self, browser_config: str,
-                                               test_env: TestEnv) -> None:
+  def test_loading_begins_without_open_browser(
+    self, browser_config: str, test_env: TestEnv
+  ) -> None:
     test_page = urllib.parse.quote("""
 <!doctype html>
 <html>
@@ -423,73 +431,93 @@ class TestDesktopLoading:
 </html>
 """)
     page_config = {
-        "pages": {
-            "DelayedStartTest": {
-                "actions": [{
-                    "action": "wait",
-                    "duration": "0.5s",
-                }, {
-                    "action": "start_browser",
-                }, {
-                    "action": "get",
-                    "url": f"data:text/html;charset=utf-8,{test_page}",
-                    "ready_state": "complete",
-                }],
+      "pages": {
+        "DelayedStartTest": {
+          "actions": [
+            {
+              "action": "wait",
+              "duration": "0.5s",
             },
+            {
+              "action": "start_browser",
+            },
+            {
+              "action": "get",
+              "url": f"data:text/html;charset=utf-8,{test_page}",
+              "ready_state": "complete",
+            },
+          ],
         },
+      },
     }
 
     self.run_loading_test(
-        browser_config,
-        page_config,
-        test_env,
-        extra_args=["--start-browser=false", "--no-splash"])
+      browser_config,
+      page_config,
+      test_env,
+      extra_args=["--start-browser=false", "--no-splash"],
+    )
     self.assert_run_succeeded(test_env)
 
   def test_loading_open_and_close_browser_multiple_times(
-      self, browser_config: str, test_env: TestEnv) -> None:
+    self, browser_config: str, test_env: TestEnv
+  ) -> None:
     test_page_1 = urllib.parse.quote(
-        "<!doctype html><html><head><title>Page 1</title></head></html>")
+      "<!doctype html><html><head><title>Page 1</title></head></html>"
+    )
     test_page_2 = urllib.parse.quote(
-        "<!doctype html><html><head><title>Page 2</title></head></html>")
+      "<!doctype html><html><head><title>Page 2</title></head></html>"
+    )
     test_page_3 = urllib.parse.quote(
-        "<!doctype html><html><head><title>Page 3</title></head></html>")
+      "<!doctype html><html><head><title>Page 3</title></head></html>"
+    )
 
     page_config = {
-        "pages": {
-            "ReopenBrowserTest": {
-                "actions": [{
-                    "action": "get",
-                    "url": f"data:text/html;charset=utf-8,{test_page_1}",
-                    "ready_state": "complete",
-                }, {
-                    "action": "stop_browser",
-                }, {
-                    "action": "wait",
-                    "duration": "0.5s",
-                }, {
-                    "action": "start_browser",
-                }, {
-                    "action": "get",
-                    "url": f"data:text/html;charset=utf-8,{test_page_2}",
-                    "ready_state": "complete",
-                }, {
-                    "action": "stop_browser",
-                }, {
-                    "action": "wait",
-                    "duration": "0.5s",
-                }, {
-                    "action": "start_browser",
-                }, {
-                    "action": "get",
-                    "url": f"data:text/html;charset=utf-8,{test_page_3}",
-                    "ready_state": "complete",
-                }, {
-                    "action": "js",
-                    "script": "return document.title;",
-                }],
+      "pages": {
+        "ReopenBrowserTest": {
+          "actions": [
+            {
+              "action": "get",
+              "url": f"data:text/html;charset=utf-8,{test_page_1}",
+              "ready_state": "complete",
             },
+            {
+              "action": "stop_browser",
+            },
+            {
+              "action": "wait",
+              "duration": "0.5s",
+            },
+            {
+              "action": "start_browser",
+            },
+            {
+              "action": "get",
+              "url": f"data:text/html;charset=utf-8,{test_page_2}",
+              "ready_state": "complete",
+            },
+            {
+              "action": "stop_browser",
+            },
+            {
+              "action": "wait",
+              "duration": "0.5s",
+            },
+            {
+              "action": "start_browser",
+            },
+            {
+              "action": "get",
+              "url": f"data:text/html;charset=utf-8,{test_page_3}",
+              "ready_state": "complete",
+            },
+            {
+              "action": "js",
+              "script": "return document.title;",
+            },
+          ],
         },
+      },
     }
 
     self.run_loading_test(browser_config, page_config, test_env)
@@ -497,113 +525,134 @@ class TestDesktopLoading:
 
   def test_close_all_tabs(self, browser_config: str, test_env: TestEnv) -> None:
     page_1 = urllib.parse.quote(
-        "<!doctype html><html><head><title>Page 1</title></head></html>")
+      "<!doctype html><html><head><title>Page 1</title></head></html>"
+    )
     page_2 = urllib.parse.quote(
-        "<!doctype html><html><head><title>Page 2</title></head></html>")
+      "<!doctype html><html><head><title>Page 2</title></head></html>"
+    )
     page_3 = urllib.parse.quote(
-        "<!doctype html><html><head><title>Page 3</title></head></html>")
+      "<!doctype html><html><head><title>Page 3</title></head></html>"
+    )
     final_page = urllib.parse.quote(
-        "<!doctype html><html><head><title>Final Page</title></head></html>")
+      "<!doctype html><html><head><title>Final Page</title></head></html>"
+    )
 
     page_config = {
-        "pages": {
-            "CloseAllTabsTest": {
-                "actions": [{
-                    "action": "get",
-                    "url": f"data:text/html;charset=utf-8,{page_1}",
-                    "ready_state": "complete",
-                }, {
-                    "action": "get",
-                    "url": f"data:text/html;charset=utf-8,{page_2}",
-                    "target": "_blank",
-                    "ready_state": "complete",
-                }, {
-                    "action": "get",
-                    "url": f"data:text/html;charset=utf-8,{page_3}",
-                    "target": "_blank",
-                    "ready_state": "complete",
-                }, {
-                    "action": "close_all_tabs",
-                }, {
-                    "action": "wait_for_condition",
-                    "condition": "return window.location.href === "
-                                 "'about:blank';",
-                    "timeout": "5s",
-                }, {
-                    "action": "get",
-                    "url": f"data:text/html;charset=utf-8,{final_page}",
-                    "ready_state": "complete",
-                }, {
-                    "action": "switch_tab",
-                    "relative_tab_index": 1,
-                }, {
-                    "action": "wait_for_condition",
-                    "condition": "return document.title === 'Final Page';",
-                    "timeout": "5s",
-                }],
+      "pages": {
+        "CloseAllTabsTest": {
+          "actions": [
+            {
+              "action": "get",
+              "url": f"data:text/html;charset=utf-8,{page_1}",
+              "ready_state": "complete",
             },
+            {
+              "action": "get",
+              "url": f"data:text/html;charset=utf-8,{page_2}",
+              "target": "_blank",
+              "ready_state": "complete",
+            },
+            {
+              "action": "get",
+              "url": f"data:text/html;charset=utf-8,{page_3}",
+              "target": "_blank",
+              "ready_state": "complete",
+            },
+            {
+              "action": "close_all_tabs",
+            },
+            {
+              "action": "wait_for_condition",
+              "condition": "return window.location.href === 'about:blank';",
+              "timeout": "5s",
+            },
+            {
+              "action": "get",
+              "url": f"data:text/html;charset=utf-8,{final_page}",
+              "ready_state": "complete",
+            },
+            {
+              "action": "switch_tab",
+              "relative_tab_index": 1,
+            },
+            {
+              "action": "wait_for_condition",
+              "condition": "return document.title === 'Final Page';",
+              "timeout": "5s",
+            },
+          ],
         },
+      },
     }
 
     self.run_loading_test(browser_config, page_config, test_env)
     self.assert_run_succeeded(test_env)
 
-  def test_session_start_closes_open_tabs(self, browser_config: str,
-                                          test_env: TestEnv) -> None:
+  def test_session_start_closes_open_tabs(
+    self, browser_config: str, test_env: TestEnv
+  ) -> None:
     platform = self.get_test_platform(browser_config)
     if not platform.is_local:
       pytest.skip("Local user-data-dir test requires a local browser platform")
 
     leftover_1 = urllib.parse.quote(
-        "<!doctype html><html><head><title>Leftover 1</title></head></html>")
+      "<!doctype html><html><head><title>Leftover 1</title></head></html>"
+    )
     leftover_2 = urllib.parse.quote(
-        "<!doctype html><html><head><title>Leftover 2</title></head></html>")
+      "<!doctype html><html><head><title>Leftover 2</title></head></html>"
+    )
     story_page = urllib.parse.quote(
-        "<!doctype html><html><head><title>Story Page</title></head></html>")
+      "<!doctype html><html><head><title>Story Page</title></head></html>"
+    )
 
     with tempfile.TemporaryDirectory() as user_data_dir:
       default_profile_dir = pth.LocalPath(user_data_dir) / "Default"
       default_profile_dir.mkdir(parents=True)
       preferences = {
-          "session": {
-              "restore_on_startup":
-                  4,
-              "startup_urls": [
-                  f"data:text/html;charset=utf-8,{leftover_1}",
-                  f"data:text/html;charset=utf-8,{leftover_2}",
-              ],
-          },
+        "session": {
+          "restore_on_startup": 4,
+          "startup_urls": [
+            f"data:text/html;charset=utf-8,{leftover_1}",
+            f"data:text/html;charset=utf-8,{leftover_2}",
+          ],
+        },
       }
       (default_profile_dir / "Preferences").write_text(
-          json.dumps(preferences), encoding="utf-8")
+        json.dumps(preferences), encoding="utf-8"
+      )
 
       page_config = {
-          "pages": {
-              "SessionStartClosesOpenTabsTest": {
-                  "actions": [{
-                      "action": "get",
-                      "url": f"data:text/html;charset=utf-8,{story_page}",
-                      "ready_state": "complete",
-                  }, {
-                      "action": "switch_tab",
-                      "relative_tab_index": 1,
-                  }, {
-                      "action": "wait_for_condition",
-                      "condition": "return document.title === 'Story Page';",
-                      "timeout": "5s",
-                  }],
+        "pages": {
+          "SessionStartClosesOpenTabsTest": {
+            "actions": [
+              {
+                "action": "get",
+                "url": f"data:text/html;charset=utf-8,{story_page}",
+                "ready_state": "complete",
               },
+              {
+                "action": "switch_tab",
+                "relative_tab_index": 1,
+              },
+              {
+                "action": "wait_for_condition",
+                "condition": "return document.title === 'Story Page';",
+                "timeout": "5s",
+              },
+            ],
           },
+        },
       }
 
       self.run_loading_test(
-          browser_config,
-          page_config,
-          test_env,
-          extra_args=[
-              f"--browser-cache-dir={user_data_dir}",
-              "--keep-browser-cache",
-          ])
+        browser_config,
+        page_config,
+        test_env,
+        extra_args=[
+          f"--browser-cache-dir={user_data_dir}",
+          "--keep-browser-cache",
+        ],
+      )
       self.assert_run_succeeded(test_env)
 
 

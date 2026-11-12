@@ -9,14 +9,21 @@ import unittest
 from typing import Callable, ClassVar, cast, override
 
 from crossbench.browsers.chrome.version import ChromeVersion
-from crossbench.browsers.chromium.version import ChromeDriverVersion, \
-    ChromiumVersion, ChromiumVersionRange
+from crossbench.browsers.chromium.version import (
+  ChromeDriverVersion,
+  ChromiumVersion,
+  ChromiumVersionRange,
+)
 from crossbench.browsers.edge.version import EdgeVersion
 from crossbench.browsers.firefox.version import FirefoxVersion
 from crossbench.browsers.safari.version import SafariVersion
 from crossbench.browsers.shell.d8.version import D8Version
-from crossbench.browsers.version import BrowserVersion, \
-    BrowserVersionChannel, PartialBrowserVersionError, UnknownBrowserVersion
+from crossbench.browsers.version import (
+  BrowserVersion,
+  BrowserVersionChannel,
+  PartialBrowserVersionError,
+  UnknownBrowserVersion,
+)
 from crossbench.browsers.webkit.version import WebKitVersion
 from crossbench.helper.version import VersionParseError, VersionPartsData
 from tests import test_helper
@@ -24,7 +31,6 @@ from tests.crossbench.helper.test_version import VersionTestCase
 
 
 class BrowserVersionChannelTestCase(unittest.TestCase):
-
   def test_unique(self):
     channels: set[BrowserVersionChannel] = set()
     names: set[str] = set()
@@ -45,33 +51,38 @@ class BrowserVersionChannelTestCase(unittest.TestCase):
     self.assertLess(BrowserVersionChannel.LTS, BrowserVersionChannel.STABLE)
     self.assertLess(BrowserVersionChannel.STABLE, BrowserVersionChannel.BETA)
     self.assertLess(BrowserVersionChannel.BETA, BrowserVersionChannel.ALPHA)
-    self.assertLess(BrowserVersionChannel.ALPHA,
-                    BrowserVersionChannel.PRE_ALPHA)
-    self.assertLessEqual(BrowserVersionChannel.PRE_ALPHA,
-                         BrowserVersionChannel.PRE_ALPHA)
+    self.assertLess(
+      BrowserVersionChannel.ALPHA, BrowserVersionChannel.PRE_ALPHA
+    )
+    self.assertLessEqual(
+      BrowserVersionChannel.PRE_ALPHA, BrowserVersionChannel.PRE_ALPHA
+    )
 
   def test_equal(self):
-    self.assertEqual(BrowserVersionChannel.PRE_ALPHA,
-                     BrowserVersionChannel.PRE_ALPHA)
+    self.assertEqual(
+      BrowserVersionChannel.PRE_ALPHA, BrowserVersionChannel.PRE_ALPHA
+    )
 
   def test_sorting(self):
     unsorted = [
-        BrowserVersionChannel.ALPHA,
-        BrowserVersionChannel.PRE_ALPHA,
-        BrowserVersionChannel.STABLE,
-        BrowserVersionChannel.BETA,
-        BrowserVersionChannel.LTS,
-        BrowserVersionChannel.ANY,
+      BrowserVersionChannel.ALPHA,
+      BrowserVersionChannel.PRE_ALPHA,
+      BrowserVersionChannel.STABLE,
+      BrowserVersionChannel.BETA,
+      BrowserVersionChannel.LTS,
+      BrowserVersionChannel.ANY,
     ]
     self.assertSequenceEqual(
-        sorted(unsorted), [
-            BrowserVersionChannel.LTS,
-            BrowserVersionChannel.STABLE,
-            BrowserVersionChannel.BETA,
-            BrowserVersionChannel.ALPHA,
-            BrowserVersionChannel.PRE_ALPHA,
-            BrowserVersionChannel.ANY,
-        ])
+      sorted(unsorted),
+      [
+        BrowserVersionChannel.LTS,
+        BrowserVersionChannel.STABLE,
+        BrowserVersionChannel.BETA,
+        BrowserVersionChannel.ALPHA,
+        BrowserVersionChannel.PRE_ALPHA,
+        BrowserVersionChannel.ANY,
+      ],
+    )
 
   def test_matches_any(self):
     base = BrowserVersionChannel.ANY
@@ -83,9 +94,13 @@ class BrowserVersionChannelTestCase(unittest.TestCase):
     self.assertTrue(base.matches(BrowserVersionChannel.PRE_ALPHA))
 
   def test_matches_other(self):
-    test_channels = (BrowserVersionChannel.LTS, BrowserVersionChannel.STABLE,
-                     BrowserVersionChannel.BETA, BrowserVersionChannel.ALPHA,
-                     BrowserVersionChannel.PRE_ALPHA)
+    test_channels = (
+      BrowserVersionChannel.LTS,
+      BrowserVersionChannel.STABLE,
+      BrowserVersionChannel.BETA,
+      BrowserVersionChannel.ALPHA,
+      BrowserVersionChannel.PRE_ALPHA,
+    )
     for channel in test_channels:
       self.assertTrue(channel.matches(BrowserVersionChannel.ANY))
       self.assertTrue(channel.matches(channel))
@@ -129,7 +144,8 @@ class _BrowserVersionTestCase(VersionTestCase, metaclass=abc.ABCMeta):
   def test_parse_any(self):
     if self.ANY_VERSION_STR == "":
       self.skipTest(
-          f"{type(self).__name__}: 'any'-channel version not supported")
+        f"{type(self).__name__}: 'any'-channel version not supported"
+      )
     version: BrowserVersion = self._parse_helper(self.ANY_VERSION_STR)
     self.assertTrue(str(version))
     self.assertFalse(version.has_channel)
@@ -320,20 +336,31 @@ class _BrowserVersionTestCase(VersionTestCase, metaclass=abc.ABCMeta):
     version_c = self.VERSION_CLS.any((120, 0, 4947, 2))
     sorted_list = [version_a, version_b, version_c]
     self.assertSequenceEqual(
-        sorted([version_a, version_c, version_b]), sorted_list)
+      sorted([version_a, version_c, version_b]), sorted_list
+    )
     self.assertSequenceEqual(
-        sorted([version_c, version_a, version_b]), sorted_list)
+      sorted([version_c, version_a, version_b]), sorted_list
+    )
     self.assertSequenceEqual(
-        sorted([version_c, version_b, version_a]), sorted_list)
+      sorted([version_c, version_b, version_a]), sorted_list
+    )
     self.assertSequenceEqual(
-        sorted([version_b, version_c, version_a]), sorted_list)
+      sorted([version_b, version_c, version_a]), sorted_list
+    )
 
   @override
   def _version_factories(
-      self) -> tuple[Callable[[VersionPartsData], BrowserVersion], ...]:
-    return (self.VERSION_CLS, self.VERSION_CLS.any, self.VERSION_CLS.lts,
-            self.VERSION_CLS.stable, self.VERSION_CLS.beta,
-            self.VERSION_CLS.alpha, self.VERSION_CLS.pre_alpha)
+    self,
+  ) -> tuple[Callable[[VersionPartsData], BrowserVersion], ...]:
+    return (
+      self.VERSION_CLS,
+      self.VERSION_CLS.any,
+      self.VERSION_CLS.lts,
+      self.VERSION_CLS.stable,
+      self.VERSION_CLS.beta,
+      self.VERSION_CLS.alpha,
+      self.VERSION_CLS.pre_alpha,
+    )
 
   @override
   def test_int_parts(self):
@@ -416,15 +443,20 @@ class ChromiumVersionTestCase(_BrowserVersionTestCase):
 
   def parse_full_variants(self):
     self.assertEqual(
-        self.parse("Chromium 125.1.6416.3"), self.parse("125.1.6416.3"))
+      self.parse("Chromium 125.1.6416.3"), self.parse("125.1.6416.3")
+    )
     self.assertEqual(
-        self.parse("Chromium 125.1.6416.3"), self.parse("M125.1.6416.3"))
+      self.parse("Chromium 125.1.6416.3"), self.parse("M125.1.6416.3")
+    )
     self.assertEqual(
-        self.parse("Chromium 125.1.6416.3"), self.parse("m125.1.6416.3"))
+      self.parse("Chromium 125.1.6416.3"), self.parse("m125.1.6416.3")
+    )
     self.assertEqual(
-        self.parse("Chromium 125.1.6416.3"), self.parse("125.1.6416.3 Stable"))
+      self.parse("Chromium 125.1.6416.3"), self.parse("125.1.6416.3 Stable")
+    )
     self.assertEqual(
-        self.parse("Chromium 125.1.6416.3"), self.parse("125.1.6416.3 stable"))
+      self.parse("Chromium 125.1.6416.3"), self.parse("125.1.6416.3 stable")
+    )
 
   def test_parse_milestone_variants(self):
     self.assertEqual(self.parse("Chromium 125"), self.parse("Chromium M125"))
@@ -518,7 +550,8 @@ class ChromiumVersionTestCase(_BrowserVersionTestCase):
   def test_compare_others_incompatible(self):
     chromium_version = ChromiumVersion.parse("Chromium 125.1.6416.3")
     safari_version = SafariVersion.parse(
-        SafariBrowserVersionTestCase.STABLE_VERSION_STR)
+      SafariBrowserVersionTestCase.STABLE_VERSION_STR
+    )
     with self.assertRaisesRegex(TypeError, "SafariVersion"):
       _ = chromium_version < safari_version
     with self.assertRaisesRegex(TypeError, "SafariVersion"):
@@ -536,9 +569,13 @@ class ChromeBrowserVersionTestCase(_BrowserVersionTestCase):
 
   @override
   def _version_factories(
-      self) -> tuple[Callable[[VersionPartsData], BrowserVersion], ...]:
-    return (*super()._version_factories(), self.VERSION_CLS.dev,
-            self.VERSION_CLS.canary)
+    self,
+  ) -> tuple[Callable[[VersionPartsData], BrowserVersion], ...]:
+    return (
+      *super()._version_factories(),
+      self.VERSION_CLS.dev,
+      self.VERSION_CLS.canary,
+    )
 
   @override
   def parse(self, value: str) -> ChromeVersion:
@@ -569,57 +606,71 @@ class ChromeBrowserVersionTestCase(_BrowserVersionTestCase):
 
   def test_parse_variants(self):
     self.assertEqual(
-        self.parse("Google Chrome 115.0.5790.114"),
-        self.parse("Chrome 115.0.5790.114"))
+      self.parse("Google Chrome 115.0.5790.114"),
+      self.parse("Chrome 115.0.5790.114"),
+    )
     self.assertEqual(
-        self.parse("Google Chrome 115.0.5790.114"),
-        self.parse("M115.0.5790.114"))
+      self.parse("Google Chrome 115.0.5790.114"), self.parse("M115.0.5790.114")
+    )
     self.assertEqual(
-        self.parse("Google Chrome 115.0.5790.114"),
-        self.parse("chr 115.0.5790.114"))
+      self.parse("Google Chrome 115.0.5790.114"),
+      self.parse("chr 115.0.5790.114"),
+    )
     self.assertEqual(
-        self.parse("Google Chrome 115.0.5790.114"),
-        self.parse("chrome 115.0.5790.114"))
+      self.parse("Google Chrome 115.0.5790.114"),
+      self.parse("chrome 115.0.5790.114"),
+    )
     self.assertEqual(
-        self.parse("Google Chrome 115.0.5790.114"),
-        self.parse("chr-115.0.5790.114"))
+      self.parse("Google Chrome 115.0.5790.114"),
+      self.parse("chr-115.0.5790.114"),
+    )
     self.assertEqual(
-        self.parse("Google Chrome 115.0.5790.114"),
-        self.parse("chrome-115.0.5790.114"))
+      self.parse("Google Chrome 115.0.5790.114"),
+      self.parse("chrome-115.0.5790.114"),
+    )
     self.assertEqual(
-        self.parse("Google Chrome 115.0.5790.114"),
-        self.parse("chr m115.0.5790.114"))
+      self.parse("Google Chrome 115.0.5790.114"),
+      self.parse("chr m115.0.5790.114"),
+    )
     self.assertEqual(
-        self.parse("Google Chrome 115.0.5790.114"),
-        self.parse("chrome m115.0.5790.114"))
+      self.parse("Google Chrome 115.0.5790.114"),
+      self.parse("chrome m115.0.5790.114"),
+    )
 
   def test_parse_chromium_prefix(self):
     self.assertEqual(
-        self.parse("Chromium 115.1.5790.114"),
-        self.parse("Chrome 115.1.5790.114"))
+      self.parse("Chromium 115.1.5790.114"), self.parse("Chrome 115.1.5790.114")
+    )
     self.assertEqual(self.parse("Chromium 115"), self.parse("Chrome 115"))
     self.assertEqual(self.parse("Chromium M115"), self.parse("Chrome M115"))
 
   def test_parse_channel(self):
     self.assertEqual(
-        self.parse(self.BETA_VERSION_STR),
-        self.parse("Google Chrome Beta 116.0.5845.50"))
+      self.parse(self.BETA_VERSION_STR),
+      self.parse("Google Chrome Beta 116.0.5845.50"),
+    )
     self.assertEqual(
-        self.parse(self.ALPHA_VERSION_STR),
-        self.parse("Google Chrome DEv 117.0.5911.2"))
+      self.parse(self.ALPHA_VERSION_STR),
+      self.parse("Google Chrome DEv 117.0.5911.2"),
+    )
     self.assertEqual(
-        self.parse(self.PRE_ALPHA_VERSION_STR),
-        self.parse("Google Chrome Canary 117.0.5921.0"))
+      self.parse(self.PRE_ALPHA_VERSION_STR),
+      self.parse("Google Chrome Canary 117.0.5921.0"),
+    )
 
   def test_str(self):
     self.assertEqual(
-        str(self.parse(self.STABLE_VERSION_STR)), "115.0.5790.114 stable")
+      str(self.parse(self.STABLE_VERSION_STR)), "115.0.5790.114 stable"
+    )
     self.assertEqual(
-        str(self.parse(self.BETA_VERSION_STR)), "116.0.5845.50 beta")
+      str(self.parse(self.BETA_VERSION_STR)), "116.0.5845.50 beta"
+    )
     self.assertEqual(
-        str(self.parse(self.ALPHA_VERSION_STR)), "117.0.5911.2 dev")
+      str(self.parse(self.ALPHA_VERSION_STR)), "117.0.5911.2 dev"
+    )
     self.assertEqual(
-        str(self.parse(self.PRE_ALPHA_VERSION_STR)), "117.0.5921.0 canary")
+      str(self.parse(self.PRE_ALPHA_VERSION_STR)), "117.0.5921.0 canary"
+    )
 
   def test_parse_stable_chrome(self):
     version: BrowserVersion = self._parse_helper(self.STABLE_VERSION_STR)
@@ -907,9 +958,13 @@ class EdgeBrowserVersionTestCase(_BrowserVersionTestCase):
 
   @override
   def _version_factories(
-      self) -> tuple[Callable[[VersionPartsData], BrowserVersion], ...]:
-    return (*super()._version_factories(), self.VERSION_CLS.dev,
-            self.VERSION_CLS.canary)
+    self,
+  ) -> tuple[Callable[[VersionPartsData], BrowserVersion], ...]:
+    return (
+      *super()._version_factories(),
+      self.VERSION_CLS.dev,
+      self.VERSION_CLS.canary,
+    )
 
   @override
   def parse(self, value: str) -> EdgeVersion:
@@ -919,14 +974,18 @@ class EdgeBrowserVersionTestCase(_BrowserVersionTestCase):
 class ChromeDriverBrowserVersionTestCase(_BrowserVersionTestCase):
   ANY_VERSION_STR = ""
   LTS_VERSION_STR = ""
-  STABLE_VERSION_STR = ("ChromeDriver 115.0.5790.114 "
-                        "(386bc09e8f4f2e025eddae123f36f6263096ae49-"
-                        "refs/branch-heads/5735@{#1052})")
+  STABLE_VERSION_STR = (
+    "ChromeDriver 115.0.5790.114 "
+    "(386bc09e8f4f2e025eddae123f36f6263096ae49-"
+    "refs/branch-heads/5735@{#1052})"
+  )
   BETA_VERSION_STR = ""
   ALPHA_VERSION_STR = ""
-  PRE_ALPHA_VERSION_STR = ("ChromeDriver 126.0.6424.0 "
-                           "(0000000000000000000000000000000000000000-"
-                           "0000000000000000000000000000000000000000)")
+  PRE_ALPHA_VERSION_STR = (
+    "ChromeDriver 126.0.6424.0 "
+    "(0000000000000000000000000000000000000000-"
+    "0000000000000000000000000000000000000000)"
+  )
   VERSION_CLS = ChromeDriverVersion
 
   @override
@@ -935,8 +994,10 @@ class ChromeDriverBrowserVersionTestCase(_BrowserVersionTestCase):
 
 
 class MicrosoftEdgeWebdriverVersionTestCase(_BrowserVersionTestCase):
-  STABLE_VERSION_STR = ("Microsoft Edge WebDriver 131.0.2903.112"
-                        "(16ab910a6e75f1c7d2da060bbe9ac569dfe64f70)")
+  STABLE_VERSION_STR = (
+    "Microsoft Edge WebDriver 131.0.2903.112"
+    "(16ab910a6e75f1c7d2da060bbe9ac569dfe64f70)"
+  )
   VERSION_CLS = ChromeDriverVersion
 
   @override
@@ -1018,10 +1079,11 @@ class FirefoxVersionTestCase(_BrowserVersionTestCase):
   def test_parse_beta_alternatives(self):
     version: BrowserVersion = self._parse_helper(self.BETA_VERSION_STR)
     self.assertEqual(
-        version,
-        self._parse_helper("Mozilla Firefox Developer Edition 116.0b4"))
-    self.assertEqual(version,
-                     self._parse_helper("Firefox Developer Edition 116.0b4"))
+      version, self._parse_helper("Mozilla Firefox Developer Edition 116.0b4")
+    )
+    self.assertEqual(
+      version, self._parse_helper("Firefox Developer Edition 116.0b4")
+    )
     # Some developer versions on mac don't have 3-part version numbers.
     alternative = self._parse_helper("Firefox Developer Edition 116.0")
     self.assertTrue(alternative.is_beta)
@@ -1035,8 +1097,10 @@ class FirefoxVersionTestCase(_BrowserVersionTestCase):
 
   def test_parse_alpha_alternatives(self):
     version: BrowserVersion = self._parse_helper(self.ALPHA_VERSION_STR)
-    for version_str in ("Mozilla Firefox Nightly 117.0a1",
-                        "Firefox Nightly 117.0a1"):
+    for version_str in (
+      "Mozilla Firefox Nightly 117.0a1",
+      "Firefox Nightly 117.0a1",
+    ):
       alternative = self._parse_helper(version_str)
       self.assertEqual(version, alternative)
     # Test verbose lookup without short channel
@@ -1046,14 +1110,17 @@ class FirefoxVersionTestCase(_BrowserVersionTestCase):
 
   def test_parse_channel_error(self):
     # Tests the "channel_long and channel_short != '.'" error branch
-    with self.assertRaisesRegex(VersionParseError,
-                                "Invalid ESR/Any channel version"):
+    with self.assertRaisesRegex(
+      VersionParseError, "Invalid ESR/Any channel version"
+    ):
       self.parse("Firefox 116.0b4 esr")
-    with self.assertRaisesRegex(VersionParseError,
-                                "Invalid ESR/Any channel version"):
+    with self.assertRaisesRegex(
+      VersionParseError, "Invalid ESR/Any channel version"
+    ):
       self.parse("Firefox 117.0a1 any")
-    with self.assertRaisesRegex(VersionParseError,
-                                "Invalid ESR/Any channel version"):
+    with self.assertRaisesRegex(
+      VersionParseError, "Invalid ESR/Any channel version"
+    ):
       self.parse("Firefox 115.0 esr")
 
   def test_parse_prefix_variants(self):
@@ -1080,8 +1147,9 @@ class SafariBrowserVersionTestCase(_BrowserVersionTestCase):
   LTS_VERSION_STR = ""
   # Additionally use the `safaridriver --version``
   STABLE_VERSION_STR = "16.6 Included with Safari 16.6 (18615.3.12.11.2)"
-  BETA_VERSION_STR = ("17.0 Included with Safari Technology Preview "
-                      "(Release 175, 18617.1.1.2)")
+  BETA_VERSION_STR = (
+    "17.0 Included with Safari Technology Preview (Release 175, 18617.1.1.2)"
+  )
   ALPHA_VERSION_STR = ""
   PRE_ALPHA_VERSION_STR = ""
   VERSION_CLS = SafariVersion
@@ -1136,40 +1204,44 @@ class SafariBrowserVersionTestCase(_BrowserVersionTestCase):
 
   def test_parse_beta_alternative(self):
     version: BrowserVersion = self._parse_helper(
-        "Safari Technology Preview 20621.1.6")
+      "Safari Technology Preview 20621.1.6"
+    )
     self.assertTrue(version.is_beta)
     self.assertSequenceEqual(version.parts, (20621, 1, 6, 0))
     self.assertTrue(version.is_complete)
 
   def test_parse_with_driver_version(self):
     version = self._parse_helper(
-        "Safari 18.1.1 Included with Safari 18.1.1 (20619.2.8.11.12)")
+      "Safari 18.1.1 Included with Safari 18.1.1 (20619.2.8.11.12)"
+    )
     self.assertTrue(version.is_stable)
     self.assertEqual(version.major, 18)
     self.assertSequenceEqual(version.parts, (18, 1, 1, 0, 20619, 2, 8, 11, 12))
     version = self._parse_helper(
-        "Safari 18.2 "
-        "Included with Safari Technology Preview (Release 209, 20621.1.6)")
+      "Safari 18.2 "
+      "Included with Safari Technology Preview (Release 209, 20621.1.6)"
+    )
     self.assertTrue(version.is_beta)
     self.assertEqual(version.major, 18)
     self.assertSequenceEqual(version.parts, (18, 2, 0, 209, 20621, 1, 6))
 
   def test_str(self):
     self.assertEqual(
-        str(self.parse(self.STABLE_VERSION_STR)),
-        "16.6 (18615.3.12.11.2) stable")
+      str(self.parse(self.STABLE_VERSION_STR)), "16.6 (18615.3.12.11.2) stable"
+    )
     self.assertEqual(
-        str(self.parse(self.BETA_VERSION_STR)),
-        "17.0 (Release 175, 18617.1.1.2) technology preview")
+      str(self.parse(self.BETA_VERSION_STR)),
+      "17.0 (Release 175, 18617.1.1.2) technology preview",
+    )
 
 
 class BrowserVersionTestCase(unittest.TestCase):
-
   @override
   def setUp(self) -> None:
     super().setUp()
     self.sf_version = SafariVersion.parse(
-        "16.6 Included with Safari 16.6 (18615.3.12.11.2)")
+      "16.6 Included with Safari 16.6 (18615.3.12.11.2)"
+    )
     self.chr_version = ChromeVersion.parse("Google Chrome 117.0.5911.2 dev")
 
   def test_cross_browser_compare(self):
@@ -1191,9 +1263,11 @@ class BrowserVersionTestCase(unittest.TestCase):
     self.check_not_valid_unique("123.1.3.2")
 
   def check_is_valid_unique(self, value: str):
-    valid = (ChromeVersion.is_valid_unique(value),
-             FirefoxVersion.is_valid_unique(value),
-             SafariVersion.is_valid_unique(value))
+    valid = (
+      ChromeVersion.is_valid_unique(value),
+      FirefoxVersion.is_valid_unique(value),
+      SafariVersion.is_valid_unique(value),
+    )
     self.assertEqual(sum(valid), 1)
 
   def test_is_valid_unique(self):
@@ -1269,7 +1343,6 @@ class WebKitBrowserVersionTestCase(_BrowserVersionTestCase):
 
 
 class ChromiumVersionRangeTestCase(unittest.TestCase):
-
   def test_init_invalid(self) -> None:
     with self.assertRaises(TypeError):
       ChromiumVersionRange()  # type: ignore
@@ -1288,17 +1361,18 @@ class ChromiumVersionRangeTestCase(unittest.TestCase):
       # pyrefly: ignore[bad-argument-type]
       ChromiumVersionRange(UnknownBrowserVersion(), ChromeVersion.any(126))
     with self.assertRaisesRegex(TypeError, "Expected ChromiumVersion"):
-      ChromiumVersionRange(ChromeVersion.any(120),
-                           UnknownBrowserVersion())  # type: ignore
+      ChromiumVersionRange(ChromeVersion.any(120), UnknownBrowserVersion())  # type: ignore
     safari_version = SafariVersion.parse(
-        SafariBrowserVersionTestCase.STABLE_VERSION_STR)
+      SafariBrowserVersionTestCase.STABLE_VERSION_STR
+    )
     with self.assertRaisesRegex(TypeError, "Expected ChromiumVersion"):
       # Intentionally passing SafariVersion to test runtime TypeError.
       # pyrefly: ignore[bad-argument-type]
       ChromiumVersionRange(safari_version, ChromeVersion.any(126))
     with self.assertRaisesRegex(ValueError, "channel-specific version"):
       ChromiumVersionRange(
-          ChromeVersion.parse("Chrome Stable"), ChromeVersion.any(126))
+        ChromeVersion.parse("Chrome Stable"), ChromeVersion.any(126)
+      )
     with self.assertRaisesRegex(ValueError, "channel-specific version"):
       ChromiumVersionRange(ChromeVersion.stable(120), ChromeVersion.any(126))
     with self.assertRaisesRegex(ValueError, "channel-specific version"):
@@ -1319,8 +1393,10 @@ class ChromiumVersionRangeTestCase(unittest.TestCase):
     self.assertNotEqual(range_a, range_c)
     self.assertNotEqual(range_a, "120-126")
     self.assertEqual(
-        repr(range_a), "ChromiumVersionRange(ChromiumVersion(120, any, ''), "
-        "ChromiumVersion(126, any, ''))")
+      repr(range_a),
+      "ChromiumVersionRange(ChromiumVersion(120, any, ''), "
+      "ChromiumVersion(126, any, ''))",
+    )
 
   def test_milestone_range(self) -> None:
     version_range = ChromiumVersionRange.any(120, 126)
@@ -1346,8 +1422,9 @@ class ChromiumVersionRangeTestCase(unittest.TestCase):
     self.assertNotIn(ChromeVersion.parse("121.0.0.0"), version_range)
 
   def test_full_version_range(self) -> None:
-    version_range = ChromiumVersionRange.any((120, 0, 6099, 10),
-                                             (126, 0, 6478, 50))
+    version_range = ChromiumVersionRange.any(
+      (120, 0, 6099, 10), (126, 0, 6478, 50)
+    )
     self.assertNotIn(ChromeVersion.parse("120.0.6099.9"), version_range)
     self.assertNotIn(ChromeVersion.parse("M120"), version_range)
     self.assertIn(ChromeVersion.parse("120.0.6099.10"), version_range)
@@ -1391,7 +1468,8 @@ class ChromiumVersionRangeTestCase(unittest.TestCase):
     self.assertNotIn(UnknownBrowserVersion(), version_range)
     self.assertNotIn(ChromeVersion.parse("Chrome Stable"), version_range)
     safari_version = SafariVersion.parse(
-        SafariBrowserVersionTestCase.STABLE_VERSION_STR)
+      SafariBrowserVersionTestCase.STABLE_VERSION_STR
+    )
     self.assertFalse(version_range.is_compatible_type(safari_version))
     with self.assertRaises(TypeError):
       _ = safari_version in version_range

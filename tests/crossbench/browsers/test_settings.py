@@ -19,7 +19,6 @@ from tests import test_helper
 
 
 class SettingsTestCase(unittest.TestCase):
-
   def test_defaults(self):
     settings = Settings()
     self.assertEqual(settings.flags, Flags())
@@ -42,7 +41,8 @@ class SettingsTestCase(unittest.TestCase):
     self.assertEqual(settings.splash_screen, SplashScreen.NONE)
 
     settings_none = Settings(
-        start_browser=False, splash_screen=SplashScreen.NONE)
+      start_browser=False, splash_screen=SplashScreen.NONE
+    )
     self.assertFalse(settings_none.start_browser)
     self.assertEqual(settings_none.splash_screen, SplashScreen.NONE)
 
@@ -53,15 +53,16 @@ class SettingsTestCase(unittest.TestCase):
     flags = Flags({"--one": "1", "--two": "2"}).freeze()
     js_flags = Flags({"--js-one": "js-1", "--js-two": "js-2"}).freeze()
     settings = Settings(
-        flags,
-        js_flags,
-        cache_dir=pth.LocalPath("cache"),
-        clear_cache_dir=False,
-        viewport=Viewport.FULLSCREEN,
-        driver_path=pth.LocalPath("driver"),
-        splash_screen=SplashScreen.DETAILED,
-        env_config=EnvConfig(cpu_max_usage_percent=10),
-        browser_version="120.0.6099.224")
+      flags,
+      js_flags,
+      cache_dir=pth.LocalPath("cache"),
+      clear_cache_dir=False,
+      viewport=Viewport.FULLSCREEN,
+      driver_path=pth.LocalPath("driver"),
+      splash_screen=SplashScreen.DETAILED,
+      env_config=EnvConfig(cpu_max_usage_percent=10),
+      browser_version="120.0.6099.224",
+    )
     self.assertEqual(settings.flags, flags)
     self.assertEqual(settings.js_flags, js_flags)
     self.assertEqual(settings.cache_dir, pth.LocalPath("cache"))
@@ -88,11 +89,13 @@ class SettingsTestCase(unittest.TestCase):
     self.assertIsInstance(settings.js_flags, JSFlags)
 
   def test_chrome_flags_js_flags(self):
-    flags = ChromeFlags({
+    flags = ChromeFlags(
+      {
         "--one": "1",
         "--two": "2",
         "--js-flags": "--js-one=js-1",
-    }).freeze()
+      }
+    ).freeze()
     settings = Settings(flags)
     self.assertEqual(settings.flags, flags)
     self.assertIsInstance(settings.flags, ChromeFlags)

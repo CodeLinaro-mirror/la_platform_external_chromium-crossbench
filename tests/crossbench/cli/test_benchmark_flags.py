@@ -11,9 +11,8 @@ from unittest import mock
 
 import hjson
 
-from crossbench import __version__
+from crossbench import __version__, plt
 from crossbench import path as pth
-from crossbench import plt
 from crossbench.benchmarks.loading.loading_benchmark import LoadingBenchmark
 from crossbench.browsers.splash_screen import SplashScreen, URLSplashScreen
 from crossbench.browsers.viewport import Viewport
@@ -34,7 +33,6 @@ if TYPE_CHECKING:
 
 
 class BenchmarkFlagsParserTestCase(BaseCliTestCase):
-
   def create_parser(self) -> CBArgumentParser:
     cli = MockCLI(platform=self.platform)
     subcommand = BenchmarkSubcommand(cli, LoadingBenchmark)
@@ -56,31 +54,34 @@ class BenchmarkFlagsParserTestCase(BaseCliTestCase):
 
   def test_cool_down_time_aliases(self) -> None:
     for flag in (
-        "--cool-down-time=5s",
-        "--cool-down=5s",
-        "--cooldown-time=5s",
-        "--cooldown=5s",
+      "--cool-down-time=5s",
+      "--cool-down=5s",
+      "--cooldown-time=5s",
+      "--cooldown=5s",
     ):
       args = self.parse_args(flag)
       self.assertEqual(args.cool_down_time, dt.timedelta(seconds=5))
 
   def test_cool_down_threshold(self) -> None:
-    for flag in ("--cool-down-threshold=moderate",
-                 "--cooldown-threshold=moderate"):
+    for flag in (
+      "--cool-down-threshold=moderate",
+      "--cooldown-threshold=moderate",
+    ):
       args = self.parse_args(flag)
       self.assertEqual(args.cool_down_threshold.name.lower(), "moderate")
 
   def test_cool_down_mutually_exclusive(self) -> None:
     for flag in ("--cool-down=5s", "--cool-down-threshold=moderate"):
-      with self.assertRaisesRegex(argparse.ArgumentError,
-                                  "--cool-down|--no-cool-down"):
+      with self.assertRaisesRegex(
+        argparse.ArgumentError, "--cool-down|--no-cool-down"
+      ):
         self.parse_args(flag, "--no-cool-down")
 
   def test_cool_down_invalid(self) -> None:
     for flag in (
-        "--cool-down=invalid",
-        "--cool-down-time=-1s",
-        "--cool-down-threshold=invalid",
+      "--cool-down=invalid",
+      "--cool-down-time=-1s",
+      "--cool-down-threshold=invalid",
     ):
       with self.assertRaises(argparse.ArgumentError):
         self.parse_args(flag)
@@ -113,8 +114,9 @@ class BenchmarkFlagsParserTestCase(BaseCliTestCase):
 
   def test_conflicting_field_trial_flags(self) -> None:
     with self.assertRaisesRegex(argparse.ArgumentError, "field-trial-config"):
-      self.parse_args("--enable-field-trial-config",
-                      "--disable-field-trial-config")
+      self.parse_args(
+        "--enable-field-trial-config", "--disable-field-trial-config"
+      )
 
   def test_no_color(self) -> None:
     args = self.parse_args("--no-color")
@@ -146,10 +148,15 @@ class BenchmarkFlagsParserTestCase(BaseCliTestCase):
       self.assertEqual(args.warmup_repetitions, 2)
 
   def test_invalid_repetitions(self) -> None:
-    for invalid in ("--repetitions=0", "--repetitions=-1", "--repeat=abc",
-                    "-r=-5"):
-      with self.assertRaisesRegex(argparse.ArgumentError,
-                                  "repetitions|repeat|invocations"):
+    for invalid in (
+      "--repetitions=0",
+      "--repetitions=-1",
+      "--repeat=abc",
+      "-r=-5",
+    ):
+      with self.assertRaisesRegex(
+        argparse.ArgumentError, "repetitions|repeat|invocations"
+      ):
         self.parse_args(invalid)
 
   def test_invalid_warmup_repetitions(self) -> None:
@@ -167,8 +174,9 @@ class BenchmarkFlagsParserTestCase(BaseCliTestCase):
 
   def test_cache_temperatures_default(self) -> None:
     args = self.parse_args()
-    self.assertSequenceEqual(args.cache_temperatures,
-                             [CacheTemperature.DEFAULT])
+    self.assertSequenceEqual(
+      args.cache_temperatures, [CacheTemperature.DEFAULT]
+    )
 
   def test_cache_temperatures(self) -> None:
     args = self.parse_args("--cache-temperatures")
@@ -219,9 +227,9 @@ class BenchmarkFlagsParserTestCase(BaseCliTestCase):
   def test_out_dir_aliases(self) -> None:
     custom_dir = pth.LocalPath("/custom_results_dir")
     for flag in (
-        f"--out-dir={custom_dir}",
-        f"--output-directory={custom_dir}",
-        f"-o={custom_dir}",
+      f"--out-dir={custom_dir}",
+      f"--output-directory={custom_dir}",
+      f"-o={custom_dir}",
     ):
       args = self.parse_args(flag)
       self.assertEqual(args.out_dir, custom_dir)
@@ -264,27 +272,28 @@ class BenchmarkFlagsParserTestCase(BaseCliTestCase):
 
   def test_run_timeout(self) -> None:
     for flag, expected in (
-        ("--run-timeout=5m", dt.timedelta(minutes=5)),
-        ("--run-timeout=45s", dt.timedelta(seconds=45)),
+      ("--run-timeout=5m", dt.timedelta(minutes=5)),
+      ("--run-timeout=45s", dt.timedelta(seconds=45)),
     ):
       args = self.parse_args(flag)
       self.assertEqual(args.run_timeout, expected)
 
   def test_timing_invalid(self) -> None:
     for flag in (
-        "--time-unit=invalid",
-        "--timeout-unit=invalid",
-        "--run-timeout=invalid",
+      "--time-unit=invalid",
+      "--timeout-unit=invalid",
+      "--run-timeout=invalid",
     ):
-      with self.assertRaisesRegex(argparse.ArgumentError,
-                                  "time-unit|timeout-unit|run-timeout"):
+      with self.assertRaisesRegex(
+        argparse.ArgumentError, "time-unit|timeout-unit|run-timeout"
+      ):
         self.parse_args(flag)
 
   def test_delays(self) -> None:
     args = self.parse_args(
-        "--start-delay=3s",
-        "--setup-delay=2s",
-        "--stop-delay=1.5s",
+      "--start-delay=3s",
+      "--setup-delay=2s",
+      "--stop-delay=1.5s",
     )
     self.assertEqual(args.start_delay, dt.timedelta(seconds=3))
     self.assertEqual(args.setup_delay, dt.timedelta(seconds=2))
@@ -292,16 +301,16 @@ class BenchmarkFlagsParserTestCase(BaseCliTestCase):
 
   def test_delay_aliases(self) -> None:
     self.assertEqual(
-        self.parse_args("--startup-delay=4s").start_delay,
-        dt.timedelta(seconds=4),
+      self.parse_args("--startup-delay=4s").start_delay,
+      dt.timedelta(seconds=4),
     )
 
   def test_delay_input(self) -> None:
     with mock.patch("builtins.input", return_value=""):
       args = self.parse_args(
-          "--start-delay=input",
-          "--setup-delay=input",
-          "--stop-delay=input",
+        "--start-delay=input",
+        "--setup-delay=input",
+        "--stop-delay=input",
       )
       self.assertEqual(args.start_delay, dt.timedelta.max)
       self.assertEqual(args.setup_delay, dt.timedelta.max)
@@ -329,10 +338,10 @@ class BenchmarkFlagsParserTestCase(BaseCliTestCase):
     self.fs.create_dir(mock_dir)
     self.fs.create_file(mock_dir / "index.html")
     for flag in (
-        "--local-file-server",
-        "--local-fileserver",
-        "--file-server",
-        "--fileserver",
+      "--local-file-server",
+      "--local-fileserver",
+      "--file-server",
+      "--fileserver",
     ):
       args = self.parse_args(f"{flag}={mock_dir}")
       self.assertIsInstance(args.network_config, NetworkConfig)
@@ -364,10 +373,14 @@ class BenchmarkFlagsParserTestCase(BaseCliTestCase):
   def test_env_config_file(self) -> None:
     env_file = pth.LocalPath("/env.config.hjson")
     self.fs.create_file(
-        env_file,
-        contents=hjson.dumps({"env": {
+      env_file,
+      contents=hjson.dumps(
+        {
+          "env": {
             "power_use_battery": False,
-        }}),
+          }
+        }
+      ),
     )
     args = self.parse_args(f"--env-config={env_file}")
     self.assertIsNotNone(args.env_config)
@@ -384,11 +397,13 @@ class BenchmarkFlagsParserTestCase(BaseCliTestCase):
 
   def test_required_device_config_mode_default(self) -> None:
     args = self.parse_args()
-    self.assertEqual(args.required_device_config_mode,
-                     RequiredDeviceConfigMode.SET)
+    self.assertEqual(
+      args.required_device_config_mode, RequiredDeviceConfigMode.SET
+    )
     runner_kwargs = Runner.kwargs_from_cli(args)
-    self.assertEqual(runner_kwargs["required_device_config_mode"],
-                     RequiredDeviceConfigMode.SET)
+    self.assertEqual(
+      runner_kwargs["required_device_config_mode"], RequiredDeviceConfigMode.SET
+    )
 
   def test_required_device_config_mode_modes(self) -> None:
     for mode in RequiredDeviceConfigMode:
@@ -404,10 +419,14 @@ class BenchmarkFlagsParserTestCase(BaseCliTestCase):
   def test_conflicting_env_flags(self) -> None:
     env_file = pth.LocalPath("/env.config.hjson")
     self.fs.create_file(
-        env_file,
-        contents=hjson.dumps({"env": {
+      env_file,
+      contents=hjson.dumps(
+        {
+          "env": {
             "power_use_battery": False,
-        }}),
+          }
+        }
+      ),
     )
     with self.assertRaises(argparse.ArgumentError):
       self.parse_args("--env=strict", f"--env-config={env_file}")
@@ -428,22 +447,25 @@ class BenchmarkFlagsParserTestCase(BaseCliTestCase):
   def test_browser_config(self) -> None:
     browser_config_file = pth.LocalPath("/browser.config.hjson")
     self.fs.create_file(
-        browser_config_file,
-        contents=hjson.dumps(
-            {"browsers": {
-                "chrome-stable": {
-                    "path": "chrome-stable",
-                },
-            }}),
+      browser_config_file,
+      contents=hjson.dumps(
+        {
+          "browsers": {
+            "chrome-stable": {
+              "path": "chrome-stable",
+            },
+          }
+        }
+      ),
     )
     args = self.parse_args(f"--browser-config={browser_config_file}")
     self.assertIsNotNone(args.browser_config)
 
   def test_browser_cache_dir_aliases(self) -> None:
     for flag in (
-        "--browser-cache-dir=/cache",
-        "--browser-cache=/cache",
-        "--user-data-dir=/cache",
+      "--browser-cache-dir=/cache",
+      "--browser-cache=/cache",
+      "--user-data-dir=/cache",
     ):
       args = self.parse_args(flag)
       self.assertEqual(str(args.browser_cache_dir), "/cache")
@@ -453,21 +475,26 @@ class BenchmarkFlagsParserTestCase(BaseCliTestCase):
     self.assertEqual(args.http_request_timeout, dt.timedelta(seconds=12.5))
 
   def test_splash_screen_options(self) -> None:
-    for flag in ("--splash-screen=none", "--splashscreen=none",
-                 "--splash=none"):
+    for flag in (
+      "--splash-screen=none",
+      "--splashscreen=none",
+      "--splash=none",
+    ):
       args = self.parse_args(flag)
       self.assertEqual(args.splash_screen, SplashScreen.NONE)
 
     for flag in (
-        "--splash-screen=minimal",
-        "--splashscreen=minimal",
-        "--splash=minimal",
+      "--splash-screen=minimal",
+      "--splashscreen=minimal",
+      "--splash=minimal",
     ):
       args = self.parse_args(flag)
       self.assertEqual(args.splash_screen, SplashScreen.MINIMAL)
 
-    for flag in ("--splash-screen=http://custom.com",
-                 "--splash=http://custom.com"):
+    for flag in (
+      "--splash-screen=http://custom.com",
+      "--splash=http://custom.com",
+    ):
       args = self.parse_args(flag)
       self.assertIsInstance(args.splash_screen, URLSplashScreen)
       self.assertEqual(args.splash_screen.url, "http://custom.com")
@@ -540,10 +567,10 @@ class BenchmarkFlagsParserTestCase(BaseCliTestCase):
 
   def test_chrome_options(self) -> None:
     args = self.parse_args(
-        "--js-flags=--flag1",
-        "--js-flags=--flag2",
-        "--enable-features=F1,F2",
-        "--disable-features=F3",
+      "--js-flags=--flag1",
+      "--js-flags=--flag2",
+      "--enable-features=F1,F2",
+      "--disable-features=F3",
     )
     self.assertSequenceEqual(args.js_flags, ["--flag1", "--flag2"])
     self.assertEqual(args.enable_features, "F1,F2")
@@ -570,9 +597,15 @@ class BenchmarkFlagsParserTestCase(BaseCliTestCase):
   def test_probe_config(self) -> None:
     probe_config_file = pth.LocalPath("/probes.config.hjson")
     self.fs.create_file(
-        probe_config_file, contents=hjson.dumps({"probes": {
+      probe_config_file,
+      contents=hjson.dumps(
+        {
+          "probes": {
             "js": {},
-        }}))
+          }
+        }
+      ),
+    )
     args = self.parse_args(f"--probe-config={probe_config_file}")
     self.assertEqual(args.probe_config, probe_config_file)
 
@@ -583,10 +616,10 @@ class BenchmarkFlagsParserTestCase(BaseCliTestCase):
 
   def test_verbose_aliases(self) -> None:
     for flag, expected in (
-        ("--verbose", 1),
-        ("-v", 1),
-        ("-vv", 2),
-        ("-vvv", 3),
+      ("--verbose", 1),
+      ("-v", 1),
+      ("-vv", 2),
+      ("-vvv", 3),
     ):
       args = self.parse_args(flag)
       self.assertEqual(args.verbosity, expected)
@@ -606,22 +639,29 @@ class BenchmarkFlagsParserTestCase(BaseCliTestCase):
     self.assertTrue(args.driver_logging)
 
   def test_driver_logging_aliases(self) -> None:
-    for flag in ("--driver-logging", "--verbose-driver",
-                 "--verbose-driver-logging"):
+    for flag in (
+      "--driver-logging",
+      "--verbose-driver",
+      "--verbose-driver-logging",
+    ):
       args = self.parse_args(flag)
       self.assertTrue(args.driver_logging)
 
   def test_gdb_lldb_aliases(self) -> None:
     self.assertEqual(
-        self.parse_args("--gdb").probe[0].probe_cls.NAME, "debugger")
+      self.parse_args("--gdb").probe[0].probe_cls.NAME, "debugger"
+    )
     self.assertEqual(
-        self.parse_args("--lldb").probe[0].probe_cls.NAME, "debugger")
+      self.parse_args("--lldb").probe[0].probe_cls.NAME, "debugger"
+    )
     with self.assertRaises(argparse.ArgumentError):
       self.parse_args("--gdb", "--lldb")
 
   def test_bin_override_aliases(self) -> None:
-    for flag in ("--bin-override=wpr=/bin/wpr",
-                 "--binary-override=wpr=/bin/wpr"):
+    for flag in (
+      "--bin-override=wpr=/bin/wpr",
+      "--binary-override=wpr=/bin/wpr",
+    ):
       args = self.parse_args(flag)
       self.assertSequenceEqual(args.binary_overrides, ["wpr=/bin/wpr"])
 
@@ -635,19 +675,21 @@ class BenchmarkFlagsParserTestCase(BaseCliTestCase):
 
   def test_extra_browser_args(self) -> None:
     args = self.parse_args(
-        "--extra-browser-args=--custom-arg1 --custom-arg2=value")
-    self.assertSequenceEqual(args.extra_browser_args,
-                             ["--custom-arg1 --custom-arg2=value"])
+      "--extra-browser-args=--custom-arg1 --custom-arg2=value"
+    )
+    self.assertSequenceEqual(
+      args.extra_browser_args, ["--custom-arg1 --custom-arg2=value"]
+    )
 
   def test_trailing_browser_args_after_separator(self) -> None:
     args = self.parse_args(
-        "--",
-        "--custom-trailing=123",
-        "--custom-trailing-flag",
+      "--",
+      "--custom-trailing=123",
+      "--custom-trailing-flag",
     )
     self.assertSequenceEqual(
-        args.other_browser_args,
-        ["--custom-trailing=123", "--custom-trailing-flag"],
+      args.other_browser_args,
+      ["--custom-trailing=123", "--custom-trailing-flag"],
     )
 
 
@@ -668,16 +710,19 @@ class BenchmarkFlagsCliTestCase(BaseCliTestCase):
     return self._get_subcommand(cli).runner
 
   def _run_loading(
-      self,
-      *flags: str,
-      is_dry_run: bool = True,
+    self,
+    *flags: str,
+    is_dry_run: bool = True,
   ) -> tuple[MockCLI, Runner]:
     self._run_counter += 1
     if self.fs.exists("/results"):
       self.fs.remove_object("/results")
     has_out_dir = any(
-        f.startswith(("--out-dir", "--output-directory", "-o", "--label",
-                      "--name")) for f in flags)
+      f.startswith(
+        ("--out-dir", "--output-directory", "-o", "--label", "--name")
+      )
+      for f in flags
+    )
     extra_flags: list[str] = []
     if not has_out_dir:
       extra_flags.append(f"--out-dir={self.out_dir}_{self._run_counter}")
@@ -686,21 +731,23 @@ class BenchmarkFlagsCliTestCase(BaseCliTestCase):
 
     with self._patch_get_browser_cls():
       cli = self.run_cli(
-          "loading",
-          f"--urls={self.URL}",
-          "--env-validation=skip",
-          *extra_flags,
-          *flags,
+        "loading",
+        f"--urls={self.URL}",
+        "--env-validation=skip",
+        *extra_flags,
+        *flags,
       )
       runner = self._get_runner(cli)
       return cli, runner
 
   def test_cool_down_default(self) -> None:
     cli, runner = self._run_loading()
-    self.assertEqual(cli.args.cool_down_time,
-                     LoadingBenchmark.DEFAULT_COOL_DOWN)
-    self.assertEqual(runner.timing.cool_down_time,
-                     LoadingBenchmark.DEFAULT_COOL_DOWN)
+    self.assertEqual(
+      cli.args.cool_down_time, LoadingBenchmark.DEFAULT_COOL_DOWN
+    )
+    self.assertEqual(
+      runner.timing.cool_down_time, LoadingBenchmark.DEFAULT_COOL_DOWN
+    )
 
   def test_no_cool_down(self) -> None:
     cli, runner = self._run_loading("--no-cool-down")
@@ -713,16 +760,25 @@ class BenchmarkFlagsCliTestCase(BaseCliTestCase):
     self.assertEqual(runner.timing.cool_down_time, dt.timedelta(seconds=5))
 
   def test_cool_down_mutually_exclusive(self) -> None:
-    with self.assertRaisesRegex((argparse.ArgumentError, SysExitTestException),
-                                "--cool-down|--no-cool-down"):
-      self.run_cli("loading", f"--urls={self.URL}", "--cool-down=5s",
-                   "--no-cool-down", "--throw")
+    with self.assertRaisesRegex(
+      (argparse.ArgumentError, SysExitTestException),
+      "--cool-down|--no-cool-down",
+    ):
+      self.run_cli(
+        "loading",
+        f"--urls={self.URL}",
+        "--cool-down=5s",
+        "--no-cool-down",
+        "--throw",
+      )
 
   def test_cool_down_invalid(self) -> None:
-    with self.assertRaisesRegex((argparse.ArgumentError, SysExitTestException),
-                                "--cool-down"):
-      self.run_cli("loading", f"--urls={self.URL}", "--cool-down=invalid",
-                   "--throw")
+    with self.assertRaisesRegex(
+      (argparse.ArgumentError, SysExitTestException), "--cool-down"
+    ):
+      self.run_cli(
+        "loading", f"--urls={self.URL}", "--cool-down=invalid", "--throw"
+      )
 
   def test_remote_driver_path_flag(self) -> None:
     remote_path = "/remote/path/to/chromedriver"
@@ -731,12 +787,13 @@ class BenchmarkFlagsCliTestCase(BaseCliTestCase):
 
   def test_remote_driver_path_multiple_browser_types_conflict(self) -> None:
     mock_browsers: list[type[mock_browser.MockBrowser]] = [
-        mock_browser.MockChromeStable,
-        mock_browser.MockFirefox,
+      mock_browser.MockChromeStable,
+      mock_browser.MockFirefox,
     ]
 
     def mock_get_browser_cls(
-        browser_config: BrowserConfig) -> type[mock_browser.MockBrowser]:
+      browser_config: BrowserConfig,
+    ) -> type[mock_browser.MockBrowser]:
       for mock_cls in mock_browsers:
         if mock_cls.mock_app_path(self.platform) == browser_config.path:
           return mock_cls
@@ -744,14 +801,15 @@ class BenchmarkFlagsCliTestCase(BaseCliTestCase):
 
     with self._patch_get_browser_cls(side_effect=mock_get_browser_cls):
       with self.assertRaises(
-          (argparse.ArgumentTypeError, SysExitTestException)):
+        (argparse.ArgumentTypeError, SysExitTestException)
+      ):
         self.run_cli(
-            "loading",
-            "--browser=chrome",
-            "--browser=firefox",
-            "--remote-driver-path=/remote/chromedriver",
-            f"--urls={self.URL}",
-            "--env-validation=skip",
+          "loading",
+          "--browser=chrome",
+          "--browser=firefox",
+          "--remote-driver-path=/remote/chromedriver",
+          f"--urls={self.URL}",
+          "--env-validation=skip",
         )
 
   def test_field_trial_config_defaults(self) -> None:
@@ -777,14 +835,15 @@ class BenchmarkFlagsCliTestCase(BaseCliTestCase):
       self.assertIn("--disable-field-trial-config", browser.flags)
 
   def test_conflicting_field_trial_flags(self) -> None:
-    with self.assertRaisesRegex((argparse.ArgumentError, SysExitTestException),
-                                "field-trial-config"):
+    with self.assertRaisesRegex(
+      (argparse.ArgumentError, SysExitTestException), "field-trial-config"
+    ):
       self.run_cli(
-          "loading",
-          f"--urls={self.URL}",
-          "--enable-field-trial-config",
-          "--disable-field-trial-config",
-          "--throw",
+        "loading",
+        f"--urls={self.URL}",
+        "--enable-field-trial-config",
+        "--disable-field-trial-config",
+        "--throw",
       )
 
   def test_no_color(self) -> None:
@@ -806,7 +865,8 @@ class BenchmarkFlagsCliTestCase(BaseCliTestCase):
       self.run_cli("loading", "--version")
     self.assertEqual(cm.exception.exit_code, 0)
     _, stdout, stderr = self.run_cli_output(
-        "loading", "--version", raises=SysExitTestException)
+      "loading", "--version", raises=SysExitTestException
+    )
     self.assertFalse(stderr)
     self.assertIn(__version__, stdout)
 
@@ -815,7 +875,8 @@ class BenchmarkFlagsCliTestCase(BaseCliTestCase):
       self.run_cli("--version")
     self.assertEqual(cm.exception.exit_code, 0)
     _, stdout, stderr = self.run_cli_output(
-        "--version", raises=SysExitTestException)
+      "--version", raises=SysExitTestException
+    )
     self.assertFalse(stderr)
     self.assertIn(__version__, stdout)
 
@@ -833,16 +894,20 @@ class BenchmarkFlagsCliTestCase(BaseCliTestCase):
     self.assertEqual(cli.args.warmup_repetitions, 2)
 
   def test_invalid_repetitions(self) -> None:
-    with self.assertRaisesRegex((argparse.ArgumentError, SysExitTestException),
-                                "repetitions"):
-      self.run_cli("loading", f"--urls={self.URL}", "--repetitions=0",
-                   "--throw")
+    with self.assertRaisesRegex(
+      (argparse.ArgumentError, SysExitTestException), "repetitions"
+    ):
+      self.run_cli(
+        "loading", f"--urls={self.URL}", "--repetitions=0", "--throw"
+      )
 
   def test_invalid_warmup_repetitions(self) -> None:
-    with self.assertRaisesRegex((argparse.ArgumentError, SysExitTestException),
-                                "warmup-repetitions"):
-      self.run_cli("loading", f"--urls={self.URL}", "--warmup-repetitions=-1",
-                   "--throw")
+    with self.assertRaisesRegex(
+      (argparse.ArgumentError, SysExitTestException), "warmup-repetitions"
+    ):
+      self.run_cli(
+        "loading", f"--urls={self.URL}", "--warmup-repetitions=-1", "--throw"
+      )
 
   def test_ignore_partial_failures_default(self) -> None:
     cli, runner = self._run_loading()
@@ -856,10 +921,12 @@ class BenchmarkFlagsCliTestCase(BaseCliTestCase):
 
   def test_cache_temperatures_default(self) -> None:
     cli, runner = self._run_loading()
-    self.assertSequenceEqual(cli.args.cache_temperatures,
-                             [CacheTemperature.DEFAULT])
-    self.assertSequenceEqual(runner.cache_temperatures,
-                             (CacheTemperature.DEFAULT,))
+    self.assertSequenceEqual(
+      cli.args.cache_temperatures, [CacheTemperature.DEFAULT]
+    )
+    self.assertSequenceEqual(
+      runner.cache_temperatures, (CacheTemperature.DEFAULT,)
+    )
 
   def test_cache_temperatures(self) -> None:
     cli, runner = self._run_loading("--cache-temperatures")
@@ -878,13 +945,14 @@ class BenchmarkFlagsCliTestCase(BaseCliTestCase):
       self.assertEqual(runner._thread_mode, mode)
 
   def test_invalid_thread_mode(self) -> None:
-    with self.assertRaisesRegex((argparse.ArgumentError, SysExitTestException),
-                                "--thread-mode"):
+    with self.assertRaisesRegex(
+      (argparse.ArgumentError, SysExitTestException), "--thread-mode"
+    ):
       self.run_cli(
-          "loading",
-          f"--urls={self.URL}",
-          "--thread-mode=invalid",
-          "--throw",
+        "loading",
+        f"--urls={self.URL}",
+        "--thread-mode=invalid",
+        "--throw",
       )
 
   def test_step_by_step_mode_default(self) -> None:
@@ -913,21 +981,23 @@ class BenchmarkFlagsCliTestCase(BaseCliTestCase):
     self.assertTrue(runner.create_symlinks)
 
   def test_conflicting_symlinks_flags(self) -> None:
-    with self.assertRaisesRegex((argparse.ArgumentError, SysExitTestException),
-                                "symlinks"):
+    with self.assertRaisesRegex(
+      (argparse.ArgumentError, SysExitTestException), "symlinks"
+    ):
       self.run_cli(
-          "loading",
-          f"--urls={self.URL}",
-          "--symlinks",
-          "--no-symlinks",
-          "--throw",
+        "loading",
+        f"--urls={self.URL}",
+        "--symlinks",
+        "--no-symlinks",
+        "--throw",
       )
 
   def test_out_dir(self) -> None:
     custom_dir = pth.LocalPath("/custom_results_dir")
     with mock.patch.object(Runner, "run", return_value=None):
       cli, runner = self._run_loading(
-          f"--out-dir={custom_dir}", is_dry_run=False)
+        f"--out-dir={custom_dir}", is_dry_run=False
+      )
       self.assertEqual(cli.args.out_dir, custom_dir)
       self.assertEqual(runner.out_dir, custom_dir)
 
@@ -944,11 +1014,11 @@ class BenchmarkFlagsCliTestCase(BaseCliTestCase):
   def test_conflicting_out_dir_and_label(self) -> None:
     with self.assertRaises((argparse.ArgumentError, SysExitTestException)):
       self.run_cli(
-          "loading",
-          f"--urls={self.URL}",
-          "--out-dir=/tmp/out",
-          "--label=custom_label",
-          "--throw",
+        "loading",
+        f"--urls={self.URL}",
+        "--out-dir=/tmp/out",
+        "--label=custom_label",
+        "--throw",
       )
 
   def test_fast_mode(self) -> None:
@@ -974,24 +1044,26 @@ class BenchmarkFlagsCliTestCase(BaseCliTestCase):
 
   def test_run_timeout(self) -> None:
     for flag, expected in (
-        ("--run-timeout=5m", dt.timedelta(minutes=5)),
-        ("--run-timeout=45s", dt.timedelta(seconds=45)),
+      ("--run-timeout=5m", dt.timedelta(minutes=5)),
+      ("--run-timeout=45s", dt.timedelta(seconds=45)),
     ):
       cli, runner = self._run_loading(flag)
       self.assertEqual(cli.args.run_timeout, expected)
       self.assertEqual(runner.timing.run_timeout, expected)
 
   def test_timing_invalid(self) -> None:
-    with self.assertRaisesRegex((argparse.ArgumentError, SysExitTestException),
-                                "time-unit"):
-      self.run_cli("loading", f"--urls={self.URL}", "--time-unit=invalid",
-                   "--throw")
+    with self.assertRaisesRegex(
+      (argparse.ArgumentError, SysExitTestException), "time-unit"
+    ):
+      self.run_cli(
+        "loading", f"--urls={self.URL}", "--time-unit=invalid", "--throw"
+      )
 
   def test_delays(self) -> None:
     cli, runner = self._run_loading(
-        "--start-delay=3s",
-        "--setup-delay=2s",
-        "--stop-delay=1.5s",
+      "--start-delay=3s",
+      "--setup-delay=2s",
+      "--stop-delay=1.5s",
     )
     self.assertEqual(cli.args.start_delay, dt.timedelta(seconds=3))
     self.assertEqual(cli.args.setup_delay, dt.timedelta(seconds=2))
@@ -1003,9 +1075,9 @@ class BenchmarkFlagsCliTestCase(BaseCliTestCase):
   def test_delay_input(self) -> None:
     with mock.patch("builtins.input", return_value=""):
       cli, runner = self._run_loading(
-          "--start-delay=input",
-          "--setup-delay=input",
-          "--stop-delay=input",
+        "--start-delay=input",
+        "--setup-delay=input",
+        "--stop-delay=input",
       )
       self.assertEqual(cli.args.start_delay, dt.timedelta.max)
       self.assertEqual(cli.args.setup_delay, dt.timedelta.max)
@@ -1051,11 +1123,11 @@ class BenchmarkFlagsCliTestCase(BaseCliTestCase):
     self.fs.create_file(wpr_file, contents=b"non_empty_wpr_archive_data")
     with self.assertRaises((argparse.ArgumentError, SysExitTestException)):
       self.run_cli(
-          "loading",
-          f"--urls={self.URL}",
-          "--network=live",
-          f"--wpr={wpr_file}",
-          "--throw",
+        "loading",
+        f"--urls={self.URL}",
+        "--network=live",
+        f"--wpr={wpr_file}",
+        "--throw",
       )
 
   def test_env_presets(self) -> None:
@@ -1067,10 +1139,14 @@ class BenchmarkFlagsCliTestCase(BaseCliTestCase):
   def test_env_config_file(self) -> None:
     env_file = pth.LocalPath("/env.config.hjson")
     self.fs.create_file(
-        env_file,
-        contents=hjson.dumps({"env": {
+      env_file,
+      contents=hjson.dumps(
+        {
+          "env": {
             "power_use_battery": False,
-        }}),
+          }
+        }
+      ),
     )
     cli, runner = self._run_loading(f"--env-config={env_file}")
     self.assertIsNotNone(cli.args.env_config)
@@ -1085,50 +1161,57 @@ class BenchmarkFlagsCliTestCase(BaseCliTestCase):
   def test_env_validation_invalid(self) -> None:
     with self.assertRaises((argparse.ArgumentError, SysExitTestException)):
       self.run_cli(
-          "loading",
-          f"--urls={self.URL}",
-          "--env-validation=invalid",
-          "--throw",
+        "loading",
+        f"--urls={self.URL}",
+        "--env-validation=invalid",
+        "--throw",
       )
 
   def test_required_device_config_mode_default(self) -> None:
     cli, runner = self._run_loading(is_dry_run=False)
-    self.assertEqual(cli.args.required_device_config_mode,
-                     RequiredDeviceConfigMode.SET)
-    self.assertEqual(runner._required_device_config_mode,
-                     RequiredDeviceConfigMode.SET)
+    self.assertEqual(
+      cli.args.required_device_config_mode, RequiredDeviceConfigMode.SET
+    )
+    self.assertEqual(
+      runner._required_device_config_mode, RequiredDeviceConfigMode.SET
+    )
 
   def test_required_device_config_mode_modes(self) -> None:
     for mode in RequiredDeviceConfigMode:
       cli, runner = self._run_loading(
-          f"--required-device-config-mode={mode.value}", is_dry_run=False)
+        f"--required-device-config-mode={mode.value}", is_dry_run=False
+      )
       self.assertEqual(cli.args.required_device_config_mode, mode)
       self.assertEqual(runner._required_device_config_mode, mode)
 
   def test_required_device_config_mode_invalid(self) -> None:
     with self.assertRaises((argparse.ArgumentError, SysExitTestException)):
       self.run_cli(
-          "loading",
-          f"--urls={self.URL}",
-          "--required-device-config-mode=invalid",
-          "--throw",
+        "loading",
+        f"--urls={self.URL}",
+        "--required-device-config-mode=invalid",
+        "--throw",
       )
 
   def test_conflicting_env_flags(self) -> None:
     env_file = pth.LocalPath("/env.config.hjson")
     self.fs.create_file(
-        env_file,
-        contents=hjson.dumps({"env": {
+      env_file,
+      contents=hjson.dumps(
+        {
+          "env": {
             "power_use_battery": False,
-        }}),
+          }
+        }
+      ),
     )
     with self.assertRaises((argparse.ArgumentError, SysExitTestException)):
       self.run_cli(
-          "loading",
-          f"--urls={self.URL}",
-          "--env=strict",
-          f"--env-config={env_file}",
-          "--throw",
+        "loading",
+        f"--urls={self.URL}",
+        "--env=strict",
+        f"--env-config={env_file}",
+        "--throw",
       )
 
   def test_dry_run(self) -> None:
@@ -1145,13 +1228,16 @@ class BenchmarkFlagsCliTestCase(BaseCliTestCase):
   def test_browser_config(self) -> None:
     browser_config_file = pth.LocalPath("/browser.config.hjson")
     self.fs.create_file(
-        browser_config_file,
-        contents=hjson.dumps(
-            {"browsers": {
-                "chrome-stable": {
-                    "path": "chrome-stable",
-                },
-            }}),
+      browser_config_file,
+      contents=hjson.dumps(
+        {
+          "browsers": {
+            "chrome-stable": {
+              "path": "chrome-stable",
+            },
+          }
+        }
+      ),
     )
     cli, runner = self._run_loading(f"--browser-config={browser_config_file}")
     self.assertEqual(len(runner.browsers), 1)
@@ -1174,30 +1260,32 @@ class BenchmarkFlagsCliTestCase(BaseCliTestCase):
   def test_conflicting_splash_screen(self) -> None:
     with self.assertRaises((argparse.ArgumentError, SysExitTestException)):
       self.run_cli(
-          "loading",
-          f"--urls={self.URL}",
-          "--splash-screen=none",
-          "--no-splash",
-          "--throw",
+        "loading",
+        f"--urls={self.URL}",
+        "--splash-screen=none",
+        "--no-splash",
+        "--throw",
       )
 
   def test_conflicting_start_browser_and_splash_screen(self) -> None:
     with self._patch_get_browser_cls():
       with self.assertRaises(
-          (argparse.ArgumentTypeError, SysExitTestException)):
+        (argparse.ArgumentTypeError, SysExitTestException)
+      ):
         self.run_cli(
-            "loading",
-            "--browser=chrome",
-            f"--urls={self.URL}",
-            "--no-start-browser",
-            "--splash-screen=minimal",
-            "--throw",
+          "loading",
+          "--browser=chrome",
+          f"--urls={self.URL}",
+          "--no-start-browser",
+          "--splash-screen=minimal",
+          "--throw",
         )
     cli, runner = self._run_loading("--no-start-browser", "--no-splash")
     self.assertFalse(cli.args.start_browser)
     self.assertFalse(runner.browsers[0].settings.start_browser)
-    self.assertEqual(runner.browsers[0].settings.splash_screen,
-                     SplashScreen.NONE)
+    self.assertEqual(
+      runner.browsers[0].settings.splash_screen, SplashScreen.NONE
+    )
 
   def test_viewport_options(self) -> None:
     cli, _ = self._run_loading("--viewport=maximized")
@@ -1214,24 +1302,27 @@ class BenchmarkFlagsCliTestCase(BaseCliTestCase):
     self.assertEqual(cli.args.viewport, Viewport.HEADLESS)
 
   def test_conflicting_viewport_headless(self) -> None:
-    with self.assertRaisesRegex((argparse.ArgumentError, SysExitTestException),
-                                "not allowed with argument"):
+    with self.assertRaisesRegex(
+      (argparse.ArgumentError, SysExitTestException),
+      "not allowed with argument",
+    ):
       self.run_cli(
-          "loading",
-          f"--urls={self.URL}",
-          "--viewport=fullscreen",
-          "--headless",
-          "--throw",
+        "loading",
+        f"--urls={self.URL}",
+        "--viewport=fullscreen",
+        "--headless",
+        "--throw",
       )
 
   def test_viewport_invalid(self) -> None:
-    with self.assertRaisesRegex((argparse.ArgumentError, SysExitTestException),
-                                "viewport"):
+    with self.assertRaisesRegex(
+      (argparse.ArgumentError, SysExitTestException), "viewport"
+    ):
       self.run_cli(
-          "loading",
-          f"--urls={self.URL}",
-          "--viewport=invalid_size",
-          "--throw",
+        "loading",
+        f"--urls={self.URL}",
+        "--viewport=invalid_size",
+        "--throw",
       )
 
   def test_clear_browser_cache(self) -> None:
@@ -1244,11 +1335,11 @@ class BenchmarkFlagsCliTestCase(BaseCliTestCase):
   def test_conflicting_clear_browser_cache(self) -> None:
     with self.assertRaises((argparse.ArgumentError, SysExitTestException)):
       self.run_cli(
-          "loading",
-          f"--urls={self.URL}",
-          "--clear-browser-cache",
-          "--no-clear-browser-cache",
-          "--throw",
+        "loading",
+        f"--urls={self.URL}",
+        "--clear-browser-cache",
+        "--no-clear-browser-cache",
+        "--throw",
       )
 
   def test_probe_flags(self) -> None:
@@ -1264,15 +1355,22 @@ class BenchmarkFlagsCliTestCase(BaseCliTestCase):
   def test_invalid_no_probe(self) -> None:
     for invalid in ("--no-probe=", "--no-probe= "):
       with self.assertRaisesRegex(
-          (argparse.ArgumentError, SysExitTestException), "no-probe"):
+        (argparse.ArgumentError, SysExitTestException), "no-probe"
+      ):
         self.run_cli("loading", f"--urls={self.URL}", invalid, "--throw")
 
   def test_probe_config(self) -> None:
     probe_config_file = pth.LocalPath("/probes.config.hjson")
     self.fs.create_file(
-        probe_config_file, contents=hjson.dumps({"probes": {
+      probe_config_file,
+      contents=hjson.dumps(
+        {
+          "probes": {
             "js": {},
-        }}))
+          }
+        }
+      ),
+    )
     cli, runner = self._run_loading(f"--probe-config={probe_config_file}")
     self.assertIsInstance(cli.args.probe_config, ProbeListConfig)
     probe_names = [probe.name for probe in runner.probes]
@@ -1281,21 +1379,27 @@ class BenchmarkFlagsCliTestCase(BaseCliTestCase):
   def test_probe_and_no_probe_conflict(self) -> None:
     probe_config_file = pth.LocalPath("/probes.config.hjson")
     self.fs.create_file(
-        probe_config_file, contents=hjson.dumps({"probes": {
+      probe_config_file,
+      contents=hjson.dumps(
+        {
+          "probes": {
             "js": {},
-        }}))
+          }
+        }
+      ),
+    )
     with self._patch_get_browser_cls():
       with self.assertRaisesRegex(
-          (argparse.ArgumentTypeError, SysExitTestException),
-          "Cannot both enable and disable probes",
+        (argparse.ArgumentTypeError, SysExitTestException),
+        "Cannot both enable and disable probes",
       ):
         self.run_cli(
-            "loading",
-            f"--urls={self.URL}",
-            f"--probe-config={probe_config_file}",
-            "--probe=js",
-            "--no-probe=js",
-            "--throw",
+          "loading",
+          f"--urls={self.URL}",
+          f"--probe-config={probe_config_file}",
+          "--probe=js",
+          "--no-probe=js",
+          "--throw",
         )
 
   def test_quiet_aliases(self) -> None:
@@ -1305,23 +1409,25 @@ class BenchmarkFlagsCliTestCase(BaseCliTestCase):
 
   def test_verbose(self) -> None:
     for flag, expected in (
-        ("--verbose", 1),
-        ("-v", 1),
-        ("-vv", 2),
-        ("-vvv", 3),
+      ("--verbose", 1),
+      ("-v", 1),
+      ("-vv", 2),
+      ("-vvv", 3),
     ):
       cli, _ = self._run_loading(flag)
       self.assertEqual(cli.args.verbosity, expected)
 
   def test_conflicting_quiet_verbose(self) -> None:
-    with self.assertRaisesRegex((argparse.ArgumentError, SysExitTestException),
-                                "not allowed with argument"):
+    with self.assertRaisesRegex(
+      (argparse.ArgumentError, SysExitTestException),
+      "not allowed with argument",
+    ):
       self.run_cli(
-          "loading",
-          f"--urls={self.URL}",
-          "--quiet",
-          "--verbose",
-          "--throw",
+        "loading",
+        f"--urls={self.URL}",
+        "--quiet",
+        "--verbose",
+        "--throw",
       )
 
   def test_throw(self) -> None:
@@ -1350,61 +1456,64 @@ class BenchmarkFlagsCliTestCase(BaseCliTestCase):
     cli, _ = self._run_loading("--bin-override=wpr=/bin/wpr")
     self.assertSequenceEqual(cli.args.binary_overrides, ["wpr=/bin/wpr"])
     self.assertEqual(
-        plt.PLATFORM.lookup_binary_override("wpr"),
-        plt.PLATFORM.path("/bin/wpr"),
+      plt.PLATFORM.lookup_binary_override("wpr"),
+      plt.PLATFORM.path("/bin/wpr"),
     )
 
   def test_bin_override_invalid(self) -> None:
     _, _, stderr = self.run_cli_output(
-        "loading",
-        f"--urls={self.URL}",
-        "--bin-override=invalid_no_equals",
-        raises=SysExitTestException,
+      "loading",
+      f"--urls={self.URL}",
+      "--bin-override=invalid_no_equals",
+      raises=SysExitTestException,
     )
     self.assertIn("Invalid --bin-override format", stderr)
 
   def test_upload_results_dry_run(self) -> None:
     with mock.patch(
-        "crossbench.uploader.results_uploader.upload") as mock_upload:
+      "crossbench.uploader.results_uploader.upload"
+    ) as mock_upload:
       cli, runner = self._run_loading(
-          "--upload-results=gs://bucket/results",
-          "--dry-run",
+        "--upload-results=gs://bucket/results",
+        "--dry-run",
       )
       self.assertEqual(cli.args.upload_results, "gs://bucket/results")
       mock_upload.assert_not_called()
 
   def test_upload_results_no_dry_run(self) -> None:
     with (
-        mock.patch("crossbench.uploader.results_uploader.upload") as
-        mock_upload,
-        mock.patch.object(Runner, "run", return_value=None),
+      mock.patch("crossbench.uploader.results_uploader.upload") as mock_upload,
+      mock.patch.object(Runner, "run", return_value=None),
     ):
       cli, runner = self._run_loading(
-          "--upload-results=gs://bucket/results",
-          is_dry_run=False,
+        "--upload-results=gs://bucket/results",
+        is_dry_run=False,
       )
       self.assertEqual(cli.args.upload_results, "gs://bucket/results")
       mock_upload.assert_called_once_with(
-          source=runner.out_dir, target="gs://bucket/results")
+        source=runner.out_dir, target="gs://bucket/results"
+      )
 
   def test_extra_browser_args(self) -> None:
     cli, runner = self._run_loading(
-        "--extra-browser-args=--custom-arg1 --custom-arg2=value")
-    self.assertSequenceEqual(cli.args.extra_browser_args,
-                             ["--custom-arg1 --custom-arg2=value"])
+      "--extra-browser-args=--custom-arg1 --custom-arg2=value"
+    )
+    self.assertSequenceEqual(
+      cli.args.extra_browser_args, ["--custom-arg1 --custom-arg2=value"]
+    )
     browser = runner.browsers[0]
     self.assertIn("--custom-arg1", browser.flags)
     self.assertEqual(browser.flags["--custom-arg2"], "value")
 
   def test_trailing_browser_args_after_separator(self) -> None:
     cli, runner = self._run_loading(
-        "--",
-        "--custom-trailing=123",
-        "--custom-trailing-flag",
+      "--",
+      "--custom-trailing=123",
+      "--custom-trailing-flag",
     )
     self.assertSequenceEqual(
-        cli.args.other_browser_args,
-        ["--custom-trailing=123", "--custom-trailing-flag"],
+      cli.args.other_browser_args,
+      ["--custom-trailing=123", "--custom-trailing-flag"],
     )
     browser = runner.browsers[0]
     self.assertEqual(browser.flags["--custom-trailing"], "123")

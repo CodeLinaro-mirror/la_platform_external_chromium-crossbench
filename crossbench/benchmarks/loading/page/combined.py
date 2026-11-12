@@ -8,8 +8,7 @@ import datetime as dt
 from typing import TYPE_CHECKING, Final, Iterable, override
 
 from crossbench.benchmarks.loading.page.base import Page
-from crossbench.benchmarks.loading.playback_controller import \
-    PlaybackController
+from crossbench.benchmarks.loading.playback_controller import PlaybackController
 from crossbench.benchmarks.loading.tab_controller import TabController
 from crossbench.cli.config.secrets import Secrets, SecretsMergeError
 
@@ -20,14 +19,13 @@ if TYPE_CHECKING:
 
 
 class CombinedPage(Page):
-
   def __init__(
-      self,
-      pages: Iterable[Page],
-      name: str = "combined",
-      playback: PlaybackController = PlaybackController.default(),
-      tabs: TabController = TabController.default(),
-      about_blank_duration: dt.timedelta = dt.timedelta(),
+    self,
+    pages: Iterable[Page],
+    name: str = "combined",
+    playback: PlaybackController = PlaybackController.default(),
+    tabs: TabController = TabController.default(),
+    about_blank_duration: dt.timedelta = dt.timedelta(),
   ) -> None:
     self._pages: Final[tuple[Page, ...]] = tuple(pages)
     assert self._pages, "No sub-pages provided for CombinedPage"
@@ -44,7 +42,8 @@ class CombinedPage(Page):
       except SecretsMergeError as e:
         raise ValueError(f"{e}. Please use --separate.") from e
     super().__init__(
-        name, duration, playback, tabs, about_blank_duration, secrets=secrets)
+      name, duration, playback, tabs, about_blank_duration, secrets=secrets
+    )
 
   @property
   @override
@@ -59,7 +58,8 @@ class CombinedPage(Page):
   @override
   def substories(self) -> tuple[str, ...]:
     return tuple(
-        substory for page in self._pages for substory in page.substories)
+      substory for page in self._pages for substory in page.substories
+    )
 
   @property
   @override

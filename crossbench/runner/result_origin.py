@@ -17,8 +17,11 @@ if TYPE_CHECKING:
   from crossbench import path as pth
   from crossbench import plt
   from crossbench.browsers.browser import Browser
-  from crossbench.exception import Annotator, ExceptionAnnotationScope, \
-      TExceptionTypes
+  from crossbench.exception import (
+    Annotator,
+    ExceptionAnnotationScope,
+    TExceptionTypes,
+  )
   from crossbench.helper.durations import Durations
   from crossbench.probes.probe import Probe
   from crossbench.runner.runner import Runner
@@ -66,7 +69,8 @@ class ResultOrigin(DecoratorTargetProtocol, ProbeResultOrigin, abc.ABC):
   @property
   def runner(self) -> Runner:
     raise NotImplementedError(
-        f"Cannot access on runner on {type(self).__name__}")
+      f"Cannot access on runner on {type(self).__name__}"
+    )
 
   @property
   @override
@@ -88,22 +92,20 @@ class ResultOrigin(DecoratorTargetProtocol, ProbeResultOrigin, abc.ABC):
     with self.exceptions.info(label), self.durations.measure(label):
       yield
 
-  def performance_mark(self,
-                       name: str,
-                       detail: Json = None,
-                       prefix: str = "crossbench-") -> None:
+  def performance_mark(
+    self, name: str, detail: Json = None, prefix: str = "crossbench-"
+  ) -> None:
     self.browser_platform.trace_mark(name, prefix=prefix)
     self.browser.performance_mark(name, detail=detail, prefix=prefix)
-
 
   def exception_info(self, *stack_entries: str) -> ExceptionAnnotationScope:
     return self.exceptions.info(*stack_entries)
 
   @override
   def exception_capture(
-      self,
-      *stack_entries: str,
-      exceptions: TExceptionTypes = (Exception,),
+    self,
+    *stack_entries: str,
+    exceptions: TExceptionTypes = (Exception,),
   ) -> ExceptionAnnotationScope:
     return self.exceptions.capture(*stack_entries, exceptions=exceptions)
 
@@ -114,8 +116,9 @@ class ResultOrigin(DecoratorTargetProtocol, ProbeResultOrigin, abc.ABC):
       return self.get_browser_probe_result_path(probe)
     if probe.RESULT_LOCATION == ResultLocation.LOCAL:
       return self.get_local_probe_result_path(probe)
-    raise ValueError(f"Invalid probe.RESULT_LOCATION {probe.RESULT_LOCATION} "
-                     f"for probe {probe}")
+    raise ValueError(
+      f"Invalid probe.RESULT_LOCATION {probe.RESULT_LOCATION} for probe {probe}"
+    )
 
   @abc.abstractmethod
   def get_local_probe_result_path(self, probe: Probe) -> pth.LocalPath:
@@ -128,7 +131,10 @@ class ResultOrigin(DecoratorTargetProtocol, ProbeResultOrigin, abc.ABC):
     # Create a temp file relative to the remote browser tmp dir.
     relative_path = local_path.relative_to(self.out_dir)
     path = self.browser_tmp_dir / relative_path
-    logging.debug("Creating remote result dir=%s on platform=%s", path.parent,
-                  self.browser_platform)
+    logging.debug(
+      "Creating remote result dir=%s on platform=%s",
+      path.parent,
+      self.browser_platform,
+    )
     self.browser_platform.mkdir(path.parent)
     return path

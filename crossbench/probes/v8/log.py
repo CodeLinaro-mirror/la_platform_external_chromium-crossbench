@@ -11,8 +11,15 @@ import logging
 import os
 import re
 import subprocess
-from typing import TYPE_CHECKING, Callable, ClassVar, Final, Iterable, Self, \
-    override
+from typing import (
+  TYPE_CHECKING,
+  Callable,
+  ClassVar,
+  Final,
+  Iterable,
+  Self,
+  override,
+)
 
 from crossbench import plt
 from crossbench.cli.ui import ui
@@ -41,12 +48,12 @@ _LOG_FLAG: Final = "--log"
 _PROF_FLAG: Final = "--prof"
 _LOG_ALL_FLAG: Final = "--log-all"
 DEFAULT_LOG_FLAGS: Final[tuple[str, ...]] = (
-    "--log",
-    "--log-code",
-    "--log-deopt",
-    "--log-source-code",
-    "--log-source-position",
-    "--log-code-disassemble",
+  "--log",
+  "--log-code",
+  "--log-deopt",
+  "--log-source-code",
+  "--log-source-position",
+  "--log-code-disassemble",
 )
 
 
@@ -79,6 +86,7 @@ class V8LogProbe(ChromiumProbe):
     config-properties for more details (prefer using --probe=profiling for
     detailed JS and C++ profiles).
   """
+
   NAME: ClassVar = "v8.log"
   RESULT_LOCATION = ResultLocation.BROWSER
 
@@ -89,84 +97,100 @@ class V8LogProbe(ChromiumProbe):
   def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
-        "log_all",
-        type=ObjectParser.bool,
-        default=False,
-        help=("Enable all (and very slow) v8 logging "
-              "(equivalent to v8's --log-all)."))
+      "log_all",
+      type=ObjectParser.bool,
+      default=False,
+      help=(
+        "Enable all (and very slow) v8 logging (equivalent to v8's --log-all)."
+      ),
+    )
     parser.add_argument(
-        "js_flags",
-        aliases=("v8_log_flags",),
-        type=str,
-        default=list(DEFAULT_LOG_FLAGS),
-        is_list=True,
-        help="Manually pass --log-.* flags to V8.")
+      "js_flags",
+      aliases=("v8_log_flags",),
+      type=str,
+      default=list(DEFAULT_LOG_FLAGS),
+      is_list=True,
+      help="Manually pass --log-.* flags to V8.",
+    )
     parser.add_argument(
-        "d8_binary",
-        type=PathParser.file_path,
-        help="Path to a D8 binary for extended log processing."
-        "If not specified the $D8_PATH env variable is used and/or "
-        "default build locations are tried.")
+      "d8_binary",
+      type=PathParser.file_path,
+      help="Path to a D8 binary for extended log processing."
+      "If not specified the $D8_PATH env variable is used and/or "
+      "default build locations are tried.",
+    )
     parser.add_argument(
-        "v8_checkout",
-        type=PathParser.dir_path,
-        help="Path to a V8 checkout for extended log processing."
-        "If not specified it is auto inferred from either the provided"
-        "d8_binary or standard installation locations.")
+      "v8_checkout",
+      type=PathParser.dir_path,
+      help="Path to a V8 checkout for extended log processing."
+      "If not specified it is auto inferred from either the provided"
+      "d8_binary or standard installation locations.",
+    )
     parser.add_argument(
-        "prof",
-        type=ObjectParser.bool,
-        default=True,
-        help="Enable v8-profiling (equivalent to v8's --prof)")
+      "prof",
+      type=ObjectParser.bool,
+      default=True,
+      help="Enable v8-profiling (equivalent to v8's --prof)",
+    )
     parser.add_argument(
-        "profview",
-        type=ObjectParser.bool,
-        default=True,
-        help=("Enable v8-profiling and generate profview.json files for "
-              "http://v8.dev/tools/head/profview"))
+      "profview",
+      type=ObjectParser.bool,
+      default=True,
+      help=(
+        "Enable v8-profiling and generate profview.json files for "
+        "http://v8.dev/tools/head/profview"
+      ),
+    )
     parser.add_argument(
-        "logview",
-        type=ObjectParser.bool,
-        default=True,
-        help="Enable v8-logviewer processing to extract details.")
+      "logview",
+      type=ObjectParser.bool,
+      default=True,
+      help="Enable v8-logviewer processing to extract details.",
+    )
     parser.add_default_argument(
-        "categories",
-        type=LogviewCategory,
-        is_list=True,
-        help="List of logviewer categories to process.")
+      "categories",
+      type=LogviewCategory,
+      is_list=True,
+      help="List of logviewer categories to process.",
+    )
     parser.add_argument(
-        "prof_sampling_interval",
-        aliases=("sampling_interval",),
-        type=DurationParser.positive_duration_ms,
-        help="Set the --prof_sampling_interval in milliseconds.")
+      "prof_sampling_interval",
+      aliases=("sampling_interval",),
+      type=DurationParser.positive_duration_ms,
+      help="Set the --prof_sampling_interval in milliseconds.",
+    )
     return parser
 
   def __init__(
-      self,
-      log_all: bool = False,
-      prof: bool = True,
-      profview: bool = True,
-      logview: bool = True,
-      categories: Iterable[LogviewCategory] | None = None,
-      js_flags: Iterable[str] | None = DEFAULT_LOG_FLAGS,
-      prof_sampling_interval: dt.timedelta | None = None,
-      # TODO: support remote platform
-      d8_binary: pth.LocalPath | None = None,
-      v8_checkout: pth.LocalPath | None = None) -> None:
+    self,
+    log_all: bool = False,
+    prof: bool = True,
+    profview: bool = True,
+    logview: bool = True,
+    categories: Iterable[LogviewCategory] | None = None,
+    js_flags: Iterable[str] | None = DEFAULT_LOG_FLAGS,
+    prof_sampling_interval: dt.timedelta | None = None,
+    # TODO: support remote platform
+    d8_binary: pth.LocalPath | None = None,
+    v8_checkout: pth.LocalPath | None = None,
+  ) -> None:
     super().__init__()
     self._profview: Final[bool] = profview
     self._logview: Final[bool] = logview
     self._js_flags: Final[JSFlags] = JSFlags()
     self._categories: Final[tuple[LogviewCategory, ...]] = tuple(
-        ObjectParser.enum_list("categories", LogviewCategory, categories or ()))
+      ObjectParser.enum_list("categories", LogviewCategory, categories or ())
+    )
     for cat in self._categories:
       self._js_flags.set(cat.flag)
     self._prof_sampling_interval: Final[dt.timedelta] = (
-        prof_sampling_interval or dt.timedelta())
+      prof_sampling_interval or dt.timedelta()
+    )
     self._d8_binary: Final[pth.LocalPath | None] = d8_binary
     self._v8_checkout: Final[pth.LocalPath | None] = v8_checkout
-    assert isinstance(log_all,
-                      bool), (f"Expected bool value, got log_all={log_all}")
+    assert isinstance(log_all, bool), (
+      f"Expected bool value, got log_all={log_all}"
+    )
     assert isinstance(prof, bool), f"Expected bool value, got log_all={prof}"
 
     if log_all:
@@ -181,7 +205,8 @@ class V8LogProbe(ChromiumProbe):
         logging.error("prof_sampling_interval has no effect without prof==True")
       # The v8 internal unit is microseconds:
       self._js_flags["--prof-sampling-interval"] = str(
-          round(self._prof_sampling_interval / dt.timedelta(microseconds=1)))
+        round(self._prof_sampling_interval / dt.timedelta(microseconds=1))
+      )
 
     js_flags = js_flags or []
     if log_all and js_flags == DEFAULT_LOG_FLAGS:
@@ -210,13 +235,13 @@ class V8LogProbe(ChromiumProbe):
   @override
   def key(self) -> ProbeKeyT:
     return super().key + (
-        ("profview", self._profview),
-        ("logview", self._logview),
-        ("categories", self._categories),
-        ("prof_sampling_interval", self._prof_sampling_interval),
-        ("js_flags", str(self.js_flags)),
-        ("d8_binary", str(self._d8_binary)),
-        ("v8_checkout", str(self._v8_checkout)),
+      ("profview", self._profview),
+      ("logview", self._logview),
+      ("categories", self._categories),
+      ("prof_sampling_interval", self._prof_sampling_interval),
+      ("js_flags", str(self.js_flags)),
+      ("d8_binary", str(self._d8_binary)),
+      ("v8_checkout", str(self._v8_checkout)),
     )
 
   @property
@@ -230,8 +255,10 @@ class V8LogProbe(ChromiumProbe):
   def validate_env(self, env: RunnerEnv) -> None:
     super().validate_env(env)
     if env.repetitions != 1:
-      env.handle_warning(f"Probe({self.NAME}) cannot merge data over multiple "
-                         f"repetitions={env.repetitions}.")
+      env.handle_warning(
+        f"Probe({self.NAME}) cannot merge data over multiple "
+        f"repetitions={env.repetitions}."
+      )
 
   @override
   def validate_browser(self, env: RunnerEnv, browser: Browser) -> None:
@@ -246,18 +273,21 @@ class V8LogProbe(ChromiumProbe):
     for search_path in browser_platform.SEARCH_PATHS:
       if browser.path.is_relative_to(search_path):
         logging.error(
-            "Probe with V8 --prof might not work with enterprise profiles")
+          "Probe with V8 --prof might not work with enterprise profiles"
+        )
 
   @override
   def attach(self, browser: Browser) -> None:
     super().attach(browser)
     assert browser.attributes().is_chromium_based, (
-        f"Expected chromium-based browser, but got {browser}")
+      f"Expected chromium-based browser, but got {browser}"
+    )
     browser.flags.set("--no-sandbox")
     browser.js_flags.update(self._js_flags)
 
-  def process_log_files(self,
-                        log_files: list[pth.AnyPath]) -> list[pth.AnyPath]:
+  def process_log_files(
+    self, log_files: list[pth.AnyPath]
+  ) -> list[pth.AnyPath]:
     if not log_files:
       return []
     if not self._profview and not self._logview:
@@ -279,8 +309,10 @@ class V8LogProbe(ChromiumProbe):
     if not tasks:
       return []
 
-    with (ui.spinner(title="PROBE v8.log: processing... "),
-          concurrent.futures.ThreadPoolExecutor() as executor):
+    with (
+      ui.spinner(title="PROBE v8.log: processing... "),
+      concurrent.futures.ThreadPoolExecutor() as executor,
+    ):
       futures = [executor.submit(func, *args) for func, args in tasks]
       json_list: list[pth.AnyPath] = []
       for f in concurrent.futures.as_completed(futures):
@@ -291,37 +323,44 @@ class V8LogProbe(ChromiumProbe):
     return json_list
 
   def _profview_tasks(
-      self,
-      log_files: list[pth.AnyPath],
-      platform: Platform,
-      finder: V8ToolsFinder,
+    self,
+    log_files: list[pth.AnyPath],
+    platform: Platform,
+    finder: V8ToolsFinder,
   ) -> list[LogTaskT]:
     tasks: list[LogTaskT] = []
     if not self._has_v8_log_flag(_PROF_FLAG):
       logging.warning(
-          "PROBE v8.log: V8 was not started with --prof or --log-all, "
-          "skipping profview generation.")
+        "PROBE v8.log: V8 was not started with --prof or --log-all, "
+        "skipping profview generation."
+      )
       return tasks
 
     logging.info(
-        "PROBE v8.log: generating profview json data "
-        "for %d v8.log files. (slow)", len(log_files))
+      "PROBE v8.log: generating profview json data for %d v8.log files. (slow)",
+      len(log_files),
+    )
     logging.debug("v8.log files: %s", log_files)
     for log_file in log_files:
-      tasks.append((_process_profview_json, (platform, finder.d8_binary,
-                                             finder.tick_processor, log_file)))
+      tasks.append(
+        (
+          _process_profview_json,
+          (platform, finder.d8_binary, finder.tick_processor, log_file),
+        )
+      )
     return tasks
 
   def _logviewer_tasks(
-      self,
-      log_files: list[pth.AnyPath],
-      platform: Platform,
-      finder: V8ToolsFinder,
+    self,
+    log_files: list[pth.AnyPath],
+    platform: Platform,
+    finder: V8ToolsFinder,
   ) -> list[LogTaskT]:
     logviewer_script = finder.v8_logviewer
     if not logviewer_script:
-      logging.warning("Did not find v8-logviewer script at %s",
-                      logviewer_script)
+      logging.warning(
+        "Did not find v8-logviewer script at %s", logviewer_script
+      )
       return []
     logging.info("PROBE v8.log: generating v8-logviewer json data")
     tasks: list[LogTaskT] = []
@@ -330,8 +369,11 @@ class V8LogProbe(ChromiumProbe):
         if not self._has_v8_log_flag(category.flag):
           continue
         tasks.append(
-            (_process_logviewer_json, (platform, finder.d8_binary,
-                                       logviewer_script, category, log_file)))
+          (
+            _process_logviewer_json,
+            (platform, finder.d8_binary, logviewer_script, category, log_file),
+          )
+        )
     return tasks
 
   @override
@@ -357,24 +399,33 @@ class V8LogProbe(ChromiumProbe):
         continue
       logging.info("Run %d: %s", i + 1, run.name)
       largest_log_file = log_files[-1]
-      logging.critical("    %s [%s]", largest_log_file,
-                       fs_helper.get_file_size(largest_log_file))
+      logging.critical(
+        "    %s [%s]",
+        largest_log_file,
+        fs_helper.get_file_size(largest_log_file),
+      )
       if len(log_files) > 1:
-        logging.info("    %s/.*v8.log: %d files", largest_log_file.parent,
-                     len(log_files))
+        logging.info(
+          "    %s/.*v8.log: %d files", largest_log_file.parent, len(log_files)
+        )
       profview_files = run.results[self].json_list
       if not profview_files:
         continue
       largest_profview_file = profview_files[-1]
-      logging.critical("    %s [%s]", largest_profview_file,
-                       fs_helper.get_file_size(largest_profview_file))
+      logging.critical(
+        "    %s [%s]",
+        largest_profview_file,
+        fs_helper.get_file_size(largest_profview_file),
+      )
       if len(profview_files) > 1:
-        logging.info("    %s/*.profview.json: %d more files",
-                     largest_profview_file.parent, len(profview_files))
+        logging.info(
+          "    %s/*.profview.json: %d more files",
+          largest_profview_file.parent,
+          len(profview_files),
+        )
 
 
 class V8LogProbeContext(ProbeContext[V8LogProbe]):
-
   @override
   def get_default_result_path(self) -> pth.AnyPath:
     log_dir = super().get_default_result_path()
@@ -394,31 +445,49 @@ class V8LogProbeContext(ProbeContext[V8LogProbe]):
   def teardown(self) -> ProbeResult:
     log_dir = self.result_path.parent
     log_files = fs_helper.sort_by_file_size(
-        self.browser_platform.glob(log_dir, "*-v8.log"), self.browser_platform)
+      self.browser_platform.glob(log_dir, "*-v8.log"), self.browser_platform
+    )
     json_list: list[pth.AnyPath] = self.probe.process_log_files(log_files)
     return self.browser_result(file=tuple(log_files), json=json_list)
 
 
-def _process_profview_json(platform: Platform, d8_binary: pth.AnyPath,
-                           tick_processor: pth.AnyPath,
-                           log_file: pth.AnyPath) -> pth.AnyPath:
+def _process_profview_json(
+  platform: Platform,
+  d8_binary: pth.AnyPath,
+  tick_processor: pth.AnyPath,
+  log_file: pth.AnyPath,
+) -> pth.AnyPath:
   # The tick-processor scripts expect D8_PATH to point to the parent dir.
   result_json = log_file.with_suffix(".profview.json")
-  return _run_v8_tool(platform, d8_binary, tick_processor, result_json,
-                      ("--preprocess", log_file))
+  return _run_v8_tool(
+    platform, d8_binary, tick_processor, result_json, ("--preprocess", log_file)
+  )
 
 
-def _process_logviewer_json(platform: Platform, d8_binary: pth.AnyPath,
-                            logviewer_script: pth.AnyPath, category: str,
-                            log_file: pth.AnyPath) -> pth.AnyPath:
+def _process_logviewer_json(
+  platform: Platform,
+  d8_binary: pth.AnyPath,
+  logviewer_script: pth.AnyPath,
+  category: str,
+  log_file: pth.AnyPath,
+) -> pth.AnyPath:
   output_json = log_file.with_suffix(f".logview.{category}.json")
-  return _run_v8_tool(platform, d8_binary, logviewer_script, output_json,
-                      (category, log_file, "--details"))
+  return _run_v8_tool(
+    platform,
+    d8_binary,
+    logviewer_script,
+    output_json,
+    (category, log_file, "--details"),
+  )
 
 
-def _run_v8_tool(platform: Platform, d8_binary: pth.AnyPath,
-                 tool_script: pth.AnyPath, output_file: pth.AnyPath,
-                 args: tuple[pth.AnyPathLike, ...]) -> pth.AnyPath:
+def _run_v8_tool(
+  platform: Platform,
+  d8_binary: pth.AnyPath,
+  tool_script: pth.AnyPath,
+  output_file: pth.AnyPath,
+  args: tuple[pth.AnyPathLike, ...],
+) -> pth.AnyPath:
   env = os.environ.copy()
   env["D8_PATH"] = str(platform.local_path(d8_binary).resolve())
   with platform.local_path(output_file).open("w", encoding="utf-8") as f:

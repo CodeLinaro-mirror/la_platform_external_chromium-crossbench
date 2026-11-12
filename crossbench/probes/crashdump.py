@@ -9,12 +9,16 @@ import logging
 from typing import TYPE_CHECKING, ClassVar, Iterable, override
 
 from crossbench.browsers.attributes import BrowserAttributes
-from crossbench.browsers.chromium_based.crash.minidump_finder import \
-    MinidumpFinder
+from crossbench.browsers.chromium_based.crash.minidump_finder import (
+  MinidumpFinder,
+)
 from crossbench.probes.internal.base import InternalProbe
 from crossbench.probes.probe_context import ProbeContext
-from crossbench.probes.results import EmptyProbeResult, LocalProbeResult, \
-    ProbeResult
+from crossbench.probes.results import (
+  EmptyProbeResult,
+  LocalProbeResult,
+  ProbeResult,
+)
 
 if TYPE_CHECKING:
   from crossbench import path as pth
@@ -24,6 +28,7 @@ if TYPE_CHECKING:
 
 class CrashdumpProbe(InternalProbe):
   """Probe to find and copy crash dumps for Chromium-based browsers."""
+
   NAME: ClassVar[str] = "cb.crashdump"
 
   @override
@@ -67,7 +72,6 @@ class CrashdumpProbe(InternalProbe):
 
 
 class CrashdumpProbeContext(ProbeContext[CrashdumpProbe], abc.ABC):
-
   def start(self) -> None:
     pass
 
@@ -107,8 +111,9 @@ class CrashdumpProbeContext(ProbeContext[CrashdumpProbe], abc.ABC):
       self.browser_platform.pull(path, dest)
       copied_files.append(dest)
 
-    logging.debug("🩺 Copied %d crash dumps to %s", len(copied_files),
-                  result_dir)
+    logging.debug(
+      "🩺 Copied %d crash dumps to %s", len(copied_files), result_dir
+    )
     return LocalProbeResult(file=copied_files)
 
   @abc.abstractmethod
@@ -117,7 +122,6 @@ class CrashdumpProbeContext(ProbeContext[CrashdumpProbe], abc.ABC):
 
 
 class LinuxCrashdumpProbeContext(CrashdumpProbeContext):
-
   def _get_minidump_dir(self, user_data_dir: pth.AnyPath) -> pth.AnyPath | None:
     minidump_dir = user_data_dir / "Crash Reports"
     if not self.browser_platform.is_dir(minidump_dir):
@@ -126,7 +130,6 @@ class LinuxCrashdumpProbeContext(CrashdumpProbeContext):
 
 
 class MacosCrashdumpProbeContext(CrashdumpProbeContext):
-
   def _get_minidump_dir(self, user_data_dir: pth.AnyPath) -> pth.AnyPath | None:
     minidump_dir = user_data_dir / "Crash Reports"
     if not self.browser_platform.is_dir(minidump_dir):

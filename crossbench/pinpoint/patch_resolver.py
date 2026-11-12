@@ -23,10 +23,12 @@ def resolve_patch(patch: str) -> str:
 
 
 def _extract_crrev_change_id_and_patchset(
-    patch: str) -> tuple[str | None, str | None]:
+  patch: str,
+) -> tuple[str | None, str | None]:
   patch = patch.strip().lower()
   match = re.fullmatch(
-      r"(?:https?://)?(?:crrev(?:\.com)?/)?(?:c/)?(\d+)(?:/(\d+))?", patch)
+    r"(?:https?://)?(?:crrev(?:\.com)?/)?(?:c/)?(\d+)(?:/(\d+))?", patch
+  )
   if match:
     return match.group(1), match.group(2)
   return None, None
@@ -43,12 +45,13 @@ def _is_url(patch: str) -> bool:
 def _revision_to_url(change_id: str, patchset: str | None = None) -> str:
   chromium_review_url = "https://chromium-review.googlesource.com"
 
-  api_response = http_requests.get(chromium_review_url +
-                                   f"/changes/{change_id}")
+  api_response = http_requests.get(
+    chromium_review_url + f"/changes/{change_id}"
+  )
   api_response.raise_for_status()
 
   # Skip the protective prefix ")]}'"
-  content = api_response.text[api_response.text.find("{"):]
+  content = api_response.text[api_response.text.find("{") :]
   data = json.loads(content)
   project = data["project"]
   url = chromium_review_url + f"/c/{project}/+/{change_id}"

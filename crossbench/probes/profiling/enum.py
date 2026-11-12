@@ -11,7 +11,6 @@ from crossbench.str_enum_with_help import StrEnumWithHelp
 
 @enum.unique
 class CleanupMode(StrEnumWithHelp):
-
   @classmethod
   def _missing_(cls, value: object) -> CleanupMode | None:
     if value is True:
@@ -28,12 +27,18 @@ class CleanupMode(StrEnumWithHelp):
 @enum.unique
 class TargetMode(StrEnumWithHelp):
   AUTO = ("auto", "Automatically choose the best option based on the platform")
-  RENDERER_MAIN_ONLY = ("renderer_main_only",
-                        "Profile Renderer Main thread only")
-  RENDERER_PROCESS_ONLY = ("renderer_process_only",
-                           "Profile Renderer process only")
-  BROWSER_APP_ONLY = ("browser_app_only",
-                      "Profile all processes of the Browser App only")
+  RENDERER_MAIN_ONLY = (
+    "renderer_main_only",
+    "Profile Renderer Main thread only",
+  )
+  RENDERER_PROCESS_ONLY = (
+    "renderer_process_only",
+    "Profile Renderer process only",
+  )
+  BROWSER_APP_ONLY = (
+    "browser_app_only",
+    "Profile all processes of the Browser App only",
+  )
   SYSTEM_WIDE = ("system_wide", "Run system-wide profiling")
 
 

@@ -20,6 +20,7 @@ class DumpHtmlProbe(Probe):
   """
   General-purpose Probe that collects HTML dumps.
   """
+
   NAME: ClassVar = "dump_html"
 
   @classmethod
@@ -38,7 +39,6 @@ class DumpHtmlProbe(Probe):
 
 
 class DumpHtmlProbeContext(ProbeContext[DumpHtmlProbe]):
-
   def __init__(self, probe: DumpHtmlProbe, run: Run) -> None:
     super().__init__(probe, run)
     self._results: Final[list[pth.LocalPath]] = []
@@ -56,24 +56,25 @@ class DumpHtmlProbeContext(ProbeContext[DumpHtmlProbe]):
     pass
 
   @override
-  def invoke(self, info_stack: exception.TInfoStack, timeout: dt.timedelta,
-             **kwargs) -> None:
+  def invoke(
+    self, info_stack: exception.TInfoStack, timeout: dt.timedelta, **kwargs
+  ) -> None:
     del timeout
 
     self._dump(info_stack, **kwargs)
 
-  def _dump(self,
-            info_stack: exception.TInfoStack,
-            suffix: str | None = None,
-            **kwargs) -> None:
+  def _dump(
+    self, info_stack: exception.TInfoStack, suffix: str | None = None, **kwargs
+  ) -> None:
     self.expect_no_extra_kwargs(kwargs)
 
     if not suffix:
       suffix = str(dt.datetime.now().strftime("%Y-%m-%d_%H%M%S"))
     label = "_".join(info_stack) + f"_{suffix}"
     path = self.local_result_path / f"{label}.html"
-    html = self.browser.js("return document.children[0].outerHTML",
-                           dt.timedelta(seconds=10))
+    html = self.browser.js(
+      "return document.children[0].outerHTML", dt.timedelta(seconds=10)
+    )
     self.host_platform.write_text(path, str(html))
     self._results.append(path)
 

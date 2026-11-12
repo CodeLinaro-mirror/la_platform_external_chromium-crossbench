@@ -15,11 +15,12 @@ if TYPE_CHECKING:
 
 
 class RunEnv(BaseEnv):
-
-  def __init__(self,
-               run: Run,
-               config: EnvConfig | None = None,
-               validation_mode: ValidationMode = ValidationMode.THROW) -> None:
+  def __init__(
+    self,
+    run: Run,
+    config: EnvConfig | None = None,
+    validation_mode: ValidationMode = ValidationMode.THROW,
+  ) -> None:
     self._run: Final[Run] = run
     self._browser: Final[Browser] = run.browser
     super().__init__(self._browser.platform, config, validation_mode)

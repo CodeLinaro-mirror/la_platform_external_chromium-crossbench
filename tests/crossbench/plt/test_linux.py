@@ -15,21 +15,33 @@ from unittest import mock
 from pyfakefs.fake_filesystem import OSType
 
 from crossbench import path as pth
-from crossbench.action_runner.virtual_device.virtual_device_type import \
-    VirtualDeviceType
+from crossbench.action_runner.virtual_device.virtual_device_type import (
+  VirtualDeviceType,
+)
 from crossbench.helper.version import VersionParseError
 from crossbench.plt.base import Platform
 from crossbench.plt.display_info import DisplayResolution
-from crossbench.plt.linux import CPUFREQ_POLICY0_PATH, \
-    PERF_EVENT_PARANOID_PATH, PROC_CPUINFO_PATH, SCRIPTS_DIR, LinuxPlatform, \
-    parse_display_xrandr
+from crossbench.plt.linux import (
+  CPUFREQ_POLICY0_PATH,
+  PERF_EVENT_PARANOID_PATH,
+  PROC_CPUINFO_PATH,
+  SCRIPTS_DIR,
+  LinuxPlatform,
+  parse_display_xrandr,
+)
 from crossbench.plt.posix import TRACE_MARKER_PATH, PosixPlatform, PosixVersion
 from crossbench.plt.process_meminfo import ProcessMeminfo
 from tests import test_helper
-from tests.crossbench.mock_helper import LinuxMockPlatform, \
-    RemoteLinuxMockPlatform, ShResult
-from tests.crossbench.plt.helper import BaseLocalMockPlatformTestMixin, \
-    BasePosixMockPlatformTestCase, PlatformClipboardTestCase
+from tests.crossbench.mock_helper import (
+  LinuxMockPlatform,
+  RemoteLinuxMockPlatform,
+  ShResult,
+)
+from tests.crossbench.plt.helper import (
+  BaseLocalMockPlatformTestMixin,
+  BasePosixMockPlatformTestCase,
+  PlatformClipboardTestCase,
+)
 
 NOW_EPOCH = dt.datetime.now()
 
@@ -59,19 +71,22 @@ class _LinuxMockPlatformTestCase(BasePosixMockPlatformTestCase):
     self.expect_sh("sync")
     self.expect_sh("tee", "/proc/sys/vm/drop_caches")
     with mock.patch.object(
-        self.platform, "sh", wraps=self.platform.sh) as mock_sh:
+      self.platform, "sh", wraps=self.platform.sh
+    ) as mock_sh:
       self.platform.clear_memory_page_cache()
-    mock_sh.assert_has_calls([
+    mock_sh.assert_has_calls(
+      [
         mock.call("sync"),
         mock.call("tee", "/proc/sys/vm/drop_caches", input=b"3\n"),
-    ])
+      ]
+    )
 
   def test_clock_boottime_ns(self) -> None:
     proc_uptime = self.fs.create_file("/proc/uptime")
     for contents, expected_ns in (
-        ("521909.79 3504712.93\n", 521_909_790_000_000),
-        ("0.00 0.00", 0),
-        ("12.5", 12_500_000_000),
+      ("521909.79 3504712.93\n", 521_909_790_000_000),
+      ("0.00 0.00", 0),
+      ("12.5", 12_500_000_000),
     ):
       with self.subTest(contents=contents):
         proc_uptime.set_contents(contents)
@@ -120,10 +135,13 @@ class _LinuxMockPlatformTestCase(BasePosixMockPlatformTestCase):
       """)  # noqa: W291
     parsed = tuple(parse_display_xrandr(xrandr_output))
     self.assertEqual(len(parsed), 1)
-    self.assertDictEqual(parsed[0], {
+    self.assertDictEqual(
+      parsed[0],
+      {
         "resolution": DisplayResolution(1728, 946),
         "refresh_rate": 120.0,
-    })
+      },
+    )
 
     xvfb_xrandr_output = textwrap.dedent("""
       Screen 0: minimum 1 x 1, current 1280 x 1024, maximum 1280 x 1024
@@ -132,26 +150,34 @@ class _LinuxMockPlatformTestCase(BasePosixMockPlatformTestCase):
       """)
     parsed_xvfb = tuple(parse_display_xrandr(xvfb_xrandr_output))
     self.assertEqual(len(parsed_xvfb), 1)
-    self.assertDictEqual(parsed_xvfb[0], {
+    self.assertDictEqual(
+      parsed_xvfb[0],
+      {
         "resolution": DisplayResolution(1280, 1024),
         "refresh_rate": 0.0,
-    })
+      },
+    )
 
   def test_display_resolution(self) -> None:
     with mock.patch.object(
-        self.platform,
-        "display_details",
-        return_value=({
-            "resolution": DisplayResolution(1728, 946),
-            "refresh_rate": 120.0,
-        },)):
-      self.assertEqual(self.platform.display_resolution(),
-                       DisplayResolution(1728, 946))
+      self.platform,
+      "display_details",
+      return_value=(
+        {
+          "resolution": DisplayResolution(1728, 946),
+          "refresh_rate": 120.0,
+        },
+      ),
+    ):
+      self.assertEqual(
+        self.platform.display_resolution(), DisplayResolution(1728, 946)
+      )
 
   def test_display_resolution_missing_raises(self) -> None:
     with mock.patch.object(self.platform, "display_details", return_value=()):
-      with self.assertRaisesRegex(RuntimeError,
-                                  "Could not determine display resolution"):
+      with self.assertRaisesRegex(
+        RuntimeError, "Could not determine display resolution"
+      ):
         self.platform.display_resolution()
 
   def test_start_virtual_device(self) -> None:
@@ -160,21 +186,25 @@ class _LinuxMockPlatformTestCase(BasePosixMockPlatformTestCase):
     proc = mock.MagicMock()
     proc.poll.return_value = None
     proc.stdout.readline.return_value = (
-        b"Virtual Keyboard (Crossbench): /dev/input/event3\n")
+      b"Virtual Keyboard (Crossbench): /dev/input/event3\n"
+    )
 
     with mock.patch.object(
-        self.platform, "popen", return_value=proc) as mock_popen:
-      self.platform._start_virtual_device("kb1", VirtualDeviceType.KEYBOARD,
-                                          b"N: Virtual Keyboard\n")
+      self.platform, "popen", return_value=proc
+    ) as mock_popen:
+      self.platform._start_virtual_device(
+        "kb1", VirtualDeviceType.KEYBOARD, b"N: Virtual Keyboard\n"
+      )
       mock_popen.assert_called_once_with(
-          "sh",
-          "-c",
-          "evemu_wrapper",
-          "--",
-          "# EVEMU 1.2\nN: Virtual Keyboard\n",
-          stdin=subprocess.PIPE,
-          stdout=subprocess.PIPE,
-          stderr=subprocess.DEVNULL)
+        "sh",
+        "-c",
+        "evemu_wrapper",
+        "--",
+        "# EVEMU 1.2\nN: Virtual Keyboard\n",
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+      )
       state = self.platform._virtual_devices["kb1"]
       self.assertIs(state.proc, proc)
       self.assertIsNone(state.start_time)
@@ -191,10 +221,12 @@ class _LinuxMockPlatformTestCase(BasePosixMockPlatformTestCase):
 
     with mock.patch.object(self.platform, "popen", return_value=proc):
       with self.assertRaisesRegex(
-          RuntimeError,
-          r"(?s)Failed to initialize virtual keyboard.*sudo modprobe uinput"):
-        self.platform._start_virtual_device("kb1", VirtualDeviceType.KEYBOARD,
-                                            b"N: Virtual Keyboard\n")
+        RuntimeError,
+        r"(?s)Failed to initialize virtual keyboard.*sudo modprobe uinput",
+      ):
+        self.platform._start_virtual_device(
+          "kb1", VirtualDeviceType.KEYBOARD, b"N: Virtual Keyboard\n"
+        )
 
   def test_meminfo_no_proc(self):
     path = SCRIPTS_DIR / "meminfo.sh"
@@ -244,19 +276,21 @@ Swap:                400 kB
 
     self.platform.sh_results = [ShResult(self._MEMINFO_SCRIPT_OUTPUT)]
     meminfo = LinuxPlatform.process_meminfo(self.platform, "some_process")
-    self.assertSequenceEqual(meminfo, [
+    self.assertSequenceEqual(
+      meminfo,
+      [
         ProcessMeminfo(926961, "/usr/bin/some_process -a", 17815, 80364, 0),
         ProcessMeminfo(930293, "/usr/bin/some_process -b", 5074, 44860, 0),
         ProcessMeminfo(930304, "/usr/bin/some_process -c", 521, 2680, 400),
-    ])
+      ],
+    )
 
   def test_gzip(self):
     test_file = self.platform.path("/tmp/test.txt")
     self.fs.create_file(test_file, contents="hello gzip")
     with mock.patch.object(
-        self.platform,
-        "which",
-        return_value=self.platform.path("/usr/bin/gzip")):
+      self.platform, "which", return_value=self.platform.path("/usr/bin/gzip")
+    ):
       self.expect_sh("gzip", str(test_file))
       gz_file = self.platform.gzip(test_file)
     self.assertEqual(gz_file, self.platform.path("/tmp/test.txt.gz"))
@@ -285,15 +319,17 @@ Swap:                400 kB
       self.assertEqual(self.platform.perf_event_paranoid(), expected)
 
 
-class LocalLinuxMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
-                                     _LinuxMockPlatformTestCase):
+class LocalLinuxMockPlatformTestCase(
+  BaseLocalMockPlatformTestMixin, _LinuxMockPlatformTestCase
+):
   __test__ = True
 
   @mock.patch("psutil.getloadavg", return_value=(0.1, 0.2, 0.3))
   @mock.patch("psutil.cpu_percent", return_value=10.0)
   @mock.patch("psutil.cpu_count", return_value=4)
-  def test_cpu_details_frequency(self, mock_cpu_count, mock_cpu_percent,
-                                 mock_getloadavg) -> None:
+  def test_cpu_details_frequency(
+    self, mock_cpu_count, mock_cpu_percent, mock_getloadavg
+  ) -> None:
     del mock_cpu_count, mock_cpu_percent, mock_getloadavg
 
     def get_cpu_details():
@@ -307,8 +343,8 @@ class LocalLinuxMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
     self.assertEqual(details["current_frequency"], "N/A")
 
     self.fs.create_file(
-        PROC_CPUINFO_PATH,
-        contents="processor\t: 0\ncpu MHz\t\t: 2400.0\n",
+      PROC_CPUINFO_PATH,
+      contents="processor\t: 0\ncpu MHz\t\t: 2400.0\n",
     )
     details = get_cpu_details()
     self.assertEqual(details["min_frequency"], "0.00MHz")
@@ -316,11 +352,14 @@ class LocalLinuxMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
     self.assertEqual(details["current_frequency"], "2400.00MHz")
 
     self.fs.create_file(
-        CPUFREQ_POLICY0_PATH / "scaling_cur_freq", contents="1800000\n")
+      CPUFREQ_POLICY0_PATH / "scaling_cur_freq", contents="1800000\n"
+    )
     self.fs.create_file(
-        CPUFREQ_POLICY0_PATH / "scaling_min_freq", contents="800000\n")
+      CPUFREQ_POLICY0_PATH / "scaling_min_freq", contents="800000\n"
+    )
     self.fs.create_file(
-        CPUFREQ_POLICY0_PATH / "scaling_max_freq", contents="3200000\n")
+      CPUFREQ_POLICY0_PATH / "scaling_max_freq", contents="3200000\n"
+    )
     details = get_cpu_details()
     self.assertEqual(details["min_frequency"], "800.00MHz")
     self.assertEqual(details["max_frequency"], "3200.00MHz")
@@ -333,13 +372,12 @@ class LocalLinuxMockPlatformTestCase(BaseLocalMockPlatformTestMixin,
     self.fs.create_file(TRACE_MARKER_PATH)
     PosixPlatform.trace_mark(self.platform, "test-mark")
     self.assertEqual(
-        self.platform.file_contents[self.platform.path(TRACE_MARKER_PATH)],
-        ["I|0|crossbench-test-mark\n"])
-
+      self.platform.file_contents[self.platform.path(TRACE_MARKER_PATH)],
+      ["I|0|crossbench-test-mark\n"],
+    )
 
 
 class RemoteLinuxMockPlatformTestCase(_LinuxMockPlatformTestCase):
-
   @override
   def setup_host_platform(self) -> LinuxMockPlatform:
     return LinuxMockPlatform()
@@ -369,11 +407,12 @@ class RemoteLinuxMockPlatformTestCase(_LinuxMockPlatformTestCase):
 
   def expect_sh_cpu_info(self, cpu_info):
     self.expect_sh(
-        "grep",
-        "-E",
-        "processor|core id|physical id",
-        "/proc/cpuinfo",
-        result=cpu_info)
+      "grep",
+      "-E",
+      "processor|core id|physical id",
+      "/proc/cpuinfo",
+      result=cpu_info,
+    )
 
   @override
   def test_cpu_cores(self):
@@ -392,8 +431,11 @@ class RemoteLinuxMockPlatformTestCase(_LinuxMockPlatformTestCase):
   def test_cpu_cores_2_cpu_single_core(self):
     # 2 physical chips, 1 core, 2 threads
     dual_chip_result = (
-        self.cpu_info(0, 0, 0) + self.cpu_info(1, 0, 0) +
-        self.cpu_info(2, 1, 0) + self.cpu_info(3, 1, 0))
+      self.cpu_info(0, 0, 0)
+      + self.cpu_info(1, 0, 0)
+      + self.cpu_info(2, 1, 0)
+      + self.cpu_info(3, 1, 0)
+    )
     self.expect_sh_cpu_info(dual_chip_result)
     self.assertEqual(self.platform.cpu_cores(logical=True), 4)
     self.assertFalse(self.platform.expected_sh_cmds)
@@ -407,8 +449,11 @@ class RemoteLinuxMockPlatformTestCase(_LinuxMockPlatformTestCase):
   def test_cpu_cores_1_cpu_dual_core(self):
     # 1 physical chips, 2 cores, 2 threads
     dual_core_result = (
-        self.cpu_info(0, 0, 0) + self.cpu_info(1, 0, 1) +
-        self.cpu_info(2, 0, 0) + self.cpu_info(3, 0, 1))
+      self.cpu_info(0, 0, 0)
+      + self.cpu_info(1, 0, 1)
+      + self.cpu_info(2, 0, 0)
+      + self.cpu_info(3, 0, 1)
+    )
     self.expect_sh_cpu_info(dual_core_result)
     self.assertEqual(self.platform.cpu_cores(logical=True), 4)
     self.assertFalse(self.platform.expected_sh_cmds)
@@ -421,10 +466,11 @@ class RemoteLinuxMockPlatformTestCase(_LinuxMockPlatformTestCase):
 
   def test_system_memory_bytes(self):
     self.expect_sh(
-        "grep",
-        "MemTotal",
-        "/proc/meminfo",
-        result="MemTotal:       16304400 kB\n")
+      "grep",
+      "MemTotal",
+      "/proc/meminfo",
+      result="MemTotal:       16304400 kB\n",
+    )
     self.assertEqual(self.platform.system_memory_bytes, 16304400 * 1024)
 
   def test_system_memory_bytes_missing(self):
@@ -459,30 +505,30 @@ class RemoteLinuxMockPlatformTestCase(_LinuxMockPlatformTestCase):
   def test_gpu_vram_used_nvidia(self):
     self.fs.create_file("/usr/bin/nvidia-smi")
     self.expect_sh(
-        "/usr/bin/nvidia-smi",
-        "--query-gpu=memory.used",
-        "--format=csv,noheader,nounits",
-        result="1024\n2048\n",
+      "/usr/bin/nvidia-smi",
+      "--query-gpu=memory.used",
+      "--format=csv,noheader,nounits",
+      result="1024\n2048\n",
     )
     vram = self.platform.gpu_vram_used()
     self.assertEqual(vram, {"gpu_0": 1024.0, "gpu_1": 2048.0})
 
   def test_gpu_vram_used_amd(self):
     self.fs.create_file(
-        "/sys/class/drm/card0/device/mem_info_vram_used",
-        contents=str(1024 * 1024 * 512),
+      "/sys/class/drm/card0/device/mem_info_vram_used",
+      contents=str(1024 * 1024 * 512),
     )
     self.fs.create_file(
-        "/sys/class/drm/card0/device/mem_info_gtt_used",
-        contents=str(1024 * 1024 * 256),
+      "/sys/class/drm/card0/device/mem_info_gtt_used",
+      contents=str(1024 * 1024 * 256),
     )
     vram = self.platform.gpu_vram_used()
     self.assertEqual(vram, {"amd_gpu": 768.0})
 
   def test_gpu_vram_used_intel(self):
     self.fs.create_file(
-        "/sys/class/drm/card0/lmem_used_bytes",
-        contents=str(1024 * 1024 * 1024),
+      "/sys/class/drm/card0/lmem_used_bytes",
+      contents=str(1024 * 1024 * 1024),
     )
     vram = self.platform.gpu_vram_used()
     self.assertEqual(vram, {"intel_gpu": 1024.0})
@@ -496,7 +542,6 @@ class RemoteLinuxMockPlatformTestCase(_LinuxMockPlatformTestCase):
     PosixPlatform.trace_mark(self.platform, "remote-mark")
 
 
-
 class LinuxPlatformClipboardTestCase(PlatformClipboardTestCase):
   __test__ = True
 
@@ -506,11 +551,12 @@ class LinuxPlatformClipboardTestCase(PlatformClipboardTestCase):
 
   @override
   def clipboard_tool_configs(
-      self) -> list[tuple[str, pth.LocalPath, list[str]]]:
+    self,
+  ) -> list[tuple[str, pth.LocalPath, list[str]]]:
     return [
-        ("xclip", pth.LocalPath("/usr/bin/xclip"), ["-selection", "clipboard"]),
-        ("wl-copy", pth.LocalPath("/usr/bin/wl-copy"), []),
-        ("xsel", pth.LocalPath("/usr/bin/xsel"), ["--clipboard", "--input"]),
+      ("xclip", pth.LocalPath("/usr/bin/xclip"), ["-selection", "clipboard"]),
+      ("wl-copy", pth.LocalPath("/usr/bin/wl-copy"), []),
+      ("xsel", pth.LocalPath("/usr/bin/xsel"), ["--clipboard", "--input"]),
     ]
 
 

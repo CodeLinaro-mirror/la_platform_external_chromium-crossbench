@@ -23,9 +23,9 @@ class BasePathFinder(abc.ABC):
   """
 
   @classmethod
-  def find_binary(cls,
-                  platform: Platform,
-                  override: pth.AnyPath | None = None) -> pth.AnyPath | None:
+  def find_binary(
+    cls, platform: Platform, override: pth.AnyPath | None = None
+  ) -> pth.AnyPath | None:
     if override:
       return platform.parse_binary_path(override)
     return cls(platform).path
@@ -82,14 +82,14 @@ def default_chromium_candidates(platform: Platform) -> tuple[pth.AnyPath, ...]:
     return tuple(candidates)
   home_dir = platform.home()
   candidates += [
-      home_dir / "Documents/chromium/src",
-      home_dir / "workspace/chromium/src",
-      home_dir / "chromium/src",
-      platform.path("C:/src/chromium/src"),
-      home_dir / "Documents/chrome/src",
-      home_dir / "workspace/chrome/src",
-      home_dir / "chrome/src",
-      platform.path("C:/src/chrome/src"),
+    home_dir / "Documents/chromium/src",
+    home_dir / "workspace/chromium/src",
+    home_dir / "chromium/src",
+    platform.path("C:/src/chromium/src"),
+    home_dir / "Documents/chrome/src",
+    home_dir / "workspace/chrome/src",
+    home_dir / "chrome/src",
+    platform.path("C:/src/chrome/src"),
   ]
   return tuple(candidates)
 
@@ -107,8 +107,9 @@ def chromium_src_relative_local_path() -> pth.LocalPath | None:
 
 
 def is_chromium_checkout_dir(platform: Platform, dir_path: pth.AnyPath) -> bool:
-  return (platform.is_file(dir_path / "tools/perf/cb") and
-          platform.is_dir(dir_path / "third_party/crossbench"))
+  return platform.is_file(dir_path / "tools/perf/cb") and platform.is_dir(
+    dir_path / "third_party/crossbench"
+  )
 
 
 class ChromiumCheckoutFinder(BasePathFinder):

@@ -17,7 +17,6 @@ class StrEnumWithHelpData(NamedTuple):
 
 
 class StrEnumWithHelp(StrEnumWithHelpData, enum.Enum):
-
   @classmethod
   def _missing_(cls: type[Self], value: object) -> Self | None:
     value = str(value).lower()

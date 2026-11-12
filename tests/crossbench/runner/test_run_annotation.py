@@ -15,7 +15,6 @@ from tests import test_helper
 
 
 class RunAnnotationTestCase(unittest.TestCase):
-
   def test_fatal(self):
     message = "FATAL custom message"
     annotation = RunAnnotation.fatal(message)

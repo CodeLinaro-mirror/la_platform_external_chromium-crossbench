@@ -47,22 +47,24 @@ class ApkConfig(ConfigObject):
   def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(cls)
     parser.add_argument(
-        "path",
-        type=cls.apk_path,
-        help="Path to an Android APK or .apks bundle.")
+      "path", type=cls.apk_path, help="Path to an Android APK or .apks bundle."
+    )
     parser.add_argument(
-        "allow_downgrade",
-        type=ObjectParser.bool,
-        default=True,
-        help="Allow APK downgrade during install.")
+      "allow_downgrade",
+      type=ObjectParser.bool,
+      default=True,
+      help="Allow APK downgrade during install.",
+    )
     parser.add_argument(
-        "reinstall",
-        aliases=("force",),
-        type=ObjectParser.bool,
-        default=True,
-        help="Uninstall and reinstall before each run.")
+      "reinstall",
+      aliases=("force",),
+      type=ObjectParser.bool,
+      default=True,
+      help="Uninstall and reinstall before each run.",
+    )
     parser.add_argument(
-        "modules",
-        type=str,
-        help="Optional bundletool modules list for .apks installs.")
+      "modules",
+      type=str,
+      help="Optional bundletool modules list for .apks installs.",
+    )
     return parser

@@ -6,8 +6,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, ClassVar, override
 
-from crossbench.benchmarks.jetstream.jetstream_2 import JetStream2Benchmark, \
-    JetStream2Probe, JetStream2ProbeContext, JetStream2Story, ProbeClsTupleT
+from crossbench.benchmarks.jetstream.jetstream_2 import (
+  JetStream2Benchmark,
+  JetStream2Probe,
+  JetStream2ProbeContext,
+  JetStream2Story,
+  ProbeClsTupleT,
+)
 
 if TYPE_CHECKING:
   from crossbench.benchmarks.base import VersionParts
@@ -31,8 +36,9 @@ class JetStream21Story(JetStream2Story):
   NAME: ClassVar[str] = "jetstream_2.1"
   URL: ClassVar[str] = "https://chromium-workloads.web.app/jetstream/v2.1/"
   URL_OFFICIAL: ClassVar[str] = "https://browserbench.org/JetStream2.1/"
-  URL_CHROME_FORK: ClassVar[
-      str] = "https://chromium-workloads.web.app/jetstream/v2.1-custom/"
+  URL_CHROME_FORK: ClassVar[str] = (
+    "https://chromium-workloads.web.app/jetstream/v2.1-custom/"
+  )
 
 
 class JetStream21Benchmark(JetStream2Benchmark):

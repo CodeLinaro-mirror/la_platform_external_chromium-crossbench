@@ -36,7 +36,6 @@ if TYPE_CHECKING:
 
 
 class MockBrowser:
-
   def __init__(self, unique_name: str, platform) -> None:
     self.unique_name = unique_name
     self.platform = platform
@@ -90,18 +89,20 @@ class MockRun(Run):
     # pyrefly: ignore[bad-override]
     _out_dir: pth.LocalPath
 
-  def __init__(self,
-               runner,
-               browser_session,
-               story="story",
-               action_runner: ActionRunner | None = None,
-               repetition=0,
-               is_warmup=False,
-               temperature="default",
-               index=0,
-               name="run 0",
-               probe=None,
-               probe_context=None) -> None:
+  def __init__(
+    self,
+    runner,
+    browser_session,
+    story="story",
+    action_runner: ActionRunner | None = None,
+    repetition=0,
+    is_warmup=False,
+    temperature="default",
+    index=0,
+    name="run 0",
+    probe=None,
+    probe_context=None,
+  ) -> None:
     self._runner = runner
     self._browser_session = browser_session
     self._browser = browser_session.browser
@@ -124,9 +125,13 @@ class MockRun(Run):
 
     self.story_secrets = Secrets()
     self._out_dir = (
-        browser_session.root_dir /
-        pth.safe_filename(self._browser.unique_name) / "stories" / name /
-        f"repetition={self._repetition}" / self._temperature)
+      browser_session.root_dir
+      / pth.safe_filename(self._browser.unique_name)
+      / "stories"
+      / name
+      / f"repetition={self._repetition}"
+      / self._temperature
+    )
     self.did_setup = False
     self.did_run = False
     self.did_teardown = False
@@ -147,17 +152,20 @@ class MockRun(Run):
     assert not self.did_setup
     self.did_setup = True
 
-  def actions(self,
-              name: str,
-              verbose: bool = False,
-              measure: bool = True,
-              performance_mark: str = "") -> Actions:
+  def actions(
+    self,
+    name: str,
+    verbose: bool = False,
+    measure: bool = True,
+    performance_mark: str = "",
+  ) -> Actions:
     return Actions(
-        name,
-        self,
-        verbose=verbose,
-        measure=measure,
-        performance_mark=performance_mark)
+      name,
+      self,
+      verbose=verbose,
+      measure=measure,
+      performance_mark=performance_mark,
+    )
 
   def set_probe_context(self, probe_context: ProbeContext) -> None:
     self.probe_context = probe_context
@@ -267,18 +275,22 @@ class MockRun(Run):
     assert not self.did_teardown
     self.did_teardown = True
 
-  def wait_range(self,
-                 min_interval: AnyTimeUnit,
-                 timeout: AnyTimeUnit,
-                 delay: AnyTimeUnit = 0) -> WaitRange:
+  def wait_range(
+    self,
+    min_interval: AnyTimeUnit,
+    timeout: AnyTimeUnit,
+    delay: AnyTimeUnit = 0,
+  ) -> WaitRange:
     timing = self.timing
     return WaitRange(
-        min=timing.timedelta(min_interval),
-        timeout=timing.timeout_timedelta(timeout),
-        delay=timing.timedelta(delay))
+      min=timing.timedelta(min_interval),
+      timeout=timing.timeout_timedelta(timeout),
+      delay=timing.timedelta(delay),
+    )
 
-  def get_probe_context(self,
-                        probe_cls: type[ProbeT]) -> ProbeContext[ProbeT] | None:
+  def get_probe_context(
+    self, probe_cls: type[ProbeT]
+  ) -> ProbeContext[ProbeT] | None:
     del probe_cls
     return self.probe_context
 
@@ -304,7 +316,6 @@ class MockRun(Run):
 
 
 class MockPlatform:
-
   def __init__(self, name) -> None:
     self.name = name
 
@@ -325,7 +336,6 @@ class MockWait(NamedTuple):
 
 
 class MockRunner:
-
   def __init__(self, probes: list[Probe] | None = None) -> None:
     self.benchmark = MockBenchmark(stories=[MockStory("mock_story")])
     self.runs: tuple[Run, ...] = ()
@@ -337,9 +347,13 @@ class MockRunner:
     self.out_dir = pth.LocalPath("results/out")
     self.timing = Timing()
     # MockPlatform does not inherit from Platform.
-    # pyrefly: ignore[bad-argument-type]
-    self.env = RunnerEnv(self.platform, self.out_dir, self.browsers,
-                         self.probes, self.repetitions)
+    self.env = RunnerEnv(
+      self.platform,  # pyrefly: ignore[bad-argument-type]
+      self.out_dir,
+      self.browsers,
+      self.probes,
+      self.repetitions,
+    )
     self.mock_waits: list[MockWait] = []
 
   def check_pause(self, run: Run) -> ResumeMode:
@@ -357,9 +371,9 @@ class MockNetwork:
 class MockProbe(Probe):
   NAME = "test-probe"
 
-  def __init__(self,
-               test_data: Any = (),
-               context_cls: type[MockProbeContext] | None = None) -> None:
+  def __init__(
+    self, test_data: Any = (), context_cls: type[MockProbeContext] | None = None
+  ) -> None:
     super().__init__()
     self.test_data = test_data
     self.context_cls = context_cls or MockProbeContext
@@ -375,7 +389,6 @@ class MockProbe(Probe):
 
 
 class MockProbeContext(ProbeContext):
-
   def start(self) -> None:
     pass
 

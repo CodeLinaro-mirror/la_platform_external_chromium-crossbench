@@ -27,6 +27,7 @@ class DownloadsProbe(Probe):
   Probe that captures downloads from websites and allows loading tests to wait
   for a download to complete.
   """
+
   NAME: ClassVar = "downloads"
   RESULT_LOCATION: ClassVar = ResultLocation.BROWSER
 
@@ -36,23 +37,26 @@ class DownloadsProbe(Probe):
   def config_parser(cls) -> ProbeConfigParser:
     parser = super().config_parser()
     parser.add_argument(
-        "clear_downloads",
-        aliases=("clear",),
-        type=ObjectParser.bool,
-        default=False,
-        help="Delete all files in the download folder before every run.")
+      "clear_downloads",
+      aliases=("clear",),
+      type=ObjectParser.bool,
+      default=False,
+      help="Delete all files in the download folder before every run.",
+    )
     parser.add_argument(
-        "save_downloads",
-        aliases=("save",),
-        type=ObjectParser.bool,
-        default=True,
-        help=("Copy all files downloaded during a test to the test results"
-              " folder."))
+      "save_downloads",
+      aliases=("save",),
+      type=ObjectParser.bool,
+      default=True,
+      help=(
+        "Copy all files downloaded during a test to the test results folder."
+      ),
+    )
     return parser
 
-  def __init__(self,
-               clear_downloads: bool = False,
-               save_downloads: bool = False) -> None:
+  def __init__(
+    self, clear_downloads: bool = False, save_downloads: bool = False
+  ) -> None:
     super().__init__()
     self._clear_downloads: Final[bool] = clear_downloads
     self._save_downloads: Final[bool] = save_downloads
@@ -63,13 +67,15 @@ class DownloadsProbe(Probe):
       return AndroidWebDriverDownloadsProbeContext(self, run)
 
     if run.browser_platform.is_chromeos:
-      return FileWatchDownloadsProbeContext(self, run,
-                                            self.CHROME_OS_DOWNLOADS_DIR)
+      return FileWatchDownloadsProbeContext(
+        self, run, self.CHROME_OS_DOWNLOADS_DIR
+      )
     raise NotImplementedError(
-        f"Probe({self}): Unsupported browser: {run.browser}. "
-        "The downloads probe is currently only supported on Android and "
-        "ChromeOS. If running locally on Linux/Mac, please use "
-        "--no-probe=downloads.")
+      f"Probe({self}): Unsupported browser: {run.browser}. "
+      "The downloads probe is currently only supported on Android and "
+      "ChromeOS. If running locally on Linux/Mac, please use "
+      "--no-probe=downloads."
+    )
 
   @property
   def clear_downloads(self) -> bool:
@@ -81,7 +87,6 @@ class DownloadsProbe(Probe):
 
 
 class DownloadsProbeContext(ProbeContext[DownloadsProbe]):
-
   def __init__(self, probe: DownloadsProbe, run: Run) -> None:
     super().__init__(probe, run)
 
@@ -91,13 +96,15 @@ class DownloadsProbeContext(ProbeContext[DownloadsProbe]):
     return downloads_dir
 
   @override
-  def invoke(self, info_stack: exception.TInfoStack, timeout: dt.timedelta,
-             **kwargs) -> None:
+  def invoke(
+    self, info_stack: exception.TInfoStack, timeout: dt.timedelta, **kwargs
+  ) -> None:
     del info_stack
     self._wait_for_download(timeout, **kwargs)
 
-  def _wait_for_download(self, timeout: dt.timedelta, pattern: str | re.Pattern,
-                         **kwargs) -> None:
+  def _wait_for_download(
+    self, timeout: dt.timedelta, pattern: str | re.Pattern, **kwargs
+  ) -> None:
     self.expect_no_extra_kwargs(kwargs)
 
     if not isinstance(pattern, re.Pattern):
@@ -114,9 +121,9 @@ class DownloadsProbeContext(ProbeContext[DownloadsProbe]):
 
 
 class FileWatchDownloadsProbeContext(DownloadsProbeContext):
-
-  def __init__(self, probe: DownloadsProbe, run: Run,
-               downloads_dir: pth.AnyPath) -> None:
+  def __init__(
+    self, probe: DownloadsProbe, run: Run, downloads_dir: pth.AnyPath
+  ) -> None:
     super().__init__(probe, run)
     self._downloads_dir: Final[pth.AnyPath] = downloads_dir
     self._existing_downloads: set[pth.AnyPath] = set()
@@ -162,7 +169,8 @@ class AndroidDownload:
 
 class AndroidWebDriverDownloadsProbeContext(DownloadsProbeContext):
   CONTENT_QUERY_RE: Final[re.Pattern] = re.compile(
-      r"Row: \d+ _display_name=(.*), _id=(\d+)")
+    r"Row: \d+ _display_name=(.*), _id=(\d+)"
+  )
   CONTENT_QUERY_NO_RESULTS: Final = "No result found."
 
   def __init__(self, probe: DownloadsProbe, run: Run) -> None:
@@ -171,20 +179,21 @@ class AndroidWebDriverDownloadsProbeContext(DownloadsProbeContext):
     self._user_id: Final[str] = str(self.browser_platform.user_id())
     self._results: Final[list[pth.AnyPath]] = []
 
-  def downloads(self,
-                include_pending: bool = True) -> Iterable[AndroidDownload]:
+  def downloads(
+    self, include_pending: bool = True
+  ) -> Iterable[AndroidDownload]:
     result: list[AndroidDownload] = []
     args = [
-        "content",
-        "query",
-        "--user",
-        self._user_id,
-        "--uri",
-        "content://media/external/downloads",
-        "--where",
-        "is_download=1",
-        "--projection",
-        "_display_name:_id",
+      "content",
+      "query",
+      "--user",
+      self._user_id,
+      "--uri",
+      "content://media/external/downloads",
+      "--where",
+      "is_download=1",
+      "--projection",
+      "_display_name:_id",
     ]
     if not include_pending:
       args.append("--where")
@@ -195,17 +204,26 @@ class AndroidWebDriverDownloadsProbeContext(DownloadsProbeContext):
     for row in rows.splitlines():
       if match := self.CONTENT_QUERY_RE.match(row):
         result.append(
-            AndroidDownload(display_name=match.group(1), id=match.group(2)))
+          AndroidDownload(display_name=match.group(1), id=match.group(2))
+        )
       else:
         raise RuntimeError(
-            f"Android downloads content query unexpect result row: {row}")
+          f"Android downloads content query unexpect result row: {row}"
+        )
 
     return result
 
   def delete(self, download: AndroidDownload) -> None:
-    self.browser_platform.sh("content", "delete", "--user", self._user_id,
-                             "--uri", "content://media/external/downloads",
-                             "--where", f"_id='{download.id}'")
+    self.browser_platform.sh(
+      "content",
+      "delete",
+      "--user",
+      self._user_id,
+      "--uri",
+      "content://media/external/downloads",
+      "--where",
+      f"_id='{download.id}'",
+    )
 
   def start(self) -> None:
     if self.probe.clear_downloads:
@@ -221,12 +239,12 @@ class AndroidWebDriverDownloadsProbeContext(DownloadsProbeContext):
         continue
       to_path = self.result_path / download.display_name
       read_downloads_cmd = (
-          "content",
-          "read",
-          "--user",
-          self._user_id,
-          "--uri",
-          f"content://media/external/downloads/{download.id}",
+        "content",
+        "read",
+        "--user",
+        self._user_id,
+        "--uri",
+        f"content://media/external/downloads/{download.id}",
       )
       content = self.browser_platform.sh_stdout_bytes(*read_downloads_cmd)
       self.browser_platform.write_bytes(to_path, content)

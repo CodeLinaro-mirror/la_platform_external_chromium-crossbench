@@ -7,19 +7,31 @@ from __future__ import annotations
 import abc
 import enum
 import logging
-from typing import TYPE_CHECKING, ClassVar, Final, Hashable, Iterable, Self, \
-    TypeVar, override
+from typing import (
+  TYPE_CHECKING,
+  ClassVar,
+  Final,
+  Hashable,
+  Iterable,
+  Self,
+  TypeVar,
+  override,
+)
 
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.config import ConfigParser, UnusedPropertiesMode, config_dir
+
 # TODO: Keep commonly used classes here.
 from crossbench.probes.probe_context import ProbeContext  # noqa: TC001
 from crossbench.probes.probe_error import ProbeIncompatibleBrowser
 from crossbench.probes.probe_result_key import ProbeResultKey
 from crossbench.probes.result_location import ResultLocation
-from crossbench.probes.results import EmptyProbeResult, LocalProbeResult, \
-    ProbeResult
+from crossbench.probes.results import (
+  EmptyProbeResult,
+  LocalProbeResult,
+  ProbeResult,
+)
 
 if TYPE_CHECKING:
   from crossbench.browsers.attributes import BrowserAttributes
@@ -28,8 +40,9 @@ if TYPE_CHECKING:
   from crossbench.probes.probe_context import ProbeSessionContext
   from crossbench.runner.groups.base import RunGroup
   from crossbench.runner.groups.browsers import BrowsersRunGroup
-  from crossbench.runner.groups.cache_temperatures import \
-      CacheTemperaturesRunGroup
+  from crossbench.runner.groups.cache_temperatures import (
+    CacheTemperaturesRunGroup,
+  )
   from crossbench.runner.groups.repetitions import RepetitionsRunGroup
   from crossbench.runner.groups.session import BrowserSessionRunGroup
   from crossbench.runner.groups.stories import StoriesRunGroup
@@ -40,16 +53,16 @@ ProbeT = TypeVar("ProbeT", bound="Probe")
 
 
 class ProbeConfigParser(ConfigParser[ProbeT]):
-
   def __init__(self, probe_cls: type[ProbeT]) -> None:
     probe_name: str = probe_cls.NAME
     if not probe_name:
       raise ValueError("Missing probe name.")
     super().__init__(
-        probe_cls,
-        key=probe_name,
-        title=f"{probe_name} probe parser",
-        unused_properties_mode=UnusedPropertiesMode.ERROR)
+      probe_cls,
+      key=probe_name,
+      title=f"{probe_name} probe parser",
+      unused_properties_mode=UnusedPropertiesMode.ERROR,
+    )
     self._probe_cls: Final[type[ProbeT]] = probe_cls
 
   @property
@@ -94,6 +107,7 @@ class Probe(ProbeResultKey, abc.ABC):
   - teardown(): Used for high-overhead Probe cleanup
 
   """
+
   NAME: ClassVar[str] = ""
   # Set to False if the Probe cannot be used with arbitrary Stories or Pages.
   IS_GENERAL_PURPOSE: ClassVar[bool] = True
@@ -127,7 +141,7 @@ class Probe(ProbeResultKey, abc.ABC):
     probe_config_file = config_dir() / f"doc/probe/{cls.NAME}.config.hjson"
     if probe_config_file.exists():
       return [
-          ("example config", str(probe_config_file)),
+        ("example config", str(probe_config_file)),
       ]
     return []
 
@@ -186,7 +200,8 @@ class Probe(ProbeResultKey, abc.ABC):
 
   def attach(self, browser: Browser) -> None:
     assert browser not in self._browsers, (
-        f"Probe={self.name} is attached multiple times to the same browser")
+      f"Probe={self.name} is attached multiple times to the same browser"
+    )
     self._browsers.add(browser)
 
   def validate_env(self, env: RunnerEnv) -> None:
@@ -198,7 +213,8 @@ class Probe(ProbeResultKey, abc.ABC):
     # Ensure that the proper super methods for setting up a probe were
     # called.
     assert self.is_attached, (
-        f"Probe {self.name} is not properly attached to a browser")
+      f"Probe {self.name} is not properly attached to a browser"
+    )
     for browser in self._browsers:
       self.validate_browser(env, browser)
 
@@ -218,10 +234,12 @@ class Probe(ProbeResultKey, abc.ABC):
     """
     del run
 
-  def expect_browser(self,
-                     browser: Browser,
-                     attributes: BrowserAttributes,
-                     message: str | None = None) -> None:
+  def expect_browser(
+    self,
+    browser: Browser,
+    attributes: BrowserAttributes,
+    message: str | None = None,
+  ) -> None:
     if attributes in browser.attributes():
       return
     if not message:
@@ -240,8 +258,9 @@ class Probe(ProbeResultKey, abc.ABC):
     """Called before any runs or browsers have been started."""
     del runner
 
-  def merge_cache_temperatures(self,
-                               group: CacheTemperaturesRunGroup) -> ProbeResult:
+  def merge_cache_temperatures(
+    self, group: CacheTemperaturesRunGroup
+  ) -> ProbeResult:
     """
     For merging probe data from multiple browser cache temperatures with the
     same repetition, story and browser.
@@ -295,8 +314,8 @@ class Probe(ProbeResultKey, abc.ABC):
     raise NotImplementedError(f"Missing default ProbeContext class for {self}")
 
   def create_session_context(
-      self: Self,
-      session: BrowserSessionRunGroup) -> ProbeSessionContext[Self] | None:
+    self: Self, session: BrowserSessionRunGroup
+  ) -> ProbeSessionContext[Self] | None:
     del session
     return None
 

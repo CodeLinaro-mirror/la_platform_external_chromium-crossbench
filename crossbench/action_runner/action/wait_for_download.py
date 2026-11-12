@@ -40,13 +40,16 @@ class WaitForDownloadAction(BaseProbeAction):
 
   @classmethod
   @override
-  def create(cls: type[Self],
-             pattern: re.Pattern[str] | None = None,
-             timeout: dt.timedelta = ACTION_TIMEOUT,
-             index: int = 0) -> Self:
+  def create(
+    cls: type[Self],
+    pattern: re.Pattern[str] | None = None,
+    timeout: dt.timedelta = ACTION_TIMEOUT,
+    index: int = 0,
+  ) -> Self:
     if pattern:
       kwargs: immutabledict[str, re.Pattern[str]] = immutabledict(
-          {"pattern": pattern})
+        {"pattern": pattern}
+      )
     else:
       kwargs = immutabledict()
     return cls(kwargs=kwargs, pattern=pattern, timeout=timeout, index=index)
@@ -57,10 +60,11 @@ class WaitForDownloadAction(BaseProbeAction):
   def config_parser(cls: type[Self]) -> ConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
-        "pattern",
-        type=ObjectParser.regexp,
-        help="A regexp to search downloaded file names",
-        required=True)
+      "pattern",
+      type=ObjectParser.regexp,
+      help="A regexp to search downloaded file names",
+      required=True,
+    )
     return parser
 
   @override

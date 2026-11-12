@@ -31,7 +31,6 @@ if TYPE_CHECKING:
 
 
 class EdgeWebDriver(EdgeBaseMixin, ChromiumBasedWebDriver):
-
   WEB_DRIVER_OPTIONS = EdgeOptions
   WEB_DRIVER_SERVICE = EdgeService
 
@@ -46,8 +45,9 @@ class EdgeWebDriver(EdgeBaseMixin, ChromiumBasedWebDriver):
     return finder.download()
 
   @override
-  def _create_driver(self, options: ChromiumOptions,
-                     service: ChromiumService) -> ChromiumDriver:
+  def _create_driver(
+    self, options: ChromiumOptions, service: ChromiumService
+  ) -> ChromiumDriver:
     assert isinstance(options, EdgeOptions)
     assert isinstance(service, EdgeService)
     return webdriver.Edge(options=options, service=service)
@@ -55,8 +55,9 @@ class EdgeWebDriver(EdgeBaseMixin, ChromiumBasedWebDriver):
   @classmethod
   @override
   def attributes(cls) -> BrowserAttributes:
-    return ((super().attributes() & ~BrowserAttributes.CHROMIUM)
-            | BrowserAttributes.EDGE)
+    return (
+      super().attributes() & ~BrowserAttributes.CHROMIUM
+    ) | BrowserAttributes.EDGE
 
 
 class EdgeWebDriverDownloader:
@@ -66,17 +67,20 @@ class EdgeWebDriverDownloader:
     self.browser: Final[EdgeWebDriver] = browser
     self.platform: Final[plt.Platform] = browser.platform
     assert self.browser.is_local, (
-        "Cannot download chromedriver for remote browser yet")
+      "Cannot download chromedriver for remote browser yet"
+    )
     extension: str = ".exe" if self.platform.is_win else ""
     self.extension: Final[str] = extension
     cache_dir = self.platform.host_platform.local_cache_dir("driver")
     self.driver_path: Final[pth.LocalPath] = (
-        cache_dir / f"edgedriver-{self.browser.version.major}{self.extension}")
+      cache_dir / f"edgedriver-{self.browser.version.major}{self.extension}"
+    )
 
   def download(self) -> pth.LocalPath:
     if not self.driver_path.exists():
       with crossbench.exception.annotate(
-          f"Downloading edgedriver for {self.browser.version}"):
+        f"Downloading edgedriver for {self.browser.version}"
+      ):
         self._download()
     return self.driver_path
 
@@ -91,7 +95,7 @@ class EdgeWebDriverDownloader:
       unpack_dir = pth.LocalPath(tmp_dir) / "extracted"
       shutil.unpack_archive(os.fspath(archive_file), os.fspath(unpack_dir))
       driver = unpack_dir / f"msedgedriver{self.extension}"
-      assert driver.is_file(), (f"Extracted driver at {driver} does not exist.")
+      assert driver.is_file(), f"Extracted driver at {driver} does not exist."
       shutil.move(os.fspath(driver), os.fspath(self.driver_path))
       self.driver_path.chmod(self.driver_path.stat().st_mode | stat.S_IEXEC)
 

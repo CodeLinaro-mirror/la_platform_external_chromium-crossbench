@@ -17,11 +17,11 @@ if TYPE_CHECKING:
   from crossbench.network.base import Network
   from crossbench.plt.base import Platform
   from crossbench.runner.groups.session import BrowserSessionRunGroup
+
   TrafficShaperT = TypeVar("TrafficShaperT", bound="TrafficShaper")
 
 
 class TrafficShaper(abc.ABC):  # noqa: B024
-
   def __init__(self, browser_platform: Platform) -> None:
     self._browser_platform: Final[Platform] = browser_platform
     self._is_running: bool = False
@@ -54,8 +54,9 @@ class TrafficShaper(abc.ABC):  # noqa: B024
     return Flags()
 
   @contextlib.contextmanager
-  def open(self, network: Network,
-           session: BrowserSessionRunGroup) -> Iterator[Self]:
+  def open(
+    self, network: Network, session: BrowserSessionRunGroup
+  ) -> Iterator[Self]:
     del network, session
     assert not self._is_running, "Cannot start network more than once."
     self._is_running = True

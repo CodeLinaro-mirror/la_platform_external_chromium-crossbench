@@ -20,8 +20,8 @@ def pytest_configure(config: pytest.Config) -> None:
   config.option.showlocals = True
   if not config.pluginmanager.has_plugin("crossbench_result_sink_tb"):
     config.pluginmanager.register(
-        result_sink.ResultSinkTracebackPlugin(),
-        "crossbench_result_sink_tb",
+      result_sink.ResultSinkTracebackPlugin(),
+      "crossbench_result_sink_tb",
     )
   if config.pluginmanager.has_plugin("crossbench_result_sink"):
     return

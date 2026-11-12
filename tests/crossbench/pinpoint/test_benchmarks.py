@@ -4,21 +4,26 @@
 
 from __future__ import annotations
 
-from crossbench.pinpoint.benchmarks import all_stories, default_story, \
-    is_crossbench_benchmark, pinpoint_benchmark_name
+from crossbench.pinpoint.benchmarks import (
+  all_stories,
+  default_story,
+  is_crossbench_benchmark,
+  pinpoint_benchmark_name,
+)
 from tests import test_helper
 from tests.crossbench.base import BaseCrossbenchTestCase
 
 
 class BenchmarksTest(BaseCrossbenchTestCase):
-
   def test_pinpoint_benchmark_name(self):
     self.assertEqual(pinpoint_benchmark_name("blink-ai"), "blink-ai.crossbench")
     self.assertEqual(
-        pinpoint_benchmark_name("devtools_frontend"),
-        "devtools_frontend.crossbench")
+      pinpoint_benchmark_name("devtools_frontend"),
+      "devtools_frontend.crossbench",
+    )
     self.assertEqual(
-        pinpoint_benchmark_name("speedometer_3.0"), "speedometer3.0.crossbench")
+      pinpoint_benchmark_name("speedometer_3.0"), "speedometer3.0.crossbench"
+    )
     self.assertIsNone(pinpoint_benchmark_name("invalid_name"))
 
   def test_is_crossbench_benchmark(self):

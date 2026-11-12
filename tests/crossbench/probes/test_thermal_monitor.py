@@ -7,17 +7,18 @@ import json
 import unittest
 
 from crossbench.browsers.settings import Settings
-from crossbench.probes.thermal_monitor import ThermalMonitorProbe, \
-    ThermalStatus
+from crossbench.probes.thermal_monitor import ThermalMonitorProbe, ThermalStatus
 from tests import test_helper
 from tests.crossbench.mock_browser import MockChromeAndroidStable
-from tests.crossbench.mock_helper import AndroidAdbMockPlatform, MockAdb, \
-    ShResult
+from tests.crossbench.mock_helper import (
+  AndroidAdbMockPlatform,
+  MockAdb,
+  ShResult,
+)
 from tests.crossbench.runner.helper import BaseRunnerTestCase
 
 
 class ThermalStatusTestCase(unittest.TestCase):
-
   def test_thermal_status_short_names(self):
     self.assertIs(ThermalStatus.parse("none"), ThermalStatus.NONE)
     self.assertIs(ThermalStatus.parse("light"), ThermalStatus.LIGHT)
@@ -29,20 +30,26 @@ class ThermalStatusTestCase(unittest.TestCase):
 
   def test_thermal_status_long_names(self):
     self.assertIs(
-        ThermalStatus.parse("THERMAL_STATUS_NONE"), ThermalStatus.NONE)
+      ThermalStatus.parse("THERMAL_STATUS_NONE"), ThermalStatus.NONE
+    )
     self.assertIs(
-        ThermalStatus.parse("THERMAL_STATUS_LIGHT"), ThermalStatus.LIGHT)
+      ThermalStatus.parse("THERMAL_STATUS_LIGHT"), ThermalStatus.LIGHT
+    )
     self.assertIs(
-        ThermalStatus.parse("THERMAL_STATUS_MODERATE"), ThermalStatus.MODERATE)
+      ThermalStatus.parse("THERMAL_STATUS_MODERATE"), ThermalStatus.MODERATE
+    )
     self.assertIs(
-        ThermalStatus.parse("THERMAL_STATUS_SEVERE"), ThermalStatus.SEVERE)
+      ThermalStatus.parse("THERMAL_STATUS_SEVERE"), ThermalStatus.SEVERE
+    )
     self.assertIs(
-        ThermalStatus.parse("THERMAL_STATUS_CRITICAL"), ThermalStatus.CRITICAL)
+      ThermalStatus.parse("THERMAL_STATUS_CRITICAL"), ThermalStatus.CRITICAL
+    )
     self.assertIs(
-        ThermalStatus.parse("THERMAL_STATUS_EMERGENCY"),
-        ThermalStatus.EMERGENCY)
+      ThermalStatus.parse("THERMAL_STATUS_EMERGENCY"), ThermalStatus.EMERGENCY
+    )
     self.assertIs(
-        ThermalStatus.parse("THERMAL_STATUS_SHUTDOWN"), ThermalStatus.SHUTDOWN)
+      ThermalStatus.parse("THERMAL_STATUS_SHUTDOWN"), ThermalStatus.SHUTDOWN
+    )
 
   def test_thermal_status_numbers(self):
     self.assertIs(ThermalStatus.parse("-1"), ThermalStatus.UNAVAILABLE)
@@ -56,39 +63,39 @@ class ThermalStatusTestCase(unittest.TestCase):
 
 
 class TestThermalMonitorProbe(BaseRunnerTestCase):
-
   def test_android_run(self):
     self.fs.create_file("/usr/bin/adb", contents="adb")
     if self.platform.is_macos:
       self.platform.expect_sh("brew", "--prefix", result=ShResult(returncode=1))
     self.platform.expect_sh(
-        "/usr/bin/adb",
-        "devices",
-        "-l",
-        result="List of devices attached\n123 device usb:0 product:a model:b")
+      "/usr/bin/adb",
+      "devices",
+      "-l",
+      result="List of devices attached\n123 device usb:0 product:a model:b",
+    )
     adb_platform = AndroidAdbMockPlatform(
-        self.platform, adb=MockAdb(self.platform))
-    runner = self.default_runner(browsers=[
+      self.platform, adb=MockAdb(self.platform)
+    )
+    runner = self.default_runner(
+      browsers=[
         MockChromeAndroidStable(
-            "adb:chrome", settings=Settings(platform=adb_platform)),
-    ])
+          "adb:chrome", settings=Settings(platform=adb_platform)
+        ),
+      ]
+    )
 
     adb_platform.expect_sh(
-        "dumpsys",
-        "thermalservice",
-        result="HAL Ready: true\nThermal Status: 0")
+      "dumpsys", "thermalservice", result="HAL Ready: true\nThermal Status: 0"
+    )
     adb_platform.expect_sh(
-        "dumpsys",
-        "thermalservice",
-        result="HAL Ready: true\nThermal Status: 1")
+      "dumpsys", "thermalservice", result="HAL Ready: true\nThermal Status: 1"
+    )
     adb_platform.expect_sh(
-        "dumpsys",
-        "thermalservice",
-        result="HAL Ready: true\nThermal Status: 2")
+      "dumpsys", "thermalservice", result="HAL Ready: true\nThermal Status: 2"
+    )
     adb_platform.expect_sh(
-        "dumpsys",
-        "thermalservice",
-        result="HAL Ready: true\nThermal Status: 0")
+      "dumpsys", "thermalservice", result="HAL Ready: true\nThermal Status: 0"
+    )
 
     runner.run(is_dry_run=False)
 

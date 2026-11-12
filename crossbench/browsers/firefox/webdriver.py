@@ -27,22 +27,24 @@ if TYPE_CHECKING:
 
 
 class FirefoxWebDriver(WebDriverBrowser, Firefox):
-
   @override
   def _find_driver(self) -> pth.AnyPath:
     finder = FirefoxDriverFinder(self)
     return finder.download()
 
   @override
-  def _start_driver(self,
-                    session: BrowserSessionRunGroup,
-                    driver_path: pth.AnyPath,
-                    startup_urls: Sequence[str] = ()) -> webdriver.Remote:
+  def _start_driver(
+    self,
+    session: BrowserSessionRunGroup,
+    driver_path: pth.AnyPath,
+    startup_urls: Sequence[str] = (),
+  ) -> webdriver.Remote:
     assert not startup_urls
     return self._start_firefox_driver(session, driver_path)
 
-  def _start_firefox_driver(self, session: BrowserSessionRunGroup,
-                            driver_path: pth.AnyPath) -> webdriver.Firefox:
+  def _start_firefox_driver(
+    self, session: BrowserSessionRunGroup, driver_path: pth.AnyPath
+  ) -> webdriver.Firefox:
     assert not self._is_running
     assert self.log_file, "Missing log file"
     options = FirefoxOptions()
@@ -67,12 +69,13 @@ class FirefoxWebDriver(WebDriverBrowser, Firefox):
     # Explicitly copy the env vars for FirefoxBrowserProfilerProbeContext
     env_copy = dict(self.platform.environ)
     service = FirefoxService(
-        executable_path=os.fspath(driver_path),
-        log_output=driver_log_path,
-        # TODO: remove after upgrading the vpython selenium version.
-        log_path=driver_log_path,
-        service_args=service_args,
-        env=env_copy)
+      executable_path=os.fspath(driver_path),
+      log_output=driver_log_path,
+      # TODO: remove after upgrading the vpython selenium version.
+      log_path=driver_log_path,
+      service_args=service_args,
+      env=env_copy,
+    )
     driver = webdriver.Firefox(options=options, service=service)
     return driver
 
@@ -92,12 +95,14 @@ class FirefoxDriverFinder:
     self.extension: Final[str] = ".exe" if self.platform.is_win else ""
     cache_dir = self.platform.host_platform.local_cache_dir("driver")
     self.driver_path: Final[pth.LocalPath] = (
-        cache_dir / f"geckodriver-{self.browser.version.major}{self.extension}")
+      cache_dir / f"geckodriver-{self.browser.version.major}{self.extension}"
+    )
 
   def download(self) -> pth.LocalPath:
     if not self.driver_path.exists():
       with exception.annotate(
-          f"Downloading geckodriver for {self.browser.version}"):
+        f"Downloading geckodriver for {self.browser.version}"
+      ):
         self._download()
     return self.driver_path
 
@@ -109,7 +114,7 @@ class FirefoxDriverFinder:
       unpack_dir = pth.LocalPath(tmp_dir) / "extracted"
       shutil.unpack_archive(os.fspath(tar_file), os.fspath(unpack_dir))
       driver = unpack_dir / f"geckodriver{self.extension}"
-      assert driver.is_file(), (f"Extracted driver at {driver} does not exist.")
+      assert driver.is_file(), f"Extracted driver at {driver} does not exist."
       self.driver_path.parent.mkdir(parents=True, exist_ok=True)
       shutil.move(os.fspath(driver), os.fspath(self.driver_path))
       self.driver_path.chmod(self.driver_path.stat().st_mode | stat.S_IEXEC)
@@ -137,7 +142,8 @@ class FirefoxDriverFinder:
         break
     if not url:
       raise ValueError(
-          f"Could not find geckodriver {version} for platform {arch}")
+        f"Could not find geckodriver {version} for platform {arch}"
+      )
     logging.info("GECKODRIVER downloading %s: %s", version, url)
     return url, archive_type
 

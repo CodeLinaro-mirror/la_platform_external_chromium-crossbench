@@ -14,7 +14,6 @@ from tests.crossbench.base import CrossbenchFakeFsTestCase
 
 
 class CPUFrequencyMapTestCase(CrossbenchFakeFsTestCase):
-
   @override
   def setUp(self):
     super().setUp()
@@ -25,8 +24,9 @@ class CPUFrequencyMapTestCase(CrossbenchFakeFsTestCase):
       CPUFrequencyMap.parse({"cpu0": "invalid"})
 
   def test_parse_conflicting_wildcard(self):
-    with self.assertRaisesRegex(argparse.ArgumentTypeError,
-                                "should be the only key"):
+    with self.assertRaisesRegex(
+      argparse.ArgumentTypeError, "should be the only key"
+    ):
       CPUFrequencyMap.parse({"*": "max", "cpu0": "min"})
 
   def test_key(self):
@@ -43,8 +43,9 @@ class CPUFrequencyMapTestCase(CrossbenchFakeFsTestCase):
     frequency_map = CPUFrequencyMap.parse({"cpu0": 42})
     # No call to self._create_cpu_dir().
 
-    with self.assertRaisesRegex(FileNotFoundError,
-                                "/sys/devices/system/cpu not found"):
+    with self.assertRaisesRegex(
+      FileNotFoundError, "/sys/devices/system/cpu not found"
+    ):
       frequency_map.get_target_frequencies(self.platform)
 
   def test_validate_fails_due_to_missing_cpu_name(self):
@@ -60,20 +61,23 @@ class CPUFrequencyMapTestCase(CrossbenchFakeFsTestCase):
     self._create_cpu_dir("cpu1", [42])
 
     with self.assertRaisesRegex(
-        ValueError,
-        r"Target frequency 42 for cpu0 not allowed in local.linux.*. "
-        r"Available frequencies: \[1, 2\]"):
+      ValueError,
+      r"Target frequency 42 for cpu0 not allowed in local.linux.*. "
+      r"Available frequencies: \[1, 2\]",
+    ):
       frequency_map.get_target_frequencies(self.platform)
 
   def test_validate_fails_due_to_missing_numerical_frequency_with_wildcard(
-      self):
+    self,
+  ):
     frequency_map = CPUFrequencyMap.parse({"*": 42})
     self._create_cpu_dir("cpu0", [1, 2])
 
     with self.assertRaisesRegex(
-        ValueError,
-        r"Target frequency 42 for cpu0 not allowed in local.linux.*. "
-        r"Available frequencies: \[1, 2\]"):
+      ValueError,
+      r"Target frequency 42 for cpu0 not allowed in local.linux.*. "
+      r"Available frequencies: \[1, 2\]",
+    ):
       frequency_map.get_target_frequencies(self.platform)
 
   def test_validate_succeeds_with_extremes(self):
@@ -84,10 +88,12 @@ class CPUFrequencyMapTestCase(CrossbenchFakeFsTestCase):
     target_frequencies = frequency_map.get_target_frequencies(self.platform)
 
     self.assertDictEqual(
-        dict(target_frequencies), {
-            pth.AnyPosixPath("/sys/devices/system/cpu/cpu0/cpufreq"): 2,
-            pth.AnyPosixPath("/sys/devices/system/cpu/cpu1/cpufreq"): 1,
-        })
+      dict(target_frequencies),
+      {
+        pth.AnyPosixPath("/sys/devices/system/cpu/cpu0/cpufreq"): 2,
+        pth.AnyPosixPath("/sys/devices/system/cpu/cpu1/cpufreq"): 1,
+      },
+    )
 
   def test_validate_succeeds_without_wildcard(self):
     frequency_map = CPUFrequencyMap.parse({"cpu0": 2, "cpu1": 2, "cpu2": 2})
@@ -101,11 +107,13 @@ class CPUFrequencyMapTestCase(CrossbenchFakeFsTestCase):
     target_frequencies = frequency_map.get_target_frequencies(self.platform)
 
     self.assertDictEqual(
-        dict(target_frequencies), {
-            pth.AnyPosixPath("/sys/devices/system/cpu/cpu0/cpufreq"): 2,
-            pth.AnyPosixPath("/sys/devices/system/cpu/cpu1/cpufreq"): 2,
-            pth.AnyPosixPath("/sys/devices/system/cpu/cpu2/cpufreq"): 2,
-        })
+      dict(target_frequencies),
+      {
+        pth.AnyPosixPath("/sys/devices/system/cpu/cpu0/cpufreq"): 2,
+        pth.AnyPosixPath("/sys/devices/system/cpu/cpu1/cpufreq"): 2,
+        pth.AnyPosixPath("/sys/devices/system/cpu/cpu2/cpufreq"): 2,
+      },
+    )
 
   def test_validate_succeeds_with_wildcard(self):
     frequency_map = CPUFrequencyMap.parse({"*": 2})
@@ -117,17 +125,20 @@ class CPUFrequencyMapTestCase(CrossbenchFakeFsTestCase):
     target_frequencies = frequency_map.get_target_frequencies(self.platform)
 
     self.assertDictEqual(
-        dict(target_frequencies), {
-            pth.AnyPosixPath("/sys/devices/system/cpu/cpu0/cpufreq"): 2,
-            pth.AnyPosixPath("/sys/devices/system/cpu/cpu1/cpufreq"): 2,
-            pth.AnyPosixPath("/sys/devices/system/cpu/cpu2/cpufreq"): 2,
-        })
+      dict(target_frequencies),
+      {
+        pth.AnyPosixPath("/sys/devices/system/cpu/cpu0/cpufreq"): 2,
+        pth.AnyPosixPath("/sys/devices/system/cpu/cpu1/cpufreq"): 2,
+        pth.AnyPosixPath("/sys/devices/system/cpu/cpu2/cpufreq"): 2,
+      },
+    )
 
   def test_validate_succeeds_for_empty_config(self):
     self._create_cpu_dir("cpu0", [1, 2, 3])
 
     target_frequencies = CPUFrequencyMap.parse({}).get_target_frequencies(
-        self.platform)
+      self.platform
+    )
 
     self.assertFalse(target_frequencies)
 
@@ -139,20 +150,26 @@ class CPUFrequencyMapTestCase(CrossbenchFakeFsTestCase):
     target_frequencies = frequency_map.get_target_frequencies(self.platform)
 
     self.assertDictEqual(
-        dict(target_frequencies), {
-            pth.AnyPosixPath("/sys/devices/system/cpu/cpu0/cpufreq"): 3,
-            pth.AnyPosixPath("/sys/devices/system/cpu/cpu1/cpufreq"): 3,
-        })
+      dict(target_frequencies),
+      {
+        pth.AnyPosixPath("/sys/devices/system/cpu/cpu0/cpufreq"): 3,
+        pth.AnyPosixPath("/sys/devices/system/cpu/cpu1/cpufreq"): 3,
+      },
+    )
 
   def _create_cpu_dir(self, cpu_name: str, available_frequencies: list[int]):
     cpu_dir = pth.AnyPosixPath(f"/sys/devices/system/cpu/{cpu_name}/cpufreq")
     self.platform.mkdir(cpu_dir, parents=True, exist_ok=True)
-    self.platform.write_text(cpu_dir / "scaling_available_frequencies",
-                             " ".join(map(str, available_frequencies)) + "\n")
-    self.platform.write_text(cpu_dir / "scaling_min_freq",
-                             str(min(available_frequencies)) + "\n")
-    self.platform.write_text(cpu_dir / "scaling_max_freq",
-                             str(max(available_frequencies)) + "\n")
+    self.platform.write_text(
+      cpu_dir / "scaling_available_frequencies",
+      " ".join(map(str, available_frequencies)) + "\n",
+    )
+    self.platform.write_text(
+      cpu_dir / "scaling_min_freq", str(min(available_frequencies)) + "\n"
+    )
+    self.platform.write_text(
+      cpu_dir / "scaling_max_freq", str(max(available_frequencies)) + "\n"
+    )
 
 
 if __name__ == "__main__":

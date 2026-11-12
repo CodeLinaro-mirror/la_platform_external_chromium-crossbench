@@ -16,20 +16,25 @@ from crossbench import path as pth
 from crossbench.exception import ExceptionAnnotator
 from crossbench.helper.cwd import change_cwd
 from crossbench.probes.probe_context import ProbeContext
-from crossbench.probes.results import EmptyProbeResult, LocalProbeResult, \
-    ProbeResult
-from crossbench.probes.trace_processor.uri_resolver import \
-    CrossbenchTraceUriResolver
+from crossbench.probes.results import (
+  EmptyProbeResult,
+  LocalProbeResult,
+  ProbeResult,
+)
+from crossbench.probes.trace_processor.uri_resolver import (
+  CrossbenchTraceUriResolver,
+)
 
 if TYPE_CHECKING:
-  from crossbench.probes.trace_processor.query_config import \
-      TraceProcessorQueryConfig
-  from crossbench.probes.trace_processor.trace_processor import \
-      TraceProcessorProbe  # noqa: F401
+  from crossbench.probes.trace_processor.query_config import (
+    TraceProcessorQueryConfig,
+  )
+  from crossbench.probes.trace_processor.trace_processor import (
+    TraceProcessorProbe,  # noqa: F401
+  )
 
 
 class TraceProcessorProbeContext(ProbeContext["TraceProcessorProbe"]):
-
   def get_default_result_path(self) -> pth.AnyPath:
     result_dir = super().get_default_result_path()
     self.host_platform.mkdir(result_dir)
@@ -51,8 +56,9 @@ class TraceProcessorProbeContext(ProbeContext["TraceProcessorProbe"]):
   def needs_tp_run(self) -> bool:
     return self.probe.needs_tp_run
 
-  def write_zip_file(self, path: pth.LocalPath,
-                     files: Iterable[pth.LocalPath]) -> None:
+  def write_zip_file(
+    self, path: pth.LocalPath, files: Iterable[pth.LocalPath]
+  ) -> None:
     try:
       # Try the more-compatible zip32 format first.
       self._write_zip_file(path, files, allow_zip64=False)
@@ -60,14 +66,16 @@ class TraceProcessorProbeContext(ProbeContext["TraceProcessorProbe"]):
       logging.warning("Trace file too large for standard ZIP, using ZIP64.")
       self._write_zip_file(path, files, allow_zip64=True)
 
-  def _write_zip_file(self, path: pth.LocalPath, files: Iterable[pth.LocalPath],
-                      allow_zip64: bool) -> None:
+  def _write_zip_file(
+    self, path: pth.LocalPath, files: Iterable[pth.LocalPath], allow_zip64: bool
+  ) -> None:
     with zipfile.ZipFile(
-        path,
-        "w",
-        compression=zipfile.ZIP_DEFLATED,
-        compresslevel=1,
-        allowZip64=allow_zip64) as zip_file:
+      path,
+      "w",
+      compression=zipfile.ZIP_DEFLATED,
+      compresslevel=1,
+      allowZip64=allow_zip64,
+    ) as zip_file:
       for f in files:
         zip_file.write(f, arcname=f.relative_to(self.run.out_dir))
 
@@ -85,9 +93,12 @@ class TraceProcessorProbeContext(ProbeContext["TraceProcessorProbe"]):
     if not self.needs_tp_run:
       logging.debug("trace_processor probe: skipping queries and metrics")
       return EmptyProbeResult()
-    with change_cwd(self.local_result_path), TraceProcessor(
-        trace=CrossbenchTraceUriResolver(self),
-        config=self.probe.tp_config) as tp:
+    with (
+      change_cwd(self.local_result_path),
+      TraceProcessor(
+        trace=CrossbenchTraceUriResolver(self), config=self.probe.tp_config
+      ) as tp,
+    ):
       with ExceptionAnnotator().annotate() as exceptions:
         query_result = self._run_queries(tp, exceptions)
         metric_result = self._run_metrics(tp, exceptions)
@@ -101,21 +112,25 @@ class TraceProcessorProbeContext(ProbeContext["TraceProcessorProbe"]):
     pprof_files = list(self.local_result_path.glob("*.pprof"))
     if self.has_pprof_query(self.queries) and not pprof_files:
       logging.warning(
-          "Probe %s: No .pprof files were generated. "
-          "This usually means no CPU samples were found in the trace or the "
-          "query failed", self.probe.name)
+        "Probe %s: No .pprof files were generated. "
+        "This usually means no CPU samples were found in the trace or the "
+        "query failed",
+        self.probe.name,
+      )
     return LocalProbeResult(pprof=pprof_files)
 
   @classmethod
-  def has_pprof_query(cls,
-                      queries: Iterable[TraceProcessorQueryConfig]) -> bool:
+  def has_pprof_query(
+    cls, queries: Iterable[TraceProcessorQueryConfig]
+  ) -> bool:
     return any("pprof" in q.name or "perf_sample" in q.name for q in queries)
 
-  def _run_queries(self, tp: TraceProcessor,
-                   exceptions: ExceptionAnnotator) -> LocalProbeResult:
+  def _run_queries(
+    self, tp: TraceProcessor, exceptions: ExceptionAnnotator
+  ) -> LocalProbeResult:
 
     def run_query(
-        query: TraceProcessorQueryConfig,
+      query: TraceProcessorQueryConfig,
     ) -> tuple[pth.LocalPath, pth.LocalPath]:
       csv_file = self.local_result_path / f"{query.name}.csv"
       json_file = self.local_result_path / f"{query.name}.json"
@@ -137,18 +152,21 @@ class TraceProcessorProbeContext(ProbeContext["TraceProcessorProbe"]):
   @property
   def queries(self) -> tuple[TraceProcessorQueryConfig, ...]:
     resolved = (
-        query.resolve_for_platform(self.run.browser.platform)
-        for query in self._probe.queries)
+      query.resolve_for_platform(self.run.browser.platform)
+      for query in self._probe.queries
+    )
     return tuple(q for q in resolved if q is not None)
 
-  def _run_metrics(self, tp: TraceProcessor,
-                   exceptions: ExceptionAnnotator) -> LocalProbeResult:
+  def _run_metrics(
+    self, tp: TraceProcessor, exceptions: ExceptionAnnotator
+  ) -> LocalProbeResult:
 
     def run_metric(metric: str) -> pth.LocalPath:
       json_file = self.local_result_path / f"{pth.safe_filename(metric)}.json"
       proto = tp.metric([metric])
       assert not json_file.exists(), (
-          f"Cannot override previously generated metric {json_file}")
+        f"Cannot override previously generated metric {json_file}"
+      )
       json_file.write_text(MessageToJson(proto))
       return json_file
 
@@ -164,7 +182,8 @@ class TraceProcessorProbeContext(ProbeContext["TraceProcessorProbe"]):
       return EmptyProbeResult()
 
     with self.run.actions(
-        "TRACE_PROCESSOR: Running trace summary", verbose=True):
+      "TRACE_PROCESSOR: Running trace summary", verbose=True
+    ):
       # Trace processor interprets an empty list as 'emit no metrics' and
       # 'None' as emit all metrics specified in the metric definitions.
       # When no metric IDs are explicitly given, default to the more
@@ -174,7 +193,8 @@ class TraceProcessorProbeContext(ProbeContext["TraceProcessorProbe"]):
         metric_ids = list(self.probe.summary_metrics)
 
       proto_result = tp.trace_summary(
-          specs=list(self.probe.metric_definitions), metric_ids=metric_ids)
+        specs=list(self.probe.metric_definitions), metric_ids=metric_ids
+      )
 
       proto_file = self.local_result_path / "v2_metrics.pb"
       proto_file.write_bytes(proto_result.SerializeToString())

@@ -8,8 +8,9 @@ import datetime as dt
 from typing import TYPE_CHECKING, ClassVar, override
 
 from crossbench.browsers.attributes import BrowserAttributes
-from crossbench.browsers.chromium.devtools import \
-    DevToolsRemoteClient as DevToolsClient
+from crossbench.browsers.chromium.devtools import (
+  DevToolsRemoteClient as DevToolsClient,
+)
 from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
 from crossbench.probes.probe_error import ProbeMissingDataError
 
@@ -26,6 +27,7 @@ class VideoAccelerationProbe(JsonResultProbe):
   """
   Chromium-only probe to detect if hardware video acceleration is used.
   """
+
   NAME: ClassVar = "video_acceleration"
 
   @override
@@ -49,8 +51,8 @@ class VideoAccelerationProbe(JsonResultProbe):
 
 
 class VideoAccelerationProbeContext(
-    JsonResultProbeContext[VideoAccelerationProbe]):
-
+  JsonResultProbeContext[VideoAccelerationProbe]
+):
   def __init__(self, probe: VideoAccelerationProbe, run: Run):
     super().__init__(probe, run)
     self._devtools_client: DevToolsClient | None = None
@@ -59,21 +61,25 @@ class VideoAccelerationProbeContext(
   def _get_devtools_client(self) -> DevToolsClient:
     if not self._devtools_client:
       self._devtools_client = DevToolsClient(
-          platform=self.browser_platform,
-          requested_local_port=0,
-          remote_devtools_identifier="chrome_devtools_remote")
+        platform=self.browser_platform,
+        requested_local_port=0,
+        remote_devtools_identifier="chrome_devtools_remote",
+      )
     return self._devtools_client
 
   def _get_page_target_id(self, client: DevToolsClient) -> str | None:
-    success, targets = client.send_command({
+    success, targets = client.send_command(
+      {
         "id": 0,
         "method": "Target.getTargets",
-    })
+      }
+    )
     if not success or not targets:
       raise RuntimeError("Failed to query target")
     result = targets.get("result")
     assert isinstance(result, dict), (
-        f"Invalid Target.getTargets result: {targets}")
+      f"Invalid Target.getTargets result: {targets}"
+    )
     target_infos = result.get("targetInfos")
     assert isinstance(target_infos, list), f"Invalid targetInfos: {result}"
     for target in target_infos:
@@ -81,7 +87,8 @@ class VideoAccelerationProbeContext(
       if target.get("type") == "page":
         target_id = target.get("targetId")
         assert isinstance(target_id, str) and target_id, (
-            f"Invalid targetId: {target}")
+          f"Invalid targetId: {target}"
+        )
         return target_id
     return None
 
@@ -105,51 +112,58 @@ class VideoAccelerationProbeContext(
         raise RuntimeError("Could not find page target")
 
       # Attach to the page target
-      response = client.send_command({
+      response = client.send_command(
+        {
           "id": 1,
           "method": "Target.attachToTarget",
           "params": {
-              "targetId": target_id,
-              "flatten": True,
+            "targetId": target_id,
+            "flatten": True,
           },
-      }).response
+        }
+      ).response
       result = response.get("result")
       if not isinstance(result, dict):
         raise ValueError(f"Could not find 'sessionId' in response: {response}")
       if not (session_id := result.get("sessionId")):
         raise ValueError(f"Could not find 'sessionId' in response: {response}")
 
-      client.dispatch_command({
+      client.dispatch_command(
+        {
           "sessionId": session_id,
           "id": 2,
           "method": "Media.enable",
-      })
+        }
+      )
 
       # Listen for events until either no event is received within timeout, or
       # hw_acceleration status is gathered.
       success = client.poll_for_response(
-          condition_fn=lambda: not self._is_hw_acceleration_determined(),
-          process_fn=self._process_media_event,
-          timeout=timeout)
+        condition_fn=lambda: not self._is_hw_acceleration_determined(),
+        process_fn=self._process_media_event,
+        timeout=timeout,
+      )
       if not success:
         raise RuntimeError("Error polling for media properties")
 
-      client.send_command({
+      client.send_command(
+        {
           "sessionId": session_id,
           "id": 3,
           "method": "Media.disable",
-      })
+        }
+      )
 
   @override
-  def invoke(self, info_stack: exception.TInfoStack, timeout: dt.timedelta,
-             **kwargs) -> None:
+  def invoke(
+    self, info_stack: exception.TInfoStack, timeout: dt.timedelta, **kwargs
+  ) -> None:
     del info_stack
     self._verify_hw_accel(timeout, **kwargs)
 
-  def _verify_hw_accel(self,
-                       timeout: dt.timedelta,
-                       expect_hw_accel: bool = True,
-                       **kwargs) -> None:
+  def _verify_hw_accel(
+    self, timeout: dt.timedelta, expect_hw_accel: bool = True, **kwargs
+  ) -> None:
     """
     Called from the "probe" action in the ActionRunner.
     Checks for hardware or software video acceleration.
@@ -161,7 +175,8 @@ class VideoAccelerationProbeContext(
 
     if self._is_hw_accelerated is None:
       raise ProbeMissingDataError(
-          "Could not determine hardware acceleration status.")
+        "Could not determine hardware acceleration status."
+      )
 
     if expect_hw_accel and not self._is_hw_accelerated:
       raise RuntimeError("Expected hardware acceleration, but found software.")
@@ -179,5 +194,6 @@ class VideoAccelerationProbeContext(
     del actions  # Unused
     if self._is_hw_accelerated is None:
       raise ProbeMissingDataError(
-          "Could not determine hardware acceleration status.")
+        "Could not determine hardware acceleration status."
+      )
     return {"is_hw_accelerated": self._is_hw_accelerated}

@@ -26,7 +26,6 @@ DEFAULT_TIMEOUT: Final = dt.timedelta(seconds=10)
 
 
 class BackgroundReader(threading.Thread):
-
   def __init__(self, stream: IO[str], read_len: int) -> None:
     super().__init__()
     self.print_output: bool = logging.getLogger().isEnabledFor(logging.DEBUG)
@@ -56,16 +55,18 @@ class State(BaseState):
 
 
 class D8Shell:
-
-  def __init__(self,
-               platform: plt.Platform,
-               d8_bin: pth.LocalPath,
-               flags: Sequence[str] = (),
-               cwd: pth.LocalPath | None = None):
+  def __init__(
+    self,
+    platform: plt.Platform,
+    d8_bin: pth.LocalPath,
+    flags: Sequence[str] = (),
+    cwd: pth.LocalPath | None = None,
+  ):
     self._state: Final = StateMachine(State.INITIAL)
     self._platform: Final[plt.Platform] = platform
     assert platform.is_local, (
-        f"D8 only works on local platforms, but got {platform}")
+      f"D8 only works on local platforms, but got {platform}"
+    )
     self._d8_bin: Final[pth.LocalPath] = d8_bin
     self._flags: Final[Sequence[str]] = flags
     self._cwd: Final[pth.LocalPath | None] = cwd
@@ -74,12 +75,12 @@ class D8Shell:
     logging.debug("SHELL: %s", shlex.join(map(str, cmd)))
     logging.debug("CWD: %s", cwd)
     self._process: Final = self._platform.popen(
-        *cmd,
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        cwd=self._cwd,
-        encoding="utf-8",
-        bufsize=1,  # Line buffering
+      *cmd,
+      stdin=subprocess.PIPE,
+      stdout=subprocess.PIPE,
+      cwd=self._cwd,
+      encoding="utf-8",
+      bufsize=1,  # Line buffering
     )
     self._state.transition(State.INITIAL, to=State.WAIT_FOR_OUTPUT)
     if stdin := self._process.stdin:
@@ -139,11 +140,13 @@ class D8Shell:
     self._stdin.flush()
     self._state.transition(State.WAIT_FOR_INPUT, to=State.WAIT_FOR_OUTPUT)
 
-  def execute(self,
-              cmd: str,
-              eval: bool = False,
-              print_output: bool = False,
-              timeout: dt.timedelta | None = None) -> str:
+  def execute(
+    self,
+    cmd: str,
+    eval: bool = False,
+    print_output: bool = False,
+    timeout: dt.timedelta | None = None,
+  ) -> str:
     if eval:
       cmd = f"eval({cmd!r})"
     self.write(cmd, print_output=print_output)

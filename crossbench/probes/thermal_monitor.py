@@ -14,8 +14,10 @@ from typing import TYPE_CHECKING, ClassVar, Final, Iterable, override
 from crossbench.cli.ui import ui
 from crossbench.helper.wait import WaitRange
 from crossbench.parse import ObjectParser
-from crossbench.probes.internal.base import InternalJsonResultProbe, \
-    InternalJsonResultProbeContext
+from crossbench.probes.internal.base import (
+  InternalJsonResultProbe,
+  InternalJsonResultProbeContext,
+)
 from crossbench.probes.probe import ProbeIncompatibleBrowser
 from crossbench.probes.results import EmptyProbeResult, LocalProbeResult
 
@@ -33,9 +35,11 @@ if TYPE_CHECKING:
   from crossbench.types import Json
 
 THERMAL_STATUS_RE: re.Pattern[str] = re.compile(
-    r"Thermal Status: (?P<status>\d+)")
+  r"Thermal Status: (?P<status>\d+)"
+)
 COOLDOWN_WAIT_RANGE = WaitRange(
-    min=dt.timedelta(seconds=1), timeout=dt.timedelta(minutes=5))
+  min=dt.timedelta(seconds=1), timeout=dt.timedelta(minutes=5)
+)
 
 
 class ThermalStatus(IntEnum):
@@ -71,11 +75,14 @@ class ThermalMonitorProbe(InternalJsonResultProbe):
   """
   Internal probe to monitor device thermal status.
   """
+
   NAME: ClassVar = "cb.thermal_monitor"
 
-  def __init__(self,
-               cool_down_time: dt.timedelta = dt.timedelta(),
-               threshold: ThermalStatus | None = None) -> None:
+  def __init__(
+    self,
+    cool_down_time: dt.timedelta = dt.timedelta(),
+    threshold: ThermalStatus | None = None,
+  ) -> None:
     super().__init__()
     self._threshold: Final[ThermalStatus | None] = threshold
     self._cool_down_time: Final[dt.timedelta] = cool_down_time
@@ -103,7 +110,8 @@ class ThermalMonitorProbe(InternalJsonResultProbe):
     super().validate_browser(env, browser)
     if self.threshold is not None and not browser.platform.is_android:
       raise ProbeIncompatibleBrowser(
-          self, browser, "Thermal thresholds only supported on android")
+        self, browser, "Thermal thresholds only supported on android"
+      )
 
   @override
   def merge_repetitions(self, group: RepetitionsRunGroup) -> ProbeResult:
@@ -112,15 +120,18 @@ class ThermalMonitorProbe(InternalJsonResultProbe):
   @override
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
     return self._merge_group(
-        group, (rep_group.results for rep_group in group.repetitions_groups))
+      group, (rep_group.results for rep_group in group.repetitions_groups)
+    )
 
   @override
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
     return self._merge_group(
-        group, (story_group.results for story_group in group.story_groups))
+      group, (story_group.results for story_group in group.story_groups)
+    )
 
-  def _merge_group(self, group: RunGroup,
-                   results_iter: Iterable[ProbeResultDict]) -> ProbeResult:
+  def _merge_group(
+    self, group: RunGroup, results_iter: Iterable[ProbeResultDict]
+  ) -> ProbeResult:
     group_max_status: ThermalStatus = ThermalStatus.UNAVAILABLE
     has_results: bool = False
     for results in results_iter:
@@ -158,12 +169,16 @@ class ThermalMonitorProbe(InternalJsonResultProbe):
 
     if max_observed_status == ThermalStatus.LIGHT:
       logging.info("-" * 80)
-      logging.error("Light thermal throttling detected during execution, "
-                    "scores may be affected.")
+      logging.error(
+        "Light thermal throttling detected during execution, "
+        "scores may be affected."
+      )
     elif max_observed_status > ThermalStatus.LIGHT:
       logging.info("-" * 80)
-      logging.error("Significant thermal throttling detected during execution, "
-                    "scores are not representative of the device performance.")
+      logging.error(
+        "Significant thermal throttling detected during execution, "
+        "scores are not representative of the device performance."
+      )
 
   @override
   def create_context(self, run: Run) -> ProbeContext:
@@ -173,8 +188,8 @@ class ThermalMonitorProbe(InternalJsonResultProbe):
 
 
 class ThermalMonitorProbeContext(
-    InternalJsonResultProbeContext[ThermalMonitorProbe]):
-
+  InternalJsonResultProbeContext[ThermalMonitorProbe]
+):
   def __init__(self, probe: ThermalMonitorProbe, run: Run) -> None:
     super().__init__(probe, run)
 
@@ -203,7 +218,6 @@ class ThermalMonitorProbeContext(
 
 
 class AndroidThermalMonitorProbeContext(ThermalMonitorProbeContext):
-
   def __init__(self, probe: ThermalMonitorProbe, run: Run) -> None:
     super().__init__(probe, run)
     self._max_observed_status: ThermalStatus = ThermalStatus.UNAVAILABLE
@@ -229,8 +243,10 @@ class AndroidThermalMonitorProbeContext(ThermalMonitorProbeContext):
           logging.info("COOLDOWN: complete")
           break
     except TimeoutError:
-      logging.error("COOLDOWN: device is still too hot after waiting for %s",
-                    COOLDOWN_WAIT_RANGE.timeout)
+      logging.error(
+        "COOLDOWN: device is still too hot after waiting for %s",
+        COOLDOWN_WAIT_RANGE.timeout,
+      )
 
   @override
   def setup(self) -> None:

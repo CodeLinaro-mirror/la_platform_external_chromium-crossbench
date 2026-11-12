@@ -36,7 +36,6 @@ if TYPE_CHECKING:
 
 
 class BaseNativePlatformTestCase(unittest.TestCase):
-
   # Explicitly disabled base test class
   __test__ = False
 
@@ -84,8 +83,8 @@ class BaseNativePlatformTestCase(unittest.TestCase):
   def test_is_battery_powered(self):
     self.assertIsInstance(self.platform.is_battery_powered, bool)
     self.assertEqual(
-        self.platform.is_battery_powered,
-        plt.PLATFORM.is_battery_powered,
+      self.platform.is_battery_powered,
+      plt.PLATFORM.is_battery_powered,
     )
 
   def test_cpu_usage(self):
@@ -107,8 +106,8 @@ class BaseNativePlatformTestCase(unittest.TestCase):
     p2 = self.platform.path("/baz/qux")
     self.assertEqual(self.platform.join_path_list(p1), str(p1))
     self.assertEqual(
-        self.platform.join_path_list([p1, p2]),
-        f"{p1}{self.platform.pathsep}{p2}")
+      self.platform.join_path_list([p1, p2]), f"{p1}{self.platform.pathsep}{p2}"
+    )
 
   def test_split_path_list(self):
     self.assertEqual(self.platform.split_path_list(""), ())
@@ -121,8 +120,9 @@ class BaseNativePlatformTestCase(unittest.TestCase):
     memory_mb = self.platform.total_memory_mb()
     self.assertIsInstance(memory_mb, int)
     self.assertGreater(memory_mb, 0)
-    self.assertEqual(memory_mb,
-                     self.platform.system_memory_bytes // (1024 * 1024))
+    self.assertEqual(
+      memory_mb, self.platform.system_memory_bytes // (1024 * 1024)
+    )
 
   def test_system_details(self):
     self.assertIsNotNone(self.platform.system_details())
@@ -287,7 +287,8 @@ class BaseNativePlatformTestCase(unittest.TestCase):
 
       if self.platform.is_local:
         with gzip.open(
-            self.platform.local_path(gz_file), "rt", encoding="utf-8") as f:
+          self.platform.local_path(gz_file), "rt", encoding="utf-8"
+        ) as f:
           self.assertEqual(f.read(), content)
 
   def test_gzip_python_fallback(self):
@@ -309,7 +310,8 @@ class BaseNativePlatformTestCase(unittest.TestCase):
       self.assertFalse(self.platform.exists(test_file))
 
       with gzip.open(
-          self.platform.local_path(gz_file), "rt", encoding="utf-8") as f:
+        self.platform.local_path(gz_file), "rt", encoding="utf-8"
+      ) as f:
         self.assertEqual(f.read(), content)
 
   def test_default_tmp_dir(self):
@@ -454,7 +456,8 @@ class BaseNativePlatformTestCase(unittest.TestCase):
     relative_path = pathlib.Path("../../foo")
     self.assertFalse(relative_path.is_absolute())
     self.assertEqual(
-        self.platform.absolute(relative_path), relative_path.absolute())
+      self.platform.absolute(relative_path), relative_path.absolute()
+    )
 
   def test_glob(self):
     if self.platform.is_remote:
@@ -553,8 +556,9 @@ class BaseNativePlatformTestCase(unittest.TestCase):
     try:
       with self.platform.TemporaryDirectory() as tmp_dir:
         default_cache_dir = tmp_dir / "cache"
-        with mock.patch("crossbench.plt.base.DEFAULT_CACHE_DIR",
-                        default_cache_dir):
+        with mock.patch(
+          "crossbench.plt.base.DEFAULT_CACHE_DIR", default_cache_dir
+        ):
           yield default_cache_dir
     finally:
       self.platform._cache_dir_root = old_cache_dir_root
@@ -612,7 +616,6 @@ class BaseNativePlatformTestCase(unittest.TestCase):
       self.skipTest("Not supported yet on remote platforms.")
 
     class FakeProcess:
-
       def __init__(self) -> None:
         self.attrs: list[str] | None = None
 
@@ -624,8 +627,8 @@ class BaseNativePlatformTestCase(unittest.TestCase):
     fake_process = FakeProcess()
     attrs = ["name", "pid"]
     with mock.patch(
-        "crossbench.plt.base.psutil.process_iter",
-        return_value=[fake_process]) as process_iter:
+      "crossbench.plt.base.psutil.process_iter", return_value=[fake_process]
+    ) as process_iter:
       processes = self.platform.processes(attrs)
 
     process_iter.assert_called_once_with(attrs=attrs)
@@ -639,7 +642,8 @@ class BaseNativePlatformTestCase(unittest.TestCase):
       self.skipTest("Too Slow on windows")
     self.assertFalse(self.platform.process_running([]))
     self.assertFalse(
-        self.platform.process_running(["crossbench_invalid_test_bin"]))
+      self.platform.process_running(["crossbench_invalid_test_bin"])
+    )
     executable = pathlib.Path(sys.executable)
     self.assertTrue(self.platform.process_running([executable.name]))
 
@@ -652,7 +656,8 @@ class BaseNativePlatformTestCase(unittest.TestCase):
 
     # Test with explicit attrs
     process_info_attrs = self.platform.process_info(
-        os.getpid(), attrs=["pid", "name"])
+      os.getpid(), attrs=["pid", "name"]
+    )
     self.assertIsNotNone(process_info_attrs)
     self.assertSetEqual(set(process_info_attrs.keys()), {"pid", "name"})
     self.assertIn("python", process_info_attrs["name"].lower())
@@ -670,7 +675,6 @@ class BaseNativePlatformTestCase(unittest.TestCase):
       self.skipTest("Not supported yet on remote platforms.")
 
     class FakeProcess:
-
       def __init__(self) -> None:
         self.attrs: list[str] | None = None
 
@@ -681,7 +685,6 @@ class BaseNativePlatformTestCase(unittest.TestCase):
         return {attr: attr for attr in attrs}
 
     class FakeParentProcess:
-
       def __init__(self, children: list[FakeProcess]) -> None:
         self._children = children
 
@@ -692,8 +695,8 @@ class BaseNativePlatformTestCase(unittest.TestCase):
     fake_parent = FakeParentProcess([fake_child])
     attrs = ["name", "pid"]
     with mock.patch(
-        "crossbench.plt.base.psutil.Process",
-        return_value=fake_parent) as process_mock:
+      "crossbench.plt.base.psutil.Process", return_value=fake_parent
+    ) as process_mock:
       children = self.platform.process_children(1234, attrs=attrs)
 
     process_mock.assert_called_once_with(1234)
@@ -732,7 +735,8 @@ class BaseNativePlatformTestCase(unittest.TestCase):
       self.platform.wait_for_port(port, timeout=dt.timedelta(seconds=0.01))
 
   @unittest.skipIf(
-      not plt.PLATFORM.which("python3"), reason="python3 not installed")
+    not plt.PLATFORM.which("python3"), reason="python3 not installed"
+  )
   def test_binary_lookup_override(self):
     test_binary = "crossbench-non-existing-test-binary"
     self.assertIsNone(self.platform.lookup_binary_override(test_binary))
@@ -750,7 +754,8 @@ class BaseNativePlatformTestCase(unittest.TestCase):
     self.assertIsNone(self.platform.which(test_binary))
 
   @unittest.skipIf(
-      not plt.PLATFORM.which("python3"), reason="python3 not installed")
+    not plt.PLATFORM.which("python3"), reason="python3 not installed"
+  )
   def test_binary_lookup_override_home_dir(self):
     # Test overriding a binary in the home directory
     test_binary_home = "~/crossbench-non-existing-test-binary"
@@ -770,8 +775,9 @@ class BaseNativePlatformTestCase(unittest.TestCase):
         continue
       value = getattr(self.platform.signals, signal_name)
       native_value = getattr(signal, signal_name)
-      self.assertEqual(value, native_value,
-                       f"Mismatching values for {signal_name}")
+      self.assertEqual(
+        value, native_value, f"Mismatching values for {signal_name}"
+      )
 
   def test_uptime(self):
     uptime: dt.timedelta = self.platform.uptime()
@@ -805,7 +811,8 @@ class PosixNativePlatformTestCase(BaseNativePlatformTestCase):
     hello_world = self.platform.sh_stdout("cat", input=b"hello world")
     self.assertEqual(hello_world, "hello world")
     hello_world_bytes = self.platform.sh_stdout_bytes(
-        "cat", input=b"hello world bytes")
+      "cat", input=b"hello world bytes"
+    )
     self.assertEqual(hello_world_bytes, b"hello world bytes")
 
   def test_sh_bytes(self):
@@ -844,9 +851,9 @@ class PosixNativePlatformTestCase(BaseNativePlatformTestCase):
     self.assertTrue(json.dumps(details))
     self.assertEqual(details["version"], __version__)
     for key, expected_type in (
-        ("current_hash", str),
-        ("canonical_parent_hash", str),
-        ("has_uncommitted_changes", bool),
+      ("current_hash", str),
+      ("canonical_parent_hash", str),
+      ("has_uncommitted_changes", bool),
     ):
       self.assertIn(key, details)
       self.assertIsInstance(details[key], expected_type)
@@ -979,7 +986,8 @@ class PosixNativePlatformTestCase(BaseNativePlatformTestCase):
   def test_shell_piping(self):
     with self.platform.NamedTemporaryFile() as file:
       result = self.platform.sh_stdout(
-          f"echo 'test data' > {file} && cat {file}", shell=True)
+        f"echo 'test data' > {file} && cat {file}", shell=True
+      )
       self.assertEqual(result, "test data\n")
 
   def test_simple_shell_status_ok(self):
@@ -993,30 +1001,36 @@ class PosixNativePlatformTestCase(BaseNativePlatformTestCase):
       self.platform.sh("ls", "path/to/invalid/test/crossbench/dir", shell=False)
     with self.assertRaises(SubprocessError):
       self.platform.sh(
-          "ls path/to/invalid/test/crossbench/dir && ls", shell=True)
+        "ls path/to/invalid/test/crossbench/dir && ls", shell=True
+      )
     with self.assertRaises(SubprocessError):
       self.platform.sh_stdout(
-          "ls", "path/to/invalid/test/crossbench/dir", shell=False)
+        "ls", "path/to/invalid/test/crossbench/dir", shell=False
+      )
     with self.assertRaises(SubprocessError):
       self.platform.sh_stdout(
-          "ls path/to/invalid/test/crossbench/dir && ls", shell=True)
+        "ls path/to/invalid/test/crossbench/dir && ls", shell=True
+      )
 
   def test_simple_shell_fail_ignore(self):
     self.platform.sh(
-        "ls", "path/to/invalid/test/crossbench/dir", shell=False, check=False)
+      "ls", "path/to/invalid/test/crossbench/dir", shell=False, check=False
+    )
     self.platform.sh(
-        "ls path/to/invalid/test/crossbench/dir && ls", shell=True, check=False)
+      "ls path/to/invalid/test/crossbench/dir && ls", shell=True, check=False
+    )
     self.assertEqual(
-        self.platform.sh_stdout(
-            "ls",
-            "path/to/invalid/test/crossbench/dir",
-            shell=False,
-            check=False), "")
+      self.platform.sh_stdout(
+        "ls", "path/to/invalid/test/crossbench/dir", shell=False, check=False
+      ),
+      "",
+    )
     self.assertEqual(
-        self.platform.sh_stdout(
-            "ls path/to/invalid/test/crossbench/dir && ls",
-            shell=True,
-            check=False), "")
+      self.platform.sh_stdout(
+        "ls path/to/invalid/test/crossbench/dir && ls", shell=True, check=False
+      ),
+      "",
+    )
 
   def test_popen_watch(self):
     with self.platform.popen("sleep", "5") as popen:
@@ -1031,11 +1045,12 @@ class PosixNativePlatformTestCase(BaseNativePlatformTestCase):
       self.skipTest("Missing remote platform popen")
       return
     proc = self.platform.popen(
-        sys.executable,
-        "-c",
-        "print('hello from popen')",
-        stdout=subprocess.PIPE,
-        encoding="utf-8")
+      sys.executable,
+      "-c",
+      "print('hello from popen')",
+      stdout=subprocess.PIPE,
+      encoding="utf-8",
+    )
     try:
       assert proc.stdout
       self.assertEqual(proc.stdout.read().strip(), "hello from popen")
@@ -1059,8 +1074,10 @@ class PosixNativePlatformTestCase(BaseNativePlatformTestCase):
     self.assertNotIn(pid, active_pids)
 
   def test_kill_all_popens(self):
-    with (self.platform.popen("sleep", "5") as
-          proc1, self.platform.popen("sleep", "5") as proc2):
+    with (
+      self.platform.popen("sleep", "5") as proc1,
+      self.platform.popen("sleep", "5") as proc2,
+    ):
       self.assertIn(proc1, self.platform.active_popens)
       self.assertIn(proc2, self.platform.active_popens)
       self.platform.kill_all_popens()
@@ -1096,7 +1113,6 @@ class PosixNativePlatformTestCase(BaseNativePlatformTestCase):
 
 
 class MockRemotePosixPlatform(RemotePosixPlatform, type(plt.PLATFORM)):
-
   def __init__(self) -> None:
     super().__init__(plt.PLATFORM)
 
@@ -1132,6 +1148,7 @@ class MockRemotePosixPlatformTestCase(PosixNativePlatformTestCase):
   """All Posix operations should also work on a remote platform (e.g. via SSH).
   This test fakes this by temporarily changing the current PLATFORM's is_remote
   getter to return True"""
+
   __test__ = plt.PLATFORM.is_posix
 
   @override
@@ -1145,8 +1162,9 @@ class MockRemotePosixPlatformTestCase(PosixNativePlatformTestCase):
     self.assertTrue(self.platform.is_remote)
 
   def tests_default_tmp_dir(self):
-    self.assertEqual(self.platform.default_tmp_dir,
-                     plt.PLATFORM.default_tmp_dir)
+    self.assertEqual(
+      self.platform.default_tmp_dir, plt.PLATFORM.default_tmp_dir
+    )
 
   def test_environ_set_property(self):
     raise self.skipTest("Not supported on remote platforms")
@@ -1170,13 +1188,17 @@ class MockRemotePosixPlatformTestCase(PosixNativePlatformTestCase):
       self.assertNotEqual(proc.remote_pid, proc.pid)
       self.assertIn(proc, self.platform.active_popens)
       self.assertNotIn(proc, self.platform.host_platform.active_popens)
-      with (mock.patch.object(self.platform, "sh", wraps=self.platform.sh) as
-            mock_sh, mock.patch("subprocess.Popen.send_signal") as
-            mock_local_send_signal):
+      with (
+        mock.patch.object(
+          self.platform, "sh", wraps=self.platform.sh
+        ) as mock_sh,
+        mock.patch("subprocess.Popen.send_signal") as mock_local_send_signal,
+      ):
         self.platform.kill_all_popens()
       mock_local_send_signal.assert_not_called()
       mock_sh.assert_called_once_with(
-          "kill", "-9", str(proc.remote_pid), check=False, capture_output=True)
+        "kill", "-9", str(proc.remote_pid), check=False, capture_output=True
+      )
       proc.wait(timeout=2)
       self.assertEqual(self.platform.active_popens, ())
       self.assertIsNone(self.platform.process_info(proc.remote_pid))
@@ -1319,8 +1341,9 @@ class MacOSNativePlatformTestCase(PosixNativePlatformTestCase):
     prev_level = plt.PLATFORM.get_main_display_brightness()
     brightness_level = 32
     plt.PLATFORM.set_main_display_brightness(brightness_level)
-    self.assertEqual(brightness_level,
-                     plt.PLATFORM.get_main_display_brightness())
+    self.assertEqual(
+      brightness_level, plt.PLATFORM.get_main_display_brightness()
+    )
     plt.PLATFORM.set_main_display_brightness(prev_level)
     self.assertEqual(prev_level, plt.PLATFORM.get_main_display_brightness())
 
@@ -1332,15 +1355,18 @@ class MacOSNativePlatformTestCase(PosixNativePlatformTestCase):
 
   def test_exec_apple_script(self):
     self.assertEqual(
-        self.platform.exec_apple_script('copy "a value" to stdout').strip(),
-        "a value")
+      self.platform.exec_apple_script('copy "a value" to stdout').strip(),
+      "a value",
+    )
 
   def test_exec_apple_script_args(self):
-    result = self.platform.exec_apple_script("copy item 1 of argv to stdout",
-                                             "a value", "b")
+    result = self.platform.exec_apple_script(
+      "copy item 1 of argv to stdout", "a value", "b"
+    )
     self.assertEqual(result.strip(), "a value")
-    result = self.platform.exec_apple_script("copy item 2 of argv to stdout",
-                                             "a value", "b")
+    result = self.platform.exec_apple_script(
+      "copy item 2 of argv to stdout", "a value", "b"
+    )
     self.assertEqual(result.strip(), "b")
 
   def test_exec_apple_script_invalid(self):
@@ -1366,14 +1392,16 @@ class WinNativePlatformTestCase(BaseNativePlatformTestCase):
     with self.assertRaises(ValueError):
       self.platform.search_binary(pathlib.Path("does not exist"))
     binary_path = self.platform.search_binary(
-        pathlib.Path("Windows NT/Accessories/wordpad.exe"))
+      pathlib.Path("Windows NT/Accessories/wordpad.exe")
+    )
     self.assertIsNotNone(binary_path)
     path = pathlib.Path(binary_path)
     self.assertTrue(path.exists())
 
   def test_app_version(self):
     binary_path = self.platform.search_binary(
-        pathlib.Path("Windows NT/Accessories/wordpad.exe"))
+      pathlib.Path("Windows NT/Accessories/wordpad.exe")
+    )
     self.assertIsNotNone(binary_path)
     path = pathlib.Path(binary_path)
     self.assertTrue(path.exists())

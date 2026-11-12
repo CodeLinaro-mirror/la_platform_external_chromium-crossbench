@@ -7,10 +7,12 @@ from __future__ import annotations
 import dataclasses
 from typing import ClassVar
 
-from crossbench.action_runner.virtual_device.virtual_device_config import \
-    VirtualDeviceConfig
-from crossbench.action_runner.virtual_device.virtual_device_type import \
-    VirtualDeviceType
+from crossbench.action_runner.virtual_device.virtual_device_config import (
+  VirtualDeviceConfig,
+)
+from crossbench.action_runner.virtual_device.virtual_device_type import (
+  VirtualDeviceType,
+)
 
 
 @dataclasses.dataclass(frozen=True)

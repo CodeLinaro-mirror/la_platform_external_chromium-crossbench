@@ -14,11 +14,12 @@ if TYPE_CHECKING:
 
 
 class ChromeVersion(ChromiumVersion):
-
   _PREFIX_RE: Final[re.Pattern] = re.compile(
-      r"(?:google )?chr(?:ome(?: for testing)?)?[- ]?"
-      r"(?:latest)?[- ]?"
-      rf"(?:{ChromiumVersion.CHANNEL_RE.pattern})?[- ]?m?", re.I)
+    r"(?:google )?chr(?:ome(?: for testing)?)?[- ]?"
+    r"(?:latest)?[- ]?"
+    rf"(?:{ChromiumVersion.CHANNEL_RE.pattern})?[- ]?m?",
+    re.I,
+  )
 
   @classmethod
   @override
@@ -28,8 +29,9 @@ class ChromeVersion(ChromiumVersion):
     prefix = prefix.lower()
     if prefix.strip() == "m":
       return True
-    return (bool(cls._PREFIX_RE.fullmatch(prefix)) or
-            super()._validate_prefix(prefix))
+    return bool(cls._PREFIX_RE.fullmatch(prefix)) or super()._validate_prefix(
+      prefix
+    )
 
   @classmethod
   @override

@@ -5,8 +5,16 @@
 from __future__ import annotations
 
 import abc
-from typing import TYPE_CHECKING, ClassVar, Final, Generic, Iterable, Self, \
-    TypeVar, override
+from typing import (
+  TYPE_CHECKING,
+  ClassVar,
+  Final,
+  Generic,
+  Iterable,
+  Self,
+  TypeVar,
+  override,
+)
 
 from crossbench.parse import ObjectParser
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeKeyT
@@ -33,59 +41,76 @@ class ShellProbeBase(Probe):
   def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
-        "setup_cmd",
-        aliases=("setup",),
-        type=ObjectParser.sh_cmd,
-        help="CMD is run before the browser is started.")
+      "setup_cmd",
+      aliases=("setup",),
+      type=ObjectParser.sh_cmd,
+      help="CMD is run before the browser is started.",
+    )
     parser.add_argument(
-        "start_cmd",
-        type=ObjectParser.sh_cmd,
-        aliases=("start",),
-        help=("CMD is run right before each story is started "
-              "and the browser is already running."))
+      "start_cmd",
+      type=ObjectParser.sh_cmd,
+      aliases=("start",),
+      help=(
+        "CMD is run right before each story is started "
+        "and the browser is already running."
+      ),
+    )
     parser.add_argument(
-        "start_story_run_cmd",
-        aliases=("start-story",),
-        type=ObjectParser.sh_cmd,
-        help=("CMD is run right before the measurement phase "
-              "of a story is started."))
+      "start_story_run_cmd",
+      aliases=("start-story",),
+      type=ObjectParser.sh_cmd,
+      help=(
+        "CMD is run right before the measurement phase of a story is started."
+      ),
+    )
     parser.add_argument(
-        "stop_story_run_cmd",
-        aliases=("stop-story",),
-        type=ObjectParser.sh_cmd,
-        help=("CMD is run right after the measurement phase "
-              "of a story has ended."))
+      "stop_story_run_cmd",
+      aliases=("stop-story",),
+      type=ObjectParser.sh_cmd,
+      help=(
+        "CMD is run right after the measurement phase of a story has ended."
+      ),
+    )
     parser.add_argument(
-        "stop_cmd",
-        aliases=("stop",),
-        type=ObjectParser.sh_cmd,
-        required=True,
-        help=("CMD is run right after the workload ended and the browser "
-              "is still running."))
+      "stop_cmd",
+      aliases=("stop",),
+      type=ObjectParser.sh_cmd,
+      required=True,
+      help=(
+        "CMD is run right after the workload ended and the browser "
+        "is still running."
+      ),
+    )
     parser.add_argument(
-        "teardown_cmd",
-        aliases=("teardown",),
-        type=ObjectParser.sh_cmd,
-        help="CMD is run after the browser is stopped.")
+      "teardown_cmd",
+      aliases=("teardown",),
+      type=ObjectParser.sh_cmd,
+      help="CMD is run after the browser is stopped.",
+    )
     return parser
 
-  def __init__(self,
-               setup_cmd: Iterable[CmdArg] | None = None,
-               start_cmd: Iterable[CmdArg] | None = None,
-               start_story_run_cmd: Iterable[CmdArg] | None = None,
-               stop_story_run_cmd: Iterable[CmdArg] | None = None,
-               stop_cmd: Iterable[CmdArg] | None = None,
-               teardown_cmd: Iterable[CmdArg] | None = None) -> None:
+  def __init__(
+    self,
+    setup_cmd: Iterable[CmdArg] | None = None,
+    start_cmd: Iterable[CmdArg] | None = None,
+    start_story_run_cmd: Iterable[CmdArg] | None = None,
+    stop_story_run_cmd: Iterable[CmdArg] | None = None,
+    stop_cmd: Iterable[CmdArg] | None = None,
+    teardown_cmd: Iterable[CmdArg] | None = None,
+  ) -> None:
     super().__init__()
     self._setup_cmd: Final[TupleCmdArgs] = tuple(setup_cmd) if setup_cmd else ()
     self._start_cmd: Final[TupleCmdArgs] = tuple(start_cmd) if start_cmd else ()
     self._start_story_run_cmd: Final[TupleCmdArgs] = (
-        tuple(start_story_run_cmd) if start_story_run_cmd else ())
+      tuple(start_story_run_cmd) if start_story_run_cmd else ()
+    )
     self._stop_story_run_cmd: Final[TupleCmdArgs] = (
-        tuple(stop_story_run_cmd) if stop_story_run_cmd else ())
+      tuple(stop_story_run_cmd) if stop_story_run_cmd else ()
+    )
     self._stop_cmd: Final[TupleCmdArgs] = tuple(stop_cmd) if stop_cmd else ()
     self._teardown_cmd: Final[TupleCmdArgs] = (
-        tuple(teardown_cmd) if teardown_cmd else ())
+      tuple(teardown_cmd) if teardown_cmd else ()
+    )
 
   @abc.abstractmethod
   @override
@@ -95,12 +120,15 @@ class ShellProbeBase(Probe):
   @property
   @override
   def key(self) -> ProbeKeyT:
-    return (*super().key, ("setup_cmd", tuple(map(str, self.setup_cmd))),
-            ("start_cmd", tuple(map(str, self.start_cmd))),
-            ("start_story_run_cmd", tuple(map(str, self.start_story_run_cmd))),
-            ("stop_story_run_cmd", tuple(map(str, self.stop_story_run_cmd))),
-            ("stop_cmd", tuple(map(str, self.stop_cmd))),
-            ("teardown_cmd", tuple(map(str, self.teardown_cmd))))
+    return (
+      *super().key,
+      ("setup_cmd", tuple(map(str, self.setup_cmd))),
+      ("start_cmd", tuple(map(str, self.start_cmd))),
+      ("start_story_run_cmd", tuple(map(str, self.start_story_run_cmd))),
+      ("stop_story_run_cmd", tuple(map(str, self.stop_story_run_cmd))),
+      ("stop_cmd", tuple(map(str, self.stop_cmd))),
+      ("teardown_cmd", tuple(map(str, self.teardown_cmd))),
+    )
 
   @property
   def setup_cmd(self) -> TupleCmdArgs:
@@ -135,12 +163,12 @@ class ShellProbeBase(Probe):
     super().validate_browser(env, browser)
     target_platform = self.target_platform(browser)
     for cmd_name in (
-        "setup_cmd",
-        "start_cmd",
-        "start_story_run_cmd",
-        "stop_story_run_cmd",
-        "stop_cmd",
-        "teardown_cmd",
+      "setup_cmd",
+      "start_cmd",
+      "start_story_run_cmd",
+      "stop_story_run_cmd",
+      "stop_cmd",
+      "teardown_cmd",
     ):
       self._validate_cmd(target_platform, cmd_name)
 
@@ -152,15 +180,19 @@ class ShellProbeBase(Probe):
     if platform.which(program):
       return
     raise ProbeValidationError(
-        self, f"Command '{program}' in {cmd_name} is not executable or "
-        f"does not exist on the target platform '{platform}'.")
+      self,
+      f"Command '{program}' in {cmd_name} is not executable or "
+      f"does not exist on the target platform '{platform}'.",
+    )
 
   @override
   def validate_env(self, env: RunnerEnv) -> None:
     super().validate_env(env)
     if env.repetitions != 1:
-      env.handle_warning(f"Probe={self.NAME} cannot merge data over multiple "
-                         f"repetitions={env.repetitions}.")
+      env.handle_warning(
+        f"Probe={self.NAME} cannot merge data over multiple "
+        f"repetitions={env.repetitions}."
+      )
 
 
 class ShellProbe(ShellProbeBase):
@@ -168,6 +200,7 @@ class ShellProbe(ShellProbeBase):
   Run an arbitrary shell command on the browser platform and store the
   stdout and stderr of the command as a result file.
   """
+
   NAME: ClassVar = "shell"
 
   @override
@@ -248,6 +281,7 @@ class LocalShellProbe(ShellProbeBase):
   Run an arbitrary shell command on the host platform and store the
   stdout and stderr of the command as a result file.
   """
+
   NAME: ClassVar[str] = "local_shell"
 
   @override

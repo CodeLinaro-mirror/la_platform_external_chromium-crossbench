@@ -9,8 +9,14 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING
 from unittest import mock
 
-from crossbench.exception import ArgumentTypeMultiException, Entry, \
-    ExceptionAnnotator, MultiException, annotate, annotate_argparsing
+from crossbench.exception import (
+  ArgumentTypeMultiException,
+  Entry,
+  ExceptionAnnotator,
+  MultiException,
+  annotate,
+  annotate_argparsing,
+)
 from tests import test_helper
 
 if TYPE_CHECKING:
@@ -30,7 +36,6 @@ class CustomValueError(ValueError):
 
 
 class ExceptionHandlerTestCase(unittest.TestCase):
-
   def test_invalid_get_item(self):
     annotator = ExceptionAnnotator()
     with self.assertRaises(TypeError):
@@ -104,9 +109,11 @@ class ExceptionHandlerTestCase(unittest.TestCase):
     self.assertTrue(len(annotator), 1)
     entry: Entry = annotator[0]
     self.assertSequenceEqual(
-        annotator.matching(CustomValueError), [
-            entry.exception,
-        ])
+      annotator.matching(CustomValueError),
+      [
+        entry.exception,
+      ],
+    )
     self.assertSequenceEqual(entry.info_stack, ("BBB", "AAA", "000"))
     self.assertIsInstance(entry.exception, ValueError)
 
@@ -179,8 +186,10 @@ class ExceptionHandlerTestCase(unittest.TestCase):
   def test_info_stack(self):
     annotator = ExceptionAnnotator(throw=True)
     exception = ValueError("custom message")
-    with self.assertRaises(ValueError) as cm, annotator.info(
-        "info 1", "info 2"):
+    with (
+      self.assertRaises(ValueError) as cm,
+      annotator.info("info 1", "info 2"),
+    ):
       self.assertSequenceEqual(annotator.info_stack, ("info 1", "info 2"))
       try:
         raise exception
@@ -276,8 +285,9 @@ class ExceptionHandlerTestCase(unittest.TestCase):
     self.assertEqual(len(annotator_1), 2)
     self.assertEqual(len(annotator_2), 1)
     self.assertSequenceEqual(annotator_1[0].info_stack, ("info 1", "info 2"))
-    self.assertSequenceEqual(annotator_1[1].info_stack,
-                             ("info 1", "info 2", "info 3", "info 4"))
+    self.assertSequenceEqual(
+      annotator_1[1].info_stack, ("info 1", "info 2", "info 3", "info 4")
+    )
     self.assertSequenceEqual(annotator_2[0].info_stack, ("info 3", "info 4"))
 
   def test_contextmanager(self):
@@ -427,8 +437,9 @@ class ExceptionHandlerTestCase(unittest.TestCase):
     self.assertFalse(annotator.is_success)
     self.assertEqual(len(annotator), 1)
     self.assertEqual(str(annotator[0].exception), "unhashable error")
-    self.assertTupleEqual(annotator[0].info_stack,
-                          ("info 1", "info 2", "info 3"))
+    self.assertTupleEqual(
+      annotator[0].info_stack, ("info 1", "info 2", "info 3")
+    )
 
 
 if __name__ == "__main__":

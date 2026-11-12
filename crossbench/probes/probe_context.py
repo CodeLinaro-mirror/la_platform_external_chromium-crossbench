@@ -7,18 +7,29 @@ from __future__ import annotations
 import abc
 import contextlib
 import datetime as dt
-from typing import TYPE_CHECKING, Final, Generic, Iterable, Iterator, \
-    Mapping, TypeVar, override
+from typing import (
+  TYPE_CHECKING,
+  Final,
+  Generic,
+  Iterable,
+  Iterator,
+  Mapping,
+  TypeVar,
+  override,
+)
 
-from crossbench.probes.results import BrowserProbeResult, EmptyProbeResult, \
-    LocalProbeResult, ProbeResult
+from crossbench.probes.results import (
+  BrowserProbeResult,
+  EmptyProbeResult,
+  LocalProbeResult,
+  ProbeResult,
+)
 
 if TYPE_CHECKING:
   from selenium.webdriver.common.options import BaseOptions
 
-  from crossbench import exception
+  from crossbench import exception, plt
   from crossbench import path as pth
-  from crossbench import plt
   from crossbench.browsers.browser import Browser
   from crossbench.probes.probe import Probe
   from crossbench.runner.groups.session import BrowserSessionRunGroup
@@ -32,14 +43,14 @@ ProbeT = TypeVar("ProbeT", bound="Probe")
 
 class BaseProbeContext(Generic[ProbeT], metaclass=abc.ABCMeta):
   """
-    Base class for an activation of a probe where active data collection
-    happens. See specific subclasses for implementations that can be used
-    for data collection during runs or whole sessions.
-    Override in Probe subclasses to implement actual performance data
-    collection.
-    - The data should be written to self.result_path.
-    - A file / list / dict of result file Paths should be returned by the
-      override teardown() method
+  Base class for an activation of a probe where active data collection
+  happens. See specific subclasses for implementations that can be used
+  for data collection during runs or whole sessions.
+  Override in Probe subclasses to implement actual performance data
+  collection.
+  - The data should be written to self.result_path.
+  - A file / list / dict of result file Paths should be returned by the
+    override teardown() method
   """
 
   def __init__(self, probe: ProbeT, result_origin: ResultOrigin) -> None:
@@ -140,21 +151,26 @@ class BaseProbeContext(Generic[ProbeT], metaclass=abc.ABCMeta):
     assert maybe_pid, "Browser is not runner or does not provide a pid."
     return maybe_pid
 
-  def browser_result(self,
-                     url: Iterable[str] | None = None,
-                     file: Iterable[pth.AnyPath] | None = None,
-                     perfetto: Iterable[pth.AnyPath] | None = None,
-                     **kwargs: Iterable[pth.AnyPath]) -> BrowserProbeResult:
+  def browser_result(
+    self,
+    url: Iterable[str] | None = None,
+    file: Iterable[pth.AnyPath] | None = None,
+    perfetto: Iterable[pth.AnyPath] | None = None,
+    **kwargs: Iterable[pth.AnyPath],
+  ) -> BrowserProbeResult:
     """Helper to create BrowserProbeResult that might be stored on a remote
     browser/device and need to be copied over to the local machine."""
     return BrowserProbeResult(
-        self.result_origin, url=url, file=file, perfetto=perfetto, **kwargs)
+      self.result_origin, url=url, file=file, perfetto=perfetto, **kwargs
+    )
 
-  def local_result(self,
-                   url: Iterable[str] | None = None,
-                   file: Iterable[pth.LocalPath] | None = None,
-                   perfetto: Iterable[pth.LocalPath] | None = None,
-                   **kwargs: Iterable[pth.LocalPath]) -> LocalProbeResult:
+  def local_result(
+    self,
+    url: Iterable[str] | None = None,
+    file: Iterable[pth.LocalPath] | None = None,
+    perfetto: Iterable[pth.LocalPath] | None = None,
+    **kwargs: Iterable[pth.LocalPath],
+  ) -> LocalProbeResult:
     """Helper to create LocalProbeResult."""
     return LocalProbeResult(url=url, file=file, perfetto=perfetto, **kwargs)
 
@@ -186,8 +202,9 @@ class BaseProbeContext(Generic[ProbeT], metaclass=abc.ABCMeta):
     if kwargs:
       raise RuntimeError(f"Got unexpected keyword arguments: {kwargs}")
 
-  def invoke(self, info_stack: exception.TInfoStack, timeout: dt.timedelta,
-             **kwargs) -> None:
+  def invoke(
+    self, info_stack: exception.TInfoStack, timeout: dt.timedelta, **kwargs
+  ) -> None:
     """
     Called from the "probe" action in the ActionRunner.
     """
@@ -315,8 +332,9 @@ class ProbeSessionContext(BaseProbeContext[ProbeT], metaclass=abc.ABCMeta):
   def __init__(self, probe: ProbeT, session: BrowserSessionRunGroup) -> None:
     super().__init__(probe, session)
     self._session: Final[BrowserSessionRunGroup] = session
-    self._default_result_path: Final[
-        pth.AnyPath] = self.get_default_result_path()
+    self._default_result_path: Final[pth.AnyPath] = (
+      self.get_default_result_path()
+    )
 
   def get_default_result_path(self) -> pth.AnyPath:
     return self._session.get_default_probe_result_path(self._probe)

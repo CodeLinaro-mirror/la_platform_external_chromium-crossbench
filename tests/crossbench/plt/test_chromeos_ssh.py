@@ -10,8 +10,9 @@ import subprocess
 from typing import override
 from unittest import mock
 
-from crossbench.action_runner.virtual_device.touchscreen import \
-    TouchscreenVirtualDeviceConfig
+from crossbench.action_runner.virtual_device.touchscreen import (
+  TouchscreenVirtualDeviceConfig,
+)
 from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
 from crossbench.plt.display_info import DisplayResolution
 from crossbench.plt.linux import SCRIPTS_DIR
@@ -21,27 +22,30 @@ from tests.crossbench.plt.test_linux_ssh import LinuxSshMockPlatformTestCase
 
 class ChromeOsSshMockPlatformTestCase(LinuxSshMockPlatformTestCase):
   SSH_USER = "chronos"
-  _WAKELOCK_CMD = ("set_power_policy"
-                   " --ac_screen_dim_delay=0"
-                   " --ac_screen_off_delay=0"
-                   " --ac_idle_action=do_nothing"
-                   " --battery_screen_dim_delay=0"
-                   " --battery_screen_off_delay=0"
-                   " --battery_idle_action=do_nothing"
-                   " --dim_wake_lock=1"
-                   " --screen_wake_lock=1"
-                   " --system_wake_lock=1")
+  _WAKELOCK_CMD = (
+    "set_power_policy"
+    " --ac_screen_dim_delay=0"
+    " --ac_screen_off_delay=0"
+    " --ac_idle_action=do_nothing"
+    " --battery_screen_dim_delay=0"
+    " --battery_screen_off_delay=0"
+    " --battery_idle_action=do_nothing"
+    " --dim_wake_lock=1"
+    " --screen_wake_lock=1"
+    " --system_wake_lock=1"
+  )
   platform: ChromeOsSshPlatform
 
   @override
   def setup_platform(self, enable_arc=False) -> ChromeOsSshPlatform:
     return ChromeOsSshPlatform(
-        self.host_platform,
-        host=self.HOST,
-        port=self.PORT,
-        ssh_port=self.SSH_PORT,
-        ssh_user=self.SSH_USER,
-        enable_arc=enable_arc)
+      self.host_platform,
+      host=self.HOST,
+      port=self.PORT,
+      ssh_port=self.SSH_PORT,
+      ssh_user=self.SSH_USER,
+      enable_arc=enable_arc,
+    )
 
   def test_name(self):
     self.assertEqual(self.platform.name, "chromeos_ssh")
@@ -54,8 +58,9 @@ class ChromeOsSshMockPlatformTestCase(LinuxSshMockPlatformTestCase):
 
   def test_basic_properties(self):
     super().test_basic_properties()
-    self.assertEqual(self.platform.default_tmp_dir,
-                     pathlib.PurePosixPath("/usr/local/tmp/"))
+    self.assertEqual(
+      self.platform.default_tmp_dir, pathlib.PurePosixPath("/usr/local/tmp/")
+    )
 
   def test_display_resolution(self):
     cros_health_tool_out = """
@@ -78,8 +83,8 @@ class ChromeOsSshMockPlatformTestCase(LinuxSshMockPlatformTestCase):
       }
     }"""
     self._expect_sh_ssh(
-        "cros-health-tool telem --category=display",
-        result=cros_health_tool_out)
+      "cros-health-tool telem --category=display", result=cros_health_tool_out
+    )
     resolution = self.platform.display_resolution()
     self.assertEqual(resolution, DisplayResolution(1366, 768))
     self.assertEqual(resolution.width, 1366)
@@ -89,11 +94,14 @@ class ChromeOsSshMockPlatformTestCase(LinuxSshMockPlatformTestCase):
     expected_port = 80
 
     self._expect_sh_ssh(
-        "/usr/local/autotest/bin/autologin.py -u username -p password")
+      "/usr/local/autotest/bin/autologin.py -u username -p password"
+    )
     self._expect_sh_ssh(
-        "cat /home/chronos/DevToolsActivePort", result=f"{expected_port}")
+      "cat /home/chronos/DevToolsActivePort", result=f"{expected_port}"
+    )
     port = self.platform.create_debugging_session(
-        browser_flags=(), username="username", password="password")
+      browser_flags=(), username="username", password="password"
+    )
 
     self.assertEqual(port, expected_port)
 
@@ -102,11 +110,14 @@ class ChromeOsSshMockPlatformTestCase(LinuxSshMockPlatformTestCase):
     expected_port = 80
 
     self._expect_sh_ssh(
-        "/usr/local/autotest/bin/autologin.py --arc -u username -p password")
+      "/usr/local/autotest/bin/autologin.py --arc -u username -p password"
+    )
     self._expect_sh_ssh(
-        "cat /home/chronos/DevToolsActivePort", result=f"{expected_port}")
+      "cat /home/chronos/DevToolsActivePort", result=f"{expected_port}"
+    )
     port = self.platform.create_debugging_session(
-        browser_flags=(), username="username", password="password")
+      browser_flags=(), username="username", password="password"
+    )
 
     self.assertEqual(port, expected_port)
 
@@ -114,14 +125,18 @@ class ChromeOsSshMockPlatformTestCase(LinuxSshMockPlatformTestCase):
     self.platform = self.setup_platform(enable_arc=True)
     expected_port = 80
 
-    self._expect_sh_ssh("/usr/local/autotest/bin/autologin.py --arc"
-                        " -u username -p password -- --another-flag")
     self._expect_sh_ssh(
-        "cat /home/chronos/DevToolsActivePort", result=f"{expected_port}")
+      "/usr/local/autotest/bin/autologin.py --arc"
+      " -u username -p password -- --another-flag"
+    )
+    self._expect_sh_ssh(
+      "cat /home/chronos/DevToolsActivePort", result=f"{expected_port}"
+    )
     port = self.platform.create_debugging_session(
-        browser_flags=("--disable-extensions", "--another-flag"),
-        username="username",
-        password="password")
+      browser_flags=("--disable-extensions", "--another-flag"),
+      username="username",
+      password="password",
+    )
 
     self.assertEqual(port, expected_port)
 
@@ -137,14 +152,17 @@ class ChromeOsSshMockPlatformTestCase(LinuxSshMockPlatformTestCase):
     expected_port = 80
     self._expect_sh_ssh(self._WAKELOCK_CMD)
     self._expect_sh_ssh(
-        "/usr/local/autotest/bin/autologin.py -u username -p password")
+      "/usr/local/autotest/bin/autologin.py -u username -p password"
+    )
     self._expect_sh_ssh(self._WAKELOCK_CMD)
     self._expect_sh_ssh(
-        "cat /home/chronos/DevToolsActivePort", result=f"{expected_port}")
+      "cat /home/chronos/DevToolsActivePort", result=f"{expected_port}"
+    )
     self._expect_sh_ssh("set_power_policy")
     with self.platform.wakelock():
       port = self.platform.create_debugging_session(
-          browser_flags=(), username="username", password="password")
+        browser_flags=(), username="username", password="password"
+      )
       self.assertEqual(port, expected_port)
 
   def test_system_details(self):
@@ -159,26 +177,30 @@ class ChromeOsSshMockPlatformTestCase(LinuxSshMockPlatformTestCase):
     self._expect_sh_ssh("'[' -e /bin/python3.0 ']'", result="")
     self._expect_sh_ssh("/bin/python3.0 --version", result="Python 3.0")
     self._expect_sh_ssh(
-        "/bin/python3.0 -c 'import sys; "
-        "print(64 if sys.maxsize > 2**32 else 32)'",
-        result="64")
+      "/bin/python3.0 -c 'import sys; "
+      "print(64 if sys.maxsize > 2**32 else 32)'",
+      result="64",
+    )
     self._expect_sh_ssh("cat /proc/cpuinfo", result="crossbench")
     self._expect_sh_ssh(
-        "grep -E 'processor|core id|physical id' /proc/cpuinfo",
-        result="processor: 0\nphysical id: 0\ncore id: 0")
+      "grep -E 'processor|core id|physical id' /proc/cpuinfo",
+      result="processor: 0\nphysical id: 0\ncore id: 0",
+    )
     self._expect_sh_ssh(
-        "grep -E 'processor|core id|physical id' /proc/cpuinfo",
-        result="processor: 0\nphysical id: 0\ncore id: 0")
+      "grep -E 'processor|core id|physical id' /proc/cpuinfo",
+      result="processor: 0\nphysical id: 0\ncore id: 0",
+    )
 
     display_info = {
-        "embedded_display": {
-            "resolution_horizontal": 1,
-            "resolution_vertical": 2,
-        },
+      "embedded_display": {
+        "resolution_horizontal": 1,
+        "resolution_vertical": 2,
+      },
     }
     self._expect_sh_ssh(
-        "cros-health-tool telem --category=display",
-        result=json.dumps(display_info))
+      "cros-health-tool telem --category=display",
+      result=json.dumps(display_info),
+    )
     self._expect_sh_ssh("which lscpu", result="/bin/lscpu")
     self._expect_sh_ssh("'[' -e /bin/lscpu ']'", result="")
     self._expect_sh_ssh("/bin/lscpu", result="definitely a real cpu")
@@ -224,33 +246,37 @@ CHROMEOS_RELEASE_UNIBUILD=1
     path = SCRIPTS_DIR / "evemu_wrapper.sh"
     self.fs.create_file(path, contents="evemu_wrapper")
     display_info = {
-        "embedded_display": {
-            "resolution_horizontal": 1366,
-            "resolution_vertical": 768,
-        },
+      "embedded_display": {
+        "resolution_horizontal": 1366,
+        "resolution_vertical": 768,
+      },
     }
     self._expect_sh_ssh(
-        "cros-health-tool telem --category=display",
-        result=json.dumps(display_info))
+      "cros-health-tool telem --category=display",
+      result=json.dumps(display_info),
+    )
 
     proc = mock.MagicMock()
     proc.poll.return_value = None
     proc.stdout.readline.return_value = b"touch1: /dev/input/event4\n"
 
     with mock.patch.object(
-        self.platform, "popen", return_value=proc) as mock_popen:
+      self.platform, "popen", return_value=proc
+    ) as mock_popen:
       with mock.patch.object(self.platform, "sleep"):
         self.platform.setup_virtual_devices(
-            (TouchscreenVirtualDeviceConfig(name="touch1"),))
+          (TouchscreenVirtualDeviceConfig(name="touch1"),)
+        )
         mock_popen.assert_called_once_with(
-            "sh",
-            "-c",
-            "evemu_wrapper",
-            "--",
-            mock.ANY,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL)
+          "sh",
+          "-c",
+          "evemu_wrapper",
+          "--",
+          mock.ANY,
+          stdin=subprocess.PIPE,
+          stdout=subprocess.PIPE,
+          stderr=subprocess.DEVNULL,
+        )
         written_header = mock_popen.call_args[0][4]
         self.assertIn("N: touch1", written_header)
         self.assertIn("A: 35 0 1366 0 0 12", written_header)

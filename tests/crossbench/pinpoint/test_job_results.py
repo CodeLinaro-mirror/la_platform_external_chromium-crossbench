@@ -9,8 +9,12 @@ import unittest
 from typing import TYPE_CHECKING, Final
 from unittest import mock
 
-from crossbench.pinpoint.job_results import PinpointAttemptResults, \
-    PinpointJobResults, PinpointVariantResults, download_results
+from crossbench.pinpoint.job_results import (
+  PinpointAttemptResults,
+  PinpointJobResults,
+  PinpointVariantResults,
+  download_results,
+)
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 
@@ -18,12 +22,12 @@ if TYPE_CHECKING:
   from crossbench.types import JsonDict
 
 _JOB_ID: Final[str] = "1234567890"
-_RESULTS_URL: Final[
-    str] = f"https://storage.cloud.google.com/results2-public/{_JOB_ID}.html"
+_RESULTS_URL: Final[str] = (
+  f"https://storage.cloud.google.com/results2-public/{_JOB_ID}.html"
+)
 
 
 class JobResultsTest(CrossbenchFakeFsTestCase):
-
   def get_tmp_dir(self):
     path = pathlib.Path("/tmp/test_results")
     return path.resolve()
@@ -31,13 +35,16 @@ class JobResultsTest(CrossbenchFakeFsTestCase):
   def setUp(self):
     super().setUp()
     self.mock_fetch = self.enterContext(
-        mock.patch("crossbench.pinpoint.job_results.fetch_job_config"))
+      mock.patch("crossbench.pinpoint.job_results.fetch_job_config")
+    )
     self.mock_sh = self.enterContext(mock.patch("crossbench.plt.PLATFORM.sh"))
     self.mock_which = self.enterContext(
-        mock.patch("crossbench.plt.PLATFORM.which"))
+      mock.patch("crossbench.plt.PLATFORM.which")
+    )
     self.mock_which.return_value = "/usr/bin/cas"
     self.mock_storage_client = self.enterContext(
-        mock.patch("crossbench.pinpoint.job_results.gcloud_storage.Client"))
+      mock.patch("crossbench.pinpoint.job_results.gcloud_storage.Client")
+    )
 
     # Setup mock bucket and blob
     self.mock_bucket = mock.MagicMock()
@@ -54,13 +61,13 @@ class JobResultsTest(CrossbenchFakeFsTestCase):
 
   def test_download_html_results(self):
     self.mock_fetch.return_value = {
-        "results_url": _RESULTS_URL,
-        "status": "Completed",
-        "state": [],
-        "arguments": {
-            "benchmark": "speedometer3",
-            "configuration": "linux-perf",
-        },
+      "results_url": _RESULTS_URL,
+      "status": "Completed",
+      "state": [],
+      "arguments": {
+        "benchmark": "speedometer3",
+        "configuration": "linux-perf",
+      },
     }
     out_dir = self.get_tmp_dir()
 
@@ -70,24 +77,26 @@ class JobResultsTest(CrossbenchFakeFsTestCase):
 
     self.mock_storage_client.assert_called_once()
     self.mock_storage_client.return_value.bucket.assert_called_with(
-        "results2-public")
+      "results2-public"
+    )
     self.mock_bucket.blob.assert_called_with(f"{_JOB_ID}.html")
     self.mock_blob.download_to_filename.assert_called_with(
-        str(out_dir / f"{_JOB_ID}.html"))
+      str(out_dir / f"{_JOB_ID}.html")
+    )
 
     self.assertTrue((out_dir / f"{_JOB_ID}.html").exists())
 
   def test_download_results_incomplete_job(self):
     self.mock_fetch.return_value = {
-        "job_id": _JOB_ID,
+      "job_id": _JOB_ID,
+      "configuration": "linux-perf",
+      "results_url": _RESULTS_URL,
+      "status": "Running",
+      "state": [],
+      "arguments": {
+        "benchmark": "speedometer3",
         "configuration": "linux-perf",
-        "results_url": _RESULTS_URL,
-        "status": "Running",
-        "state": [],
-        "arguments": {
-            "benchmark": "speedometer3",
-            "configuration": "linux-perf",
-        },
+      },
     }
     out_dir = self.get_tmp_dir()
 
@@ -96,47 +105,51 @@ class JobResultsTest(CrossbenchFakeFsTestCase):
 
   def test_download_results(self):
     self.mock_fetch.return_value = {
-        "configuration":
-            "mac-intel-perf",
-        "results_url":
-            _RESULTS_URL,
-        "status":
-            "Completed",
-        "arguments": {
-            "benchmark": "speedometer3",
-            "configuration": "mac-intel-perf",
-        },
-        "state": [{
-            "change": {
-                "commits": [{
-                    "repository": "chromium",
-                    "commit_position": 111,
-                }],
-                "label": "base",
-            },
-            "attempts": [{
-                "executions": [
-                    {  # 0: build
-                    },
-                    {  # 1: test
-                        "details": [{
-                            "key": "isolate",
-                            "value": "123abc",
-                        }],
-                    },
-                    {  # 2: values
-                        "details": [{
-                            "key":
-                                "trace",
-                            "value":
-                                "trace.pb",
-                            "url":
-                                "https://storage.cloud.google.com/res/trace.pb",
-                        }],
-                    },
-                ],
-            }],
-        }],
+      "configuration": "mac-intel-perf",
+      "results_url": _RESULTS_URL,
+      "status": "Completed",
+      "arguments": {
+        "benchmark": "speedometer3",
+        "configuration": "mac-intel-perf",
+      },
+      "state": [
+        {
+          "change": {
+            "commits": [
+              {
+                "repository": "chromium",
+                "commit_position": 111,
+              }
+            ],
+            "label": "base",
+          },
+          "attempts": [
+            {
+              "executions": [
+                {  # 0: build
+                },
+                {  # 1: test
+                  "details": [
+                    {
+                      "key": "isolate",
+                      "value": "123abc",
+                    }
+                  ],
+                },
+                {  # 2: values
+                  "details": [
+                    {
+                      "key": "trace",
+                      "value": "trace.pb",
+                      "url": "https://storage.cloud.google.com/res/trace.pb",
+                    }
+                  ],
+                },
+              ],
+            }
+          ],
+        }
+      ],
     }
 
     out_dir = self.get_tmp_dir()
@@ -154,36 +167,41 @@ class JobResultsTest(CrossbenchFakeFsTestCase):
     self.mock_storage_client.return_value.bucket.assert_any_call("res")
     self.mock_bucket.blob.assert_any_call("trace.pb")
     self.mock_blob.download_to_filename.assert_any_call(
-        str(out_dir / "base" / "1" / "trace.pb"))
+      str(out_dir / "base" / "1" / "trace.pb")
+    )
 
     self.assertTrue((out_dir / "base" / "1" / "trace.pb").exists())
 
   def test_download_results_no_label(self):
     self.mock_fetch.return_value = {
-        "configuration":
-            "linux-perf",
-        "results_url":
-            _RESULTS_URL,
-        "status":
-            "Completed",
-        "arguments": {
-            "benchmark": "speedometer3",
-            "configuration": "linux-perf",
-        },
-        "state": [{
-            "change": {
-                "commits": [{
-                    "repository": "chromium",
-                    "commit_position": 123,
-                }, {
-                    "repository": "v8",
-                    "commit_position": 456,
-                }],
-            },
-            "attempts": [{
-                "executions": [],
-            }],
-        }],
+      "configuration": "linux-perf",
+      "results_url": _RESULTS_URL,
+      "status": "Completed",
+      "arguments": {
+        "benchmark": "speedometer3",
+        "configuration": "linux-perf",
+      },
+      "state": [
+        {
+          "change": {
+            "commits": [
+              {
+                "repository": "chromium",
+                "commit_position": 123,
+              },
+              {
+                "repository": "v8",
+                "commit_position": 456,
+              },
+            ],
+          },
+          "attempts": [
+            {
+              "executions": [],
+            }
+          ],
+        }
+      ],
     }
 
     out_dir = self.get_tmp_dir()
@@ -193,19 +211,23 @@ class JobResultsTest(CrossbenchFakeFsTestCase):
 
   def test_download_results_no_label_no_commits(self):
     self.mock_fetch.return_value = {
+      "configuration": "linux-perf",
+      "results_url": _RESULTS_URL,
+      "status": "Completed",
+      "arguments": {
+        "benchmark": "speedometer3",
         "configuration": "linux-perf",
-        "results_url": _RESULTS_URL,
-        "status": "Completed",
-        "arguments": {
-            "benchmark": "speedometer3",
-            "configuration": "linux-perf",
-        },
-        "state": [{
-            "change": {},
-            "attempts": [{
-                "executions": [],
-            }],
-        }],
+      },
+      "state": [
+        {
+          "change": {},
+          "attempts": [
+            {
+              "executions": [],
+            }
+          ],
+        }
+      ],
     }
 
     out_dir = self.get_tmp_dir()
@@ -216,14 +238,14 @@ class JobResultsTest(CrossbenchFakeFsTestCase):
   def test_download_results_missing_cas(self):
     self.mock_which.return_value = None
     self.mock_fetch.return_value = {
+      "configuration": "linux-perf",
+      "results_url": _RESULTS_URL,
+      "status": "Completed",
+      "arguments": {
+        "benchmark": "speedometer3",
         "configuration": "linux-perf",
-        "results_url": _RESULTS_URL,
-        "status": "Completed",
-        "arguments": {
-            "benchmark": "speedometer3",
-            "configuration": "linux-perf",
-        },
-        "state": [],
+      },
+      "state": [],
     }
     out_dir = self.get_tmp_dir()
 
@@ -242,14 +264,14 @@ class JobResultsTest(CrossbenchFakeFsTestCase):
     self.mock_which.side_effect = which_side_effect
 
     self.mock_fetch.return_value = {
+      "configuration": "linux-perf",
+      "results_url": _RESULTS_URL,
+      "status": "Completed",
+      "arguments": {
+        "benchmark": "speedometer3",
         "configuration": "linux-perf",
-        "results_url": _RESULTS_URL,
-        "status": "Completed",
-        "arguments": {
-            "benchmark": "speedometer3",
-            "configuration": "linux-perf",
-        },
-        "state": [],
+      },
+      "state": [],
     }
     out_dir = self.get_tmp_dir()
 
@@ -271,14 +293,14 @@ class JobResultsTest(CrossbenchFakeFsTestCase):
     self.mock_which.return_value = None
 
     self.mock_fetch.return_value = {
+      "configuration": "linux-perf",
+      "results_url": _RESULTS_URL,
+      "status": "Completed",
+      "arguments": {
+        "benchmark": "speedometer3",
         "configuration": "linux-perf",
-        "results_url": _RESULTS_URL,
-        "status": "Completed",
-        "arguments": {
-            "benchmark": "speedometer3",
-            "configuration": "linux-perf",
-        },
-        "state": [],
+      },
+      "state": [],
     }
     out_dir = self.get_tmp_dir()
 
@@ -293,33 +315,37 @@ class JobResultsTest(CrossbenchFakeFsTestCase):
     (cache_dir / "cas" / "cas").open("a").close()
 
     with mock.patch(
-        "crossbench.plt.PLATFORM.local_cache_dir", return_value=cache_dir):
+      "crossbench.plt.PLATFORM.local_cache_dir", return_value=cache_dir
+    ):
       self.mock_fetch.return_value = {
-          "configuration":
-              "linux-perf",
-          "results_url":
-              _RESULTS_URL,
-          "status":
-              "Completed",
-          "arguments": {
-              "benchmark": "speedometer3",
-              "configuration": "linux-perf",
-          },
-          "state": [{
-              "change": {},
-              "attempts": [{
-                  "executions": [
-                      {  # 0: build
-                      },
-                      {  # 1: test
-                          "details": [{
-                              "key": "isolate",
-                              "value": "123abc_cached",
-                          }],
-                      },
-                  ],
-              }],
-          }],
+        "configuration": "linux-perf",
+        "results_url": _RESULTS_URL,
+        "status": "Completed",
+        "arguments": {
+          "benchmark": "speedometer3",
+          "configuration": "linux-perf",
+        },
+        "state": [
+          {
+            "change": {},
+            "attempts": [
+              {
+                "executions": [
+                  {  # 0: build
+                  },
+                  {  # 1: test
+                    "details": [
+                      {
+                        "key": "isolate",
+                        "value": "123abc_cached",
+                      }
+                    ],
+                  },
+                ],
+              }
+            ],
+          }
+        ],
       }
       out_dir = self.get_tmp_dir() / "out"
       download_results(_JOB_ID, out_dir)
@@ -330,14 +356,14 @@ class JobResultsTest(CrossbenchFakeFsTestCase):
 
   def test_download_results_file_exists_no_force(self):
     self.mock_fetch.return_value = {
+      "configuration": "linux-perf",
+      "results_url": _RESULTS_URL,
+      "status": "Completed",
+      "state": [],
+      "arguments": {
+        "benchmark": "speedometer3",
         "configuration": "linux-perf",
-        "results_url": _RESULTS_URL,
-        "status": "Completed",
-        "state": [],
-        "arguments": {
-            "benchmark": "speedometer3",
-            "configuration": "linux-perf",
-        },
+      },
     }
     out_dir = self.get_tmp_dir()
     out_dir.mkdir(parents=True)
@@ -347,14 +373,14 @@ class JobResultsTest(CrossbenchFakeFsTestCase):
 
   def test_download_results_file_exists_with_force(self):
     self.mock_fetch.return_value = {
+      "configuration": "linux-perf",
+      "results_url": _RESULTS_URL,
+      "status": "Completed",
+      "state": [],
+      "arguments": {
+        "benchmark": "speedometer3",
         "configuration": "linux-perf",
-        "results_url": _RESULTS_URL,
-        "status": "Completed",
-        "state": [],
-        "arguments": {
-            "benchmark": "speedometer3",
-            "configuration": "linux-perf",
-        },
+      },
     }
     out_dir = self.get_tmp_dir()
     out_dir.mkdir(parents=True)
@@ -366,20 +392,20 @@ class JobResultsTest(CrossbenchFakeFsTestCase):
 
 
 class PinpointJobResultsTestCase(unittest.TestCase):
-
   def setUp(self):
     super().setUp()
     self.mock_fetch = self.enterContext(
-        mock.patch("crossbench.pinpoint.job_results.fetch_job_config"))
+      mock.patch("crossbench.pinpoint.job_results.fetch_job_config")
+    )
     self.mock_fetch.return_value = {
-        "results_url": "https://example.com/results.html",
-        "status": "Completed",
-        "created": "2024-01-01T12:00:00Z",
-        "state": [],
-        "arguments": {
-            "benchmark": "speedometer3",
-            "configuration": "linux-perf",
-        },
+      "results_url": "https://example.com/results.html",
+      "status": "Completed",
+      "created": "2024-01-01T12:00:00Z",
+      "state": [],
+      "arguments": {
+        "benchmark": "speedometer3",
+        "configuration": "linux-perf",
+      },
     }
 
   def test_created_date_valid(self):
@@ -413,16 +439,19 @@ class PinpointJobResultsTestCase(unittest.TestCase):
 
   def test_variant_name_with_commits(self):
     data: JsonDict = {
-        "change": {
-            "commits": [{
-                "repository": "chromium",
-                "commit_position": 123,
-            }, {
-                "repository": "v8",
-                "commit_position": 456,
-            }],
-        },
-        "attempts": [],
+      "change": {
+        "commits": [
+          {
+            "repository": "chromium",
+            "commit_position": 123,
+          },
+          {
+            "repository": "v8",
+            "commit_position": 456,
+          },
+        ],
+      },
+      "attempts": [],
     }
     variant = PinpointVariantResults(data, 0)
     self.assertEqual(variant.name, "chromium_123_v8_456")
@@ -434,15 +463,17 @@ class PinpointJobResultsTestCase(unittest.TestCase):
 
   def test_find_isolate(self):
     data: JsonDict = {
-        "executions": [
-            {},  # 0: build
-            {  # 1: test
-                "details": [{
-                    "key": "isolate",
-                    "value": "123abchash",
-                }],
-            },
-        ],
+      "executions": [
+        {},  # 0: build
+        {  # 1: test
+          "details": [
+            {
+              "key": "isolate",
+              "value": "123abchash",
+            }
+          ],
+        },
+      ],
     }
     attempt = PinpointAttemptResults(data, 0)
     self.assertEqual(attempt.cas_isolate, "123abchash")
@@ -454,21 +485,24 @@ class PinpointJobResultsTestCase(unittest.TestCase):
 
   def test_find_trace(self):
     data: JsonDict = {
-        "executions": [
-            {},
-            {},
-            {  # 2: values
-                "details": [{
-                    "key": "trace",
-                    "value": "trace.pb",
-                    "url": "gs://bucket/trace.pb",
-                }],
-            },
-        ],
+      "executions": [
+        {},
+        {},
+        {  # 2: values
+          "details": [
+            {
+              "key": "trace",
+              "value": "trace.pb",
+              "url": "gs://bucket/trace.pb",
+            }
+          ],
+        },
+      ],
     }
     attempt = PinpointAttemptResults(data, 0)
-    self.assertEqual(attempt.perfetto_trace_url_by_name,
-                     {"trace.pb": "gs://bucket/trace.pb"})
+    self.assertEqual(
+      attempt.perfetto_trace_url_by_name, {"trace.pb": "gs://bucket/trace.pb"}
+    )
 
   def test_find_trace_missing(self):
     data: JsonDict = {"executions": [{}, {}, {}]}
@@ -477,27 +511,33 @@ class PinpointJobResultsTestCase(unittest.TestCase):
 
   def test_find_multiple_traces(self):
     data: JsonDict = {
-        "executions": [
-            {},
-            {},
-            {  # 2: values
-                "details": [{
-                    "key": "trace",
-                    "value": "trace1.pb",
-                    "url": "gs://bucket/trace1.pb",
-                }, {
-                    "key": "trace",
-                    "value": "trace2",
-                    "url": "gs://bucket/trace2.pb",
-                }],
+      "executions": [
+        {},
+        {},
+        {  # 2: values
+          "details": [
+            {
+              "key": "trace",
+              "value": "trace1.pb",
+              "url": "gs://bucket/trace1.pb",
             },
-        ],
+            {
+              "key": "trace",
+              "value": "trace2",
+              "url": "gs://bucket/trace2.pb",
+            },
+          ],
+        },
+      ],
     }
     attempt = PinpointAttemptResults(data, 0)
-    self.assertEqual(attempt.perfetto_trace_url_by_name, {
+    self.assertEqual(
+      attempt.perfetto_trace_url_by_name,
+      {
         "trace1.pb": "gs://bucket/trace1.pb",
         "trace2.pb": "gs://bucket/trace2.pb",
-    })
+      },
+    )
 
 
 if __name__ == "__main__":

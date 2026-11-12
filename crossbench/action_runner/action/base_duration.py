@@ -21,8 +21,10 @@ if TYPE_CHECKING:
 @dataclasses.dataclass(frozen=True, eq=False)
 class BaseDurationAction(Action):
   """Base class for actions with a duration (swipe, scroll, get, etc.)."""
+
   duration: dt.timedelta = dataclasses.field(
-      default=dt.timedelta(), kw_only=True)
+    default=dt.timedelta(), kw_only=True
+  )
 
   @override
   def validate(self) -> None:
@@ -32,7 +34,8 @@ class BaseDurationAction(Action):
   def validate_duration(self) -> None:
     if self.duration.total_seconds() <= 0:
       raise ValueError(
-          f"{self}.duration should be positive, but got {self.duration}")
+        f"{self}.duration should be positive, but got {self.duration}"
+      )
 
   @override
   def to_json(self) -> JsonDict:
@@ -44,6 +47,7 @@ class BaseDurationAction(Action):
 @dataclasses.dataclass(frozen=True, eq=False)
 class DurationAction(BaseDurationAction):
   """Base class for wait actions requiring an explicit duration argument."""
+
   TYPE: ClassVar[ActionType] = ActionType.WAIT
 
   @classmethod
@@ -52,5 +56,6 @@ class DurationAction(BaseDurationAction):
   def config_parser(cls: type[Self]) -> ConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
-        "duration", type=DurationParser.positive_duration, required=True)
+      "duration", type=DurationParser.positive_duration, required=True
+    )
     return parser

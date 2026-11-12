@@ -6,9 +6,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, ClassVar, override
 
-from crossbench.benchmarks.motionmark.motionmark_1 import \
-    MotionMark1Benchmark, MotionMark1Probe, MotionMark1ProbeContext, \
-    MotionMark1Story
+from crossbench.benchmarks.motionmark.motionmark_1 import (
+  MotionMark1Benchmark,
+  MotionMark1Probe,
+  MotionMark1ProbeContext,
+  MotionMark1Story,
+)
 
 if TYPE_CHECKING:
   from crossbench.benchmarks.base import VersionParts
@@ -30,7 +33,8 @@ class MotionMark10ProbeContext(MotionMark1ProbeContext):
 class MotionMark10Story(MotionMark1Story):
   NAME: ClassVar[str] = "motionmark_1.0"
   URL: ClassVar[str] = (
-      "https://chromium-workloads.web.app/motionmark/v1.0/MotionMark")
+    "https://chromium-workloads.web.app/motionmark/v1.0/MotionMark"
+  )
   URL_OFFICIAL: ClassVar[str] = "https://browserbench.org/MotionMark1.0"
 
 

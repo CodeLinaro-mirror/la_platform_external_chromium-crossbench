@@ -21,12 +21,14 @@ class SystemStatsProbe(PollingProbe):
   General-purpose probe to periodically collect system-wide CPU and memory
   stats on unix systems.
   """
+
   NAME: ClassVar = "system.stats"
   CMD: ClassVar[TupleCmdArgs] = ("ps", "-a", "-e", "-o", "pcpu,pmem,args", "-r")
   IS_GENERAL_PURPOSE: ClassVar = True
 
   def __init__(
-      self, interval: dt.timedelta = dt.timedelta(seconds=0.1)) -> None:
+    self, interval: dt.timedelta = dt.timedelta(seconds=0.1)
+  ) -> None:
     super().__init__(self.CMD, interval)
 
   @override

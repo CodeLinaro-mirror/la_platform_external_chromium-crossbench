@@ -17,9 +17,9 @@ from tests.crossbench.probes.helper import BaseProbeTestCase
 
 
 class VramProbeTestCase(BaseProbeTestCase):
-
-  def _mock_gpu_vram_poller(self,
-                            samples: list[dict[str, float]]) -> threading.Event:
+  def _mock_gpu_vram_poller(
+    self, samples: list[dict[str, float]]
+  ) -> threading.Event:
     all_sampled = threading.Event()
     call_count = 0
 
@@ -35,20 +35,22 @@ class VramProbeTestCase(BaseProbeTestCase):
     return all_sampled
 
   def test_vram_probe(self):
-    all_sampled = self._mock_gpu_vram_poller([
+    all_sampled = self._mock_gpu_vram_poller(
+      [
         {
-            "gpu_0": 100.0,
+          "gpu_0": 100.0,
         },
         {
-            "gpu_0": 150.0,
+          "gpu_0": 150.0,
         },
         {
-            "gpu_0": 200.0,
+          "gpu_0": 200.0,
         },
         {
-            "gpu_0": 120.0,
+          "gpu_0": 120.0,
         },
-    ])
+      ]
+    )
 
     probe = VramProbe(interval=dt.timedelta(seconds=0.05))
 
@@ -85,24 +87,26 @@ class VramProbeTestCase(BaseProbeTestCase):
     self.assertEqual(data["delta_mb"], 100.0)
 
   def test_vram_probe_multi_gpu(self):
-    all_sampled = self._mock_gpu_vram_poller([
+    all_sampled = self._mock_gpu_vram_poller(
+      [
         {
-            "gpu_0": 100.0,
-            "gpu_1": 200.0,
+          "gpu_0": 100.0,
+          "gpu_1": 200.0,
         },
         {
-            "gpu_0": 150.0,
-            "gpu_1": 250.0,
+          "gpu_0": 150.0,
+          "gpu_1": 250.0,
         },
         {
-            "gpu_0": 300.0,
-            "gpu_1": 220.0,
+          "gpu_0": 300.0,
+          "gpu_1": 220.0,
         },
         {
-            "gpu_0": 100.0,
-            "gpu_1": 200.0,
+          "gpu_0": 100.0,
+          "gpu_1": 200.0,
         },
-    ])
+      ]
+    )
     probe = VramProbe(interval=dt.timedelta(seconds=0.05))
 
     mock_browser = mock.Mock(spec=Browser)

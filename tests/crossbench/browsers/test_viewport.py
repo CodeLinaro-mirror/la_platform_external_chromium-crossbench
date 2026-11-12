@@ -12,7 +12,6 @@ from tests import test_helper
 
 
 class ViewportTestCase(unittest.TestCase):
-
   def test_is_default(self):
     self.assertTrue(Viewport.DEFAULT.is_default)
     self.assertFalse(Viewport.FULLSCREEN.is_default)
@@ -55,8 +54,11 @@ class ViewportTestCase(unittest.TestCase):
     self.assertEqual(Viewport.HEADLESS.mode, ViewportMode.HEADLESS)
     self.assertEqual(Viewport().mode, ViewportMode.SIZE)
 
-  NON_SIZED_DEFAULTS = (Viewport.FULLSCREEN, Viewport.MAXIMIZED,
-                        Viewport.HEADLESS)
+  NON_SIZED_DEFAULTS = (
+    Viewport.FULLSCREEN,
+    Viewport.MAXIMIZED,
+    Viewport.HEADLESS,
+  )
 
   def test_position(self):
     for invalid in self.NON_SIZED_DEFAULTS:
@@ -101,10 +103,22 @@ class ViewportTestCase(unittest.TestCase):
     self.assertEqual(Viewport(x=100, y=200).y, 200)
 
   def test_parse_invalid(self):
-    invalid_inputs = ("-", "-100x", "100x", "100xXX", "100x-100", "-100x100",
-                      "asdf", "100x100,,", "100x100,a", "100x100,100",
-                      "100x100,100x", "100x100,-100", "100x100,100x-100",
-                      "100x100,-100x100")
+    invalid_inputs = (
+      "-",
+      "-100x",
+      "100x",
+      "100xXX",
+      "100x-100",
+      "-100x100",
+      "asdf",
+      "100x100,,",
+      "100x100,a",
+      "100x100,100",
+      "100x100,100x",
+      "100x100,-100",
+      "100x100,100x-100",
+      "100x100,-100x100",
+    )
     for invalid in invalid_inputs:
       with self.subTest(value=invalid):
         with self.assertRaises((ValueError, ArgumentTypeError)):
@@ -144,8 +158,12 @@ class ViewportTestCase(unittest.TestCase):
 
   def test_parse_sized_invalid_no_size(self):
     invalid: Any
-    for invalid in ("fullscreen", Viewport.FULLSCREEN, "headless",
-                    Viewport.HEADLESS):
+    for invalid in (
+      "fullscreen",
+      Viewport.FULLSCREEN,
+      "headless",
+      Viewport.HEADLESS,
+    ):
       with self.assertRaises(ArgumentTypeError) as cm:
         Viewport.parse_sized(invalid)
       self.assertIn("explicit size", str(cm.exception))
@@ -158,7 +176,8 @@ class ViewportTestCase(unittest.TestCase):
 
   def test_str(self):
     self.assertEqual(
-        str(Viewport.parse("100x200,22x33")), "Viewport(100x200,22x33)")
+      str(Viewport.parse("100x200,22x33")), "Viewport(100x200,22x33)"
+    )
     self.assertEqual(str(Viewport.MAXIMIZED), "Viewport(maximized)")
 
   def test_equal(self):
@@ -168,7 +187,8 @@ class ViewportTestCase(unittest.TestCase):
     self.assertTrue(Viewport.MAXIMIZED == Viewport.MAXIMIZED)
     self.assertFalse(Viewport.DEFAULT == Viewport.MAXIMIZED)
     self.assertTrue(
-        Viewport.parse("100x200,22x33"), Viewport.parse("100x200,22x33"))
+      Viewport.parse("100x200,22x33"), Viewport.parse("100x200,22x33")
+    )
 
 
 if __name__ == "__main__":

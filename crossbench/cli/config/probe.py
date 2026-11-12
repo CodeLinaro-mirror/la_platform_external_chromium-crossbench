@@ -26,7 +26,8 @@ class ProbeConfigError(ConfigError):
 
 
 _PROBE_CONFIG_RE: Final[re.Pattern] = re.compile(
-    r"(?P<probe_name>[\w.-]+):?(?P<config>.*)", re.MULTILINE | re.DOTALL)
+  r"(?P<probe_name>[\w.-]+):?(?P<config>.*)", re.MULTILINE | re.DOTALL
+)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -48,8 +49,10 @@ class ProbeConfig(ConfigObject):
     if not self.probe_cls:
       raise ValueError(f"{type(self).__name__}.cls cannot be None.")
     if self.config_dict and self.config_str:
-      raise ValueError(f"{type(self).__name__}: "
-                       "Cannot have both config_dict and config_str value.")
+      raise ValueError(
+        f"{type(self).__name__}: "
+        "Cannot have both config_dict and config_str value."
+      )
 
   @classmethod
   @override
@@ -77,7 +80,8 @@ class ProbeConfig(ConfigObject):
     config: dict[str, object] = {"name": probe_name}
     inline_config: dict[str, object] = {}
     if cls.is_path_like(config_str) and config_str.endswith(
-        (".json", ".hjson")):
+      (".json", ".hjson")
+    ):
       # Variant, hjson path: "name:path/to/config.hjson"
       inline_config = ObjectParser.dict(ObjectParser.hjson_file(config_str))
     elif cls.is_hjson_like(config_str):
@@ -97,8 +101,9 @@ class ProbeConfig(ConfigObject):
     return cls.parse_probe_dict(probe_name, config, **kwargs)
 
   @classmethod
-  def parse_probe_dict(cls, probe_name: str, config: dict[str, object],
-                       **kwargs) -> Self:
+  def parse_probe_dict(
+    cls, probe_name: str, config: dict[str, object], **kwargs
+  ) -> Self:
     if direct_probe_cls := PROBE_LOOKUP.get(probe_name):
       return cls(direct_probe_cls, config_dict=config, **kwargs)
     probe_cls: type[Probe] = cls._handle_dict_unknown_probe_name(probe_name)
@@ -113,9 +118,9 @@ class ProbeConfig(ConfigObject):
 
   @classmethod
   def _handle_unknown_probe_name(cls, msg: str, value: str) -> type[Probe]:
-    error_message, alternative = close_matches_message(value,
-                                                       PROBE_LOOKUP.keys(),
-                                                       "Probe name")
+    error_message, alternative = close_matches_message(
+      value, PROBE_LOOKUP.keys(), "Probe name"
+    )
     error_message += msg
     logging.error(error_message)
     if alternative:
@@ -130,7 +135,8 @@ class ProbeConfig(ConfigObject):
       if config_str := self.config_str:
         return self.probe_cls.parse_str(config_str)
       return self.probe_cls.parse_dict(
-          dict(self.config_dict) if self.config_dict else {})
+        dict(self.config_dict) if self.config_dict else {}
+      )
     raise exception.UnreachableError
 
   @property

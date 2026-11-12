@@ -6,8 +6,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, ClassVar, MutableMapping, override
 
-from crossbench.benchmarks.speedometer.speedometer import SpeedometerProbe, \
-    SpeedometerProbeContext, SpeedometerStory
+from crossbench.benchmarks.speedometer.speedometer import (
+  SpeedometerProbe,
+  SpeedometerProbeContext,
+  SpeedometerStory,
+)
 from crossbench.helper import url_helper
 from crossbench.parse import ObjectParser
 
@@ -20,12 +23,12 @@ class Speedometer2Probe(SpeedometerProbe):
 
 
 class Speedometer2ProbeContext(SpeedometerProbeContext):
-
   @override
   def process_json_data(self, json_data: Json) -> Json:
     # Move aggregate scores to the end
     for raw_iteration_data in ObjectParser.non_empty_sequence(
-        json_data, f"{self.probe.name} metrics"):
+      json_data, f"{self.probe.name} metrics"
+    ):
       iteration_data = ObjectParser.dict(raw_iteration_data, "iteration data")
       iteration_data["Mean"] = iteration_data.pop("mean")
       iteration_data["Total"] = iteration_data.pop("total")
@@ -37,22 +40,22 @@ class Speedometer2ProbeContext(SpeedometerProbeContext):
 class Speedometer2Story(SpeedometerStory):
   __doc__ = SpeedometerStory.__doc__
   SUBSTORIES: ClassVar[tuple[str, ...]] = (
-      "VanillaJS-TodoMVC",
-      "Vanilla-ES2015-TodoMVC",
-      "Vanilla-ES2015-Babel-Webpack-TodoMVC",
-      "React-TodoMVC",
-      "React-Redux-TodoMVC",
-      "EmberJS-TodoMVC",
-      "EmberJS-Debug-TodoMVC",
-      "BackboneJS-TodoMVC",
-      "AngularJS-TodoMVC",
-      "Angular2-TypeScript-TodoMVC",
-      "VueJS-TodoMVC",
-      "jQuery-TodoMVC",
-      "Preact-TodoMVC",
-      "Inferno-TodoMVC",
-      "Elm-TodoMVC",
-      "Flight-TodoMVC",
+    "VanillaJS-TodoMVC",
+    "Vanilla-ES2015-TodoMVC",
+    "Vanilla-ES2015-Babel-Webpack-TodoMVC",
+    "React-TodoMVC",
+    "React-Redux-TodoMVC",
+    "EmberJS-TodoMVC",
+    "EmberJS-Debug-TodoMVC",
+    "BackboneJS-TodoMVC",
+    "AngularJS-TodoMVC",
+    "Angular2-TypeScript-TodoMVC",
+    "VueJS-TodoMVC",
+    "jQuery-TodoMVC",
+    "Preact-TodoMVC",
+    "Inferno-TodoMVC",
+    "Elm-TodoMVC",
+    "Flight-TodoMVC",
   )
 
   @property

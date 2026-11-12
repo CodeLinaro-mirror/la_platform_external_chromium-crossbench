@@ -8,16 +8,19 @@ import json
 import logging
 from typing import TYPE_CHECKING, ClassVar, cast, override
 
-from crossbench.probes.internal.base import InternalJsonResultProbe, \
-    InternalJsonResultProbeContext
+from crossbench.probes.internal.base import (
+  InternalJsonResultProbe,
+  InternalJsonResultProbeContext,
+)
 from crossbench.probes.results import EmptyProbeResult
 
 if TYPE_CHECKING:
   from crossbench.probes.results import ProbeResult
   from crossbench.runner.actions import Actions
   from crossbench.runner.groups.browsers import BrowsersRunGroup
-  from crossbench.runner.groups.cache_temperatures import \
-      CacheTemperaturesRunGroup
+  from crossbench.runner.groups.cache_temperatures import (
+    CacheTemperaturesRunGroup,
+  )
   from crossbench.runner.groups.repetitions import RepetitionsRunGroup
   from crossbench.runner.groups.stories import StoriesRunGroup
   from crossbench.types import Json, JsonDict
@@ -28,6 +31,7 @@ class ResultsSummaryProbe(InternalJsonResultProbe):
   Runner-internal meta-probe: Collects a summary results.json with all the Run
   information, including all paths to the results of all attached Probes.
   """
+
   NAME: ClassVar = "cb.results"
   FILE_NAME: ClassVar[str] = "cb.results.json"
   # Given that this is  a meta-Probe that summarizes the data from other
@@ -45,8 +49,9 @@ class ResultsSummaryProbe(InternalJsonResultProbe):
     return True
 
   @override
-  def merge_cache_temperatures(self,
-                               group: CacheTemperaturesRunGroup) -> ProbeResult:
+  def merge_cache_temperatures(
+    self, group: CacheTemperaturesRunGroup
+  ) -> ProbeResult:
     # If session setup failed, the results will not have been initialized.
     return group.first_run.results.get(self, EmptyProbeResult())
 
@@ -69,22 +74,22 @@ class ResultsSummaryProbe(InternalJsonResultProbe):
         browser = repetition_data["browser"]
         del browser["log"]
       repetition_summary: JsonDict = {
-          "cwd": repetition_data["cwd"],
-          "probes": repetition_data["probes"],
-          "success": repetition_data["success"],
-          "errors": repetition_data["errors"],
+        "cwd": repetition_data["cwd"],
+        "probes": repetition_data["probes"],
+        "success": repetition_data["success"],
+        "errors": repetition_data["errors"],
       }
       repetitions.append(repetition_summary)
 
     merged_data: JsonDict = {
-        "cwd": str(group.path),
-        "story": group.story.details_json(),
-        "browser": browser,
-        "group": group.info,
-        "repetitions": repetitions,
-        "probes": group.results.to_json(),
-        "success": group.is_success,
-        "errors": group.exceptions.error_messages(),
+      "cwd": str(group.path),
+      "story": group.story.details_json(),
+      "browser": browser,
+      "group": group.info,
+      "repetitions": repetitions,
+      "probes": group.results.to_json(),
+      "success": group.is_success,
+      "errors": group.exceptions.error_messages(),
     }
     if has_empty_results:
       logging.error("Probe %s produced empty results for some runs.", self.NAME)
@@ -104,20 +109,20 @@ class ResultsSummaryProbe(InternalJsonResultProbe):
         browser = merged_story_data["browser"]
       story_info = merged_story_data["story"]
       stories[story_info["name"]] = {
-          "cwd": merged_story_data["cwd"],
-          "duration": story_info["duration"],
-          "probes": merged_story_data["probes"],
-          "errors": merged_story_data["errors"],
+        "cwd": merged_story_data["cwd"],
+        "duration": story_info["duration"],
+        "probes": merged_story_data["probes"],
+        "errors": merged_story_data["errors"],
       }
 
     merged_data: JsonDict = {
-        "cwd": str(group.path),
-        "browser": browser,
-        "stories": stories,
-        "group": group.info,
-        "probes": group.results.to_json(),
-        "success": group.is_success,
-        "errors": group.exceptions.error_messages(),
+      "cwd": str(group.path),
+      "browser": browser,
+      "stories": stories,
+      "group": group.info,
+      "probes": group.results.to_json(),
+      "success": group.is_success,
+      "errors": group.exceptions.error_messages(),
     }
     return self.write_group_result(group, merged_data, csv_formatter=None)
 
@@ -131,17 +136,17 @@ class ResultsSummaryProbe(InternalJsonResultProbe):
         merged_browser_data = json.load(f)
       browser_info = merged_browser_data["browser"]
       browsers[browser_info["unique_name"]] = {
-          "cwd": merged_browser_data["cwd"],
-          "probes": merged_browser_data["probes"],
-          "errors": merged_browser_data["errors"],
+        "cwd": merged_browser_data["cwd"],
+        "probes": merged_browser_data["probes"],
+        "errors": merged_browser_data["errors"],
       }
 
     merged_data: JsonDict = {
-        "cwd": str(group.path),
-        "browsers": browsers,
-        "probes": group.results.to_json(),
-        "success": group.is_success,
-        "errors": group.exceptions.error_messages(),
+      "cwd": str(group.path),
+      "browsers": browsers,
+      "probes": group.results.to_json(),
+      "success": group.is_success,
+      "errors": group.exceptions.error_messages(),
     }
     return self.write_group_result(group, merged_data, csv_formatter=None)
 
@@ -151,7 +156,6 @@ class ResultsSummaryProbe(InternalJsonResultProbe):
 
 
 class ResultsSummaryProbeContext(InternalJsonResultProbeContext):
-
   @override
   def to_json(self, actions: Actions) -> Json:
     # TODO: remove once mypy is replaced by pyrefly

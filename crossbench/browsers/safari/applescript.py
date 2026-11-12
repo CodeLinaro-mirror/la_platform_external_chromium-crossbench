@@ -12,11 +12,14 @@ from crossbench.browsers.safari.safari import Safari
 
 class SafariAppleScript(Safari, AppleScriptBrowser):
   APPLE_SCRIPT_ALLOW_JS_MENU: ClassVar[str] = (
-      "Develop > Allow JavaScript from Apple Events")
+    "Develop > Allow JavaScript from Apple Events"
+  )
   APPLE_SCRIPT_JS_COMMAND: ClassVar[str] = (
-      "tell current tab of front window to do javascript %(js_script)s")
+    "tell current tab of front window to do javascript %(js_script)s"
+  )
   APPLE_SCRIPT_SET_URL: ClassVar[str] = (
-      "set URL of the current tab of front window to %(url)s")
+    "set URL of the current tab of front window to %(url)s"
+  )
 
   @override
   def _setup_window(self) -> None:
@@ -40,10 +43,13 @@ class SafariAppleScript(Safari, AppleScriptBrowser):
           keystroke "m"
         end tell""")
     else:
-      bounds = (f"{self.viewport.x},{self.viewport.y},"
-                f"{self.viewport.width},{self.viewport.height}")
+      bounds = (
+        f"{self.viewport.x},{self.viewport.y},"
+        f"{self.viewport.width},{self.viewport.height}"
+      )
       self._exec_apple_script(
-          f"set the bounds of the first window to {{{bounds}}}")
+        f"set the bounds of the first window to {{{bounds}}}"
+      )
 
   @override
   def quit(self) -> None:

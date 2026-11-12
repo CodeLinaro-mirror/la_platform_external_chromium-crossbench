@@ -19,7 +19,6 @@ from tests.crossbench.cli.config.base import BaseConfigTestCase
 
 
 class EnvironmentConfigTestCase(BaseConfigTestCase):
-
   def test_parse_args_empty(self):
     args = self.mock_args(env_config=None)
     config = EnvConfig.parse_args(args)
@@ -44,21 +43,22 @@ class EnvironmentConfigTestCase(BaseConfigTestCase):
   def test_parse_args_file(self):
     config_file = pth.LocalPath("/env.hjson")
     self.fs.create_file(
-        config_file, contents=hjson.dumps({"cpu_max_usage_percent": 88}))
+      config_file, contents=hjson.dumps({"cpu_max_usage_percent": 88})
+    )
     args = self.mock_args(env_config=config_file)
     config = EnvConfig.parse_args(args)
     self.assertEqual(config.cpu_max_usage_percent, 88)
 
   def test_parse_global_config_dict(self):
     env_config_data = {
-        "screen_brightness_percent": 66,
-        "cpu_max_usage_percent": 77,
+      "screen_brightness_percent": 66,
+      "cpu_max_usage_percent": 77,
     }
     config_data = {
-        "probes": {},
-        "env": env_config_data,
-        "browsers": {},
-        "network": {},
+      "probes": {},
+      "env": env_config_data,
+      "browsers": {},
+      "network": {},
     }
     direct = EnvConfig.parse(env_config_data)
     nested = EnvConfig.parse(config_data)
@@ -141,48 +141,56 @@ class EnvironmentConfigTestCase(BaseConfigTestCase):
     high = EnvConfig(system_min_uptime=dt.timedelta(minutes=10))
     self.assertEqual(high.system_min_uptime, dt.timedelta(minutes=10))
     self.assertEqual(
-        high.merge(high).system_min_uptime, dt.timedelta(minutes=10))
+      high.merge(high).system_min_uptime, dt.timedelta(minutes=10)
+    )
     self.assertEqual(
-        default.merge(high).system_min_uptime, dt.timedelta(minutes=10))
+      default.merge(high).system_min_uptime, dt.timedelta(minutes=10)
+    )
     self.assertEqual(
-        high.merge(default).system_min_uptime, dt.timedelta(minutes=10))
+      high.merge(default).system_min_uptime, dt.timedelta(minutes=10)
+    )
 
     low = EnvConfig(system_min_uptime=dt.timedelta(minutes=1))
     self.assertEqual(low.system_min_uptime, dt.timedelta(minutes=1))
     self.assertEqual(low.merge(low).system_min_uptime, dt.timedelta(minutes=1))
     self.assertEqual(
-        default.merge(low).system_min_uptime, dt.timedelta(minutes=1))
+      default.merge(low).system_min_uptime, dt.timedelta(minutes=1)
+    )
     self.assertEqual(
-        low.merge(default).system_min_uptime, dt.timedelta(minutes=1))
+      low.merge(default).system_min_uptime, dt.timedelta(minutes=1)
+    )
 
     self.assertEqual(
-        low.merge(high).system_min_uptime, dt.timedelta(minutes=10))
+      low.merge(high).system_min_uptime, dt.timedelta(minutes=10)
+    )
     self.assertEqual(
-        high.merge(low).system_min_uptime, dt.timedelta(minutes=10))
+      high.merge(low).system_min_uptime, dt.timedelta(minutes=10)
+    )
 
   def test_parse_env_vars(self):
     config = EnvConfig.parse({"env_vars": {"JSC_useBaselineJIT": "false"}})
-    self.assertEqual(config.env_vars,
-                     immutabledict({"JSC_useBaselineJIT": "false"}))
+    self.assertEqual(
+      config.env_vars, immutabledict({"JSC_useBaselineJIT": "false"})
+    )
 
   def test_parse_env_vars_invalid(self):
     for invalid in (
-        "FOO=1",
-        {
-            "": "1",
-        },
-        {
-            "1FOO": "1",
-        },
-        {
-            "FOO-BAR": "1",
-        },
-        {
-            "FOO": 1,
-        },
-        {
-            "FOO": None,
-        },
+      "FOO=1",
+      {
+        "": "1",
+      },
+      {
+        "1FOO": "1",
+      },
+      {
+        "FOO-BAR": "1",
+      },
+      {
+        "FOO": 1,
+      },
+      {
+        "FOO": None,
+      },
     ):
       with self.subTest(invalid=invalid):
         with self.assertRaises(argparse.ArgumentTypeError):
@@ -198,10 +206,14 @@ class EnvironmentConfigTestCase(BaseConfigTestCase):
     self.assertEqual(env_a.merge(default).env_vars, immutabledict({"A": "1"}))
     self.assertEqual(env_a.merge(env_a).env_vars, immutabledict({"A": "1"}))
     self.assertEqual(
-        env_a.merge(env_b).env_vars, immutabledict({
-            "A": "1",
-            "B": "2",
-        }))
+      env_a.merge(env_b).env_vars,
+      immutabledict(
+        {
+          "A": "1",
+          "B": "2",
+        }
+      ),
+    )
 
     env_conflict = EnvConfig(env_vars=immutabledict({"A": "2"}))
     with self.assertRaises(ValueError):

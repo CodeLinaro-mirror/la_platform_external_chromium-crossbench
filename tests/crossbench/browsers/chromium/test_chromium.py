@@ -18,9 +18,11 @@ from crossbench import path as pth
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.chromium.base import ChromiumBaseMixin
 from crossbench.browsers.chromium.driver_finder import ChromeDriverFinder
-from crossbench.browsers.chromium.webdriver import \
-    ChromeApkHelperPackageInfo, ChromiumWebDriver, \
-    LocalChromiumWebDriverAndroid
+from crossbench.browsers.chromium.webdriver import (
+  ChromeApkHelperPackageInfo,
+  ChromiumWebDriver,
+  LocalChromiumWebDriverAndroid,
+)
 from crossbench.browsers.chromium_based import helper
 from crossbench.browsers.chromium_based.webdriver import ChromiumBasedWebDriver
 from crossbench.browsers.settings import Settings
@@ -32,39 +34,54 @@ from tests.crossbench.base import BaseCrossbenchTestCase
 
 if TYPE_CHECKING:
   from selenium.webdriver.chromium.options import ChromiumOptions
-from tests.crossbench.mock_helper import AndroidAdbMockPlatform, \
-    LinuxMockPlatform, MacOsMockPlatform, MockPlatform
+from tests.crossbench.mock_helper import (
+  AndroidAdbMockPlatform,
+  LinuxMockPlatform,
+  MacOsMockPlatform,
+  MockPlatform,
+)
 
 
 class LocalChromeWebDriverAndroidTestCase(BaseCrossbenchTestCase):
-
   def test_is_apk_helper(self):
     self.assertTrue(
-        LocalChromiumWebDriverAndroid.is_apk_helper(
-            pth.AnyPath("/home/user/Documents/chrome/src/"
-                        "out/arm64.apk/bin/chrome_public_apk")))
+      LocalChromiumWebDriverAndroid.is_apk_helper(
+        pth.AnyPath(
+          "/home/user/Documents/chrome/src/out/arm64.apk/bin/chrome_public_apk"
+        )
+      )
+    )
     self.assertTrue(
-        LocalChromiumWebDriverAndroid.is_apk_helper(
-            pth.AnyPath("/home/user/Documents/chrome/src/"
-                        "out/arm64.apk/bin/trichrome_chrome_64_32_bundle")))
+      LocalChromiumWebDriverAndroid.is_apk_helper(
+        pth.AnyPath(
+          "/home/user/Documents/chrome/src/"
+          "out/arm64.apk/bin/trichrome_chrome_64_32_bundle"
+        )
+      )
+    )
     self.assertFalse(LocalChromiumWebDriverAndroid.is_apk_helper(None))
     self.assertFalse(
-        LocalChromiumWebDriverAndroid.is_apk_helper(
-            pth.AnyPath("org.chromium.chrome")))
+      LocalChromiumWebDriverAndroid.is_apk_helper(
+        pth.AnyPath("org.chromium.chrome")
+      )
+    )
     self.assertFalse(
-        LocalChromiumWebDriverAndroid.is_apk_helper(
-            pth.AnyPath("/home/user/Documents/chrome/src/out/arm64/chrome")))
+      LocalChromiumWebDriverAndroid.is_apk_helper(
+        pth.AnyPath("/home/user/Documents/chrome/src/out/arm64/chrome")
+      )
+    )
 
   def test_package_info_parse(self):
     raw_output = (
-        'Package name: "org.chromium.chrome"\n'
-        "versionCode: 808900004\n"
-        'versionName: "157.0.8089.0"\n'
-        "minSdkVersion: 29\n"
-        "targetSdkVersion: 37\n"
-        "Supported ABIs: ['arm64-v8a']\n"
-        "Decoded versionCode: "
-        "build_number=8089 patch_number=0 sku=CHROME abi=arm_64_high\n")
+      'Package name: "org.chromium.chrome"\n'
+      "versionCode: 808900004\n"
+      'versionName: "157.0.8089.0"\n'
+      "minSdkVersion: 29\n"
+      "targetSdkVersion: 37\n"
+      "Supported ABIs: ['arm64-v8a']\n"
+      "Decoded versionCode: "
+      "build_number=8089 patch_number=0 sku=CHROME abi=arm_64_high\n"
+    )
     info = ChromeApkHelperPackageInfo.parse(raw_output)
     self.assertEqual(info.package_name, "org.chromium.chrome")
     self.assertEqual(info.version_name, "157.0.8089.0")
@@ -73,8 +90,9 @@ class LocalChromeWebDriverAndroidTestCase(BaseCrossbenchTestCase):
     self.assertEqual(info.properties["targetSdkVersion"], 37)
     self.assertEqual(info.properties["Supported ABIs"], ["arm64-v8a"])
     self.assertEqual(
-        info.properties["Decoded versionCode"],
-        "build_number=8089 patch_number=0 sku=CHROME abi=arm_64_high")
+      info.properties["Decoded versionCode"],
+      "build_number=8089 patch_number=0 sku=CHROME abi=arm_64_high",
+    )
 
   def test_package_info_parse_invalid(self):
     with self.assertRaises(argparse.ArgumentTypeError):
@@ -95,17 +113,20 @@ class LocalChromeWebDriverAndroidTestCase(BaseCrossbenchTestCase):
 
     version_str = mock_browser.MockChromium.VERSION
     with mock.patch.object(
-        self.platform, "app_version", return_value=version_str):
+      self.platform, "app_version", return_value=version_str
+    ):
       # Missing args.gn => cannot detect local build:
       browser = ChromiumWebDriver(
-          "local", path=path, settings=Settings(platform=self.platform))
+        "local", path=path, settings=Settings(platform=self.platform)
+      )
       self.assertFalse(browser.is_local_build)
       self.assertEqual(browser.version.version_str, version_str)
 
       self.fs.create_file(build_dir / "args.gn")
       self.assertTrue(helper.is_in_build_dir(path, self.platform))
       browser = ChromiumWebDriver(
-          "local", path=path, settings=Settings(platform=self.platform))
+        "local", path=path, settings=Settings(platform=self.platform)
+      )
       self.assertTrue(browser.is_local_build)
       self.assertFalse(browser.version.has_channel)
       self.assertEqual(browser.version.version_str, version_str)
@@ -115,7 +136,8 @@ class LocalChromeWebDriverAndroidTestCase(BaseCrossbenchTestCase):
     self.fs.create_file(gn_dir / "args.gn")
     self.assertEqual(helper.find_build_dir(gn_dir, self.platform), gn_dir)
     self.assertEqual(
-        helper.find_build_dir(gn_dir / "chrome", self.platform), gn_dir)
+      helper.find_build_dir(gn_dir / "chrome", self.platform), gn_dir
+    )
 
     ninja_dir = pth.LocalPath("/home/testuser/chrome/src/out/ninja_build")
     self.fs.create_file(ninja_dir / "build.ninja")
@@ -124,9 +146,11 @@ class LocalChromeWebDriverAndroidTestCase(BaseCrossbenchTestCase):
     unstripped_dir = pth.LocalPath("/home/testuser/chrome/src/out/isolated")
     self.fs.create_dir(unstripped_dir / "lib.unstripped")
     self.assertEqual(
-        helper.find_build_dir(
-            unstripped_dir / "clang_x64/chromedriver", self.platform),
-        unstripped_dir)
+      helper.find_build_dir(
+        unstripped_dir / "clang_x64/chromedriver", self.platform
+      ),
+      unstripped_dir,
+    )
 
   def test_profile_data_dir(self):
     build_dir = pathlib.Path("/home/testuser/chrome/src/out/release")
@@ -136,12 +160,14 @@ class LocalChromeWebDriverAndroidTestCase(BaseCrossbenchTestCase):
 
     version_str = mock_browser.MockChromium.VERSION
     with mock.patch.object(
-        self.platform, "app_version", return_value=version_str):
+      self.platform, "app_version", return_value=version_str
+    ):
       cache_dir = pth.AnyPath("/tmp/my-cache-dir")
       browser = ChromiumWebDriver(
-          "local",
-          path=path,
-          settings=Settings(platform=self.platform, cache_dir=cache_dir))
+        "local",
+        path=path,
+        settings=Settings(platform=self.platform, cache_dir=cache_dir),
+      )
       browser.setup()
 
       self.assertEqual(browser.profile_data_dir, cache_dir)
@@ -154,9 +180,11 @@ class LocalChromeWebDriverAndroidTestCase(BaseCrossbenchTestCase):
 
     version_str = mock_browser.MockChromium.VERSION
     with mock.patch.object(
-        self.platform, "app_version", return_value=version_str):
+      self.platform, "app_version", return_value=version_str
+    ):
       browser = ChromiumWebDriver(
-          "local", path=path, settings=Settings(platform=self.platform))
+        "local", path=path, settings=Settings(platform=self.platform)
+      )
 
       custom_dir = pth.AnyPath("/tmp/custom-user-data-dir")
       browser.flags["--user-data-dir"] = str(custom_dir)
@@ -171,20 +199,22 @@ class MockChromiumBasedWebDriver(ChromiumBaseMixin, ChromiumBasedWebDriver):
   def __init__(self, label, driver) -> None:
     mock_platform = mock.MagicMock(name="Mock Platform")
     mock_platform.app_version.side_effect = [mock_browser.MockChromium.VERSION]
-    mock_platform.is_process_running.side_effect = (
-        lambda p: Platform.is_process_running(mock_platform, p))
-    mock_platform.host_platform.is_process_running.side_effect = (
-        lambda p: Platform.is_process_running(mock_platform.host_platform, p))
+    mock_platform.is_process_running.side_effect = lambda p: (
+      Platform.is_process_running(mock_platform, p)
+    )
+    mock_platform.host_platform.is_process_running.side_effect = lambda p: (
+      Platform.is_process_running(mock_platform.host_platform, p)
+    )
     self._private_driver = driver
     super().__init__(
-        label=label, path=None, settings=Settings(platform=mock_platform))
+      label=label, path=None, settings=Settings(platform=mock_platform)
+    )
 
   def _create_driver(self, options, service):
     raise RuntimeError("start() should not be called")
 
 
 class ChromiumBasedWebDriverTestCase(unittest.TestCase):
-
   def _make_tab_switch_mocks(self, handles, current):
     mock_driver = mock.MagicMock(name="Mock Driver")
     browser = MockChromiumBasedWebDriver("test-driver", mock_driver)
@@ -204,7 +234,8 @@ class ChromiumBasedWebDriverTestCase(unittest.TestCase):
     mock_driver = mock.MagicMock(name="Mock Driver")
     browser = MockChromiumBasedWebDriver("test-driver", mock_driver)
     error = selenium.common.exceptions.WebDriverException(
-        "failed to change window state to 'normal'")
+      "failed to change window state to 'normal'"
+    )
     mock_driver.set_window_rect.side_effect = [error, None]
     with mock.patch("crossbench.browsers.webdriver.time.sleep") as mock_sleep:
       browser._setup_window()
@@ -215,8 +246,10 @@ class ChromiumBasedWebDriverTestCase(unittest.TestCase):
     mock_driver = mock.MagicMock(name="Mock Driver")
     browser = MockChromiumBasedWebDriver("test-driver", mock_driver)
     mock_driver.set_window_rect.side_effect = (
-        selenium.common.exceptions.WebDriverException(
-            "failed to change window state to 'normal'"))
+      selenium.common.exceptions.WebDriverException(
+        "failed to change window state to 'normal'"
+      )
+    )
     with mock.patch("crossbench.browsers.webdriver.time.sleep") as mock_sleep:
       with self.assertRaises(selenium.common.exceptions.WebDriverException):
         browser._setup_window()
@@ -306,12 +339,15 @@ class ChromiumBasedWebDriverTestCase(unittest.TestCase):
     browser, mock_driver = self._make_tab_switch_mocks(["1", "2"], "2")
     mock_driver.window_handles = ["1"]
     type(mock_driver).current_window_handle = mock.PropertyMock(
-        side_effect=selenium.common.exceptions.NoSuchWindowException(
-            "no such window: target window already closed"))
+      side_effect=selenium.common.exceptions.NoSuchWindowException(
+        "no such window: target window already closed"
+      )
+    )
 
     def switch_to_window(handle):
       type(mock_driver).current_window_handle = mock.PropertyMock(
-          return_value=handle)
+        return_value=handle
+      )
       mock_driver.title = handle
       mock_driver.current_url = f"https://{handle}.com"
 
@@ -372,10 +408,12 @@ class ChromiumBasedWebDriverTestCase(unittest.TestCase):
       mock_close_all_tabs.assert_called_once_with()
 
     mock_driver.execute.assert_called_once_with(
-        "executeCdpCommand", {
-            "cmd": "Browser.close",
-            "params": {},
-        })
+      "executeCdpCommand",
+      {
+        "cmd": "Browser.close",
+        "params": {},
+      },
+    )
     mock_driver.close.assert_not_called()
     self.assertEqual(browser.platform.process_info.call_count, 2)
     browser.platform.terminate.assert_not_called()
@@ -393,17 +431,20 @@ class ChromiumBasedWebDriverTestCase(unittest.TestCase):
     browser.platform.is_macos = True
     browser.platform.host_platform.is_local = True
     browser.platform.process_info.side_effect = [
-        {"pid": 2222, "status": "running"},
-        {"pid": 2222, "status": "zombie"},
+      {"pid": 2222, "status": "running"},
+      {"pid": 2222, "status": "zombie"},
     ]
     browser.platform.host_platform.process_info.return_value = {
-        "pid": 1111,
-        "status": "zombie",
+      "pid": 1111,
+      "status": "zombie",
     }
 
-    with mock.patch.object(browser, "close_all_tabs") as mock_close_all_tabs, \
-         mock.patch.object(
-             browser, "force_quit_apple_script") as mock_apple_script:
+    with (
+      mock.patch.object(browser, "close_all_tabs") as mock_close_all_tabs,
+      mock.patch.object(
+        browser, "force_quit_apple_script"
+      ) as mock_apple_script,
+    ):
       browser.quit()
       mock_close_all_tabs.assert_called_once_with()
       self.assertGreaterEqual(mock_apple_script.call_count, 1)
@@ -416,7 +457,8 @@ class ChromiumBasedWebDriverTestCase(unittest.TestCase):
   def test_quit_handles_http_error(self):
     mock_driver = mock.MagicMock(name="Mock Driver")
     mock_driver.execute.side_effect = urllib3.exceptions.MaxRetryError(
-        mock.Mock(), "/session/test/chromium/send_command_and_get_result")
+      mock.Mock(), "/session/test/chromium/send_command_and_get_result"
+    )
     browser = MockChromiumBasedWebDriver("test-driver", mock_driver)
     browser._is_running = True
     browser._pid = 2222
@@ -450,12 +492,12 @@ class ChromiumBasedWebDriverTestCase(unittest.TestCase):
       browser._teardown_cache_dir()
 
     browser.platform.rm.assert_called_once_with(
-        cache_dir, missing_ok=True, dir=True)
+      cache_dir, missing_ok=True, dir=True
+    )
     self.assertIsNone(browser._cache_dir)
 
 
 class ChromeDriverFinderTestCase(BaseCrossbenchTestCase):
-
   def setUp(self) -> None:
     super().setUp()
     self.mock_browser = mock.MagicMock()
@@ -521,7 +563,6 @@ class ChromeDriverFinderTestCase(BaseCrossbenchTestCase):
 
 
 class ChromiumPathMacOSTest(BaseCrossbenchTestCase):
-
   def setup_platform(self) -> MockPlatform:
     return MacOsMockPlatform()
 
@@ -534,21 +575,20 @@ class ChromiumPathMacOSTest(BaseCrossbenchTestCase):
 
     # Test passing the bundle path
     browser = ChromiumWebDriver(
-        "test-label", path=app_path, settings=Settings(platform=self.platform))
+      "test-label", path=app_path, settings=Settings(platform=self.platform)
+    )
     self.assertEqual(str(browser.app_path), str(app_path))
     self.assertEqual(str(browser.path), str(bin_path))
 
     # Test passing the binary path
     browser2 = ChromiumWebDriver(
-        "test-label-2",
-        path=bin_path,
-        settings=Settings(platform=self.platform))
+      "test-label-2", path=bin_path, settings=Settings(platform=self.platform)
+    )
     self.assertEqual(str(browser2.app_path), str(app_path))
     self.assertEqual(str(browser2.path), str(bin_path))
 
 
 class ChromiumPathLinuxTest(BaseCrossbenchTestCase):
-
   def setup_platform(self) -> MockPlatform:
     return LinuxMockPlatform()
 
@@ -558,7 +598,8 @@ class ChromiumPathLinuxTest(BaseCrossbenchTestCase):
     self.platform.app_version = mock.MagicMock(return_value="120.0.0.0")
 
     browser = ChromiumWebDriver(
-        "test-label", path=bin_path, settings=Settings(platform=self.platform))
+      "test-label", path=bin_path, settings=Settings(platform=self.platform)
+    )
     self.assertEqual(str(browser.app_path), str(bin_path))
     self.assertEqual(str(browser.path), str(bin_path))
 
@@ -566,13 +607,16 @@ class ChromiumPathLinuxTest(BaseCrossbenchTestCase):
     bin_path = pth.AnyPath("/usr/bin/chromium")
     self.fs.create_file(bin_path, st_size=1000)
     self.platform.app_version = mock.MagicMock(
-        side_effect=AssertionError("app_version should not be called"))
+      side_effect=AssertionError("app_version should not be called")
+    )
 
     browser = ChromiumWebDriver(
-        "test-label",
-        path=bin_path,
-        settings=Settings(
-            platform=self.platform, browser_version="120.0.6099.224"))
+      "test-label",
+      path=bin_path,
+      settings=Settings(
+        platform=self.platform, browser_version="120.0.6099.224"
+      ),
+    )
     self.assertEqual(browser.version.parts_str, "120.0.6099.224")
     self.platform.app_version.assert_not_called()
 
@@ -588,14 +632,16 @@ class ChromiumPathLinuxTest(BaseCrossbenchTestCase):
     self.platform.app_version = mock.MagicMock(return_value="120.0.0.0")
 
     browser = ChromiumWebDriver(
-        "test-label", path=bin_path, settings=Settings(platform=self.platform))
+      "test-label", path=bin_path, settings=Settings(platform=self.platform)
+    )
     browser.validate_binary()
 
     self.assertEqual(str(browser.driver_path), str(driver_path))
 
 
-class MockLocalChromiumWebDriverAndroid(ChromiumBaseMixin,
-                                        LocalChromiumWebDriverAndroid):
+class MockLocalChromiumWebDriverAndroid(
+  ChromiumBaseMixin, LocalChromiumWebDriverAndroid
+):
   _private_driver: mock.MagicMock
 
   def _create_driver(self, options, service):
@@ -603,7 +649,6 @@ class MockLocalChromiumWebDriverAndroid(ChromiumBaseMixin,
 
 
 class ChromiumPathAndroidTest(BaseCrossbenchTestCase):
-
   @override
   def setup_platform(self) -> MockPlatform:
     mock_adb = mock.MagicMock()
@@ -621,9 +666,9 @@ class ChromiumPathAndroidTest(BaseCrossbenchTestCase):
     return platform
 
   def _create_android_browser(
-      self,
-      version: str,
-      viewport: Viewport = Viewport.DEFAULT,
+    self,
+    version: str,
+    viewport: Viewport = Viewport.DEFAULT,
   ) -> MockLocalChromiumWebDriverAndroid:
     out_dir = pth.AnyPath("/home/user/chromium/src/out/Android")
     chrome_public_apk_path = out_dir / "bin/chrome_public_apk"
@@ -637,10 +682,12 @@ class ChromiumPathAndroidTest(BaseCrossbenchTestCase):
     self.platform.host_platform.sh_stdout = mock.MagicMock(return_value=output)
 
     browser = MockLocalChromiumWebDriverAndroid(
-        "test-label",
-        path=chrome_public_apk_path,
-        settings=Settings(
-            platform=self.platform, browser_version=version, viewport=viewport))
+      "test-label",
+      path=chrome_public_apk_path,
+      settings=Settings(
+        platform=self.platform, browser_version=version, viewport=viewport
+      ),
+    )
     browser._private_driver = mock.MagicMock()
     return browser
 
@@ -648,43 +695,52 @@ class ChromiumPathAndroidTest(BaseCrossbenchTestCase):
     browser = self._create_android_browser("120.0.0.0")
     browser.validate_binary()
     driver_path = pth.AnyPath(
-        "/home/user/chromium/src/out/Android/clang_x64/chromedriver")
+      "/home/user/chromium/src/out/Android/clang_x64/chromedriver"
+    )
     self.assertEqual(str(browser.driver_path), str(driver_path))
 
   def test_setup_window_maximized_legacy_uiautomator(self):
     browser = self._create_android_browser(
-        "153.0.7993.0", viewport=Viewport.MAXIMIZED)
-    with mock.patch.object(self.platform,
-                           "uiautomator_device") as mock_uiautomator:
+      "153.0.7993.0", viewport=Viewport.MAXIMIZED
+    )
+    with mock.patch.object(
+      self.platform, "uiautomator_device"
+    ) as mock_uiautomator:
       browser._setup_window()
       mock_uiautomator.assert_called_once_with(root_device=False)
     browser._private_driver.maximize_window.assert_not_called()
 
   def test_setup_window_maximized_webdriver(self):
     browser = self._create_android_browser(
-        "153.0.7994.0", viewport=Viewport.MAXIMIZED)
-    with mock.patch.object(self.platform,
-                           "uiautomator_device") as mock_uiautomator:
+      "153.0.7994.0", viewport=Viewport.MAXIMIZED
+    )
+    with mock.patch.object(
+      self.platform, "uiautomator_device"
+    ) as mock_uiautomator:
       browser._setup_window()
       mock_uiautomator.assert_not_called()
     browser._private_driver.maximize_window.assert_called_once_with()
 
   def test_setup_window_explicit_bounds_unsupported_version(self):
     browser = self._create_android_browser(
-        "153.0.7993.0", viewport=Viewport(800, 600, 20, 30))
+      "153.0.7993.0", viewport=Viewport(800, 600, 20, 30)
+    )
     browser._setup_window()
     browser._private_driver.set_window_rect.assert_not_called()
 
   def test_setup_window_explicit_bounds_supported_version(self):
     browser = self._create_android_browser(
-        "153.0.7994.0", viewport=Viewport(800, 600, 20, 30))
+      "153.0.7994.0", viewport=Viewport(800, 600, 20, 30)
+    )
     browser._setup_window()
     browser._private_driver.set_window_rect.assert_called_once_with(
-        20, 30, 800, 600)
+      20, 30, 800, 600
+    )
 
   def test_setup_window_default_viewport_skipped(self):
     browser = self._create_android_browser(
-        "153.0.7994.0", viewport=Viewport.DEFAULT)
+      "153.0.7994.0", viewport=Viewport.DEFAULT
+    )
     browser._setup_window()
     browser._private_driver.maximize_window.assert_not_called()
     browser._private_driver.set_window_rect.assert_not_called()
@@ -697,21 +753,20 @@ class ChromiumPathAndroidTest(BaseCrossbenchTestCase):
     mock_driver = mock.MagicMock()
 
     with (
-        mock.patch.object(self.platform, "rm"),
-        mock.patch.object(browser, "adb_force_stop") as mock_force_stop,
-        mock.patch.object(browser, "adb_force_clear") as mock_force_clear,
-        mock.patch.object(browser, "_read_device_flags", return_value=None),
-        mock.patch.object(
-            browser, "_backup_chrome_flags",
-            wraps=browser._backup_chrome_flags) as mock_backup_flags,
-        mock.patch.object(
-            browser, "_start_chromedriver", return_value=mock_driver) as
-        mock_start_chromedriver,
-        mock.patch.object(browser, "_dismiss_any_os_permission_prompts"),
-        mock.patch.object(
-            browser,
-            "_restore_chrome_flags",
-            wraps=browser._restore_chrome_flags) as mock_restore_flags,
+      mock.patch.object(self.platform, "rm"),
+      mock.patch.object(browser, "adb_force_stop") as mock_force_stop,
+      mock.patch.object(browser, "adb_force_clear") as mock_force_clear,
+      mock.patch.object(browser, "_read_device_flags", return_value=None),
+      mock.patch.object(
+        browser, "_backup_chrome_flags", wraps=browser._backup_chrome_flags
+      ) as mock_backup_flags,
+      mock.patch.object(
+        browser, "_start_chromedriver", return_value=mock_driver
+      ) as mock_start_chromedriver,
+      mock.patch.object(browser, "_dismiss_any_os_permission_prompts"),
+      mock.patch.object(
+        browser, "_restore_chrome_flags", wraps=browser._restore_chrome_flags
+      ) as mock_restore_flags,
     ):
       # First start in session: clears data and backs up flags.
       browser._start_driver(mock_session, driver_path)
@@ -745,9 +800,11 @@ class ChromiumPathAndroidTest(BaseCrossbenchTestCase):
     self.fs.create_file(build_dir / "args.gn")
     version_str = mock_browser.MockChromium.VERSION
     with mock.patch.object(
-        self.platform, "app_version", return_value=version_str):
+      self.platform, "app_version", return_value=version_str
+    ):
       browser = ChromiumWebDriver(
-          "local", path=path, settings=Settings(platform=self.platform))
+        "local", path=path, settings=Settings(platform=self.platform)
+      )
       mock_session = mock.MagicMock()
 
       def add_existing_pref(options: ChromiumOptions) -> None:
@@ -755,23 +812,27 @@ class ChromiumPathAndroidTest(BaseCrossbenchTestCase):
 
       mock_session.setup_selenium_options.side_effect = add_existing_pref
       options = browser._create_options(
-          mock_session,
-          args=(),
-          startup_urls=("https://www.google.com/", "about:blank"))
+        mock_session,
+        args=(),
+        startup_urls=("https://www.google.com/", "about:blank"),
+      )
       prefs = options.experimental_options["prefs"]
       self.assertTrue(prefs["existing.pref"])
       self.assertEqual(prefs["session.restore_on_startup"], 4)
       self.assertEqual(
-          prefs["session.startup_urls"],
-          ["https://www.google.com/", "about:blank"])
+        prefs["session.startup_urls"],
+        ["https://www.google.com/", "about:blank"],
+      )
 
   def test_create_options_with_startup_urls_android_unsupported(self) -> None:
     browser = self._create_android_browser("153.0.7994.0")
     mock_session = mock.MagicMock()
     with self.assertRaisesRegex(
-        NotImplementedError, "only supported on desktop Chromium"):
+      NotImplementedError, "only supported on desktop Chromium"
+    ):
       browser._create_options(
-          mock_session, args=(), startup_urls=("https://www.google.com/",))
+        mock_session, args=(), startup_urls=("https://www.google.com/",)
+      )
 
 
 if __name__ == "__main__":

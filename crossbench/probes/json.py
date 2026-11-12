@@ -10,16 +10,29 @@ import json
 import logging
 import re
 from collections import defaultdict
-from typing import TYPE_CHECKING, Callable, ClassVar, Final, Generic, \
-    Mapping, TypeVar, cast, override
+from typing import (
+  TYPE_CHECKING,
+  Callable,
+  ClassVar,
+  Final,
+  Generic,
+  Mapping,
+  TypeVar,
+  cast,
+  override,
+)
 
 import xlsxwriter
 from tabulate import tabulate
 from xlsxwriter.utility import xl_rowcol_to_cell
 
 from crossbench.probes import helper
-from crossbench.probes.metric import CSVFormatter, Metric, MetricsMerger, \
-    metric_geomean
+from crossbench.probes.metric import (
+  CSVFormatter,
+  Metric,
+  MetricsMerger,
+  metric_geomean,
+)
 from crossbench.probes.probe import Probe
 from crossbench.probes.probe_context import ProbeContext
 from crossbench.probes.probe_error import ProbeMissingDataError
@@ -39,14 +52,14 @@ if TYPE_CHECKING:
 
 IS_NUMERIC_RE: Final[re.Pattern] = re.compile(r"[0-9.e+\-]+")
 LOG_SUMMARY_KEYS: Final[tuple[str, ...]] = (
-    "label",
-    "browser",
-    "version",
-    "os",
-    "model",
-    "cpu",
-    "runs",
-    "failed runs",
+  "label",
+  "browser",
+  "version",
+  "os",
+  "model",
+  "cpu",
+  "runs",
+  "failed runs",
 )
 
 
@@ -71,8 +84,8 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
 
   @override
   def merge_repetitions(
-      self,
-      group: RepetitionsRunGroup,
+    self,
+    group: RepetitionsRunGroup,
   ) -> ProbeResult:
     if not self.AUTO_MERGE_REPETITIONS:
       return super().merge_repetitions(group)
@@ -81,13 +94,15 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
     for run in group.runs:
       if self not in run.results:
         raise ProbeMissingDataError(
-            f"Probe {self.NAME} produced no data to merge.")
+          f"Probe {self.NAME} produced no data to merge."
+        )
       if run.results[self].is_empty:
         has_empty_results = True
         continue
       source_file = run.results[self].json
       assert source_file.is_file(), (
-          f"{source_file} from {run} is not a file or doesn't exist.")
+        f"{source_file} from {run} is not a file or doesn't exist."
+      )
       with source_file.open(encoding="utf-8") as f:
         merger.add(json.load(f))
     if has_empty_results:
@@ -102,13 +117,15 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
       browser_result["info"] = story_group.info
       browser_json_path = story_group.results[self].json
       assert browser_json_path.is_file(), (
-          f"{browser_json_path} from {story_group} "
-          "is not a file or doesn't exist.")
+        f"{browser_json_path} from {story_group} "
+        "is not a file or doesn't exist."
+      )
       with browser_json_path.open(encoding="utf-8") as f:
         browser_result["data"] = json.load(f)
     merged_json_path = group.get_local_probe_result_path(self)
     assert not merged_json_path.exists(), (
-        f"Cannot override existing Json result: {merged_json_path}")
+      f"Cannot override existing Json result: {merged_json_path}"
+    )
     with merged_json_path.open("w", encoding="utf-8") as f:
       json.dump(merged_json, f, indent=2)
     return LocalProbeResult(json=(merged_json_path,))
@@ -118,11 +135,13 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
     for story_group in group.story_groups:
       csv_file_list.append(story_group.results[self].csv)
     merged_table: TableData = cast(
-        "TableData", helper.merge_csv(csv_file_list, row_header_len=-1))
+      "TableData", helper.merge_csv(csv_file_list, row_header_len=-1)
+    )
     merged_json_path = group.get_local_probe_result_path(self, exists_ok=True)
     merged_csv_path = merged_json_path.with_suffix(".csv")
     assert not merged_csv_path.exists(), (
-        f"Cannot override existing CSV result: {merged_csv_path}")
+      f"Cannot override existing CSV result: {merged_csv_path}"
+    )
     with merged_csv_path.open("w", newline="", encoding="utf-8") as f:
       csv.writer(f, delimiter="\t").writerows(merged_table)
 
@@ -131,11 +150,12 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
     return LocalProbeResult(csv=(merged_csv_path,), xlsx=(merged_xlsx_path,))
 
   def write_group_result(
-      self,
-      group: RunGroup,
-      merged_data: dict | list | MetricsMerger,
-      csv_formatter: type[CSVFormatter] | None = CSVFormatter,
-      value_fn: Callable[[Metric], Json] = metric_geomean) -> ProbeResult:
+    self,
+    group: RunGroup,
+    merged_data: dict | list | MetricsMerger,
+    csv_formatter: type[CSVFormatter] | None = CSVFormatter,
+    value_fn: Callable[[Metric], Json] = metric_geomean,
+  ) -> ProbeResult:
     merged_json_path = group.get_local_probe_result_path(self)
     with merged_json_path.open("w", encoding="utf-8") as f:
       if isinstance(merged_data, (dict, list)):
@@ -145,18 +165,26 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
     if not csv_formatter:
       return LocalProbeResult(json=(merged_json_path,))
     if not isinstance(merged_data, MetricsMerger):
-      raise ValueError("write_csv is only supported for MetricsMerger, "
-                       f"but found {type(merged_data)}'.")
-    return self.write_group_csv_result(group, merged_data, merged_json_path,
-                                       csv_formatter, value_fn)
+      raise ValueError(
+        "write_csv is only supported for MetricsMerger, "
+        f"but found {type(merged_data)}'."
+      )
+    return self.write_group_csv_result(
+      group, merged_data, merged_json_path, csv_formatter, value_fn
+    )
 
-  def write_group_csv_result(self, group: RunGroup, merged_data: MetricsMerger,
-                             merged_json_path: pth.LocalPath,
-                             csv_formatter: type[CSVFormatter],
-                             value_fn: Callable[[Metric], Json]) -> ProbeResult:
+  def write_group_csv_result(
+    self,
+    group: RunGroup,
+    merged_data: MetricsMerger,
+    merged_json_path: pth.LocalPath,
+    csv_formatter: type[CSVFormatter],
+    value_fn: Callable[[Metric], Json],
+  ) -> ProbeResult:
     merged_csv_path = merged_json_path.with_suffix(".csv")
     assert not merged_csv_path.exists(), (
-        f"Cannot override existing CSV result: {merged_csv_path}")
+      f"Cannot override existing CSV result: {merged_csv_path}"
+    )
     # Create a CSV table:
     # 0 | info label 0,                                          info_value 0
     #     ...                                                    ...
@@ -168,7 +196,8 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
     for label, info_value in group.info.items():
       headers.append((label, info_value))
     csv_data = csv_formatter(
-        merged_data, value_fn, headers=headers, sort=self.SORT_KEYS).table
+      merged_data, value_fn, headers=headers, sort=self.SORT_KEYS
+    ).table
     with merged_csv_path.open("w", newline="", encoding="utf-8") as f:
       writer = csv.writer(f, delimiter="\t")
       writer.writerows(csv_data)
@@ -184,8 +213,9 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
     flattened: TableData = [[label, *values] for label, values in table.items()]
     logging.critical(tabulate(flattened, tablefmt="plain"))
 
-  def _extract_result_metrics_table(self, metrics: JsonDict,
-                                    table: dict[str, list[str]]) -> None:
+  def _extract_result_metrics_table(
+    self, metrics: JsonDict, table: dict[str, list[str]]
+  ) -> None:
     """Add individual metrics to the table in here.
     Typically you only add score and total values for each benchmark or
     benchmark item."""
@@ -194,7 +224,6 @@ class JsonResultProbe(Probe, metaclass=abc.ABCMeta):
 
 
 class XLSXWriter:
-
   @classmethod
   def write(cls, table: TableData, path: pth.LocalPath) -> None:
     instance = cls(table, path)
@@ -209,9 +238,11 @@ class XLSXWriter:
     self._workbook: Final[xlsxwriter.Workbook] = xlsxwriter.Workbook(self._path)
     self._worksheet: Final[Worksheet] = self._workbook.add_worksheet()
     self._percent_format: Final[Format] = self._workbook.add_format(
-        {"num_format": "+0.0%;-0.0%;0.0%"})
+      {"num_format": "+0.0%;-0.0%;0.0%"}
+    )
     self._num_format: Final[Format] = self._workbook.add_format(
-        {"num_format": "0.000"})
+      {"num_format": "0.000"}
+    )
 
   def _detect_header_cols(self) -> int:
     nof_header_cols: int = 0
@@ -251,8 +282,9 @@ class XLSXWriter:
       if is_header_row:
         self._worksheet.write(row_index, dst_col_index, value)
       else:
-        self._worksheet.write_number(row_index, dst_col_index, float(value),
-                                     self._num_format)
+        self._worksheet.write_number(
+          row_index, dst_col_index, float(value), self._num_format
+        )
 
       current_cell: str = xl_rowcol_to_cell(row_index, dst_col_index)
       dst_col_index += 1
@@ -262,8 +294,9 @@ class XLSXWriter:
       # Skip over diff formula for the header row (== keep empty cell).
       if not is_header_row:
         diff_formula = f"=(({current_cell}/{base_cell})-1)"
-        self._worksheet.write_formula(row_index, dst_col_index, diff_formula,
-                                      self._percent_format)
+        self._worksheet.write_formula(
+          row_index, dst_col_index, diff_formula, self._percent_format
+        )
       dst_col_index += 1
 
   def _write_header_cols(self, row_index: int, row_data: list[str]) -> int:
@@ -281,10 +314,10 @@ JsonResultProbeT = TypeVar("JsonResultProbeT", bound="JsonResultProbe")
 
 
 class JsonResultProbeContext(
-    ProbeContext[JsonResultProbeT],
-    Generic[JsonResultProbeT],
-    metaclass=abc.ABCMeta):
-
+  ProbeContext[JsonResultProbeT],
+  Generic[JsonResultProbeT],
+  metaclass=abc.ABCMeta,
+):
   FLATTEN: ClassVar[bool] = True
 
   def __init__(self, probe: JsonResultProbeT, run: Run) -> None:
@@ -318,15 +351,15 @@ class JsonResultProbeContext(
   def extract_json(self, run: Run) -> Json:
     with run.actions(f"Extracting Probe({self.probe.name})") as actions:
       json_data = self.to_json(actions)
-      assert json_data is not None, (
-          f"Probe({self.probe.name}) produced no data")
+      assert json_data is not None, f"Probe({self.probe.name}) produced no data"
       return json_data
 
   def write_json(self, run: Run, json_data: Json) -> ProbeResult:
     flattened_file = None
     with run.actions(f"Writing Probe({self.probe.name})"):
       assert json_data is not None, (
-          f"Probe({self.probe.name}) produced no Json data.")
+        f"Probe({self.probe.name}) produced no Json data."
+      )
       raw_file = self.local_result_path
       if self.FLATTEN:
         raw_file = raw_file.with_suffix(".json.nested")
@@ -344,6 +377,7 @@ class JsonResultProbeContext(
     return json_data
 
   def flatten_json_data(self, json_data: Json) -> Json:
-    assert isinstance(
-        json_data, Mapping), f"Expected JsonMapping, got {type(json_data)}"
+    assert isinstance(json_data, Mapping), (
+      f"Expected JsonMapping, got {type(json_data)}"
+    )
     return helper.Flatten(json_data, sort=self.probe.SORT_KEYS).data

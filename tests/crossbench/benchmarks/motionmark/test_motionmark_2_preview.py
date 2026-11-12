@@ -9,55 +9,56 @@ import csv
 from typing import override
 from unittest import mock
 
-from crossbench.benchmarks.motionmark.motionmark_2_preview import \
-    MotionMark2PreviewBenchmark, MotionMark2PreviewProbe, \
-    MotionMark2PreviewProbeContext, MotionMark2PreviewStory
+from crossbench.benchmarks.motionmark.motionmark_2_preview import (
+  MotionMark2PreviewBenchmark,
+  MotionMark2PreviewProbe,
+  MotionMark2PreviewProbeContext,
+  MotionMark2PreviewStory,
+)
 from crossbench.env.runner_env import EnvConfig, RunnerEnv, ValidationMode
 from crossbench.runner.runner import Runner
 from tests import test_helper
-from tests.crossbench.benchmarks.motionmark.helper import \
-    MotionMark1BaseTestCase
+from tests.crossbench.benchmarks.motionmark.helper import (
+  MotionMark1BaseTestCase,
+)
 
 
 class MotionMark2PreviewTestCase(MotionMark1BaseTestCase):
-
-  EXAMPLE_PROBE_DATA = [{
+  EXAMPLE_PROBE_DATA = [
+    {
       "testsResults": {
-          "MotionMark": {
-              "Stories": {
-                  "complexity": {
-                      "complexity":
-                          1169.7666313745012,
-                      "stdev":
-                          2.6693101402239985,
-                      "bootstrap": {
-                          "confidenceLow": 1154.0859381321234,
-                          "confidenceHigh": 1210.464520355893,
-                          "median": 1180.8987652049277,
-                          "mean": 1163.0061487765158,
-                          "confidencePercentage": 0.8,
-                      },
-                      "segment1": [[1, 16.666666666666668],
-                                   [1, 16.666666666666668]],
-                      "segment2": [[1, 6.728874992470971],
-                                   [3105, 13.858528114770454]],
-                  },
-                  "controller": {
-                      "score": 1168.106104032434,
-                      "average": 1168.106104032434,
-                      "stdev": 37.027504395081785,
-                      "percent": 3.1698750881669624,
-                  },
-                  "score": 1180.8987652049277,
-                  "scoreLowerBound": 1154.0859381321234,
-                  "scoreUpperBound": 1210.464520355893,
+        "MotionMark": {
+          "Stories": {
+            "complexity": {
+              "complexity": 1169.7666313745012,
+              "stdev": 2.6693101402239985,
+              "bootstrap": {
+                "confidenceLow": 1154.0859381321234,
+                "confidenceHigh": 1210.464520355893,
+                "median": 1180.8987652049277,
+                "mean": 1163.0061487765158,
+                "confidencePercentage": 0.8,
               },
+              "segment1": [[1, 16.666666666666668], [1, 16.666666666666668]],
+              "segment2": [[1, 6.728874992470971], [3105, 13.858528114770454]],
+            },
+            "controller": {
+              "score": 1168.106104032434,
+              "average": 1168.106104032434,
+              "stdev": 37.027504395081785,
+              "percent": 3.1698750881669624,
+            },
+            "score": 1180.8987652049277,
+            "scoreLowerBound": 1154.0859381321234,
+            "scoreUpperBound": 1210.464520355893,
           },
+        },
       },
       "score": 1180.8987652049277,
       "scoreLowerBound": 1154.0859381321234,
       "scoreUpperBound": 1210.464520355893,
-  }]
+    }
+  ]
 
   @property
   @override
@@ -83,8 +84,9 @@ class MotionMark2PreviewTestCase(MotionMark1BaseTestCase):
   def test_aliases(self):
     super().test_aliases()
     self.assertEqual(self.benchmark_cls.NAME, "motionmark_2.0-preview")
-    self.assertEqual(self.benchmark_cls.aliases(),
-                     ("mm2-preview", "motionmark2-preview"))
+    self.assertEqual(
+      self.benchmark_cls.aliases(), ("mm2-preview", "motionmark2-preview")
+    )
 
   @override
   def _test_run(self, custom_url: str | None = None, throw: bool = False):
@@ -104,15 +106,16 @@ class MotionMark2PreviewTestCase(MotionMark1BaseTestCase):
     benchmark = self.benchmark_cls(stories, custom_url=custom_url)
     self.assertTrue(len(benchmark.describe()) > 0)
     runner = Runner(
-        self.out_dir,
-        self.browsers,
-        benchmark,
-        env_config=EnvConfig(),
-        env_validation_mode=ValidationMode.SKIP,
-        platform=self.platform,
-        repetitions=repetitions,
-        throw=throw,
-        in_memory_result_db=True)
+      self.out_dir,
+      self.browsers,
+      benchmark,
+      env_config=EnvConfig(),
+      env_validation_mode=ValidationMode.SKIP,
+      platform=self.platform,
+      repetitions=repetitions,
+      throw=throw,
+      in_memory_result_db=True,
+    )
     with mock.patch.object(RunnerEnv, "validate_url", return_value=True) as cm:
       runner.run()
     cm.assert_called_once()
@@ -121,18 +124,22 @@ class MotionMark2PreviewTestCase(MotionMark1BaseTestCase):
       urls = self.filter_splashscreen_urls(browser.url_list)
       self.assertEqual(len(urls), repetitions)
       self.assertTrue(browser.was_js_invoked(self.probe_context_cls.JS))
-    with (self.out_dir /
-          f"{self.probe_cls.NAME}.csv").open(encoding="utf-8") as f:
+    with (self.out_dir / f"{self.probe_cls.NAME}.csv").open(
+      encoding="utf-8"
+    ) as f:
       csv_data = list(csv.DictReader(f, delimiter="\t"))
     self.assertListEqual(
-        list(csv_data[0].keys()), ["label", "", "dev", "stable"])
+      list(csv_data[0].keys()), ["label", "", "dev", "stable"]
+    )
     self.assertDictEqual(
-        csv_data[1], {
-            "label": "version",
-            "dev": "102.22.33.44",
-            "stable": "100.22.33.44",
-            "": "",
-        })
+      csv_data[1],
+      {
+        "label": "version",
+        "dev": "102.22.33.44",
+        "stable": "100.22.33.44",
+        "": "",
+      },
+    )
 
   def test_warning_experimental(self):
     stories = self.story_cls.from_names(["Stories"])
@@ -142,7 +149,8 @@ class MotionMark2PreviewTestCase(MotionMark1BaseTestCase):
     with self.assertLogs(level="WARNING") as cm:
       benchmark.setup(runner)
     self.assertTrue(
-        any("not officially released yet" in log for log in cm.output))
+      any("not officially released yet" in log for log in cm.output)
+    )
 
 
 del MotionMark1BaseTestCase

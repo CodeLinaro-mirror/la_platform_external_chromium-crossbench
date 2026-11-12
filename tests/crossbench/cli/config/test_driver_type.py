@@ -13,7 +13,6 @@ from tests import test_helper
 
 
 class BrowserDriverTypeTestCase(unittest.TestCase):
-
   def test_default(self):
     self.assertEqual(BrowserDriverType.default(), BrowserDriverType.WEB_DRIVER)
 
@@ -25,21 +24,21 @@ class BrowserDriverTypeTestCase(unittest.TestCase):
 
   def test_parse_str(self):
     test_data = {
-        "": BrowserDriverType.default(),
-        "selenium": BrowserDriverType.WEB_DRIVER,
-        "webdriver": BrowserDriverType.WEB_DRIVER,
-        "applescript": BrowserDriverType.APPLE_SCRIPT,
-        "osa": BrowserDriverType.APPLE_SCRIPT,
-        "android": BrowserDriverType.ANDROID,
-        "adb": BrowserDriverType.ANDROID,
-        "cdp": BrowserDriverType.ANDROID_CDP,
-        "android-cdp": BrowserDriverType.ANDROID_CDP,
-        "iphone": BrowserDriverType.IOS,
-        "ios": BrowserDriverType.IOS,
-        "ios-wda": BrowserDriverType.IOS_WDA,
-        "wda": BrowserDriverType.IOS_WDA,
-        "ssh": BrowserDriverType.LINUX_SSH,
-        "chromeos-ssh": BrowserDriverType.CHROMEOS_SSH,
+      "": BrowserDriverType.default(),
+      "selenium": BrowserDriverType.WEB_DRIVER,
+      "webdriver": BrowserDriverType.WEB_DRIVER,
+      "applescript": BrowserDriverType.APPLE_SCRIPT,
+      "osa": BrowserDriverType.APPLE_SCRIPT,
+      "android": BrowserDriverType.ANDROID,
+      "adb": BrowserDriverType.ANDROID,
+      "cdp": BrowserDriverType.ANDROID_CDP,
+      "android-cdp": BrowserDriverType.ANDROID_CDP,
+      "iphone": BrowserDriverType.IOS,
+      "ios": BrowserDriverType.IOS,
+      "ios-wda": BrowserDriverType.IOS_WDA,
+      "wda": BrowserDriverType.IOS_WDA,
+      "ssh": BrowserDriverType.LINUX_SSH,
+      "chromeos-ssh": BrowserDriverType.CHROMEOS_SSH,
     }
     for value, result in test_data.items():
       self.assertEqual(BrowserDriverType.parse(value), result)
@@ -50,13 +49,15 @@ class BrowserDriverTypeTestCase(unittest.TestCase):
 
   def test_is_remote_browser_generic(self):
     for driver_type in BrowserDriverType:
-      self.assertNotEqual(driver_type.is_local_browser,
-                          driver_type.is_remote_browser)
+      self.assertNotEqual(
+        driver_type.is_local_browser, driver_type.is_remote_browser
+      )
 
   def test_is_remote_driver_generic(self):
     for driver_type in BrowserDriverType:
-      self.assertNotEqual(driver_type.is_local_driver,
-                          driver_type.is_remote_driver)
+      self.assertNotEqual(
+        driver_type.is_local_driver, driver_type.is_remote_driver
+      )
 
   def test_is_remote_driver_implication(self):
     for driver_type in BrowserDriverType:
@@ -65,32 +66,34 @@ class BrowserDriverTypeTestCase(unittest.TestCase):
 
   def test_is_remote_driver(self):
     remote_driver_types = {
-        BrowserDriverType.CHROMEOS_SSH,
-        BrowserDriverType.LINUX_SSH,
+      BrowserDriverType.CHROMEOS_SSH,
+      BrowserDriverType.LINUX_SSH,
     }
     for driver_type in BrowserDriverType:
-      self.assertEqual(driver_type.is_remote_driver, driver_type
-                       in remote_driver_types)
+      self.assertEqual(
+        driver_type.is_remote_driver, driver_type in remote_driver_types
+      )
 
   def test_is_android(self):
     android_types = {
-        BrowserDriverType.ANDROID,
-        BrowserDriverType.ANDROID_CDP,
+      BrowserDriverType.ANDROID,
+      BrowserDriverType.ANDROID_CDP,
     }
     for driver_type in BrowserDriverType:
       self.assertEqual(driver_type.is_android, driver_type in android_types)
 
   def test_is_remote_browser(self):
     remote_browser_types = {
-        BrowserDriverType.ANDROID,
-        BrowserDriverType.ANDROID_CDP,
-        BrowserDriverType.CHROMEOS_SSH,
-        BrowserDriverType.IOS,
-        BrowserDriverType.LINUX_SSH,
+      BrowserDriverType.ANDROID,
+      BrowserDriverType.ANDROID_CDP,
+      BrowserDriverType.CHROMEOS_SSH,
+      BrowserDriverType.IOS,
+      BrowserDriverType.LINUX_SSH,
     }
     for driver_type in BrowserDriverType:
-      self.assertEqual(driver_type.is_remote_browser, driver_type
-                       in remote_browser_types)
+      self.assertEqual(
+        driver_type.is_remote_browser, driver_type in remote_browser_types
+      )
 
 
 if __name__ == "__main__":

@@ -20,16 +20,18 @@ if TYPE_CHECKING:
 
 
 class WebviewBrowser(Webview):
-
-  def __init__(self,
-               label: str,
-               path: pth.AnyPath | None = None,
-               settings: Settings | None = None) -> None:
+  def __init__(
+    self,
+    label: str,
+    path: pth.AnyPath | None = None,
+    settings: Settings | None = None,
+  ) -> None:
     super().__init__(label, path, settings)
     # TODO: crbug.com/408236113 - Read the activity name from config
     # or command line to replace "WebViewBrowserActivity".
     self._android_activity: Final[str] = (
-        f"{self._android_package}.WebViewBrowserActivity")
+      f"{self._android_package}.WebViewBrowserActivity"
+    )
 
   @override
   def quit(self) -> None:
@@ -48,12 +50,13 @@ class WebviewBrowser(Webview):
     pass
 
   @override
-  def _create_options(self,
-                      session: BrowserSessionRunGroup,
-                      args: Sequence[str],
-                      startup_urls: Sequence[str] = ()) -> ChromiumOptions:
-    options = super()._create_options(
-        session, args, startup_urls=startup_urls)
+  def _create_options(
+    self,
+    session: BrowserSessionRunGroup,
+    args: Sequence[str],
+    startup_urls: Sequence[str] = (),
+  ) -> ChromiumOptions:
+    options = super()._create_options(session, args, startup_urls=startup_urls)
     # Needed because WebView/WebLayer apps require activity name.
     options.add_experimental_option("androidActivity", self._android_activity)
     return options

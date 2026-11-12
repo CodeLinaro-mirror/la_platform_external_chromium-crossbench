@@ -8,8 +8,10 @@ from unittest import mock
 
 from crossbench import path as pth
 from crossbench.browsers.attributes import BrowserAttributes
-from crossbench.probes.crashdump import CrashdumpProbe, \
-    LinuxCrashdumpProbeContext
+from crossbench.probes.crashdump import (
+  CrashdumpProbe,
+  LinuxCrashdumpProbeContext,
+)
 from crossbench.probes.results import EmptyProbeResult
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
@@ -17,7 +19,6 @@ from tests.crossbench.runner.helper import MockRun
 
 
 class CrashdumpProbeTestCase(CrossbenchFakeFsTestCase):
-
   def test_probe_name(self):
     probe = CrashdumpProbe()
     self.assertEqual(probe.name, "cb.crashdump")
@@ -49,7 +50,8 @@ class CrashdumpProbeTestCase(CrossbenchFakeFsTestCase):
     browser = mock.MagicMock()
     browser.unique_name = "mock_browser"
     browser.attributes = mock.MagicMock(
-        return_value={BrowserAttributes.CHROMIUM_BASED})
+      return_value={BrowserAttributes.CHROMIUM_BASED}
+    )
     browser.user_data_dir = None
 
     platform = mock.MagicMock()
@@ -71,7 +73,8 @@ class CrashdumpProbeTestCase(CrossbenchFakeFsTestCase):
     browser = mock.MagicMock()
     browser.unique_name = "mock_browser"
     browser.attributes = mock.MagicMock(
-        return_value={BrowserAttributes.CHROMIUM_BASED})
+      return_value={BrowserAttributes.CHROMIUM_BASED}
+    )
 
     user_data_dir = pth.LocalPath("/path/to/user/data")
     browser.user_data_dir = user_data_dir
@@ -91,12 +94,15 @@ class CrashdumpProbeTestCase(CrossbenchFakeFsTestCase):
     # Mock MinidumpFinder
     mock_finder = mock.MagicMock()
     mock_finder.get_all_minidump_paths = mock.MagicMock(
-        return_value=(
-            [pth.LocalPath("/path/to/user/data/Crash Reports/dump1.dmp")],
-            ["explanation"]))
+      return_value=(
+        [pth.LocalPath("/path/to/user/data/Crash Reports/dump1.dmp")],
+        ["explanation"],
+      )
+    )
 
     with mock.patch(
-        "crossbench.probes.crashdump.MinidumpFinder", return_value=mock_finder):
+      "crossbench.probes.crashdump.MinidumpFinder", return_value=mock_finder
+    ):
       run = MockRun(mock.MagicMock(), browser_session)
 
       context = probe.create_context(run)
@@ -111,7 +117,8 @@ class CrashdumpProbeTestCase(CrossbenchFakeFsTestCase):
     browser = mock.MagicMock()
     browser.unique_name = "mock_browser"
     browser.attributes = mock.MagicMock(
-        return_value={BrowserAttributes.CHROMIUM_BASED})
+      return_value={BrowserAttributes.CHROMIUM_BASED}
+    )
 
     user_data_dir = pth.LocalPath("/path/to/user/data")
     browser.user_data_dir = user_data_dir
@@ -128,10 +135,12 @@ class CrashdumpProbeTestCase(CrossbenchFakeFsTestCase):
     # Mock MinidumpFinder
     mock_finder = mock.MagicMock()
     mock_finder.get_all_minidump_paths = mock.MagicMock(
-        return_value=((), ["explanation"]))
+      return_value=((), ["explanation"])
+    )
 
     with mock.patch(
-        "crossbench.probes.crashdump.MinidumpFinder", return_value=mock_finder):
+      "crossbench.probes.crashdump.MinidumpFinder", return_value=mock_finder
+    ):
       run = MockRun(mock.MagicMock(), browser_session)
 
       context = probe.create_context(run)

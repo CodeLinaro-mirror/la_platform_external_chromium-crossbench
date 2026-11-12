@@ -14,10 +14,11 @@ if TYPE_CHECKING:
 
 # TODO: merge with path finder helper
 def find_crash_binary(
-    platform: Platform,
-    binary_name: str,
-    build_dir: pth.LocalPath | None = None,
-    finder_cls: type[BasePathFinder] | None = None) -> pth.LocalPath | None:
+  platform: Platform,
+  binary_name: str,
+  build_dir: pth.LocalPath | None = None,
+  finder_cls: type[BasePathFinder] | None = None,
+) -> pth.LocalPath | None:
   if build_dir:
     candidate = build_dir / binary_name
     if candidate.is_file():

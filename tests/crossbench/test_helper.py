@@ -21,7 +21,6 @@ from tests.crossbench.base import CrossbenchFakeFsTestCase
 
 
 class WaitTestCase(unittest.TestCase):
-
   def test_invalid_wait_ranges(self):
     with self.assertRaises(AssertionError):
       WaitRange(min=-1)
@@ -34,25 +33,37 @@ class WaitTestCase(unittest.TestCase):
 
   def test_range(self):
     durations = list(WaitRange(min=1, max=16, factor=2, max_iterations=5))
-    self.assertSequenceEqual(durations, [(0, dt.timedelta(seconds=1)),
-                                         (1, dt.timedelta(seconds=2)),
-                                         (2, dt.timedelta(seconds=4)),
-                                         (3, dt.timedelta(seconds=8)),
-                                         (4, dt.timedelta(seconds=16))])
+    self.assertSequenceEqual(
+      durations,
+      [
+        (0, dt.timedelta(seconds=1)),
+        (1, dt.timedelta(seconds=2)),
+        (2, dt.timedelta(seconds=4)),
+        (3, dt.timedelta(seconds=8)),
+        (4, dt.timedelta(seconds=16)),
+      ],
+    )
 
   def test_range_with_delay(self):
     durations = list(
-        WaitRange(min=1, max=16, factor=2, max_iterations=5, delay=5.5))
-    self.assertSequenceEqual(durations, [
+      WaitRange(min=1, max=16, factor=2, max_iterations=5, delay=5.5)
+    )
+    self.assertSequenceEqual(
+      durations,
+      [
         (0, dt.timedelta(seconds=5.5)),
         (1, dt.timedelta(seconds=1)),
         (2, dt.timedelta(seconds=2)),
         (3, dt.timedelta(seconds=4)),
         (4, dt.timedelta(seconds=8)),
-    ])
+      ],
+    )
     durations = list(
-        WaitRange(min=1, max=16, factor=2, max_iterations=10, delay=5.5))
-    self.assertSequenceEqual(durations, [
+      WaitRange(min=1, max=16, factor=2, max_iterations=10, delay=5.5)
+    )
+    self.assertSequenceEqual(
+      durations,
+      [
         (0, dt.timedelta(seconds=5.5)),
         (1, dt.timedelta(seconds=1)),
         (2, dt.timedelta(seconds=2)),
@@ -63,30 +74,33 @@ class WaitTestCase(unittest.TestCase):
         (7, dt.timedelta(seconds=16)),
         (8, dt.timedelta(seconds=16)),
         (9, dt.timedelta(seconds=16)),
-    ])
+      ],
+    )
 
   def test_range_extended(self):
     durations = list(WaitRange(min=1, max=16, factor=2, max_iterations=5 + 4))
     self.assertSequenceEqual(
-        durations,
-        [
-            (0, dt.timedelta(seconds=1)),
-            (1, dt.timedelta(seconds=2)),
-            (2, dt.timedelta(seconds=4)),
-            (3, dt.timedelta(seconds=8)),
-            (4, dt.timedelta(seconds=16)),
-            # After 5 iterations the interval is no longer increased
-            (5, dt.timedelta(seconds=16)),
-            (6, dt.timedelta(seconds=16)),
-            (7, dt.timedelta(seconds=16)),
-            (8, dt.timedelta(seconds=16)),
-        ])
+      durations,
+      [
+        (0, dt.timedelta(seconds=1)),
+        (1, dt.timedelta(seconds=2)),
+        (2, dt.timedelta(seconds=4)),
+        (3, dt.timedelta(seconds=8)),
+        (4, dt.timedelta(seconds=16)),
+        # After 5 iterations the interval is no longer increased
+        (5, dt.timedelta(seconds=16)),
+        (6, dt.timedelta(seconds=16)),
+        (7, dt.timedelta(seconds=16)),
+        (8, dt.timedelta(seconds=16)),
+      ],
+    )
 
   def test_wait_with_backoff(self):
     data: list[tuple[dt.timedelta, dt.timedelta]] = []
     delta = dt.timedelta(seconds=0.0005)
     for expected_i, (i, time_spent, time_left) in enumerate(
-        WaitRange(min=0.01, max=0.05).wait_with_backoff()):
+      WaitRange(min=0.01, max=0.05).wait_with_backoff()
+    ):
       data.append((time_spent, time_left))
       self.assertEqual(expected_i, i)
       if len(data) == 2:
@@ -101,7 +115,8 @@ class WaitTestCase(unittest.TestCase):
   def test_wait_with_backoff_max_iterations(self):
     i = 0
     for expected_i, step in enumerate(
-        WaitRange(min=0.01, max=0.05, max_iterations=11).wait_with_backoff()):
+      WaitRange(min=0.01, max=0.05, max_iterations=11).wait_with_backoff()
+    ):
       i = step.iteration
       self.assertEqual(expected_i, i)
     self.assertEqual(i, 10)
@@ -109,15 +124,16 @@ class WaitTestCase(unittest.TestCase):
   def test_wait_with_backoff_max_iterations_delay(self):
     i = 0
     for expected_i, step in enumerate(
-        WaitRange(min=0.01, max=0.05, delay=0.1,
-                  max_iterations=11).wait_with_backoff()):
+      WaitRange(
+        min=0.01, max=0.05, delay=0.1, max_iterations=11
+      ).wait_with_backoff()
+    ):
       i = step.iteration
       self.assertEqual(expected_i, i)
     self.assertEqual(i, 10)
 
 
 class DurationsTestCase(unittest.TestCase):
-
   def test_single(self):
     durations = Durations()
     self.assertTrue(len(durations) == 0)
@@ -146,7 +162,6 @@ class DurationsTestCase(unittest.TestCase):
 
 
 class ChangeCWDTestCase(CrossbenchFakeFsTestCase):
-
   def test_basic(self):
     old_cwd = pathlib.Path.cwd()
     new_cwd = pathlib.Path("/foo/bar").absolute()
@@ -159,7 +174,6 @@ class ChangeCWDTestCase(CrossbenchFakeFsTestCase):
 
 
 class FileSizeTestCase(CrossbenchFakeFsTestCase):
-
   def test_empty(self):
     test_file = pathlib.Path("test.txt")
     test_file.touch()
@@ -200,81 +214,91 @@ class FileSizeTestCase(CrossbenchFakeFsTestCase):
 
 
 class GroupByTestCase(unittest.TestCase):
-
   def test_empty(self):
     grouped: dict[str, Any] = collection_helper.group_by([], key=str)
     self.assertDictEqual({}, grouped)
 
   def test_basic(self):
-    grouped: dict[str,
-                  list[int]] = collection_helper.group_by([1, 1, 1, 2, 2, 3],
-                                                          key=str)
+    grouped: dict[str, list[int]] = collection_helper.group_by(
+      [1, 1, 1, 2, 2, 3], key=str
+    )
     self.assertSequenceEqual(list(grouped.keys()), ["1", "2", "3"])
     self.assertDictEqual({"1": [1, 1, 1], "2": [2, 2], "3": [3]}, grouped)
 
   def test_basic_out_of_order(self):
-    grouped: dict[str,
-                  list[int]] = collection_helper.group_by([2, 3, 2, 1, 1, 1],
-                                                          key=str)
+    grouped: dict[str, list[int]] = collection_helper.group_by(
+      [2, 3, 2, 1, 1, 1], key=str
+    )
     self.assertSequenceEqual(list(grouped.keys()), ["1", "2", "3"])
     self.assertDictEqual({"1": [1, 1, 1], "2": [2, 2], "3": [3]}, grouped)
 
   def test_basic_input_order(self):
-    grouped: dict[str,
-                  list[int]] = collection_helper.group_by([2, 3, 2, 1, 1, 1],
-                                                          key=str,
-                                                          sort_key=None)
+    grouped: dict[str, list[int]] = collection_helper.group_by(
+      [2, 3, 2, 1, 1, 1], key=str, sort_key=None
+    )
     self.assertSequenceEqual(list(grouped.keys()), ["2", "3", "1"])
     self.assertDictEqual({"1": [1, 1, 1], "2": [2, 2], "3": [3]}, grouped)
 
   def test_basic_custom_order(self):
     grouped: dict[str, list[int]] = collection_helper.group_by(
-        [2, 3, 2, 1, 1, 1], key=str, sort_key=lambda item: int(item[0]))
+      [2, 3, 2, 1, 1, 1], key=str, sort_key=lambda item: int(item[0])
+    )
     self.assertSequenceEqual(list(grouped.keys()), ["1", "2", "3"])
     self.assertDictEqual({"1": [1, 1, 1], "2": [2, 2], "3": [3]}, grouped)
     # Try reverse sorting
     grouped: dict[str, list[int]] = collection_helper.group_by(
-        [2, 3, 2, 1, 1, 1], key=str, sort_key=lambda item: -int(item[0]))
+      [2, 3, 2, 1, 1, 1], key=str, sort_key=lambda item: -int(item[0])
+    )
     self.assertSequenceEqual(list(grouped.keys()), ["3", "2", "1"])
     self.assertDictEqual({"1": [1, 1, 1], "2": [2, 2], "3": [3]}, grouped)
 
   def test_custom_key(self):
     grouped: dict[int, list[int]] = collection_helper.group_by(
-        [1.1, 1.2, 1.3, 2.1, 2.2, 3.1], key=int)
+      [1.1, 1.2, 1.3, 2.1, 2.2, 3.1], key=int
+    )
     self.assertDictEqual({1: [1.1, 1.2, 1.3], 2: [2.1, 2.2], 3: [3.1]}, grouped)
 
   def test_custom_value(self):
     grouped: dict[str, list[int]] = collection_helper.group_by(
-        [1, 1, 1, 2, 2, 3], key=str, value=lambda x: x * 100)
-    self.assertDictEqual({
+      [1, 1, 1, 2, 2, 3], key=str, value=lambda x: x * 100
+    )
+    self.assertDictEqual(
+      {
         "1": [100, 100, 100],
         "2": [200, 200],
         "3": [300],
-    }, grouped)
+      },
+      grouped,
+    )
 
   def test_custom_group(self):
     grouped: dict[str, list[Any]] = collection_helper.group_by_custom(
-        [1, 1, 1, 2, 2, 3], key=str, group=lambda key: ["custom"])
+      [1, 1, 1, 2, 2, 3], key=str, group=lambda key: ["custom"]
+    )
     self.assertDictEqual(
-        {
-            "1": ["custom", 1, 1, 1],
-            "2": ["custom", 2, 2],
-            "3": ["custom", 3],
-        }, grouped)
+      {
+        "1": ["custom", 1, 1, 1],
+        "2": ["custom", 2, 2],
+        "3": ["custom", 3],
+      },
+      grouped,
+    )
 
   def test_custom_group_out_of_order(self):
     grouped: dict[str, list[Any]] = collection_helper.group_by_custom(
-        [1, 1, 1, 3, 2, 2], key=str, group=lambda key: ["custom"])
+      [1, 1, 1, 3, 2, 2], key=str, group=lambda key: ["custom"]
+    )
     self.assertDictEqual(
-        {
-            "1": ["custom", 1, 1, 1],
-            "2": ["custom", 2, 2],
-            "3": ["custom", 3],
-        }, grouped)
+      {
+        "1": ["custom", 1, 1, 1],
+        "2": ["custom", 2, 2],
+        "3": ["custom", 3],
+      },
+      grouped,
+    )
 
 
 class ConcatFilesTestCase(CrossbenchFakeFsTestCase):
-
   @override
   def setUp(self):
     super().setUp()
@@ -298,7 +322,6 @@ class ConcatFilesTestCase(CrossbenchFakeFsTestCase):
 
 
 class StrEnumWithHelpTestCase(unittest.TestCase):
-
   @enum.unique
   class TestEnum(StrEnumWithHelp):
     A = ("a", "help a")
@@ -330,48 +353,61 @@ class StrEnumWithHelpTestCase(unittest.TestCase):
   def test_list(self):
     self.assertEqual(len(self.TestEnum), 2)
     self.assertSequenceEqual(
-        list(self.TestEnum), [self.TestEnum.A, self.TestEnum.B])
+      list(self.TestEnum), [self.TestEnum.A, self.TestEnum.B]
+    )
 
   def test_help_items(self):
-    self.assertSequenceEqual(self.TestEnum.help_text_items(),
-                             [("'a'", "help a"), ("'b'", "help b")])
+    self.assertSequenceEqual(
+      self.TestEnum.help_text_items(), [("'a'", "help a"), ("'b'", "help b")]
+    )
 
 
 class UpdateUrlQueryTestCase(unittest.TestCase):
-
   def test_empty(self):
-    self.assertEqual("http://test.com",
-                     url_helper.update_url_query("http://test.com", {}))
-    self.assertEqual("https://test.com",
-                     url_helper.update_url_query("https://test.com", {}))
     self.assertEqual(
-        "https://test.com?foo=bar",
-        url_helper.update_url_query("https://test.com?foo=bar", {}))
+      "http://test.com", url_helper.update_url_query("http://test.com", {})
+    )
+    self.assertEqual(
+      "https://test.com", url_helper.update_url_query("https://test.com", {})
+    )
+    self.assertEqual(
+      "https://test.com?foo=bar",
+      url_helper.update_url_query("https://test.com?foo=bar", {}),
+    )
 
   def test_empty_add(self):
     self.assertEqual(
-        "http://test.com?foo=bar",
-        url_helper.update_url_query("http://test.com", {"foo": "bar"}))
+      "http://test.com?foo=bar",
+      url_helper.update_url_query("http://test.com", {"foo": "bar"}),
+    )
     self.assertEqual(
-        "http://test.com?foo=bar#status",
-        url_helper.update_url_query("http://test.com#status", {"foo": "bar"}))
+      "http://test.com?foo=bar#status",
+      url_helper.update_url_query("http://test.com#status", {"foo": "bar"}),
+    )
     self.assertEqual(
-        "http://test.com?xyz=10&foo=bar#status",
-        url_helper.update_url_query("http://test.com?xyz=10#status",
-                                    {"foo": "bar"}))
+      "http://test.com?xyz=10&foo=bar#status",
+      url_helper.update_url_query(
+        "http://test.com?xyz=10#status", {"foo": "bar"}
+      ),
+    )
 
   def test_override(self):
     self.assertEqual(
-        "http://test.com?foo=bar",
-        url_helper.update_url_query("http://test.com?foo=BAR", {"foo": "bar"}))
+      "http://test.com?foo=bar",
+      url_helper.update_url_query("http://test.com?foo=BAR", {"foo": "bar"}),
+    )
     self.assertEqual(
-        "http://test.com?foo=bar#status",
-        url_helper.update_url_query("http://test.com?foo=BAR#status",
-                                    {"foo": "bar"}))
+      "http://test.com?foo=bar#status",
+      url_helper.update_url_query(
+        "http://test.com?foo=BAR#status", {"foo": "bar"}
+      ),
+    )
     self.assertEqual(
-        "http://test.com?foo=bar&xyz=10#status",
-        url_helper.update_url_query("http://test.com?foo=BAR&xyz=10#status",
-                                    {"foo": "bar"}))
+      "http://test.com?foo=bar&xyz=10#status",
+      url_helper.update_url_query(
+        "http://test.com?foo=BAR&xyz=10#status", {"foo": "bar"}
+      ),
+    )
 
 
 if __name__ == "__main__":

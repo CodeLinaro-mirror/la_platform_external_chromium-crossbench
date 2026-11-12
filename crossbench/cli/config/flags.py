@@ -8,8 +8,17 @@ import argparse
 import dataclasses
 import functools
 import logging
-from typing import TYPE_CHECKING, Final, Iterable, Mapping, Self, Sequence, \
-    TypeAlias, cast, override
+from typing import (
+  TYPE_CHECKING,
+  Final,
+  Iterable,
+  Mapping,
+  Self,
+  Sequence,
+  TypeAlias,
+  cast,
+  override,
+)
 
 from immutabledict import immutabledict
 from ordered_set import OrderedSet
@@ -54,20 +63,21 @@ class FlagsVariantConfig:
   label: str
   index: int = 0
   flags: Flags = dataclasses.field(
-      default_factory=lambda: ChromeFlags().freeze())
+    default_factory=lambda: ChromeFlags().freeze()
+  )
 
   @classmethod
   def parse(cls, name: str, index: int, data: RawFlagsData) -> Self:
     return cls(name, index, _parse_flags(data))
 
-  def merge_copy(self,
-                 other: FlagsVariantConfig,
-                 label: str | None = None,
-                 index: int = -1) -> FlagsVariantConfig:
+  def merge_copy(
+    self, other: FlagsVariantConfig, label: str | None = None, index: int = -1
+  ) -> FlagsVariantConfig:
     index = self.index if index < 0 else index
     new_label = label or f"{self.label}_{other.label}"
-    return FlagsVariantConfig(new_label, index,
-                              self.flags.merge_copy(other.flags).freeze())
+    return FlagsVariantConfig(
+      new_label, index, self.flags.merge_copy(other.flags).freeze()
+    )
 
   def __hash__(self) -> int:
     return hash(self.flags)
@@ -121,7 +131,8 @@ class FlagsGroupConfig(tuple[FlagsVariantConfig, ...]):
     logging.debug("Using custom flag group labels")
     for label, value in config.items():
       with exception.annotate_argparsing(
-          f"Parsing flag variant ...[{label!r}]:"):
+        f"Parsing flag variant ...[{label!r}]:"
+      ):
         variant = FlagsVariantConfig.parse(label, len(variants), value)
         if variant in variants:
           raise ConfigError(f"Duplicate flag variant: {value}")
@@ -158,7 +169,8 @@ class FlagsGroupConfig(tuple[FlagsVariantConfig, ...]):
     flags = ChromeFlags()
     for flag_name, flag_value in data.items():
       with exception.annotate_argparsing(
-          f"Parsing flag variant ...[{flag_name}]:"):
+        f"Parsing flag variant ...[{flag_name}]:"
+      ):
         if flag_value is None or isinstance(flag_value, str):
           cls._validate_variants_value(flags, flag_name, flag_value)
           continue
@@ -166,29 +178,31 @@ class FlagsGroupConfig(tuple[FlagsVariantConfig, ...]):
           cls._validate_variants_sequence(flags, flag_name, flag_value)
           continue
         raise ConfigError(
-            f"Invalid flag variant value (None, str or sequence): "
-            f"{flag_name}={flag_value!r}")
+          f"Invalid flag variant value (None, str or sequence): "
+          f"{flag_name}={flag_value!r}"
+        )
 
   @classmethod
-  def _validate_variants_sequence(cls, flags: ChromeFlags, flag_name: str,
-                                  flag_values: Sequence) -> None:
-    ObjectParser.unique_sequence(flag_values,
-                                 f"flag {flag_name!r} variant values",
-                                 ConfigError)
+  def _validate_variants_sequence(
+    cls, flags: ChromeFlags, flag_name: str, flag_values: Sequence
+  ) -> None:
+    ObjectParser.unique_sequence(
+      flag_values, f"flag {flag_name!r} variant values", ConfigError
+    )
     for sequence_flag_value in flag_values:
       cls._validate_variants_value(flags.copy(), flag_name, sequence_flag_value)
 
   @classmethod
-  def _validate_variants_value(cls, flags: ChromeFlags, flag_name: str,
-                               flag_value: object) -> None:
+  def _validate_variants_value(
+    cls, flags: ChromeFlags, flag_name: str, flag_value: object
+  ) -> None:
     if flag_value is None:
       flags.set(flag_name)
       return
     if isinstance(flag_value, str):
       flags.set(flag_name, flag_value)
       return
-    raise ConfigError(f"Invalid flag variant value: "
-                      f"{flag_name}={flag_value!r}")
+    raise ConfigError(f"Invalid flag variant value: {flag_name}={flag_value!r}")
 
   @classmethod
   def _dict_variant_to_group(cls, flag_name: str, data: object) -> Self:
@@ -210,16 +224,20 @@ class FlagsGroupConfig(tuple[FlagsVariantConfig, ...]):
         cls._validate_variant_flag(flag_name, variant)
         flag = ChromeFlags({flag_name: variant})
       if flag in flags:
-        raise ConfigError("Same flag variant was specified more than once: "
-                          f"{flag!r} for entry {flag_name!r}")
+        raise ConfigError(
+          "Same flag variant was specified more than once: "
+          f"{flag!r} for entry {flag_name!r}"
+        )
       flags.add(flag)
     return cls.parse_sequence(flags)
 
   @classmethod
   def _validate_variant_flag(cls, flag_name: str, flag_value: object) -> None:
     if flag_value == "None,":
-      raise ConfigError("Please use null (from json) instead of "
-                        f"None (from python) for flag {flag_name!r}")
+      raise ConfigError(
+        "Please use null (from json) instead of "
+        f"None (from python) for flag {flag_name!r}"
+      )
 
   @classmethod
   def parse_sequence(cls, data: Sequence) -> Self:
@@ -251,7 +269,8 @@ class FlagsGroupConfig(tuple[FlagsVariantConfig, ...]):
 
   @classmethod
   def config_from_args_flags(
-      cls, args: argparse.Namespace) -> dict[str, list[str] | str | None]:
+    cls, args: argparse.Namespace
+  ) -> dict[str, list[str] | str | None]:
     initial_flags = ChromeFlags(_parse_flags(args.other_browser_args))
     with exception.annotate("Parsing --extra-browser-args"):
       # Parse --extra-browser-args with lower priority after
@@ -271,8 +290,9 @@ class FlagsGroupConfig(tuple[FlagsVariantConfig, ...]):
       case None:
         pass
       case _:
-        raise ValueError("Invalid field-trial-config value: "
-                         f"{args.enable_field_trial_config}")
+        raise ValueError(
+          f"Invalid field-trial-config value: {args.enable_field_trial_config}"
+        )
     match args.sandbox:
       case False:
         initial_flags.set("--no-sandbox")
@@ -308,18 +328,23 @@ class FlagsGroupConfig(tuple[FlagsVariantConfig, ...]):
       return other
     for variant in self:
       for variant_other in other:
-        new_label = self._unique_product_label(new_labels, variant,
-                                               variant_other)
+        new_label = self._unique_product_label(
+          new_labels, variant, variant_other
+        )
         new_labels.add(new_label)
         new_variant: FlagsVariantConfig = variant.merge_copy(
-            variant_other, index=len(new_variants), label=new_label)
+          variant_other, index=len(new_variants), label=new_label
+        )
         new_variants.append(new_variant)
 
     return type(self)(tuple(new_variants))
 
-  def _unique_product_label(self, label_set: set[str],
-                            variant_a: FlagsVariantConfig,
-                            variant_b: FlagsVariantConfig) -> str:
+  def _unique_product_label(
+    self,
+    label_set: set[str],
+    variant_a: FlagsVariantConfig,
+    variant_b: FlagsVariantConfig,
+  ) -> str:
     default = f"{variant_a.label}_{variant_b.label}"
     if variant_a.label == DEFAULT_LABEL:
       default = variant_b.label
@@ -338,7 +363,6 @@ class FlagsGroupConfig(tuple[FlagsVariantConfig, ...]):
 
 
 class FlagsConfig(ConfigObject, immutabledict[str, FlagsGroupConfig]):
-
   # immutabledict.__new__ is annotated as returning immutabledict, not Self.
   def __new__(cls, data: Mapping[str, FlagsGroupConfig] | None = None) -> Self:
     if not data:

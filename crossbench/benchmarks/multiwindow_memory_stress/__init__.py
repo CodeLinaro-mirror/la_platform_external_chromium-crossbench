@@ -4,7 +4,8 @@
 
 from __future__ import annotations
 
-from crossbench.benchmarks.multiwindow_memory_stress.multiwindow_memory_stress_benchmark import \
-    MultiwindowMemoryStressBenchmark
+from crossbench.benchmarks.multiwindow_memory_stress.multiwindow_memory_stress_benchmark import (
+  MultiwindowMemoryStressBenchmark,
+)
 
 __all__ = ["MultiwindowMemoryStressBenchmark"]

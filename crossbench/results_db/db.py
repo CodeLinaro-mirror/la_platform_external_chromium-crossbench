@@ -32,14 +32,18 @@ if TYPE_CHECKING:
   from crossbench.results_db.records.base import BaseRecord
   from crossbench.runner.run import Run
 
-DEFAULT_CLASSES: Final[tuple[type[BaseRecord],
-                             ...]] = (PlatformRecord, BrowserRecord, RunRecord,
-                                      UnitRecord)
+DEFAULT_CLASSES: Final[tuple[type[BaseRecord], ...]] = (
+  PlatformRecord,
+  BrowserRecord,
+  RunRecord,
+  UnitRecord,
+)
 
 
 @orm_event.listens_for(orm_engine.Engine, "connect")
-def set_sqlite_pragma(dbapi_connection: sqlite3.Connection,
-                      connection_record: orm_engine.Connection) -> None:
+def set_sqlite_pragma(
+  dbapi_connection: sqlite3.Connection, connection_record: orm_engine.Connection
+) -> None:
   """sqlite needs manual foreign key setup"""
   del connection_record
   cursor = dbapi_connection.cursor()
@@ -50,7 +54,6 @@ def set_sqlite_pragma(dbapi_connection: sqlite3.Connection,
 
 
 class ResultsDB:
-
   def __init__(self, db_file: pth.LocalPath | None = None):
     self._db_file: Final[pth.LocalPath | None] = db_file
     init_tables: bool = True
@@ -60,7 +63,8 @@ class ResultsDB:
       engine_url = f"sqlite:///{self._db_file}"
     is_debug_logging = logging.getLogger().isEnabledFor(logging.DEBUG)
     self._engine: Final[sqlalchemy.engine.Engine] = sqlalchemy.create_engine(
-        engine_url, echo=is_debug_logging)
+      engine_url, echo=is_debug_logging
+    )
     if init_tables:
       self._init_tables()
 

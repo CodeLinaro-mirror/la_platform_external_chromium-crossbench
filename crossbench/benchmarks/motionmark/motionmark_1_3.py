@@ -7,9 +7,12 @@ from __future__ import annotations
 import datetime as dt
 from typing import TYPE_CHECKING, ClassVar, override
 
-from crossbench.benchmarks.motionmark.motionmark_1 import \
-    MotionMark1Benchmark, MotionMark1Probe, MotionMark1ProbeContext, \
-    MotionMark1Story
+from crossbench.benchmarks.motionmark.motionmark_1 import (
+  MotionMark1Benchmark,
+  MotionMark1Probe,
+  MotionMark1ProbeContext,
+  MotionMark1Story,
+)
 
 if TYPE_CHECKING:
   from crossbench.benchmarks.base import VersionParts
@@ -30,15 +33,18 @@ class MotionMark13ProbeContext(MotionMark1ProbeContext):
 
 class MotionMark13Story(MotionMark1Story):
   NAME: ClassVar = "motionmark_1.3"
-  URL: ClassVar[
-      str] = "https://chromium-workloads.web.app/motionmark/v1.3/MotionMark"
+  URL: ClassVar[str] = (
+    "https://chromium-workloads.web.app/motionmark/v1.3/MotionMark"
+  )
   URL_OFFICIAL: ClassVar[str] = "https://browserbench.org/MotionMark1.3"
   READY_TIMEOUT: ClassVar[dt.timedelta] = dt.timedelta(seconds=12)
   DEVELOPER_READY_JS: ClassVar[str] = (
-      "return !(document.querySelector('#frame-rate-detection span'));")
+    "return !(document.querySelector('#frame-rate-detection span'));"
+  )
   READY_JS: ClassVar[str] = (
-      "return !!("
-      "   document.querySelector('#frame-rate-label')?.textContent?.trim());")
+    "return !!("
+    "   document.querySelector('#frame-rate-label')?.textContent?.trim());"
+  )
 
 
 class MotionMark13Benchmark(MotionMark1Benchmark):

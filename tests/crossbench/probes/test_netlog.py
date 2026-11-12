@@ -8,15 +8,19 @@ import pathlib
 import unittest
 from unittest import mock
 
-from crossbench.probes.netlog import NetLogCaptureMode, NetLogProbe, \
-    NetLogProbeContext
-from crossbench.probes.probe_error import ProbeIncompatibleBrowser, \
-    ProbeValidationError
+from crossbench.probes.netlog import (
+  NetLogCaptureMode,
+  NetLogProbe,
+  NetLogProbeContext,
+)
+from crossbench.probes.probe_error import (
+  ProbeIncompatibleBrowser,
+  ProbeValidationError,
+)
 from tests import test_helper
 
 
 class NetLogProbeTestCase(unittest.TestCase):
-
   def test_parse_config(self) -> None:
     probe = NetLogProbe.parse_dict({})
     self.assertEqual(probe.capture_mode, NetLogCaptureMode.DEFAULT)
@@ -63,7 +67,8 @@ class NetLogProbeTestCase(unittest.TestCase):
     probe = NetLogProbe(capture_mode=NetLogCaptureMode.DEFAULT)
     run = mock.MagicMock()
     run.get_default_probe_result_path.return_value = pathlib.Path(
-        "test_netlog.json")
+      "test_netlog.json"
+    )
     extra_flags: dict[str, str] = {}
     run.session.extra_flags = extra_flags
     context = NetLogProbeContext(probe, run)

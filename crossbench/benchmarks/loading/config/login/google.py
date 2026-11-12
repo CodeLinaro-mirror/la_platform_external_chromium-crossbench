@@ -19,101 +19,127 @@ if TYPE_CHECKING:
   from crossbench.runner.actions import Actions
 
 GOOGLE_LOGIN_URL: str = (
-    "https://accounts.google.com/Logout?"
-    "continue=https%3A%2F%2Faccounts.google.com%2Fv3%2Fsignin%2Fidentifier%3F"
-    "flowName%3DGlifWebSignIn%26flowEntry%3DServiceLogin")
+  "https://accounts.google.com/Logout?"
+  "continue=https%3A%2F%2Faccounts.google.com%2Fv3%2Fsignin%2Fidentifier%3F"
+  "flowName%3DGlifWebSignIn%26flowEntry%3DServiceLogin"
+)
 
 SUCCESSFUL_LOGIN_REDIRECT: str = "https://myaccount.google.com"
 
 ADD_PASSKEY_REDIRECT: str = (
-    "https://accounts.google.com/v3/signin/speedbump/passkeyenrollment")
-SKIP_PASSKEY_ACTION: ClickAction = ClickAction.parse({
+  "https://accounts.google.com/v3/signin/speedbump/passkeyenrollment"
+)
+SKIP_PASSKEY_ACTION: ClickAction = ClickAction.parse(
+  {
     "action": "click",
     "pos": {
-        "selector": "xpath///span[contains(text(), 'Not now')]",
-        "required": True,
-        "wait": True,
+      "selector": "xpath///span[contains(text(), 'Not now')]",
+      "required": True,
+      "wait": True,
     },
     "source": "js",
-})
+  }
+)
 
 ADD_RECOVERY_PHONE_REDIRECT: str = "https://gds.google.com/web/recoveryoptions"
-SKIP_RECOVERY_PHONE: ClickAction = ClickAction.parse({
+SKIP_RECOVERY_PHONE: ClickAction = ClickAction.parse(
+  {
     "action": "click",
     "pos": {
-        "selector": "[aria-label='Skip']",
-        "required": True,
-        "wait": True,
+      "selector": "[aria-label='Skip']",
+      "required": True,
+      "wait": True,
     },
     "source": "js",
-})
+  }
+)
 
 ADD_HOME_ADDRESS_REDIRECT: str = "https://gds.google.com/web/homeaddress"
-SKIP_HOME_ADDRESS: ClickAction = ClickAction.parse({
+SKIP_HOME_ADDRESS: ClickAction = ClickAction.parse(
+  {
     "action": "click",
     "pos": {
-        "selector": "[aria-label='Skip']",
-        "required": True,
-        "wait": True,
+      "selector": "[aria-label='Skip']",
+      "required": True,
+      "wait": True,
     },
     "source": "js",
-})
+  }
+)
 
 SUSPICIOUS_ACTIVITY_URL: str = "https://myaccount.google.com/notifications"
-CHECK_SUSPICIOUS_ACTIVITY: ClickAction = ClickAction.parse({
+CHECK_SUSPICIOUS_ACTIVITY: ClickAction = ClickAction.parse(
+  {
     "action": "click",
     "pos": {
-        "selector": "[aria-label='Check activity']",
-        "required": True,
+      "selector": "[aria-label='Check activity']",
+      "required": True,
     },
     "source": "js",
-})
+  }
+)
 
-CLICK_YES_IT_WAS_ME: ClickAction = ClickAction.parse({
+CLICK_YES_IT_WAS_ME: ClickAction = ClickAction.parse(
+  {
     "action": "click",
     "pos": {
-        "selector": "xpath///button[./span[text()='Yes, it was me']]",
-        "required": True,
-        "wait": True,
+      "selector": "xpath///button[./span[text()='Yes, it was me']]",
+      "required": True,
+      "wait": True,
     },
     "source": "js",
     "verify": "xpath///body[not(./button[./span[text()='Yes, it was me']])]",
-})
+  }
+)
 
-DISMISS_CHROME_SIGNIN: Final[TextInputAction] = TextInputAction.parse({
+DISMISS_CHROME_SIGNIN: Final[TextInputAction] = TextInputAction.parse(
+  {
     "action": "text_input",
     "keyevent": "Escape",
     "source": "keyboard",
-})
+  }
+)
 
 
 class GoogleLogin(PresetLoginBlock):
   """Google-specific login steps."""
 
-  def _dismiss_chrome_signin_prompt(self, action: Actions,
-                                    runner: ActionRunner) -> None:
+  def _dismiss_chrome_signin_prompt(
+    self, action: Actions, runner: ActionRunner
+  ) -> None:
     action.wait(1)
     try:
       runner.text_input(DISMISS_CHROME_SIGNIN)
     except NotImplementedError as e:
       logging.debug("Could not dismiss Chrome sign-in prompt: %s", e)
 
-  def _submit_login_field(self, action: Actions, runner: ActionRunner,
-                          secret: UsernamePassword, aria_label: str,
-                          input_val: str, button_name: str) -> None:
+  def _submit_login_field(
+    self,
+    action: Actions,
+    runner: ActionRunner,
+    secret: UsernamePassword,
+    aria_label: str,
+    input_val: str,
+    button_name: str,
+  ) -> None:
     if secret.is_interactive:
       return
     action.wait_js_condition(
-        ("return "
-         f"document.querySelector(\"[aria-label='{aria_label}']\") != null &&"
-         f"document.getElementById({button_name!r}) != null;"),
-        0.2,
-        timeout=20)
+      (
+        "return "
+        f"document.querySelector(\"[aria-label='{aria_label}']\") != null &&"
+        f"document.getElementById({button_name!r}) != null;"
+      ),
+      0.2,
+      timeout=20,
+    )
     self._dismiss_chrome_signin_prompt(action, runner)
-    action.js("const inputField ="
-              f" document.querySelector(\"[aria-label='{aria_label}']\");"
-              f"inputField.value = {input_val!r};"
-              f"document.getElementById({button_name!r}).click();")
+    action.js(
+      "const inputField ="
+      f" document.querySelector(\"[aria-label='{aria_label}']\");"
+      f"inputField.value = {input_val!r};"
+      f"document.getElementById({button_name!r}).click();"
+    )
 
   def timeout(self, secret: UsernamePassword) -> dt.timedelta:
     if secret.is_interactive:
@@ -133,18 +159,35 @@ class GoogleLogin(PresetLoginBlock):
     with run.actions("Login", measure=False) as action:
       logging.info("Logging into Google with account: %s", secret.username)
       action.show_url(
-          GOOGLE_LOGIN_URL,
-          ready_state=ReadyState.INTERACTIVE,
-          timeout=self.timeout(secret))
-      self._submit_login_field(action, runner, secret, "Email or phone",
-                               secret.username, "identifierNext")
-      self._submit_login_field(action, runner, secret, "Enter your password",
-                               secret.password, "passwordNext")
+        GOOGLE_LOGIN_URL,
+        ready_state=ReadyState.INTERACTIVE,
+        timeout=self.timeout(secret),
+      )
+      self._submit_login_field(
+        action,
+        runner,
+        secret,
+        "Email or phone",
+        secret.username,
+        "identifierNext",
+      )
+      self._submit_login_field(
+        action,
+        runner,
+        secret,
+        "Enter your password",
+        secret.password,
+        "passwordNext",
+      )
 
       action.wait_js_condition(
-          ("return !document.URL.startsWith("
-           "'https://accounts.google.com/v3/signin/challenge/pwd');"), 0.2,
-          self.timeout(secret))
+        (
+          "return !document.URL.startsWith("
+          "'https://accounts.google.com/v3/signin/challenge/pwd');"
+        ),
+        0.2,
+        self.timeout(secret),
+      )
       action.wait_for_ready_state(ReadyState.COMPLETE, self.timeout(secret))
 
       wait_range = run.wait_range(0.2, self.timeout(secret))
@@ -156,34 +199,57 @@ class GoogleLogin(PresetLoginBlock):
 
         if current_url.startswith(ADD_PASSKEY_REDIRECT):
           logging.info("Dismissing passkey enrollment page.")
-          self._dismiss_login_page(action, runner, SKIP_PASSKEY_ACTION,
-                                   ADD_PASSKEY_REDIRECT, step.time_left)
+          self._dismiss_login_page(
+            action,
+            runner,
+            SKIP_PASSKEY_ACTION,
+            ADD_PASSKEY_REDIRECT,
+            step.time_left,
+          )
 
         if current_url.startswith(ADD_RECOVERY_PHONE_REDIRECT):
           logging.info("Dismissing account recovery page.")
-          self._dismiss_login_page(action, runner, SKIP_RECOVERY_PHONE,
-                                   ADD_RECOVERY_PHONE_REDIRECT, step.time_left)
+          self._dismiss_login_page(
+            action,
+            runner,
+            SKIP_RECOVERY_PHONE,
+            ADD_RECOVERY_PHONE_REDIRECT,
+            step.time_left,
+          )
 
         if current_url.startswith(ADD_HOME_ADDRESS_REDIRECT):
           logging.info("Dismissing add home address page.")
-          self._dismiss_login_page(action, runner, SKIP_HOME_ADDRESS,
-                                   ADD_HOME_ADDRESS_REDIRECT, step.time_left)
+          self._dismiss_login_page(
+            action,
+            runner,
+            SKIP_HOME_ADDRESS,
+            ADD_HOME_ADDRESS_REDIRECT,
+            step.time_left,
+          )
 
       self._clear_suspicious_activity(action, runner)
 
-  def _dismiss_login_page(self, action: Actions, runner: ActionRunner,
-                          click_action: ClickAction, current_url: str,
-                          timeout: dt.timedelta) -> None:
+  def _dismiss_login_page(
+    self,
+    action: Actions,
+    runner: ActionRunner,
+    click_action: ClickAction,
+    current_url: str,
+    timeout: dt.timedelta,
+  ) -> None:
     runner.click(click_action)
     action.wait_js_condition(
-        f"return !document.URL.startsWith('{current_url}');", 0.2, timeout)
+      f"return !document.URL.startsWith('{current_url}');", 0.2, timeout
+    )
     action.wait_for_ready_state(ReadyState.COMPLETE, timeout)
 
-  def _clear_suspicious_activity(self, action: Actions,
-                                 runner: ActionRunner) -> None:
+  def _clear_suspicious_activity(
+    self, action: Actions, runner: ActionRunner
+  ) -> None:
     has_suspicious_activity = action.js(
-        "return document.querySelector("
-        "\"[aria-label='Check activity']\") != null;")
+      "return document.querySelector("
+      "\"[aria-label='Check activity']\") != null;"
+    )
 
     if not has_suspicious_activity:
       return

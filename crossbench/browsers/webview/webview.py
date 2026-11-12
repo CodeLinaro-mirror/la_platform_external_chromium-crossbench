@@ -18,30 +18,34 @@ if TYPE_CHECKING:
   from crossbench.browsers.version import BrowserVersion
 
 _WEBVIEW_SYSUPDATE_CURRENT_PKG_RE = re.compile(
-    r"Current WebView package.*:.*\(([a-z.]*),\s+(\d+\.\d+\.\d+\.\d+)\)")
+  r"Current WebView package.*:.*\(([a-z.]*),\s+(\d+\.\d+\.\d+\.\d+)\)"
+)
 
 
 # TODO: crbug.com/393058910 - Replace this Webview class stub placeholder
 # once Webview class is properly created.
 class Webview(ChromeWebDriverAndroid, metaclass=abc.ABCMeta):
-
   @classmethod
   @override
   def attributes(cls) -> BrowserAttributes:
-    return ((super().attributes() & ~BrowserAttributes.CHROME)
-            | BrowserAttributes.WEBVIEW)
+    return (
+      super().attributes() & ~BrowserAttributes.CHROME
+    ) | BrowserAttributes.WEBVIEW
 
-  def __init__(self,
-               label: str,
-               path: pth.AnyPath | None = None,
-               settings: Settings | None = None) -> None:
+  def __init__(
+    self,
+    label: str,
+    path: pth.AnyPath | None = None,
+    settings: Settings | None = None,
+  ) -> None:
     super().__init__(label, path, settings)
     self._chrome_command_line_path: pth.AnyPath = FLAGS_WEBVIEW
 
   @override
   def _extract_version(self) -> BrowserVersion:
-    webview_provider = self.platform.sh_stdout("settings", "get", "global",
-                                               "webview_provider").strip()
+    webview_provider = self.platform.sh_stdout(
+      "settings", "get", "global", "webview_provider"
+    ).strip()
     if webview_provider == "null":
       # If webview_provider is null, we need to use dumpsys webviewupdate
       # to get the webview provider package name.

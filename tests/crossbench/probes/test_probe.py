@@ -11,9 +11,14 @@ from unittest import mock
 import crossbench.path as pth
 from crossbench.browsers.settings import Settings
 from crossbench.cli.config.probe_list import ProbeListConfig
-from crossbench.probes.all import CONFIGURABLE_INTERNAL_PROBES, \
-    DEFAULT_INTERNAL_PROBES, GENERAL_PURPOSE_PROBES, INTERNAL_PROBES, \
-    NON_CONFIGURABLE_INTERNAL_PROBES, OPTIONAL_INTERNAL_PROBES
+from crossbench.probes.all import (
+  CONFIGURABLE_INTERNAL_PROBES,
+  DEFAULT_INTERNAL_PROBES,
+  GENERAL_PURPOSE_PROBES,
+  INTERNAL_PROBES,
+  NON_CONFIGURABLE_INTERNAL_PROBES,
+  OPTIONAL_INTERNAL_PROBES,
+)
 from crossbench.probes.bits import BitsProbe
 from crossbench.probes.cb_perfetto.perfetto import PerfettoProbe
 from crossbench.probes.cb_perfetto.tracing import TracingProbe
@@ -37,27 +42,33 @@ from crossbench.probes.polling import PollingShellProbe
 from crossbench.probes.power_sampler import PowerSamplerProbe
 from crossbench.probes.powermetrics import PowerMetricsProbe
 from crossbench.probes.probe import Probe, ProbeKeyT, ProbePriority
-from crossbench.probes.probe_error import ProbeIncompatibleBrowser, \
-    ProbeValidationError
+from crossbench.probes.probe_error import (
+  ProbeIncompatibleBrowser,
+  ProbeValidationError,
+)
 from crossbench.probes.profiling.browser_profiling import BrowserProfilingProbe
 from crossbench.probes.profiling.system_profiling import ProfilingProbe
 from crossbench.probes.results import LocalProbeResult
 from crossbench.probes.screenshot import ScreenshotProbe
 from crossbench.probes.shell import LocalShellProbe, ShellProbe, ShellProbeBase
 from crossbench.probes.system_stats import SystemStatsProbe
-from crossbench.probes.trace_processor.trace_processor import \
-    TraceProcessorProbe
+from crossbench.probes.trace_processor.trace_processor import (
+  TraceProcessorProbe,
+)
 from crossbench.probes.v8.builtins_pgo import V8BuiltinsPGOProbe
 from crossbench.probes.v8.log import V8LogProbe
 from crossbench.probes.v8.rcs import V8RCSProbe
 from crossbench.probes.v8.turbolizer import V8TurbolizerProbe
 from crossbench.probes.video import VideoProbe
 from crossbench.probes.web_page_replay.recorder import WebPageReplayProbe
-from crossbench.probes.xcode_instruments.xcode_instruments import \
-    XcodeInstrumentsProbe
+from crossbench.probes.xcode_instruments.xcode_instruments import (
+  XcodeInstrumentsProbe,
+)
 from tests import test_helper
-from tests.crossbench.base import CrossbenchConfigTestMixin, \
-    CrossbenchFakeFsTestCase
+from tests.crossbench.base import (
+  CrossbenchConfigTestMixin,
+  CrossbenchFakeFsTestCase,
+)
 from tests.crossbench.mock_browser import MockChromeStable
 from tests.crossbench.mock_helper import LinuxMockPlatform
 from tests.crossbench.probes.helper import BaseProbeTestCase
@@ -68,7 +79,6 @@ if TYPE_CHECKING:
 
 
 class ProbeListConfigTestCase(CrossbenchFakeFsTestCase):
-
   def test_invalid_empty(self):
     with self.assertRaisesRegex(ValueError, "str"):
       ProbeListConfig.parse({"probes": ""})
@@ -83,7 +93,6 @@ class ProbeListConfigTestCase(CrossbenchFakeFsTestCase):
 
 
 class ProbeTestCase(CrossbenchConfigTestMixin, CrossbenchFakeFsTestCase):
-
   def setUp(self) -> None:
     super().setUp()
     self.setup_perfetto_config_presets()
@@ -139,8 +148,11 @@ class ProbeTestCase(CrossbenchConfigTestMixin, CrossbenchFakeFsTestCase):
       # "conceptually abstract" but technically concrete. (Not ever expected
       # to be instantiated, but don't actually possess @abc.abstractmethod
       # methods that'd trigger isabstract.)
-      if (not inspect.isabstract(probe_sub_cls) and
-          probe_sub_cls not in (ChromiumProbe, EnvModifier, JsonResultProbe)):
+      if not inspect.isabstract(probe_sub_cls) and probe_sub_cls not in (
+        ChromiumProbe,
+        EnvModifier,
+        JsonResultProbe,
+      ):
         yield probe_sub_cls
       yield from self.all_probe_subclasses(probe_sub_cls)
     yield from OPTIONAL_INTERNAL_PROBES
@@ -165,17 +177,23 @@ class ProbeTestCase(CrossbenchConfigTestMixin, CrossbenchFakeFsTestCase):
       if probe_cls.IS_GENERAL_PURPOSE:
         self.assertIn(probe_cls, GENERAL_PURPOSE_PROBES)
     self.assertGreater(
-        count,
-        len(GENERAL_PURPOSE_PROBES) + len(DEFAULT_INTERNAL_PROBES))
+      count, len(GENERAL_PURPOSE_PROBES) + len(DEFAULT_INTERNAL_PROBES)
+    )
     self.assertFalse(
-        set(NON_CONFIGURABLE_INTERNAL_PROBES).intersection(
-            set(CONFIGURABLE_INTERNAL_PROBES)))
+      set(NON_CONFIGURABLE_INTERNAL_PROBES).intersection(
+        set(CONFIGURABLE_INTERNAL_PROBES)
+      )
+    )
     self.assertFalse(
-        set(NON_CONFIGURABLE_INTERNAL_PROBES).intersection(
-            set(OPTIONAL_INTERNAL_PROBES)))
+      set(NON_CONFIGURABLE_INTERNAL_PROBES).intersection(
+        set(OPTIONAL_INTERNAL_PROBES)
+      )
+    )
     self.assertFalse(
-        set(CONFIGURABLE_INTERNAL_PROBES).intersection(
-            set(OPTIONAL_INTERNAL_PROBES)))
+      set(CONFIGURABLE_INTERNAL_PROBES).intersection(
+        set(OPTIONAL_INTERNAL_PROBES)
+      )
+    )
 
   def test_help(self):
     for probe_cls in self.probe_classes():
@@ -196,28 +214,28 @@ class ProbeTestCase(CrossbenchConfigTestMixin, CrossbenchFakeFsTestCase):
     # be experimented with and make it more accessible to explore.
     # TODO(crbug.com/383572680): provide more default settings
     requires_configuration = {
-        ChromeHistogramsProbe,
-        ChromeMetricsInternalsProbe,
-        DTraceProbe,
-        # Reason: missing lldb binary on some platforms
-        DebuggerProbe,
-        # TODO: provide default settings
-        JSProbe,
-        # TODO: auto-download perfetto bin from storage
-        PerfettoProbe,
-        # TODO: provide default settings
-        PollingShellProbe,
-        # TODO: provide default settings
-        ShellProbe,
-        LocalShellProbe,
-        # TODO: missing wpr, download precompiled wpr from storage
-        WebPageReplayProbe,
-        WebviewEmbedderProbe,
-        EtmProbe,
-        # Reason: requires bits_path and bits_out parameters
-        BitsProbe,
-        # Reason: requires an `instrument` .instrpkg to record with.
-        XcodeInstrumentsProbe,
+      ChromeHistogramsProbe,
+      ChromeMetricsInternalsProbe,
+      DTraceProbe,
+      # Reason: missing lldb binary on some platforms
+      DebuggerProbe,
+      # TODO: provide default settings
+      JSProbe,
+      # TODO: auto-download perfetto bin from storage
+      PerfettoProbe,
+      # TODO: provide default settings
+      PollingShellProbe,
+      # TODO: provide default settings
+      ShellProbe,
+      LocalShellProbe,
+      # TODO: missing wpr, download precompiled wpr from storage
+      WebPageReplayProbe,
+      WebviewEmbedderProbe,
+      EtmProbe,
+      # Reason: requires bits_path and bits_out parameters
+      BitsProbe,
+      # Reason: requires an `instrument` .instrpkg to record with.
+      XcodeInstrumentsProbe,
     }
     for probe_cls in GENERAL_PURPOSE_PROBES:
       if probe_cls in requires_configuration:
@@ -293,24 +311,27 @@ class ProbeTestCase(CrossbenchConfigTestMixin, CrossbenchFakeFsTestCase):
     MockChromeStable.setup_fs(self.fs, platform)
     browser = MockChromeStable("stable", settings=Settings(platform=platform))
     self.assertRegex(
-        str(ProbeIncompatibleBrowser(probe, browser, "Some error message")),
-        r"Probe\(browser-profiling\): Some error message\n"
-        r"      Got: browser=Chrome:stable, "
-        r"platform=local\.mock\.linux\.arm64\.\d+")
+      str(ProbeIncompatibleBrowser(probe, browser, "Some error message")),
+      r"Probe\(browser-profiling\): Some error message\n"
+      r"      Got: browser=Chrome:stable, "
+      r"platform=local\.mock\.linux\.arm64\.\d+",
+    )
 
 
 class ShellProbeExecutionTestCase(BaseProbeTestCase):
-
-  def _verify_shell_probe_execution(self, probe_cls: type[ShellProbeBase],
-                                    run: MockRun,
-                                    target_platform: MockPlatformMixin) -> None:
+  def _verify_shell_probe_execution(
+    self,
+    probe_cls: type[ShellProbeBase],
+    run: MockRun,
+    target_platform: MockPlatformMixin,
+  ) -> None:
     cmds = {
-        "setup_cmd": ["setup-cmd", "1", "2"],
-        "start_cmd": ["start-cmd", "3", "4"],
-        "start_story_run_cmd": ["start-story-cmd", "5", "6"],
-        "stop_story_run_cmd": ["stop-story-cmd", "7", "8"],
-        "stop_cmd": ["stop-cmd", "9", "10"],
-        "teardown_cmd": ["teardown-cmd", "11", "12"],
+      "setup_cmd": ["setup-cmd", "1", "2"],
+      "start_cmd": ["start-cmd", "3", "4"],
+      "start_story_run_cmd": ["start-story-cmd", "5", "6"],
+      "stop_story_run_cmd": ["stop-story-cmd", "7", "8"],
+      "stop_cmd": ["stop-cmd", "9", "10"],
+      "teardown_cmd": ["teardown-cmd", "11", "12"],
     }
     probe = probe_cls(**cmds)
 
@@ -334,8 +355,9 @@ class ShellProbeExecutionTestCase(BaseProbeTestCase):
 
     # Verify the exact filenames are constructed correctly from hook names.
     expected_filenames = [
-        f"{key.removesuffix('_cmd')}.{suffix}.txt" for key in cmds
-        for suffix in ("stdout", "stderr")
+      f"{key.removesuffix('_cmd')}.{suffix}.txt"
+      for key in cmds
+      for suffix in ("stdout", "stderr")
     ]
     actual_filenames = [f.name for f in result.file_list]
     self.assertSequenceEqual(actual_filenames, expected_filenames)
@@ -359,6 +381,7 @@ class BaseShellProbeValidationTestCase(BaseProbeTestCase):
   platforms, so we share the test cases in this base class and specialize
   the concrete subclasses for LocalShellProbe and ShellProbe.
   """
+
   __test__ = False
 
   @property
@@ -380,8 +403,9 @@ class BaseShellProbeValidationTestCase(BaseProbeTestCase):
 
     self._remote_exec_1 = self._create_file("/remote/bin/remote_exec_1", 0o755)
     self._remote_exec_2 = self._create_file("/remote/bin/remote_exec_2", 0o755)
-    self._remote_non_exec = self._create_file("/remote/bin/remote_non_exec",
-                                              0o644)
+    self._remote_non_exec = self._create_file(
+      "/remote/bin/remote_non_exec", 0o644
+    )
 
     run = self.mock_run()
     self.assertIsInstance(run.browser, mock.MagicMock)
@@ -392,15 +416,19 @@ class BaseShellProbeValidationTestCase(BaseProbeTestCase):
 
     # Register lookups permanently for host platform.
     self.browser.host_platform.set_binary_lookup_override(
-        "local_exec_1", self._local_exec_1)
+      "local_exec_1", self._local_exec_1
+    )
     self.browser.host_platform.set_binary_lookup_override(
-        "local_exec_2", self._local_exec_2)
+      "local_exec_2", self._local_exec_2
+    )
 
     # Register lookups permanently for browser/remote platform.
-    self.browser_platform.set_binary_lookup_override("remote_exec_1",
-                                                     self._remote_exec_1)
-    self.browser_platform.set_binary_lookup_override("remote_exec_2",
-                                                     self._remote_exec_2)
+    self.browser_platform.set_binary_lookup_override(
+      "remote_exec_1", self._remote_exec_1
+    )
+    self.browser_platform.set_binary_lookup_override(
+      "remote_exec_2", self._remote_exec_2
+    )
 
     self.prefix = "local" if self.probe_cls is LocalShellProbe else "remote"
     wrong_prefix = "remote" if self.probe_cls is LocalShellProbe else "local"
@@ -448,13 +476,15 @@ class BaseShellProbeValidationTestCase(BaseProbeTestCase):
     target_platform.set_binary_lookup_override(str(exec_path), exec_path)
 
     probe = self.probe_cls(
-        setup_cmd=[f"~/{self.prefix}_exec_tilde"], stop_cmd=[self.exec_2])
+      setup_cmd=[f"~/{self.prefix}_exec_tilde"], stop_cmd=[self.exec_2]
+    )
     self._verify_validation(probe)
 
   def test_validation_tilde_failure_non_existent(self):
     probe = self.probe_cls(
-        setup_cmd=[f"~/{self.prefix}_does_not_exist_tilde"],
-        stop_cmd=[self.exec_2])
+      setup_cmd=[f"~/{self.prefix}_does_not_exist_tilde"],
+      stop_cmd=[self.exec_2],
+    )
     with self.assertRaises(ProbeValidationError) as cm:
       self._verify_validation(probe)
     self.assertIn("not executable or does not exist", str(cm.exception))

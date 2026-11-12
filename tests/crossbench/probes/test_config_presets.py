@@ -10,10 +10,13 @@ from pyfakefs import fake_filesystem_unittest
 
 from crossbench import path as pth
 from crossbench import plt
-from crossbench.benchmarks.loadline import LoadLine1TabletBenchmark, \
-    LoadLine1TabletDebugBenchmark, LoadLine2TabletBenchmark, \
-    LoadLine2TabletDebugBenchmark
 from crossbench.benchmarks.loading.config.pages import PagesConfig
+from crossbench.benchmarks.loadline import (
+  LoadLine1TabletBenchmark,
+  LoadLine1TabletDebugBenchmark,
+  LoadLine2TabletBenchmark,
+  LoadLine2TabletDebugBenchmark,
+)
 from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.helper.cwd import change_cwd
 from crossbench.helper.path_finder_base import default_chromium_candidates
@@ -24,7 +27,7 @@ if TYPE_CHECKING:
   from crossbench.probes.probe import Probe
 
 PROBE_LOOKUP: dict[str, type[Probe]] = {
-    probe_cls.NAME: probe_cls for probe_cls in GENERAL_PURPOSE_PROBES
+  probe_cls.NAME: probe_cls for probe_cls in GENERAL_PURPOSE_PROBES
 }
 
 
@@ -39,8 +42,9 @@ class ProbeConfigTestCase(fake_filesystem_unittest.TestCase):
     self.real_config_dir = test_helper.config_dir()
     super().setUp()
     self.setUpPyfakefs(modules_to_reload=[pth])
-    self._add_real_directory(test_helper.crossbench_dir() /
-                             "probes/trace_processor/queries")
+    self._add_real_directory(
+      test_helper.crossbench_dir() / "probes/trace_processor/queries"
+    )
     self.set_up_required_paths()
 
   def set_up_required_paths(self):
@@ -53,8 +57,9 @@ class ProbeConfigTestCase(fake_filesystem_unittest.TestCase):
     self.fs.create_file(perfetto_tools / "traceconv")
     self.fs.create_file(perfetto_tools / "trace_processor")
 
-  def _test_parse_config_dir(self,
-                             real_config_dir: pathlib.Path) -> list[Probe]:
+  def _test_parse_config_dir(
+    self, real_config_dir: pathlib.Path
+  ) -> list[Probe]:
     probes: list[Probe] = []
     self._add_real_directory(real_config_dir)
     # make sure we have a fakefs path
@@ -92,11 +97,17 @@ class ProbeConfigTestCase(fake_filesystem_unittest.TestCase):
 
   def test_parse_loadline_configs(self):
     self._add_real_directory(
-        LoadLine1TabletBenchmark.default_probe_config_path().parent)
+      LoadLine1TabletBenchmark.default_probe_config_path().parent
+    )
     self._add_real_directory(
-        LoadLine2TabletBenchmark.default_probe_config_path().parent)
-    for cls in (LoadLine1TabletBenchmark, LoadLine1TabletDebugBenchmark,
-                LoadLine2TabletBenchmark, LoadLine2TabletDebugBenchmark):
+      LoadLine2TabletBenchmark.default_probe_config_path().parent
+    )
+    for cls in (
+      LoadLine1TabletBenchmark,
+      LoadLine1TabletDebugBenchmark,
+      LoadLine2TabletBenchmark,
+      LoadLine2TabletDebugBenchmark,
+    ):
       probe_config = cls.default_probe_config_path()
       probes = ProbeListConfig.parse(probe_config).probes
       self.assertTrue(probes)

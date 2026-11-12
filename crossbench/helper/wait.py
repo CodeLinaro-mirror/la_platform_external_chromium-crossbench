@@ -47,13 +47,15 @@ class WaitRange:
   wait_with_backoff().
   """
 
-  def __init__(self,
-               min: AnyTime = 0.1,
-               timeout: AnyTime = 10,
-               factor: float = 1.01,
-               max: AnyTime | None = None,
-               max_iterations: float = math.inf,
-               delay: AnyTime = 0) -> None:
+  def __init__(
+    self,
+    min: AnyTime = 0.1,
+    timeout: AnyTime = 10,
+    factor: float = 1.01,
+    max: AnyTime | None = None,
+    max_iterations: float = math.inf,
+    delay: AnyTime = 0,
+  ) -> None:
     self._min: Final[dt.timedelta] = as_timedelta(min)
     assert self._min.total_seconds() > 0
     if not max:
@@ -114,7 +116,8 @@ def sleep_f(seconds: float) -> None:
 
 
 def wait_with_backoff(
-    wait_range: AnyTime | WaitRange) -> Iterator[WaitBackoffStep]:
+  wait_range: AnyTime | WaitRange,
+) -> Iterator[WaitBackoffStep]:
   if not isinstance(wait_range, WaitRange):
     wait_range = WaitRange(timeout=wait_range)
   return wait_range.wait_with_backoff()

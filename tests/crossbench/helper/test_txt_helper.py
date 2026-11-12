@@ -11,7 +11,6 @@ from tests import test_helper
 
 
 class TxtHelperTestCase(unittest.TestCase):
-
   def test_plural_str(self):
     self.assertEqual(txt_helper.plural_str(1, "attempt"), "attempt")
     self.assertEqual(txt_helper.plural_str(0, "attempt"), "attempts")
@@ -30,8 +29,8 @@ class TxtHelperTestCase(unittest.TestCase):
 
   def test_type_name(self):
     self.assertEqual(
-        txt_helper.type_name(TxtHelperTestCase),
-        f"{__name__}.TxtHelperTestCase")
+      txt_helper.type_name(TxtHelperTestCase), f"{__name__}.TxtHelperTestCase"
+    )
 
 
 if __name__ == "__main__":

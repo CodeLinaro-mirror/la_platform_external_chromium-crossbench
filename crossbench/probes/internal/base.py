@@ -40,11 +40,13 @@ class InternalJsonResultProbe(JsonResultProbe, InternalProbe):
 
 
 InternalJsonResultProbeT = TypeVar(
-    "InternalJsonResultProbeT", bound="InternalJsonResultProbe")
+  "InternalJsonResultProbeT", bound="InternalJsonResultProbe"
+)
 
 
 class InternalJsonResultProbeContext(
-    JsonResultProbeContext[InternalJsonResultProbeT]):
+  JsonResultProbeContext[InternalJsonResultProbeT]
+):
   FLATTEN: ClassVar = False
 
   @override

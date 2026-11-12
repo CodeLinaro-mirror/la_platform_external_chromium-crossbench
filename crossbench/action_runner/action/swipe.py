@@ -31,10 +31,12 @@ class SwipeAction(BaseDurationAction):
   end_x: int = 0
   end_y: int = 0
   source_device: str = dataclasses.field(
-      default=DEFAULT_VIRTUAL_DEVICES[InputSource.TOUCH].name, kw_only=True)
+    default=DEFAULT_VIRTUAL_DEVICES[InputSource.TOUCH].name, kw_only=True
+  )
   # Overrides BaseDurationAction.duration:
   duration: dt.timedelta = dataclasses.field(
-      default=DEFAULT_DURATION, kw_only=True)
+    default=DEFAULT_DURATION, kw_only=True
+  )
 
   @classmethod
   @override
@@ -42,28 +44,28 @@ class SwipeAction(BaseDurationAction):
   def config_parser(cls: type[Self]) -> ConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
-        "start_x",
-        aliases=("startx",),
-        type=NumberParser.any_int,
-        required=True)
+      "start_x", aliases=("startx",), type=NumberParser.any_int, required=True
+    )
     parser.add_argument(
-        "start_y",
-        aliases=("starty",),
-        type=NumberParser.any_int,
-        required=True)
+      "start_y", aliases=("starty",), type=NumberParser.any_int, required=True
+    )
     parser.add_argument(
-        "end_x", aliases=("endx",), type=NumberParser.any_int, required=True)
+      "end_x", aliases=("endx",), type=NumberParser.any_int, required=True
+    )
     parser.add_argument(
-        "end_y", aliases=("endy",), type=NumberParser.any_int, required=True)
+      "end_y", aliases=("endy",), type=NumberParser.any_int, required=True
+    )
     parser.add_argument(
-        "source_device",
-        type=ObjectParser.non_empty_str,
-        required=False,
-        default=DEFAULT_VIRTUAL_DEVICES[InputSource.TOUCH].name)
+      "source_device",
+      type=ObjectParser.non_empty_str,
+      required=False,
+      default=DEFAULT_VIRTUAL_DEVICES[InputSource.TOUCH].name,
+    )
     parser.add_argument(
-        "duration",
-        type=DurationParser.positive_duration,
-        default=cls.DEFAULT_DURATION)
+      "duration",
+      type=DurationParser.positive_duration,
+      default=cls.DEFAULT_DURATION,
+    )
     return parser
 
   @override

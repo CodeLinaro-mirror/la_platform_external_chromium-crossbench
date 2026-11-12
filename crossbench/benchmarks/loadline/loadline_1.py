@@ -10,8 +10,10 @@ import numpy as np
 
 from crossbench import config
 from crossbench import path as pth
-from crossbench.benchmarks.loadline.loadline import LoadLineBenchmark, \
-    LoadLineProbe
+from crossbench.benchmarks.loadline.loadline import (
+  LoadLineBenchmark,
+  LoadLineProbe,
+)
 from crossbench.probes.probe_context import ProbeContext
 
 if TYPE_CHECKING:
@@ -30,15 +32,17 @@ if TYPE_CHECKING:
 VERSION_STRING: Final[str] = "1.6.0"
 
 _DEPRECATION_MESSAGE = (
-    "⚠️  Please run LoadLine2 which supersedes this benchmark.")
+  "⚠️  Please run LoadLine2 which supersedes this benchmark."
+)
 
 
 def process_scores(df: pd.DataFrame) -> pd.DataFrame:
-  df = df.groupby(["cb_browser",
-                   "cb_story"])["score"].mean().reset_index().pivot(
-                       columns=["cb_story"],
-                       index=["cb_browser"],
-                       values=["score"])
+  df = (
+    df.groupby(["cb_browser", "cb_story"])["score"]
+    .mean()
+    .reset_index()
+    .pivot(columns=["cb_story"], index=["cb_browser"], values=["score"])
+  )
   df = df.droplevel(0, axis=1)
   # The globo workload was modified at some point, and to keep scores
   # comparable between versions, we introduced a coefficient.
@@ -48,18 +52,21 @@ def process_scores(df: pd.DataFrame) -> pd.DataFrame:
   df["TOTAL_SCORE"] = np.exp(np.log(df).mean(axis=1))
   df.index.rename("browser", inplace=True)
   df = df.reindex(
-      columns=(
-          ["TOTAL_SCORE", *sorted(
-              c for c in df.columns if c != "TOTAL_SCORE")]))
+    columns=(
+      ["TOTAL_SCORE", *sorted(c for c in df.columns if c != "TOTAL_SCORE")]
+    )
+  )
   return df
 
 
 def process_breakdown(df: pd.DataFrame) -> pd.DataFrame:
   df["os"] = df[["network", "process_launch"]].max(axis=1)
-  df = df.groupby([
+  df = df.groupby(
+    [
       "cb_browser",
       "cb_story",
-  ])[["os", "renderer", "compositor", "gpu", "surfaceflinger"]].mean()
+    ]
+  )[["os", "renderer", "compositor", "gpu", "surfaceflinger"]].mean()
   df.index.names = ["browser", "story"]
   return df
 
@@ -96,16 +103,19 @@ class LoadLine1Probe(LoadLineProbe):
 
 
 class LoadLine1ProbeContext(ProbeContext[LoadLine1Probe]):
-
   def start(self) -> None:
     pass
 
   @override
   def start_story_run(self) -> None:
-    benchmark_type = ("loadline-phone" if "phone" in self.probe.benchmark.NAME
-                      else "loadline-tablet")
+    benchmark_type = (
+      "loadline-phone"
+      if "phone" in self.probe.benchmark.NAME
+      else "loadline-tablet"
+    )
     self.run.performance_mark(
-        f"LoadLine/{benchmark_type}/{self.run.story.name}", prefix="")
+      f"LoadLine/{benchmark_type}/{self.run.story.name}", prefix=""
+    )
 
   def stop(self) -> None:
     pass
@@ -123,7 +133,8 @@ class LoadLine1Benchmark(LoadLineBenchmark):
   def add_cli_arguments(cls, parser: CBArgumentParser) -> CBArgumentParser:
     super().add_cli_arguments(parser)
     parser.add_argument(
-        "--benchmark-version", action="version", version=f"{VERSION_STRING}")
+      "--benchmark-version", action="version", version=f"{VERSION_STRING}"
+    )
     return parser
 
   @classmethod
@@ -137,8 +148,8 @@ class LoadLine1Benchmark(LoadLineBenchmark):
 
 
 class LoadLine1PhoneBenchmark(LoadLine1Benchmark):
-  """LoadLine benchmark for phones.
-  """
+  """LoadLine benchmark for phones."""
+
   NAME: ClassVar = "loadline-phone"
 
   @classmethod
@@ -158,8 +169,8 @@ class LoadLine1PhoneBenchmark(LoadLine1Benchmark):
 
 
 class LoadLine1TabletBenchmark(LoadLine1Benchmark):
-  """LoadLine benchmark for tablets.
-  """
+  """LoadLine benchmark for tablets."""
+
   NAME: ClassVar = "loadline-tablet"
 
   @classmethod
@@ -179,8 +190,9 @@ class LoadLine1TabletBenchmark(LoadLine1Benchmark):
 
   @classmethod
   @override
-  def extra_flags(cls, browser_attributes: BrowserAttributes,
-                  story: Story) -> Flags:
+  def extra_flags(
+    cls, browser_attributes: BrowserAttributes, story: Story
+  ) -> Flags:
     flags: Flags = super().extra_flags(browser_attributes, story)
     if browser_attributes.is_chromium_based:
       flags.set("--request-desktop-sites")
@@ -191,6 +203,7 @@ class LoadLine1PhoneDebugBenchmark(LoadLine1PhoneBenchmark):
   """LoadLine benchmark for phones, with more tracing categories, for easier
   performance analysis.
   """
+
   NAME: ClassVar = "loadline-phone-debug"
   DEFAULT_REPETITIONS: ClassVar = 1
 
@@ -209,6 +222,7 @@ class LoadLine1TabletDebugBenchmark(LoadLine1TabletBenchmark):
   """LoadLine benchmark for tablets, with more tracing categories, for easier
   performance analysis.
   """
+
   NAME: ClassVar = "loadline-tablet-debug"
   DEFAULT_REPETITIONS: ClassVar = 1
 
@@ -227,6 +241,7 @@ class LoadLine1PhoneFastBenchmark(LoadLine1PhoneBenchmark):
   """LoadLine benchmark for phones, with less repetitions, for faster local
   experiments.
   """
+
   NAME: ClassVar = "loadline-phone-fast"
   DEFAULT_REPETITIONS: ClassVar = 10
 
@@ -240,6 +255,7 @@ class LoadLine1TabletFastBenchmark(LoadLine1TabletBenchmark):
   """LoadLine benchmark for tablets, with less repetitions, for faster local
   experiments.
   """
+
   NAME: ClassVar = "loadline-tablet-fast"
   DEFAULT_REPETITIONS: ClassVar = 10
 

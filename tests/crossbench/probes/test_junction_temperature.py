@@ -7,11 +7,13 @@ from __future__ import annotations
 from typing import override
 from unittest import mock
 
-from crossbench.probes.junction_temperature import JunctionTemperatureMode
-from crossbench.probes.junction_temperature import \
-    JunctionTemperatureProbe as JtProbe
-from crossbench.probes.junction_temperature import \
-    JunctionTemperatureProbeContext
+from crossbench.probes.junction_temperature import (
+  JunctionTemperatureMode,
+  JunctionTemperatureProbeContext,
+)
+from crossbench.probes.junction_temperature import (
+  JunctionTemperatureProbe as JtProbe,
+)
 from crossbench.probes.probe import ProbeIncompatibleBrowser
 from crossbench.probes.results import LocalProbeResult
 from tests import test_helper
@@ -31,7 +33,6 @@ def _stats_collect() -> tuple[str, ...]:
 
 
 class JunctionTemperatureProbeTestCase(BaseProbeTestCase):
-
   @override
   def setUp(self) -> None:
     super().setUp()
@@ -51,7 +52,8 @@ class JunctionTemperatureProbeTestCase(BaseProbeTestCase):
 
   def test_validate_browser_root_failure_non_root(self):
     self.browser.platform.sh_stdout.return_value = (
-        "uid=2000(shell) gid=2000(shell)")
+      "uid=2000(shell) gid=2000(shell)"
+    )
     with self.assertRaises(ProbeIncompatibleBrowser) as cm:
       self.probe.validate_browser(self.env, self.browser)
     self.assertIn("Can't use root on this device", str(cm.exception))
@@ -76,10 +78,10 @@ class JunctionTemperatureProbeTestCase(BaseProbeTestCase):
     self.assertIn("TMU path missing", str(cm.exception))
 
   def _check_probe_lifecycle(
-      self,
-      mode: JunctionTemperatureMode,
-      tmu_stats_output: str,
-      steps: list[tuple[str, tuple[str, ...] | None]],
+    self,
+    mode: JunctionTemperatureMode,
+    tmu_stats_output: str,
+    steps: list[tuple[str, tuple[str, ...] | None]],
   ) -> None:
     probe = JtProbe(mode=mode)
     run = self.mock_run(result_path="/results/junction_temperature.txt")
@@ -109,30 +111,30 @@ class JunctionTemperatureProbeTestCase(BaseProbeTestCase):
 
   def test_probe_lifecycle_and_teardown(self):
     self._check_probe_lifecycle(
-        mode=JunctionTemperatureMode.RUN,
-        tmu_stats_output="tmu_stats data 123",
-        steps=[
-            ("setup", _stats_reset()),
-            ("start", None),
-            ("start_story_run", None),
-            ("stop_story_run", None),
-            ("stop", None),
-            ("teardown", _stats_collect()),
-        ],
+      mode=JunctionTemperatureMode.RUN,
+      tmu_stats_output="tmu_stats data 123",
+      steps=[
+        ("setup", _stats_reset()),
+        ("start", None),
+        ("start_story_run", None),
+        ("stop_story_run", None),
+        ("stop", None),
+        ("teardown", _stats_collect()),
+      ],
     )
 
   def test_probe_lifecycle_story_mode(self):
     self._check_probe_lifecycle(
-        mode=JunctionTemperatureMode.STORY,
-        tmu_stats_output="tmu_stats data 456",
-        steps=[
-            ("setup", None),
-            ("start", None),
-            ("start_story_run", _stats_reset()),
-            ("stop_story_run", _stats_collect()),
-            ("stop", None),
-            ("teardown", None),
-        ],
+      mode=JunctionTemperatureMode.STORY,
+      tmu_stats_output="tmu_stats data 456",
+      steps=[
+        ("setup", None),
+        ("start", None),
+        ("start_story_run", _stats_reset()),
+        ("stop_story_run", _stats_collect()),
+        ("stop", None),
+        ("teardown", None),
+      ],
     )
 
   def test_probe_teardown_without_start(self):

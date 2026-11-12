@@ -17,21 +17,30 @@ from crossbench import plt
 from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.exception import ArgumentTypeMultiException, MultiException
 from crossbench.probes.all import TraceProcessorProbe
-from crossbench.probes.trace_processor.constants import MODULES_DIR, \
-    QUERIES_DIR
-from crossbench.probes.trace_processor.context.base import \
-    TraceProcessorProbeContext
-from crossbench.probes.trace_processor.context.symbolizing import \
-    ChromiumSymbolPathFinder, TraceProcessorSymbolizingProbeContext
-from crossbench.probes.trace_processor.helper import \
-    CBBatchTraceProcessorConfig, CBTraceProcessorConfig
-from crossbench.probes.trace_processor.query_config import \
-    DeviceSpecificTraceProcessorQuery, TraceProcessorQueryConfig
-from crossbench.probes.trace_processor.trace_processor import \
-    TraceProcessorOutputFormat
+from crossbench.probes.trace_processor.constants import MODULES_DIR, QUERIES_DIR
+from crossbench.probes.trace_processor.context.base import (
+  TraceProcessorProbeContext,
+)
+from crossbench.probes.trace_processor.context.symbolizing import (
+  ChromiumSymbolPathFinder,
+  TraceProcessorSymbolizingProbeContext,
+)
+from crossbench.probes.trace_processor.helper import (
+  CBBatchTraceProcessorConfig,
+  CBTraceProcessorConfig,
+)
+from crossbench.probes.trace_processor.query_config import (
+  DeviceSpecificTraceProcessorQuery,
+  TraceProcessorQueryConfig,
+)
+from crossbench.probes.trace_processor.trace_processor import (
+  TraceProcessorOutputFormat,
+)
 from tests import test_helper
-from tests.crossbench.base import BaseCrossbenchTestCase, \
-    CrossbenchFakeFsTestCase
+from tests.crossbench.base import (
+  BaseCrossbenchTestCase,
+  CrossbenchFakeFsTestCase,
+)
 
 
 def read_query_sql(name: str) -> str:
@@ -39,12 +48,13 @@ def read_query_sql(name: str) -> str:
 
 
 class TraceProcessorProbeTestCase(unittest.TestCase):
-
-  @unittest.skipIf(not plt.PLATFORM.which("trace_processor"),
-                   "trace_processor not available")
+  @unittest.skipIf(
+    not plt.PLATFORM.which("trace_processor"), "trace_processor not available"
+  )
   def test_parse_example_config(self):
     config_file = (
-        test_helper.config_dir() / "doc/probe/trace_processor.config.hjson")
+      test_helper.config_dir() / "doc/probe/trace_processor.config.hjson"
+    )
     self.assertTrue(config_file.is_file())
     probes = ProbeListConfig.parse(config_file).probes
     self.assertEqual(len(probes), 2)
@@ -63,8 +73,9 @@ class TraceProcessorProbeTestCase(unittest.TestCase):
 
     self.assertEqual(len(probe.module_paths), 2)
     self.assertRegex(
-        str(probe.module_paths[0]),
-        r".*\/crossbench\/probes\/trace_processor\/modules\/ext")
+      str(probe.module_paths[0]),
+      r".*\/crossbench\/probes\/trace_processor\/modules\/ext",
+    )
     self.assertEqual(str(probe.module_paths[1]), "/my_project/modules/ext")
 
     metric_definitions = probe.metric_definitions
@@ -75,26 +86,30 @@ class TraceProcessorProbeTestCase(unittest.TestCase):
     summary_metrics = probe.summary_metrics
     # Should contain everything in 'metrics' plus 'summary_metrics'
     self.assertSequenceEqual(
-        list(summary_metrics),
-        ["trace_stats", "file_metric_def_textproto", "inline_textproto_metric"])
+      list(summary_metrics),
+      ["trace_stats", "file_metric_def_textproto", "inline_textproto_metric"],
+    )
 
   def test_query_config_duplicate_name_raises(self):
-    with self.assertRaisesRegex(ArgumentTypeError,
-                                "Unexpected duplicates in query names"):
-      TraceProcessorProbe.parse_dict({
+    with self.assertRaisesRegex(
+      ArgumentTypeError, "Unexpected duplicates in query names"
+    ):
+      TraceProcessorProbe.parse_dict(
+        {
           "queries": [
-              "loadline/benchmark_score",
-              {
-                  "name": "loadline_benchmark_score",
-                  "sql": "select * from slice where slice.name = 'comment'",
-              },
+            "loadline/benchmark_score",
+            {
+              "name": "loadline_benchmark_score",
+              "sql": "select * from slice where slice.name = 'comment'",
+            },
           ],
-      })
+        }
+      )
 
   def test_parse_wv_shell_heapdump_config(self):
     config_file = (
-        test_helper.config_dir() /
-        "team/woa/wv_shell_heapdump.probe.config.hjson")
+      test_helper.config_dir() / "team/woa/wv_shell_heapdump.probe.config.hjson"
+    )
     self.assertTrue(config_file.is_file())
     probes = ProbeListConfig.parse(config_file).probes
     self.assertEqual(len(probes), 2)
@@ -102,12 +117,13 @@ class TraceProcessorProbeTestCase(unittest.TestCase):
     self.assertIsInstance(tp_probe, TraceProcessorProbe)
     self.assertEqual(len(tp_probe.queries), 1)
     self.assertEqual(tp_probe.queries[0].name, "wv_heapdump_memory")
-    self.assertEqual(tp_probe.queries[0].sql,
-                     read_query_sql("wv_heapdump_memory.sql"))
+    self.assertEqual(
+      tp_probe.queries[0].sql, read_query_sql("wv_heapdump_memory.sql")
+    )
 
-  def _create_metric_spec(self,
-                          metric_id: str = "test_metric",
-                          sql: str = "SELECT 1 AS val") -> str:
+  def _create_metric_spec(
+    self, metric_id: str = "test_metric", sql: str = "SELECT 1 AS val"
+  ) -> str:
     return f"""
       metric_spec {{
         id: "{metric_id}"
@@ -121,43 +137,50 @@ class TraceProcessorProbeTestCase(unittest.TestCase):
       }}
     """
 
-  @unittest.skipIf(not plt.PLATFORM.which("trace_processor"),
-                   "trace_processor not available")
+  @unittest.skipIf(
+    not plt.PLATFORM.which("trace_processor"), "trace_processor not available"
+  )
   def test_validate_env_valid_metric_definitions_only(self):
     spec = self._create_metric_spec()
     probe = TraceProcessorProbe(metric_definitions=[spec])
     probe.attach(unittest.mock.MagicMock())
     probe.validate_env(unittest.mock.MagicMock())
 
-  @unittest.skipIf(not plt.PLATFORM.which("trace_processor"),
-                   "trace_processor not available")
+  @unittest.skipIf(
+    not plt.PLATFORM.which("trace_processor"), "trace_processor not available"
+  )
   def test_validate_env_invalid_metric_definitions_only_raises(self):
     probe = TraceProcessorProbe(metric_definitions=["invalid_textproto {"])
     probe.attach(unittest.mock.MagicMock())
     with self.assertRaises(MultiException):
       probe.validate_env(unittest.mock.MagicMock())
 
-  @unittest.skipIf(not plt.PLATFORM.which("trace_processor"),
-                   "trace_processor not available")
+  @unittest.skipIf(
+    not plt.PLATFORM.which("trace_processor"), "trace_processor not available"
+  )
   def test_validate_env_invalid_sql_in_metric_definitions_only_raises(self):
     spec = self._create_metric_spec(
-        metric_id="broken_sql_metric", sql="SYNTAX ERROR")
+      metric_id="broken_sql_metric", sql="SYNTAX ERROR"
+    )
     probe = TraceProcessorProbe(metric_definitions=[spec])
     probe.attach(unittest.mock.MagicMock())
     with self.assertRaises(MultiException):
       probe.validate_env(unittest.mock.MagicMock())
 
-  @unittest.skipIf(not plt.PLATFORM.which("trace_processor"),
-                   "trace_processor not available")
+  @unittest.skipIf(
+    not plt.PLATFORM.which("trace_processor"), "trace_processor not available"
+  )
   def test_validate_env_summary_metrics(self):
     spec = self._create_metric_spec()
     valid_probe = TraceProcessorProbe(
-        metric_definitions=[spec], summary_metrics=["test_metric"])
+      metric_definitions=[spec], summary_metrics=["test_metric"]
+    )
     valid_probe.attach(unittest.mock.MagicMock())
     valid_probe.validate_env(unittest.mock.MagicMock())
 
     invalid_probe = TraceProcessorProbe(
-        metric_definitions=[spec], summary_metrics=["nonexistent_metric"])
+      metric_definitions=[spec], summary_metrics=["nonexistent_metric"]
+    )
     invalid_probe.attach(unittest.mock.MagicMock())
     with self.assertRaises(MultiException):
       invalid_probe.validate_env(unittest.mock.MagicMock())
@@ -182,10 +205,12 @@ class TraceProcessorProbeFakeFsTestCase(CrossbenchFakeFsTestCase):
     trace_processor_dir.mkdir(parents=True)
     trace_processor_path.touch()
 
-    config = TraceProcessorProbe.parse_dict({
+    config = TraceProcessorProbe.parse_dict(
+      {
         "trace_processor_bin": str(trace_processor_path),
         "queries": self._QUERIES,
-    })
+      }
+    )
 
     self.assertEqual(str(config.trace_processor_bin), str(trace_processor_path))
 
@@ -195,15 +220,17 @@ class TraceProcessorProbeFakeFsTestCase(CrossbenchFakeFsTestCase):
     sql_packages_dir.mkdir(parents=True)
     config_file = config_dir / "probe_config.hjson"
     config_file.write_text(
-        json.dumps({
-            "probes": {
-                "trace_processor": {
-                    "module_paths": ["./metrics/sql_packages"],
-                    "queries": self._QUERIES,
-                },
+      json.dumps(
+        {
+          "probes": {
+            "trace_processor": {
+              "module_paths": ["./metrics/sql_packages"],
+              "queries": self._QUERIES,
             },
-        }),
-        encoding="utf-8",
+          },
+        }
+      ),
+      encoding="utf-8",
     )
     probes = ProbeListConfig.parse(config_file).probes
     self.assertEqual(len(probes), 1)
@@ -214,10 +241,12 @@ class TraceProcessorProbeFakeFsTestCase(CrossbenchFakeFsTestCase):
   def _assert_parse_output_option(self, key: str, aliases: list[str]) -> None:
     for config_key in (key, *aliases):
       for values in ("json", "csv", ["json"], ["csv"], ["json", "csv"]):
-        probe = TraceProcessorProbe.parse_dict({
+        probe = TraceProcessorProbe.parse_dict(
+          {
             "queries": self._QUERIES,
             config_key: values,
-        })
+          }
+        )
         expected = (values,) if isinstance(values, str) else tuple(values)
         self.assertEqual(getattr(probe, key), expected)
 
@@ -226,23 +255,30 @@ class TraceProcessorProbeFakeFsTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse_output_to_clipboard(self):
     self._assert_parse_output_option(
-        key="output_to_clipboard", aliases=["pbcopy", "clipboard"])
+      key="output_to_clipboard", aliases=["pbcopy", "clipboard"]
+    )
 
   def test_parse_invalid_stdout_option(self):
     with self.assertRaises(
-        (ArgumentTypeError, ValueError, ArgumentTypeMultiException)):
-      TraceProcessorProbe.parse_dict({
+      (ArgumentTypeError, ValueError, ArgumentTypeMultiException)
+    ):
+      TraceProcessorProbe.parse_dict(
+        {
           "queries": self._QUERIES,
           "stdout": "invalid_choice",
-      })
+        }
+      )
 
   def test_parse_invalid_clipboard_option(self):
     with self.assertRaises(
-        (ArgumentTypeError, ValueError, ArgumentTypeMultiException)):
-      TraceProcessorProbe.parse_dict({
+      (ArgumentTypeError, ValueError, ArgumentTypeMultiException)
+    ):
+      TraceProcessorProbe.parse_dict(
+        {
           "queries": self._QUERIES,
           "clipboard": "invalid_choice",
-      })
+        }
+      )
 
   def test_init_invalid_output_to_stdout_option(self):
     with self.assertRaises(ValueError):
@@ -261,9 +297,11 @@ class TraceProcessorProbeFakeFsTestCase(CrossbenchFakeFsTestCase):
     mock_platform.has_clipboard = False
     with unittest.mock.patch.object(plt, "PLATFORM", mock_platform):
       with self.assertRaisesRegex(
-          RuntimeError, "Clipboard tool unavailable on current platform."):
+        RuntimeError, "Clipboard tool unavailable on current platform."
+      ):
         TraceProcessorProbe(
-            output_to_clipboard=[TraceProcessorOutputFormat.JSON])
+          output_to_clipboard=[TraceProcessorOutputFormat.JSON]
+        )
 
   def test_create_context_platform(self):
     probe = TraceProcessorProbe.parse_dict({"queries": self._QUERIES})
@@ -272,14 +310,15 @@ class TraceProcessorProbeFakeFsTestCase(CrossbenchFakeFsTestCase):
     run_macos.browser_platform.is_macos = True
     run_macos.browser_platform.is_android = False
     self.assertIsInstance(
-        probe.create_context(run_macos), TraceProcessorSymbolizingProbeContext)
+      probe.create_context(run_macos), TraceProcessorSymbolizingProbeContext
+    )
 
     run_android = unittest.mock.MagicMock()
     run_android.browser_platform.is_macos = False
     run_android.browser_platform.is_android = True
     self.assertIsInstance(
-        probe.create_context(run_android),
-        TraceProcessorSymbolizingProbeContext)
+      probe.create_context(run_android), TraceProcessorSymbolizingProbeContext
+    )
 
     run_linux = unittest.mock.MagicMock()
     run_linux.browser_platform.is_macos = False
@@ -287,57 +326,76 @@ class TraceProcessorProbeFakeFsTestCase(CrossbenchFakeFsTestCase):
     context_linux = probe.create_context(run_linux)
     self.assertIsInstance(context_linux, TraceProcessorProbeContext)
     self.assertNotIsInstance(
-        context_linux, TraceProcessorSymbolizingProbeContext)
+      context_linux, TraceProcessorSymbolizingProbeContext
+    )
 
   def test_has_pprof_query(self):
     run = unittest.mock.MagicMock()
 
-    probe = TraceProcessorProbe.parse_dict({
+    probe = TraceProcessorProbe.parse_dict(
+      {
         "queries": [
-            {
-                "name": "pprof",
-                "sql": "select 1",
-            },
-            {
-                "name": "other",
-                "sql": "select 2",
-            },
+          {
+            "name": "pprof",
+            "sql": "select 1",
+          },
+          {
+            "name": "other",
+            "sql": "select 2",
+          },
         ],
-    })
+      }
+    )
     context = probe.create_context(run)
     self.assertTrue(context.has_pprof_query(context.queries))
 
     probe2 = TraceProcessorProbe.parse_dict(
-        {"queries": [{
+      {
+        "queries": [
+          {
             "name": "other",
             "sql": "select 2",
-        }]})
+          }
+        ]
+      }
+    )
     context2 = probe2.create_context(run)
     self.assertFalse(context2.has_pprof_query(context2.queries))
 
     probe3 = TraceProcessorProbe.parse_dict(
-        {"queries": [{
+      {
+        "queries": [
+          {
             "name": "my_perf_sample_query",
             "sql": "select 3",
-        }]})
+          }
+        ]
+      }
+    )
     context3 = probe3.create_context(run)
     self.assertTrue(context3.has_pprof_query(context3.queries))
 
   def mock_has_symbols(self, return_value: bool = True):
     return unittest.mock.patch.object(
-        TraceProcessorSymbolizingProbeContext,
-        "has_symbols",
-        new_callable=unittest.mock.PropertyMock,
-        return_value=return_value)
+      TraceProcessorSymbolizingProbeContext,
+      "has_symbols",
+      new_callable=unittest.mock.PropertyMock,
+      return_value=return_value,
+    )
 
   def test_symbolizing_context_auto_adds_pprof(self):
     run = unittest.mock.MagicMock()
     run.has_probe_context_by_name.return_value = True
     probe = TraceProcessorProbe.parse_dict(
-        {"queries": [{
+      {
+        "queries": [
+          {
             "name": "other",
             "sql": "select 1",
-        }]})
+          }
+        ]
+      }
+    )
 
     context = TraceProcessorSymbolizingProbeContext(probe, run)
     with self.mock_has_symbols():
@@ -362,12 +420,16 @@ class TraceProcessorProbeFakeFsTestCase(CrossbenchFakeFsTestCase):
   def test_symbolizing_context_skips_pprof_with_perf_sample(self):
     run = unittest.mock.MagicMock()
     run.has_probe_context_by_name.return_value = True
-    probe = TraceProcessorProbe.parse_dict({
-        "queries": [{
+    probe = TraceProcessorProbe.parse_dict(
+      {
+        "queries": [
+          {
             "name": "jetstream_3/perf_sample_span",
             "sql": "select 1",
-        }],
-    })
+          }
+        ],
+      }
+    )
 
     context = TraceProcessorSymbolizingProbeContext(probe, run)
     with self.mock_has_symbols():
@@ -382,19 +444,24 @@ class TraceProcessorProbeFakeFsTestCase(CrossbenchFakeFsTestCase):
     context_default = TraceProcessorSymbolizingProbeContext(probe_default, run)
     self.assertTrue(context_default.should_symbolize_profile)
 
-    probe_enabled = TraceProcessorProbe.parse_dict({
+    probe_enabled = TraceProcessorProbe.parse_dict(
+      {
         "queries": ["pprof"],
         "symbolize_profile": True,
-    })
+      }
+    )
     context_enabled = TraceProcessorSymbolizingProbeContext(probe_enabled, run)
     self.assertTrue(context_enabled.should_symbolize_profile)
 
-    probe_disabled = TraceProcessorProbe.parse_dict({
+    probe_disabled = TraceProcessorProbe.parse_dict(
+      {
         "queries": ["pprof"],
         "symbolize_profile": False,
-    })
+      }
+    )
     context_disabled = TraceProcessorSymbolizingProbeContext(
-        probe_disabled, run)
+      probe_disabled, run
+    )
     self.assertFalse(context_disabled.should_symbolize_profile)
 
   def test_chromium_symbol_path_finder_local_and_android(self):
@@ -411,7 +478,8 @@ class TraceProcessorProbeFakeFsTestCase(CrossbenchFakeFsTestCase):
     browser.driver_path = build_dir / "clang_x64/chromedriver"
 
     self.assertEqual(
-        ChromiumSymbolPathFinder(browser).local_path, unstripped_dir)
+      ChromiumSymbolPathFinder(browser).local_path, unstripped_dir
+    )
 
     desktop_dir = pth.LocalPath("/out/Default")
     self.fs.create_file(desktop_dir / "args.gn")
@@ -422,7 +490,8 @@ class TraceProcessorProbeFakeFsTestCase(CrossbenchFakeFsTestCase):
     desktop_browser.app_path = desktop_dir / "chrome"
 
     self.assertEqual(
-        ChromiumSymbolPathFinder(desktop_browser).local_path, desktop_dir)
+      ChromiumSymbolPathFinder(desktop_browser).local_path, desktop_dir
+    )
 
   def test_symbolize_profile_teardown(self):
     build_dir = pth.LocalPath("/out/Release")
@@ -440,10 +509,12 @@ class TraceProcessorProbeFakeFsTestCase(CrossbenchFakeFsTestCase):
     trace_file = out_dir / "perfetto/trace.pb.gz"
     self.fs.create_file(trace_file, contents=b"trace_data")
 
-    probe = TraceProcessorProbe.parse_dict({
+    probe = TraceProcessorProbe.parse_dict(
+      {
         "traceconv_bin": str(traceconv_bin),
         "llvm_symbolizer_bin": str(llvm_symbolizer_bin),
-    })
+      }
+    )
 
     run = unittest.mock.MagicMock()
     run.out_dir = out_dir
@@ -460,11 +531,13 @@ class TraceProcessorProbeFakeFsTestCase(CrossbenchFakeFsTestCase):
       del kwargs
       symbols_pb = args[4]
       self.fs.create_file(
-          symbols_pb, contents=bytes(i % 256 for i in range(150 * 1024)))
+        symbols_pb, contents=bytes(i % 256 for i in range(150 * 1024))
+      )
 
     context = TraceProcessorSymbolizingProbeContext(probe, run)
     with unittest.mock.patch.object(
-        plt.PLATFORM, "sh", side_effect=fake_sh) as mock_sh:
+      plt.PLATFORM, "sh", side_effect=fake_sh
+    ) as mock_sh:
       context.teardown()
 
     self.assertTrue(context.has_symbols)
@@ -480,10 +553,10 @@ TARGET_FALLBACK = "web_power/powerline_cpu_rails"
 
 
 class TraceProcessorQueryConfigTestCase(unittest.TestCase):
-
   def test_invalid_name_raises(self):
-    with self.assertRaisesRegex(ArgumentTypeMultiException,
-                                "sql query path does not exist"):
+    with self.assertRaisesRegex(
+      ArgumentTypeMultiException, "sql query path does not exist"
+    ):
       TraceProcessorQueryConfig.parse("not_an_actual_query")
 
   def test_file_query(self):
@@ -493,7 +566,8 @@ class TraceProcessorQueryConfigTestCase(unittest.TestCase):
 
   def test_file_query_path(self):
     query = TraceProcessorQueryConfig.parse(
-        pth.LocalPath("speedometer_cpu_time"))
+      pth.LocalPath("speedometer_cpu_time")
+    )
     self.assertEqual(query.name, "speedometer_cpu_time")
     self.assertEqual(query.sql, read_query_sql("speedometer_cpu_time.sql"))
 
@@ -513,78 +587,92 @@ class TraceProcessorQueryConfigTestCase(unittest.TestCase):
     self.assertEqual(query.sql, read_query_sql("loadline/benchmark_score.sql"))
 
   def test_inline_query(self):
-    query = TraceProcessorQueryConfig.parse({
+    query = TraceProcessorQueryConfig.parse(
+      {
         "name": "comment",
         "sql": "select * from slice where slice.name = 'comment'",
-    })
+      }
+    )
     self.assertEqual(query.name, "comment")
-    self.assertEqual(query.sql,
-                     "select * from slice where slice.name = 'comment'")
+    self.assertEqual(
+      query.sql, "select * from slice where slice.name = 'comment'"
+    )
 
   def test_inline_query_name_escaped(self):
-    query = TraceProcessorQueryConfig.parse({
+    query = TraceProcessorQueryConfig.parse(
+      {
         "name": "//comment//",
         "sql": "select * from slice where slice.name = 'comment'",
-    })
+      }
+    )
     self.assertEqual(query.name, "__comment__")
-    self.assertEqual(query.sql,
-                     "select * from slice where slice.name = 'comment'")
+    self.assertEqual(
+      query.sql, "select * from slice where slice.name = 'comment'"
+    )
 
   def test_query_with_replacements(self):
-    query = TraceProcessorQueryConfig.parse({
+    query = TraceProcessorQueryConfig.parse(
+      {
         "name": "comment",
         "sql": "'replace me'",
         "replacements": {
-            "replace me": "new value",
+          "replace me": "new value",
         },
-    })
+      }
+    )
     self.assertEqual(query.name, "comment")
     self.assertEqual(query.sql, "'new value'")
 
   def test_device_specific_query_parsing(self):
-    query = TraceProcessorQueryConfig.parse({
+    query = TraceProcessorQueryConfig.parse(
+      {
         "name": "web_power_power_rails",
         "device_override": {
-            r"Pixel 9.*": TARGET_P9,
-            r"Pixel 10.*": TARGET_P10,
+          r"Pixel 9.*": TARGET_P9,
+          r"Pixel 10.*": TARGET_P10,
         },
         "sql": TARGET_FALLBACK,
-    })
+      }
+    )
     self.assertIsInstance(query, DeviceSpecificTraceProcessorQuery)
 
   def test_device_specific_query_invalid_regex_raises(self):
     with self.assertRaisesRegex(ValueError, "Invalid regular expression"):
-      TraceProcessorQueryConfig.parse({
+      TraceProcessorQueryConfig.parse(
+        {
           "name": "web_power_power_rails",
           "device_override": {
-              "[Pixel 9": TARGET_P9,
+            "[Pixel 9": TARGET_P9,
           },
           "sql": TARGET_FALLBACK,
-      })
+        }
+      )
 
   def test_device_specific_query_unresolved_sql_access_raises(self):
-    query = TraceProcessorQueryConfig.parse({
+    query = TraceProcessorQueryConfig.parse(
+      {
         "name": "web_power_power_rails",
         "device_override": {
-            r"Pixel 9.*": TARGET_P9,
+          r"Pixel 9.*": TARGET_P9,
         },
-    })
+      }
+    )
     # Accessing the SQL of an unresolved device-specific query must fail fast
     # since the final query contents are bound to a device platform at runtime.
     with self.assertRaises(RuntimeError):
       _ = query.sql
 
   def _verify_resolution(
-      self,
-      device_override: dict[str, str],
-      model: str,
-      expected_sql_path: str,
-      sql: str | None = TARGET_FALLBACK,
-      replacements: dict[str, str] | None = None,
+    self,
+    device_override: dict[str, str],
+    model: str,
+    expected_sql_path: str,
+    sql: str | None = TARGET_FALLBACK,
+    replacements: dict[str, str] | None = None,
   ) -> None:
     config_dict: dict = {
-        "name": "web_power_power_rails",
-        "device_override": device_override,
+      "name": "web_power_power_rails",
+      "device_override": device_override,
     }
     if sql is not None:
       config_dict["sql"] = sql
@@ -605,53 +693,60 @@ class TraceProcessorQueryConfigTestCase(unittest.TestCase):
 
   def test_device_specific_query_resolution_match(self):
     self._verify_resolution(
-        device_override={
-            r"Pixel 9.*": TARGET_P9,
-            r"Pixel 10.*": TARGET_P10,
-        },
-        model="Pixel 10 Pro XL",
-        expected_sql_path=f"{TARGET_P10}.sql")
+      device_override={
+        r"Pixel 9.*": TARGET_P9,
+        r"Pixel 10.*": TARGET_P10,
+      },
+      model="Pixel 10 Pro XL",
+      expected_sql_path=f"{TARGET_P10}.sql",
+    )
 
   def test_device_specific_query_resolution_no_substring_match(self):
     device_override = {
-        r"Pixel 1\b.*": TARGET_P1,
-        r"Pixel 10\b.*": TARGET_P10,
+      r"Pixel 1\b.*": TARGET_P1,
+      r"Pixel 10\b.*": TARGET_P10,
     }
     self._verify_resolution(
-        device_override=device_override,
-        model="Pixel 10 Pro",
-        expected_sql_path=f"{TARGET_P10}.sql")
+      device_override=device_override,
+      model="Pixel 10 Pro",
+      expected_sql_path=f"{TARGET_P10}.sql",
+    )
 
     # If the device is entirely missing from the overrides, we fallback
     self._verify_resolution(
-        device_override=device_override,
-        model="Pixel 11",
-        expected_sql_path=f"{TARGET_FALLBACK}.sql")
+      device_override=device_override,
+      model="Pixel 11",
+      expected_sql_path=f"{TARGET_FALLBACK}.sql",
+    )
 
   def test_device_specific_query_resolution_fallback(self):
     self._verify_resolution(
-        device_override={
-            r"Pixel 9.*": TARGET_P9,
-        },
-        model="Pixel 10 Pro",
-        expected_sql_path=f"{TARGET_FALLBACK}.sql")
+      device_override={
+        r"Pixel 9.*": TARGET_P9,
+      },
+      model="Pixel 10 Pro",
+      expected_sql_path=f"{TARGET_FALLBACK}.sql",
+    )
 
   def test_device_specific_query_with_replacements(self):
     self._verify_resolution(
-        device_override={
-            r"Pixel 9.*": TARGET_P9,
-        },
-        model="Pixel 10 Pro",
-        expected_sql_path=f"{TARGET_FALLBACK}.sql",
-        replacements={"Chromium": "ReplacedChromium"})
+      device_override={
+        r"Pixel 9.*": TARGET_P9,
+      },
+      model="Pixel 10 Pro",
+      expected_sql_path=f"{TARGET_FALLBACK}.sql",
+      replacements={"Chromium": "ReplacedChromium"},
+    )
 
   def test_device_specific_query_resolution_unsupported_returns_none(self):
-    query = TraceProcessorQueryConfig.parse({
+    query = TraceProcessorQueryConfig.parse(
+      {
         "name": "web_power_power_rails",
         "device_override": {
-            r"Pixel 9.*": TARGET_P9,
+          r"Pixel 9.*": TARGET_P9,
         },
-    })
+      }
+    )
 
     platform = unittest.mock.MagicMock()
     platform.model = "Pixel 10 Pro"
@@ -660,28 +755,33 @@ class TraceProcessorQueryConfigTestCase(unittest.TestCase):
     self.assertIsNone(resolved)
 
   def test_device_specific_query_resolution_multiple_conflicting_matches(self):
-    query = TraceProcessorQueryConfig.parse({
+    query = TraceProcessorQueryConfig.parse(
+      {
         "name": "web_power_power_rails",
         "device_override": {
-            r"Pixel.*": TARGET_P9,
-            r"Pixel 10.*": TARGET_P10,
+          r"Pixel.*": TARGET_P9,
+          r"Pixel 10.*": TARGET_P10,
         },
-    })
+      }
+    )
     platform = unittest.mock.MagicMock()
     platform.model = "Pixel 10 Pro"
 
     with self.assertRaisesRegex(
-        ValueError, "Multiple conflicting mappings match device model"):
+      ValueError, "Multiple conflicting mappings match device model"
+    ):
       query.resolve_for_platform(platform)
 
   def test_device_specific_query_resolution_multiple_identical_matches(self):
-    query = TraceProcessorQueryConfig.parse({
+    query = TraceProcessorQueryConfig.parse(
+      {
         "name": "web_power_power_rails",
         "device_override": {
-            r"Pixel.*": TARGET_P9,
-            r"Pixel 9.*": TARGET_P9,
+          r"Pixel.*": TARGET_P9,
+          r"Pixel 9.*": TARGET_P9,
         },
-    })
+      }
+    )
     platform = unittest.mock.MagicMock()
     platform.model = "Pixel 9 Pro"
 
@@ -690,7 +790,6 @@ class TraceProcessorQueryConfigTestCase(unittest.TestCase):
 
 
 class TraceProcessorResultTestCase(BaseCrossbenchTestCase):
-
   def test_merge_browsers(self):
     probe: TraceProcessorProbe = TraceProcessorProbe.parse_dict({})
 
@@ -704,9 +803,15 @@ class TraceProcessorResultTestCase(BaseCrossbenchTestCase):
     result1 = unittest.mock.MagicMock()
     csv1 = self.create_file("run1/query.csv", contents="foo,bar\n1,2\n")
     json1 = self.create_file(
-        "run1/metric.json", contents=json.dumps({"foo": {
+      "run1/metric.json",
+      contents=json.dumps(
+        {
+          "foo": {
             "bar": 7,
-        }}))
+          }
+        }
+      ),
+    )
     result1.csv_list = [csv1]
     result1.json_list = [json1]
 
@@ -720,9 +825,15 @@ class TraceProcessorResultTestCase(BaseCrossbenchTestCase):
     result2 = unittest.mock.MagicMock()
     csv2 = self.create_file("run2/query.csv", contents="foo,bar\n3,4\n")
     json2 = self.create_file(
-        "run2/metric.json", contents=json.dumps({"foo": {
+      "run2/metric.json",
+      contents=json.dumps(
+        {
+          "foo": {
             "bar": 9,
-        }}))
+          }
+        }
+      ),
+    )
     result2.csv_list = [csv2]
     result2.json_list = [json2]
 
@@ -743,7 +854,8 @@ class TraceProcessorResultTestCase(BaseCrossbenchTestCase):
 
     browsers_run_group = unittest.mock.MagicMock()
     browsers_run_group.get_local_probe_result_path = unittest.mock.MagicMock(
-        return_value=pth.LocalPath("result/"))
+      return_value=pth.LocalPath("result/")
+    )
     browsers_run_group.story_groups = [story_group]
     browsers_run_group.runs = [run1, run2]
 
@@ -751,9 +863,11 @@ class TraceProcessorResultTestCase(BaseCrossbenchTestCase):
     self.assertEqual(len(merged_result.csv_list), 1)
     self.assertEqual(len(merged_result.json_list), 1)
 
-    expected_csv = ("foo,bar,cb_browser,cb_story,cb_temperature,cb_run\n"
-                    "1,2,browser,story,default,0\n"
-                    "3,4,browser,story,default,1\n")
+    expected_csv = (
+      "foo,bar,cb_browser,cb_story,cb_temperature,cb_run\n"
+      "1,2,browser,story,default,0\n"
+      "3,4,browser,story,default,1\n"
+    )
     with merged_result.csv.open("r") as f:
       self.assertEqual(f.read(), expected_csv)
 
@@ -763,8 +877,9 @@ class TraceProcessorResultTestCase(BaseCrossbenchTestCase):
     self.assertTrue("values" in metrics["foo/bar"])
     self.assertSequenceEqual([7, 9], metrics["foo/bar"]["values"])
 
-  def _assert_independent_results(self, config1: dict[str, Any],
-                                  config2: dict[str, Any]) -> None:
+  def _assert_independent_results(
+    self, config1: dict[str, Any], config2: dict[str, Any]
+  ) -> None:
     probe1 = TraceProcessorProbe.parse_dict(config1)
     probe2 = TraceProcessorProbe.parse_dict(config2)
     res1 = unittest.mock.MagicMock()
@@ -778,49 +893,66 @@ class TraceProcessorResultTestCase(BaseCrossbenchTestCase):
 
   def test_multiple_probes_preserve_independent_results(self):
     self._assert_independent_results(
-        {"metrics": ["metric_cpu"]},
-        {"metrics": ["metric_memory"]},
+      {"metrics": ["metric_cpu"]},
+      {"metrics": ["metric_memory"]},
     )
     self._assert_independent_results(
-        {"queries": [{
+      {
+        "queries": [
+          {
             "name": "query_cpu",
             "sql": "SELECT 1",
-        }]},
-        {"queries": [{
+          }
+        ]
+      },
+      {
+        "queries": [
+          {
             "name": "query_memory",
             "sql": "SELECT 2",
-        }]},
+          }
+        ]
+      },
     )
     self._assert_independent_results(
-        {"metrics": ["metric_cpu"]},
-        {"queries": [{
+      {"metrics": ["metric_cpu"]},
+      {
+        "queries": [
+          {
             "name": "query_cpu",
             "sql": "SELECT 1",
-        }]},
+          }
+        ]
+      },
     )
 
-  def _capture_stdout(self, group: unittest.mock.MagicMock, *probes:
-                      TraceProcessorProbe) -> str:
+  def _capture_stdout(
+    self, group: unittest.mock.MagicMock, *probes: TraceProcessorProbe
+  ) -> str:
     with unittest.mock.patch(
-        "sys.stdout", new_callable=io.StringIO) as mock_out:
+      "sys.stdout", new_callable=io.StringIO
+    ) as mock_out:
       for p in probes:
         p.log_browsers_result(group)
       return mock_out.getvalue()
 
-  def _capture_clipboard(self, group: unittest.mock.MagicMock, *probes:
-                         TraceProcessorProbe) -> str:
+  def _capture_clipboard(
+    self, group: unittest.mock.MagicMock, *probes: TraceProcessorProbe
+  ) -> str:
     with unittest.mock.patch.object(plt.PLATFORM, "set_clipboard") as mock_set:
       for p in probes:
         p.log_browsers_result(group)
       if mock_set.called:
-        text, = mock_set.call_args.args
+        (text,) = mock_set.call_args.args
         return text
     return ""
 
   def _test_log_browsers_result(self, key: str, output_capturer):
-    probe = TraceProcessorProbe.parse_dict({
+    probe = TraceProcessorProbe.parse_dict(
+      {
         key: ["json"],
-    })
+      }
+    )
     merged_result = unittest.mock.MagicMock(is_empty=False)
     json_file = self.create_file("out/query.json", contents='{"test": 123}')
     merged_result.json_list = [json_file]
@@ -838,9 +970,11 @@ class TraceProcessorResultTestCase(BaseCrossbenchTestCase):
     self._test_log_browsers_result("clipboard", self._capture_clipboard)
 
   def _test_log_browsers_result_multiple_runs(self, key: str, output_capturer):
-    probe = TraceProcessorProbe.parse_dict({
+    probe = TraceProcessorProbe.parse_dict(
+      {
         key: ["json"],
-    })
+      }
+    )
     merged_result = unittest.mock.MagicMock(is_empty=False)
     f1 = self.create_file("out/q1.json", contents='{"run": 1}')
     f2 = self.create_file("out/q2.json", contents='{"run": 2}')
@@ -855,19 +989,24 @@ class TraceProcessorResultTestCase(BaseCrossbenchTestCase):
     self._test_log_browsers_result_multiple_runs("stdout", self._capture_stdout)
 
   def test_log_browsers_result_multiple_runs_clipboard(self):
-    self._test_log_browsers_result_multiple_runs("clipboard",
-                                                 self._capture_clipboard)
+    self._test_log_browsers_result_multiple_runs(
+      "clipboard", self._capture_clipboard
+    )
 
   def test_log_browsers_result_multiple_probes(self):
     probe_silent = TraceProcessorProbe.parse_dict({"metrics": ["silent"]})
-    probe_print = TraceProcessorProbe.parse_dict({
+    probe_print = TraceProcessorProbe.parse_dict(
+      {
         "metrics": ["printed"],
         "output_to_stdout": ["json"],
-    })
-    probe_copy = TraceProcessorProbe.parse_dict({
+      }
+    )
+    probe_copy = TraceProcessorProbe.parse_dict(
+      {
         "metrics": ["clip"],
         "output_to_clipboard": ["csv"],
-    })
+      }
+    )
 
     res_silent = unittest.mock.MagicMock(is_empty=False)
     res_print = unittest.mock.MagicMock(is_empty=False)
@@ -883,9 +1022,9 @@ class TraceProcessorResultTestCase(BaseCrossbenchTestCase):
 
     group = unittest.mock.MagicMock(runs=[])
     group.results = {
-        probe_silent: res_silent,
-        probe_print: res_print,
-        probe_copy: res_copy,
+      probe_silent: res_silent,
+      probe_print: res_print,
+      probe_copy: res_copy,
     }
 
     mock_platform = unittest.mock.MagicMock()
@@ -896,11 +1035,14 @@ class TraceProcessorResultTestCase(BaseCrossbenchTestCase):
     self.assertNotIn("clip", out)
     mock_platform.set_clipboard.assert_called_once_with("clip,data\n1,2")
 
-  def _test_log_browsers_result_multiple_outputs(self, key: str,
-                                                 output_capturer):
-    probe = TraceProcessorProbe.parse_dict({
+  def _test_log_browsers_result_multiple_outputs(
+    self, key: str, output_capturer
+  ):
+    probe = TraceProcessorProbe.parse_dict(
+      {
         key: ["json", "csv"],
-    })
+      }
+    )
     merged_result = unittest.mock.MagicMock(is_empty=False)
     json_file = self.create_file("out/q.json", contents='{"metric": 1}')
     csv_file = self.create_file("out/q.csv", contents="col1,col2\n1,2")
@@ -913,18 +1055,22 @@ class TraceProcessorResultTestCase(BaseCrossbenchTestCase):
     self.assertIn("col1,col2", out)
 
   def test_log_browsers_result_multiple_outputs_stdout(self):
-    self._test_log_browsers_result_multiple_outputs("stdout",
-                                                    self._capture_stdout)
+    self._test_log_browsers_result_multiple_outputs(
+      "stdout", self._capture_stdout
+    )
 
   def test_log_browsers_result_multiple_outputs_clipboard(self):
-    self._test_log_browsers_result_multiple_outputs("clipboard",
-                                                    self._capture_clipboard)
+    self._test_log_browsers_result_multiple_outputs(
+      "clipboard", self._capture_clipboard
+    )
 
   def test_log_browsers_result_stdout_and_clipboard_same_file(self):
-    probe = TraceProcessorProbe.parse_dict({
+    probe = TraceProcessorProbe.parse_dict(
+      {
         "stdout": ["json"],
         "clipboard": ["json"],
-    })
+      }
+    )
     merged_result = unittest.mock.MagicMock(is_empty=False)
     json_file = self.create_file("out/q.json", contents='{"metric": 1}')
     merged_result.json_list = [json_file]
@@ -939,7 +1085,6 @@ class TraceProcessorResultTestCase(BaseCrossbenchTestCase):
 
 
 class TraceProcessorHelperTestCase(unittest.TestCase):
-
   def test_default_trace_processor_config(self):
     config = CBTraceProcessorConfig()
     self.assertIsNotNone(config.add_sql_packages)
@@ -949,10 +1094,11 @@ class TraceProcessorHelperTestCase(unittest.TestCase):
   def test_default_trace_processor_config_custom_modules(self):
     custom_dir = pth.LocalPath("/custom/path")
     config = CBTraceProcessorConfig(
-        bin_path="/path/to/tp",
-        module_paths=[custom_dir],
-        verbose=True,
-        enable_dev_features=True)
+      bin_path="/path/to/tp",
+      module_paths=[custom_dir],
+      verbose=True,
+      enable_dev_features=True,
+    )
     self.assertEqual(config.bin_path, "/path/to/tp")
     self.assertTrue(config.verbose)
     self.assertTrue(config.enable_dev_features)
@@ -962,7 +1108,8 @@ class TraceProcessorHelperTestCase(unittest.TestCase):
 
   def test_trace_processor_config_windows_module_paths(self):
     with unittest.mock.patch.object(
-        plt.PLATFORM, "path", side_effect=pth.AnyWindowsPath):
+      plt.PLATFORM, "path", side_effect=pth.AnyWindowsPath
+    ):
       config = CBTraceProcessorConfig(module_paths=[r"C:\custom\modules\ext"])
     self.assertIsNotNone(config.add_sql_packages)
     self.assertIn("C:/custom/modules/ext", config.add_sql_packages)
@@ -993,13 +1140,15 @@ class TraceProcessorHelperTestCase(unittest.TestCase):
       CBBatchTraceProcessorConfig(tp_config=tp_config, verbose=True)
 
     with self.assertRaisesRegex(
-        ValueError, r"bin_path.*module_paths.*extra_flags.*verbose"):
+      ValueError, r"bin_path.*module_paths.*extra_flags.*verbose"
+    ):
       CBBatchTraceProcessorConfig(
-          tp_config=tp_config,
-          bin_path="/path",
-          module_paths=["/modules"],
-          extra_flags=["--flag"],
-          verbose=True)
+        tp_config=tp_config,
+        bin_path="/path",
+        module_paths=["/modules"],
+        extra_flags=["--flag"],
+        verbose=True,
+      )
 
 
 if __name__ == "__main__":

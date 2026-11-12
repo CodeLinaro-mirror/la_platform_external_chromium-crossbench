@@ -41,28 +41,33 @@ class MeminfoAction(BaseProbeAction):
 
   @classmethod
   @override
-  def create(cls: type[Self],
-             browser: bool = True,
-             packages: Iterable[str] = (),
-             title: str | None = None,
-             system: bool = False,
-             timeout: dt.timedelta = ACTION_TIMEOUT,
-             index: int = 0) -> Self:
+  def create(
+    cls: type[Self],
+    browser: bool = True,
+    packages: Iterable[str] = (),
+    title: str | None = None,
+    system: bool = False,
+    timeout: dt.timedelta = ACTION_TIMEOUT,
+    index: int = 0,
+  ) -> Self:
     packages = tuple(packages)
-    kwargs: immutabledict[str, object] = immutabledict({
+    kwargs: immutabledict[str, object] = immutabledict(
+      {
         "browser": browser,
         "system": system,
         "packages": packages,
         "title": title,
-    })
+      }
+    )
     return cls(
-        kwargs=kwargs,
-        browser=browser,
-        packages=packages,
-        title=title,
-        system=system,
-        timeout=timeout,
-        index=index)
+      kwargs=kwargs,
+      browser=browser,
+      packages=packages,
+      title=title,
+      system=system,
+      timeout=timeout,
+      index=index,
+    )
 
   @classmethod
   @override
@@ -71,7 +76,8 @@ class MeminfoAction(BaseProbeAction):
     parser = super().config_parser()
     parser.add_argument("browser", type=ObjectParser.bool, default=True)
     parser.add_argument(
-        "packages", type=ObjectParser.non_empty_str, default=(), is_list=True)
+      "packages", type=ObjectParser.non_empty_str, default=(), is_list=True
+    )
     parser.add_argument("system", type=ObjectParser.bool, default=False)
     parser.add_argument("title", type=ObjectParser.non_empty_str, default=None)
     return parser
@@ -80,5 +86,7 @@ class MeminfoAction(BaseProbeAction):
   def validate(self) -> None:
     super().validate()
     if not self.browser and not self.system and not self.packages:
-      raise ValueError(f"{self} requires at least one of browser, system, "
-                       "or packages to be specified.")
+      raise ValueError(
+        f"{self} requires at least one of browser, system, "
+        "or packages to be specified."
+      )

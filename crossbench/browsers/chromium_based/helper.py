@@ -17,15 +17,18 @@ def get_chromedriver_target(is_android: bool) -> str:
   return "chromedriver"
 
 
-def get_chromedriver_build_instructions(build_dir: pth.LocalPath,
-                                        is_android: bool = False) -> str:
-  return ("Please build 'chromedriver' manually for local builds:\n"
-          f"    autoninja -C {build_dir} {get_chromedriver_target(is_android)}")
+def get_chromedriver_build_instructions(
+  build_dir: pth.LocalPath, is_android: bool = False
+) -> str:
+  return (
+    "Please build 'chromedriver' manually for local builds:\n"
+    f"    autoninja -C {build_dir} {get_chromedriver_target(is_android)}"
+  )
 
 
-def find_build_dir(path: pth.AnyPath,
-                   platform: Platform,
-                   limit: int = 5) -> pth.AnyPath | None:
+def find_build_dir(
+  path: pth.AnyPath, platform: Platform, limit: int = 5
+) -> pth.AnyPath | None:
   if is_build_dir(path, platform):
     return path
   for parent in path.parents[:limit]:
@@ -35,9 +38,11 @@ def find_build_dir(path: pth.AnyPath,
 
 
 def is_build_dir(path: pth.AnyPath, platform: Platform) -> bool:
-  return (platform.is_file(path / "args.gn") or
-          platform.is_file(path / "build.ninja") or
-          platform.is_dir(path / "lib.unstripped"))
+  return (
+    platform.is_file(path / "args.gn")
+    or platform.is_file(path / "build.ninja")
+    or platform.is_dir(path / "lib.unstripped")
+  )
 
 
 def is_in_build_dir(path: pth.AnyPath, platform: Platform) -> bool:

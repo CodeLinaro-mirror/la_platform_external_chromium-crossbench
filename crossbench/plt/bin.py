@@ -6,21 +6,31 @@ from __future__ import annotations
 
 import abc
 import functools
-from typing import TYPE_CHECKING, Callable, ClassVar, Final, Self, TypeAlias, \
-    cast, override
+from typing import (
+  TYPE_CHECKING,
+  Callable,
+  ClassVar,
+  Final,
+  Self,
+  TypeAlias,
+  cast,
+  override,
+)
 
 from crossbench import path as pth
 from crossbench.helper.path_finder_base import ChromiumCheckoutFinder
 
 if TYPE_CHECKING:
   from crossbench.plt.base import Platform
+
   BinaryLookup: TypeAlias = pth.AnyPathLike | tuple[pth.AnyPathLike, ...]
 
 
 def validate_win_binary(binary_name: str) -> None:
   if not binary_name.lower().endswith((".exe", ".bat")):
     raise ValueError(
-        f"Windows binary {binary_name} should have '.exe' or '.bat' suffix")
+      f"Windows binary {binary_name} should have '.exe' or '.bat' suffix"
+    )
 
 
 class BinaryPath(abc.ABC):
@@ -89,7 +99,8 @@ class XcodeXctestrunPath(BinaryPath):
   """
 
   DERIVED_DATA: ClassVar[pth.AnyPath] = pth.AnyPath(
-      "Library/Developer/Xcode/DerivedData")
+    "Library/Developer/Xcode/DerivedData"
+  )
   GLOB: ClassVar[str] = "WebDriverAgent-*/Build/Products/*.xctestrun"
 
   def __init__(self, sdk: str) -> None:
@@ -102,8 +113,9 @@ class XcodeXctestrunPath(BinaryPath):
     if not platform.is_dir(derived_data):
       return None
     candidates = [
-        path for path in platform.glob(derived_data, self.GLOB)
-        if self.sdk in path.name
+      path
+      for path in platform.glob(derived_data, self.GLOB)
+      if self.sdk in path.name
     ]
     if not candidates:
       return None
@@ -116,12 +128,12 @@ def _find_chromium_checkout(platform: Platform) -> pth.AnyPath | None:
 
 
 class ChromePath(BinaryPath):
-
   def __init__(self, relative_path: pth.AnyPathLike):
     # Enforce standard AnyPath wrapping
     self.relative_path: Final[pth.AnyPath] = pth.AnyPath(relative_path)
     assert self.relative_path.parts, (
-        "ChromiumLookup requires a non-empty relative_path")
+      "ChromiumLookup requires a non-empty relative_path"
+    )
 
   @property
   @override
@@ -141,7 +153,8 @@ class PerfettoChromePath(ChromePath):
   """Lookup a Perfetto binary in Chrome's third_party/perfetto/tools."""
 
   PERFETTO_TOOLS_PATH: ClassVar[pth.AnyPath] = pth.AnyPath(
-      "third_party/perfetto/tools")
+    "third_party/perfetto/tools"
+  )
 
   def __init__(self, binary: pth.AnyPathLike):
     self.binary: Final[pth.AnyPath] = pth.AnyPath(binary)
@@ -159,13 +172,13 @@ class ChromeBuildPath(BinaryPath):
   """Lookup a binary in Chrome build directories."""
 
   BUILD_DIR_NAMES: Final[tuple[str, ...]] = (
-      "Default",
-      "Release",
-      "release",
-      "rel",
-      "Optdebug",
-      "optdebug",
-      "opt",
+    "Default",
+    "Release",
+    "release",
+    "rel",
+    "Optdebug",
+    "optdebug",
+    "opt",
   )
 
   def __init__(self, binary: pth.AnyPathLike):
@@ -204,15 +217,18 @@ class AndroidBuildToolPath(BinaryPath):
   in a build-tools directory."""
 
   CHROME_SDK_PATH: ClassVar[pth.AnyPath] = pth.AnyPath(
-      "third_party/android_sdk/public")
+    "third_party/android_sdk/public"
+  )
 
-  def __init__(self,
-               tool_name: str,
-               fallback_sdk_path: pth.AnyPathLike | None = None):
+  def __init__(
+    self, tool_name: str, fallback_sdk_path: pth.AnyPathLike | None = None
+  ):
     assert len(pth.AnyPath(tool_name).parts) == 1, (
-        f"tool_name '{tool_name}' must not contain path separators")
+      f"tool_name '{tool_name}' must not contain path separators"
+    )
     self.fallback_sdk_path: Final[pth.AnyPath | None] = (
-        pth.AnyPath(fallback_sdk_path) if fallback_sdk_path else None)
+      pth.AnyPath(fallback_sdk_path) if fallback_sdk_path else None
+    )
     self.tool_name: Final[str] = str(tool_name)
 
   @property
@@ -232,8 +248,9 @@ class AndroidBuildToolPath(BinaryPath):
     except ValueError:
       return (0,)
 
-  def _find_tool_in_sdk(self, platform: Platform,
-                        base_sdk_path: pth.AnyPath) -> pth.AnyPath | None:
+  def _find_tool_in_sdk(
+    self, platform: Platform, base_sdk_path: pth.AnyPath
+  ) -> pth.AnyPath | None:
     build_tools_dir = base_sdk_path / "build-tools"
     if not platform.exists(build_tools_dir):
       return None
@@ -256,7 +273,8 @@ class AndroidBuildToolPath(BinaryPath):
   def resolve(self, platform: Platform) -> pth.AnyPath | None:
     if maybe_chrome := _find_chromium_checkout(platform):
       if candidate := self._find_tool_in_sdk(
-          platform, maybe_chrome / self.CHROME_SDK_PATH):
+        platform, maybe_chrome / self.CHROME_SDK_PATH
+      ):
         return candidate
 
     if not self.fallback_sdk_path:
@@ -270,30 +288,33 @@ class AndroidBuildToolPath(BinaryPath):
 
     return self._find_tool_in_sdk(platform, base_dir)
 
-class BinaryNotFoundError(RuntimeError):
 
+class BinaryNotFoundError(RuntimeError):
   def __init__(self, binary: Binary, platform: Platform) -> None:
     self.binary: Final[Binary] = binary
     self.platform: Final[Platform] = platform
     super().__init__(self._create_message())
 
   def _create_message(self) -> str:
-    return (f"Could not find binary '{self.binary}' on {self.platform}. "
-            f"Please install {self.binary.name} or use the "
-            f"--bin-{self.binary.name} "
-            "command line flag to manually specify a path.")
+    return (
+      f"Could not find binary '{self.binary}' on {self.platform}. "
+      f"Please install {self.binary.name} or use the "
+      f"--bin-{self.binary.name} "
+      "command line flag to manually specify a path."
+    )
 
 
 class UnsupportedPlatformError(BinaryNotFoundError):
-
   def __init__(self, binary: Binary, platform: Platform, expected: str) -> None:
     self.expected_platform_name: Final[str] = expected
     super().__init__(binary, platform)
 
   @override
   def _create_message(self) -> str:
-    return (f"Could not find binary '{self.binary}' on {self.platform}. "
-            f"Only supported on {self.expected_platform_name}")
+    return (
+      f"Could not find binary '{self.binary}' on {self.platform}. "
+      f"Only supported on {self.expected_platform_name}"
+    )
 
 
 class Binary:
@@ -301,15 +322,17 @@ class Binary:
   Use this implementation to define binaries that exist on multiple platforms.
   For platform-specific binaries use subclasses of Binary."""
 
-  def __init__(self,
-               name: str,
-               default: BinaryPathArg | None = None,
-               posix: BinaryPathArg | None = None,
-               linux: BinaryPathArg | None = None,
-               android: BinaryPathArg | None = None,
-               macos: BinaryPathArg | None = None,
-               win: BinaryPathArg | None = None,
-               chromeos: BinaryPathArg | None = None) -> None:
+  def __init__(
+    self,
+    name: str,
+    default: BinaryPathArg | None = None,
+    posix: BinaryPathArg | None = None,
+    linux: BinaryPathArg | None = None,
+    android: BinaryPathArg | None = None,
+    macos: BinaryPathArg | None = None,
+    win: BinaryPathArg | None = None,
+    chromeos: BinaryPathArg | None = None,
+  ) -> None:
     self._name: Final[str] = name
     self._default: Final[tuple[BinaryPath, ...]] = self._convert(default)
     self._posix: Final[tuple[BinaryPath, ...]] = self._convert(posix)
@@ -322,9 +345,9 @@ class Binary:
     if not any((chromeos, default, posix, linux, android, macos, win)):
       raise ValueError("At least one platform binary must be provided")
 
-  def _convert(self,
-               paths: BinaryPathArg
-               | None = None) -> tuple[BinaryPath, ...]:
+  def _convert(
+    self, paths: BinaryPathArg | None = None
+  ) -> tuple[BinaryPath, ...]:
     if paths is None:
       return ()
     if isinstance(paths, tuple):
@@ -394,7 +417,6 @@ class Binary:
 
 
 class PosixBinary(Binary):
-
   def __init__(self, name: pth.AnyPathLike) -> None:
     super().__init__(pth.AnyPosixPath(name).name, posix=name)
 
@@ -405,7 +427,6 @@ class PosixBinary(Binary):
 
 
 class MacOsBinary(Binary):
-
   def __init__(self, name: pth.AnyPathLike) -> None:
     super().__init__(pth.AnyPosixPath(name).name, macos=name)
 
@@ -416,7 +437,6 @@ class MacOsBinary(Binary):
 
 
 class LinuxBinary(Binary):
-
   def __init__(self, name: pth.AnyPathLike) -> None:
     super().__init__(pth.AnyPosixPath(name).name, linux=name)
 
@@ -427,7 +447,6 @@ class LinuxBinary(Binary):
 
 
 class AndroidBinary(Binary):
-
   def __init__(self, name: pth.AnyPathLike) -> None:
     super().__init__(pth.AnyPosixPath(name).name, android=name)
 
@@ -438,7 +457,6 @@ class AndroidBinary(Binary):
 
 
 class WinBinary(Binary):
-
   def __init__(self, name: pth.AnyPathLike) -> None:
     super().__init__(pth.AnyWindowsPath(name).name, win=name)
 
@@ -449,7 +467,6 @@ class WinBinary(Binary):
 
 
 class ChromeOSBinary(Binary):
-
   def __init__(self, name: pth.AnyPathLike) -> None:
     super().__init__(pth.AnyPosixPath(name).name, chromeos=name)
 
@@ -461,35 +478,37 @@ class ChromeOSBinary(Binary):
 
 class Binaries:
   ADB: ClassVar = Binary(
+    "adb",
+    macos=(
       "adb",
-      macos=(
-          "adb",
-          "~/Library/Android/sdk/platform-tools/adb",
-          ChromePath("third_party/android_sdk/public/platform-tools/adb"),
-      ),
-      linux=(
-          "adb",
-          ChromePath("third_party/android_sdk/public/platform-tools/adb"),
-      ),
-      win=(
-          "adb.exe",
-          "Android/sdk/platform-tools/adb.exe",
-          ChromePath("third_party/android_sdk/public/platform-tools/adb.exe"),
-      ))
+      "~/Library/Android/sdk/platform-tools/adb",
+      ChromePath("third_party/android_sdk/public/platform-tools/adb"),
+    ),
+    linux=(
+      "adb",
+      ChromePath("third_party/android_sdk/public/platform-tools/adb"),
+    ),
+    win=(
+      "adb.exe",
+      "Android/sdk/platform-tools/adb.exe",
+      ChromePath("third_party/android_sdk/public/platform-tools/adb.exe"),
+    ),
+  )
   AAPT: ClassVar = Binary(
+    "aapt",
+    macos=(
       "aapt",
-      macos=(
-          "aapt",
-          AndroidBuildToolPath("aapt", "~/Library/Android/sdk"),
-      ),
-      linux=(
-          "aapt",
-          AndroidBuildToolPath("aapt"),
-      ),
-      win=(
-          "aapt.exe",
-          AndroidBuildToolPath("aapt.exe", "Android/sdk"),
-      ))
+      AndroidBuildToolPath("aapt", "~/Library/Android/sdk"),
+    ),
+    linux=(
+      "aapt",
+      AndroidBuildToolPath("aapt"),
+    ),
+    win=(
+      "aapt.exe",
+      AndroidBuildToolPath("aapt.exe", "Android/sdk"),
+    ),
+  )
   CPIO: ClassVar = LinuxBinary("cpio")
   FFMPEG: ClassVar = Binary("ffmpeg", posix="ffmpeg")
   GCERT: ClassVar = Binary("gcert", posix="gcert")
@@ -513,61 +532,73 @@ class Binaries:
   XCRUN: ClassVar = MacOsBinary("xcrun")
   XCTRACE: ClassVar = MacOsBinary("xctrace")
   WDA_XCTESTRUN: ClassVar[Binary] = Binary(
-      "wda-xctestrun", macos=XcodeXctestrunPath("iphoneos"))
+    "wda-xctestrun", macos=XcodeXctestrunPath("iphoneos")
+  )
   WDA_XCTESTRUN_SIMULATOR: ClassVar[Binary] = Binary(
-      "wda-xctestrun-simulator", macos=XcodeXctestrunPath("iphonesimulator"))
+    "wda-xctestrun-simulator", macos=XcodeXctestrunPath("iphonesimulator")
+  )
   CHROMEDRIVER: ClassVar = Binary(
-      "chromedriver",
-      chromeos="/usr/local/chromedriver/chromedriver",
-      linux="chromedriver")
+    "chromedriver",
+    chromeos="/usr/local/chromedriver/chromedriver",
+    linux="chromedriver",
+  )
   LLVM_SYMBOLIZER: ClassVar = Binary(
+    "llvm-symbolizer",
+    default=(
+      ChromePath("third_party/llvm-build/Release+Asserts/bin/llvm-symbolizer"),
       "llvm-symbolizer",
-      default=(
-          ChromePath(
-              "third_party/llvm-build/Release+Asserts/bin/llvm-symbolizer"),
-          "llvm-symbolizer",
-      ))
+    ),
+  )
   TRACECONV: ClassVar = Binary(
-      "traceconv", default=(
-          PerfettoChromePath("traceconv"),
-          "traceconv",
-      ))
+    "traceconv",
+    default=(
+      PerfettoChromePath("traceconv"),
+      "traceconv",
+    ),
+  )
   TRACEBOX: ClassVar = Binary(
-      "tracebox", default=(
-          PerfettoChromePath("tracebox"),
-          "tracebox",
-      ))
+    "tracebox",
+    default=(
+      PerfettoChromePath("tracebox"),
+      "tracebox",
+    ),
+  )
   TRACE_PROCESSOR: ClassVar = Binary(
+    "trace_processor",
+    default=(
+      PerfettoChromePath("trace_processor"),
       "trace_processor",
-      default=(
-          PerfettoChromePath("trace_processor"),
-          "trace_processor",
-      ))
+    ),
+  )
   TRACE_PROCESSOR_SHELL: ClassVar = Binary(
+    "trace_processor_shell",
+    default=(
+      ChromeBuildPath("trace_processor_shell"),
+      PerfettoChromePath("trace_processor"),
       "trace_processor_shell",
-      default=(
-          ChromeBuildPath("trace_processor_shell"),
-          PerfettoChromePath("trace_processor"),
-          "trace_processor_shell",
-          "trace_processor",
-      ))
+      "trace_processor",
+    ),
+  )
 
 
 class Browsers:
   SAFARI: ClassVar = MacOsBinary("Safari.app")
   SAFARI_TECH_PREVIEW: ClassVar = MacOsBinary("Safari Technology Preview.app")
   FIREFOX_STABLE: ClassVar = Binary(
-      "firefox stable",
-      macos="Firefox.app",
-      linux="firefox",
-      win="Mozilla Firefox/firefox.exe")
+    "firefox stable",
+    macos="Firefox.app",
+    linux="firefox",
+    win="Mozilla Firefox/firefox.exe",
+  )
   FIREFOX_DEV: ClassVar = Binary(
-      "firefox developer edition",
-      macos="Firefox Developer Edition.app",
-      linux="firefox-developer-edition",
-      win="Firefox Developer Edition/firefox.exe")
+    "firefox developer edition",
+    macos="Firefox Developer Edition.app",
+    linux="firefox-developer-edition",
+    win="Firefox Developer Edition/firefox.exe",
+  )
   FIREFOX_NIGHTLY: ClassVar = Binary(
-      "Firefox nightly",
-      macos="Firefox Nightly.app",
-      linux=("firefox-nightly", "firefox-trunk"),
-      win="Firefox Nightly/firefox.exe")
+    "Firefox nightly",
+    macos="Firefox Nightly.app",
+    linux=("firefox-nightly", "firefox-trunk"),
+    win="Firefox Nightly/firefox.exe",
+  )

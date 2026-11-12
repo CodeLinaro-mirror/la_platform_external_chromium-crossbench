@@ -9,16 +9,24 @@ import argparse
 import datetime as dt
 import logging
 import re
-from typing import TYPE_CHECKING, ClassVar, Final, Iterator, Mapping, \
-    Sequence, override
+from typing import (
+  TYPE_CHECKING,
+  ClassVar,
+  Final,
+  Iterator,
+  Mapping,
+  Sequence,
+  override,
+)
 
 from immutabledict import immutabledict
 
 from crossbench import path as pth
 from crossbench.benchmarks.base import SubStoryBenchmark
 from crossbench.benchmarks.embedder.config.cujs import CUJsConfig
-from crossbench.benchmarks.embedder.config.setup_commands import \
-    SetupCommandsConfig
+from crossbench.benchmarks.embedder.config.setup_commands import (
+  SetupCommandsConfig,
+)
 from crossbench.browsers.webview.embedder import WebviewEmbedder
 from crossbench.cli.ui.ui import timer
 from crossbench.parse import ObjectParser
@@ -33,7 +41,6 @@ if TYPE_CHECKING:
 
 
 class EmbedderStory(Story, metaclass=abc.ABCMeta):
-
   def __init__(self, name: str, actions: Sequence[ActionBlock]):
     duration = dt.timedelta(seconds=30)
     self._actions: Final[Sequence[ActionBlock]] = actions
@@ -53,8 +60,14 @@ class EmbedderStory(Story, metaclass=abc.ABCMeta):
     activity = run_benchmark.android_activity
     if "." not in activity:
       activity = f".{activity}"
-    cmd: TupleCmdArgs = ("am", "start", "-S", "-W", "-n",
-                         f"{run_browser.android_package}/{activity}")
+    cmd: TupleCmdArgs = (
+      "am",
+      "start",
+      "-S",
+      "-W",
+      "-n",
+      f"{run_browser.android_package}/{activity}",
+    )
     if action := run_benchmark.android_action:
       if "." not in action:
         action = f"{run_browser.android_package}.{action}"
@@ -77,8 +90,14 @@ class EmbedderStory(Story, metaclass=abc.ABCMeta):
 
   def teardown(self, run: Run) -> None:
     # Return to home screen after the story has run
-    run.browser_platform.sh("am", "start", "-a", "android.intent.action.MAIN",
-                            "-c", "android.intent.category.HOME")
+    run.browser_platform.sh(
+      "am",
+      "start",
+      "-a",
+      "android.intent.action.MAIN",
+      "-c",
+      "android.intent.category.HOME",
+    )
 
   @classmethod
   def all_story_names(cls) -> tuple[str, ...]:
@@ -89,38 +108,43 @@ class EmbedderBenchmark(SubStoryBenchmark):
   """
   Benchmark runner for a WV embedder app mode.
   """
+
   NAME: ClassVar = "embedder"
   DEFAULT_STORY_CLS: ClassVar = EmbedderStory
   _ANDROID_EXTRA_RE: Final[re.Pattern[str]] = re.compile(
-      r"(?P<key>[^=:]+)[=:](?P<value>.*)", re.DOTALL)
+    r"(?P<key>[^=:]+)[=:](?P<value>.*)", re.DOTALL
+  )
 
   def __init__(
-      self,
-      stories: Sequence[Story],
-      action_runner_config: ActionRunnerConfig | None = None,
-      embedder_process_name: str = "search",
-      embedder_push_files: Sequence[str] = (),
-      embedder_setup_command_config: SetupCommandsConfig | None = None,
-      embedder_teardown_command_config: SetupCommandsConfig | None = None,
-      embedder_drop_caches: bool = False,
-      android_action: str = "GOOGLE_SEARCH",
-      android_activity: str = "SearchActivity",
-      android_extras: Sequence[str | tuple[str, str]] | Mapping[str, str] = (),
+    self,
+    stories: Sequence[Story],
+    action_runner_config: ActionRunnerConfig | None = None,
+    embedder_process_name: str = "search",
+    embedder_push_files: Sequence[str] = (),
+    embedder_setup_command_config: SetupCommandsConfig | None = None,
+    embedder_teardown_command_config: SetupCommandsConfig | None = None,
+    embedder_drop_caches: bool = False,
+    android_action: str = "GOOGLE_SEARCH",
+    android_activity: str = "SearchActivity",
+    android_extras: Sequence[str | tuple[str, str]] | Mapping[str, str] = (),
   ) -> None:
     for story in stories:
       assert isinstance(story, self.DEFAULT_STORY_CLS)
     super().__init__(stories, action_runner_config)
     self._embedder_process_name: Final[str] = embedder_process_name
     self._embedder_push_files: Final[Sequence[str]] = embedder_push_files
-    self._embedder_setup_command_config: Final[
-        SetupCommandsConfig | None] = embedder_setup_command_config
+    self._embedder_setup_command_config: Final[SetupCommandsConfig | None] = (
+      embedder_setup_command_config
+    )
     self._embedder_teardown_command_config: Final[
-        SetupCommandsConfig | None] = embedder_teardown_command_config
+      SetupCommandsConfig | None
+    ] = embedder_teardown_command_config
     self._embedder_drop_caches: Final[bool] = embedder_drop_caches
     self._android_action: Final[str] = android_action
     self._android_activity: Final[str] = android_activity
     self._android_extras: Final[immutabledict[str, str]] = (
-        self._parse_android_extras(android_extras))
+      self._parse_android_extras(android_extras)
+    )
 
   @property
   def embedder_process_name(self) -> str:
@@ -162,13 +186,14 @@ class EmbedderBenchmark(SubStoryBenchmark):
     if match := cls._ANDROID_EXTRA_RE.fullmatch(extra):
       return match.group("key"), match.group("value")
     raise argparse.ArgumentTypeError(
-        f"Invalid --android-extras format {extra!r}: "
-        "expected 'key=value' or 'key:value'.")
+      f"Invalid --android-extras format {extra!r}: "
+      "expected 'key=value' or 'key:value'."
+    )
 
   @classmethod
   def _parse_android_extras(
-      cls,
-      raw_extras: Sequence[str | tuple[str, str]] | Mapping[str, str],
+    cls,
+    raw_extras: Sequence[str | tuple[str, str]] | Mapping[str, str],
   ) -> immutabledict[str, str]:
     if isinstance(raw_extras, Mapping):
       for key, value in raw_extras.items():
@@ -185,7 +210,8 @@ class EmbedderBenchmark(SubStoryBenchmark):
         ObjectParser.any_str(value, f"android_extras[{key!r}]")
       if key in extras:
         raise argparse.ArgumentTypeError(
-            f"Duplicate --android-extras key: {key!r}")
+          f"Duplicate --android-extras key: {key!r}"
+        )
       extras[key] = value
     return immutabledict(extras)
 
@@ -203,54 +229,69 @@ class EmbedderBenchmark(SubStoryBenchmark):
     # --android-extras using a flag config that needs to have unique keys.
     parser.allow_abbrev = True
     parser.add_argument(
-        "--cujs-config",
-        "--cuj-config",
-        type=CUJsConfig.parse,
-        help="Stories we want to perform in the benchmark run following a"
-        "specified scenario.")
+      "--cujs-config",
+      "--cuj-config",
+      type=CUJsConfig.parse,
+      help="Stories we want to perform in the benchmark run following a"
+      "specified scenario.",
+    )
     parser.add_argument(
-        "--embedder-process-name",
-        default="search",
-        help="Name of the embedder process.")
+      "--embedder-process-name",
+      default="search",
+      help="Name of the embedder process.",
+    )
     parser.add_argument(
-        "--embedder-push-files",
-        type=ObjectParser.non_empty_str,
-        action="append",
-        default=[],
-        help="Files to push from host to device, provide one pair of paths "
-        "per flag in the format: source:destination")
+      "--embedder-push-files",
+      type=ObjectParser.non_empty_str,
+      action="append",
+      default=[],
+      help="Files to push from host to device, provide one pair of paths "
+      "per flag in the format: source:destination",
+    )
     parser.add_argument(
-        "--embedder-setup-command-config",
-        type=SetupCommandsConfig.parse,
-        help="Setup commands to run on device before the benchmark.")
+      "--embedder-setup-command-config",
+      type=SetupCommandsConfig.parse,
+      help="Setup commands to run on device before the benchmark.",
+    )
     parser.add_argument(
-        "--embedder-teardown-command-config",
-        type=SetupCommandsConfig.parse,
-        help="Teardown commands to run on device after the benchmark.")
+      "--embedder-teardown-command-config",
+      type=SetupCommandsConfig.parse,
+      help="Teardown commands to run on device after the benchmark.",
+    )
     parser.add_argument(
-        "--embedder-drop-caches",
-        default=False,
-        action="store_true",
-        help="Drop page cache before running each story.")
+      "--embedder-drop-caches",
+      default=False,
+      action="store_true",
+      help="Drop page cache before running each story.",
+    )
     parser.add_argument(
-        "--android-action",
-        default="GOOGLE_SEARCH",
-        type=ObjectParser.any_str,
-        help=("The Android action in setup that is passed to the adb intent\n"
-              "`am start -a` option. Pass empty string if not applicable."))
+      "--android-action",
+      default="GOOGLE_SEARCH",
+      type=ObjectParser.any_str,
+      help=(
+        "The Android action in setup that is passed to the adb intent\n"
+        "`am start -a` option. Pass empty string if not applicable."
+      ),
+    )
     parser.add_argument(
-        "--android-activity",
-        default="SearchActivity",
-        type=ObjectParser.non_empty_str,
-        help=("The Android activity name in setup that is passed to the adb\n"
-              "intent `am start -n` option."))
+      "--android-activity",
+      default="SearchActivity",
+      type=ObjectParser.non_empty_str,
+      help=(
+        "The Android activity name in setup that is passed to the adb\n"
+        "intent `am start -n` option."
+      ),
+    )
     parser.add_argument(
-        "--android-extras",
-        type=cls.parse_android_extra,
-        action="append",
-        default=[],
-        help=("Intent string extras (-e <key> <value>) to pass to the Android\n"
-              "start command, formatted as 'key=value' or 'key:value'."))
+      "--android-extras",
+      type=cls.parse_android_extra,
+      action="append",
+      default=[],
+      help=(
+        "Intent string extras (-e <key> <value>) to pass to the Android\n"
+        "start command, formatted as 'key=value' or 'key:value'."
+      ),
+    )
     return parser
 
   @classmethod
@@ -258,10 +299,12 @@ class EmbedderBenchmark(SubStoryBenchmark):
   def stories_from_cli_args(cls, args: argparse.Namespace) -> Sequence[Story]:
     config = cls.get_cujs_config(args)
     cujs = tuple(
-        EmbedderStory(
-            name=cuj_config.label,
-            actions=cuj_config.blocks,
-        ) for cuj_config in config.cujs)
+      EmbedderStory(
+        name=cuj_config.label,
+        actions=cuj_config.blocks,
+      )
+      for cuj_config in config.cujs
+    )
     return cujs
 
   @classmethod
@@ -272,7 +315,8 @@ class EmbedderBenchmark(SubStoryBenchmark):
     kwargs["embedder_push_files"] = args.embedder_push_files
     kwargs["embedder_setup_command_config"] = args.embedder_setup_command_config
     kwargs["embedder_teardown_command_config"] = (
-        args.embedder_teardown_command_config)
+      args.embedder_teardown_command_config
+    )
     kwargs["embedder_drop_caches"] = args.embedder_drop_caches
     kwargs["android_action"] = args.android_action
     kwargs["android_activity"] = args.android_activity
@@ -288,9 +332,10 @@ class EmbedderBenchmark(SubStoryBenchmark):
       if cujs_config_dict := config_data.get("cujs"):
         if args.cujs_config:
           raise argparse.ArgumentTypeError(
-              "Conflicting arguments: "
-              "either specify a --config file without a 'cujs' property "
-              "or remove the --cuj-config argument.")
+            "Conflicting arguments: "
+            "either specify a --config file without a 'cujs' property "
+            "or remove the --cuj-config argument."
+          )
         # TODO: CUJsConfig.parse_dict should be able to parse the inner dict.
         return CUJsConfig.parse_dict({"cujs": cujs_config_dict})
     return args.cujs_config

@@ -12,11 +12,15 @@ from unittest import mock
 from crossbench import config
 from crossbench import path as pth
 from crossbench.benchmarks.web_power.base import VERSION_STRING, WebPowerStory
-from crossbench.benchmarks.web_power.consolidated import WebPowerBenchmark, \
-    WebPowerConsolidatedStoryFilter
+from crossbench.benchmarks.web_power.consolidated import (
+  WebPowerBenchmark,
+  WebPowerConsolidatedStoryFilter,
+)
 from crossbench.benchmarks.web_power.idle import WebPowerIdleStory
-from crossbench.benchmarks.web_power.media_playback import AmbientMode, \
-    WebPowerMediaPlaybackStory
+from crossbench.benchmarks.web_power.media_playback import (
+  AmbientMode,
+  WebPowerMediaPlaybackStory,
+)
 from crossbench.benchmarks.web_power.page_load import WebPowerPageLoadStory
 from crossbench.benchmarks.web_power.probe import WebPowerProbe
 from crossbench.benchmarks.web_power.scroll import WebPowerScrollStory
@@ -26,24 +30,30 @@ from crossbench.cli.parser import CBArgumentParser
 from crossbench.cli.subcommand.benchmark import BenchmarkSubcommand
 from crossbench.probes.bits import BitsProbe
 from crossbench.probes.trace_processor.query_config import QUERIES_DIR
-from crossbench.probes.trace_processor.trace_processor import \
-    TraceProcessorProbe
+from crossbench.probes.trace_processor.trace_processor import (
+  TraceProcessorProbe,
+)
 from tests import test_helper
-from tests.crossbench.base import BaseCliTestCase, BaseCrossbenchTestCase, \
-    SysExitTestException
-from tests.crossbench.benchmarks.web_power.test_base import \
-    BaseWebPowerBenchmarkTestCase
+from tests.crossbench.base import (
+  BaseCliTestCase,
+  BaseCrossbenchTestCase,
+  SysExitTestException,
+)
+from tests.crossbench.benchmarks.web_power.test_base import (
+  BaseWebPowerBenchmarkTestCase,
+)
 
 
 class WebPowerConsolidatedStoryFilterTestCase(BaseCrossbenchTestCase):
-
   def test_stories_from_names_explicit(self) -> None:
     parser = CBArgumentParser()
     parser = WebPowerBenchmark.add_cli_arguments(parser)
     args = parser.parse_args(
-        ["--stories=idle-msn,scroll-cnn,media-playback-youtube"])
+      ["--stories=idle-msn,scroll-cnn,media-playback-youtube"]
+    )
     story_filter = WebPowerConsolidatedStoryFilter.from_cli_args(
-        WebPowerBenchmark.DEFAULT_STORY_CLS, args)
+      WebPowerBenchmark.DEFAULT_STORY_CLS, args
+    )
     stories = story_filter.stories
 
     self.assertEqual(len(stories), 3)
@@ -52,15 +62,17 @@ class WebPowerConsolidatedStoryFilterTestCase(BaseCrossbenchTestCase):
     self.assertEqual(stories[1].name, "web-power-scroll-cnn")
     self.assertEqual(stories[1].url, "https://www.cnn.com")
     self.assertEqual(stories[2].name, "web-power-media-playback-youtube")
-    self.assertEqual(stories[2].url,
-                     "https://www.youtube.com/watch?v=XITHbsUUlYI")
+    self.assertEqual(
+      stories[2].url, "https://www.youtube.com/watch?v=XITHbsUUlYI"
+    )
 
   def test_stories_from_names_tag_idle(self) -> None:
     parser = CBArgumentParser()
     parser = WebPowerBenchmark.add_cli_arguments(parser)
     args = parser.parse_args(["--stories=#idle"])
     story_filter = WebPowerConsolidatedStoryFilter.from_cli_args(
-        WebPowerBenchmark.DEFAULT_STORY_CLS, args)
+      WebPowerBenchmark.DEFAULT_STORY_CLS, args
+    )
     stories = story_filter.stories
 
     self.assertEqual(len(stories), 3)
@@ -73,7 +85,8 @@ class WebPowerConsolidatedStoryFilterTestCase(BaseCrossbenchTestCase):
     parser = WebPowerBenchmark.add_cli_arguments(parser)
     args = parser.parse_args(["--stories=#cnn"])
     story_filter = WebPowerConsolidatedStoryFilter.from_cli_args(
-        WebPowerBenchmark.DEFAULT_STORY_CLS, args)
+      WebPowerBenchmark.DEFAULT_STORY_CLS, args
+    )
     stories = story_filter.stories
 
     self.assertEqual(len(stories), 3)
@@ -86,7 +99,8 @@ class WebPowerConsolidatedStoryFilterTestCase(BaseCrossbenchTestCase):
     parser = WebPowerBenchmark.add_cli_arguments(parser)
     args = parser.parse_args(["--stories=idle-yahoo"])
     story_filter = WebPowerConsolidatedStoryFilter.from_cli_args(
-        WebPowerBenchmark.DEFAULT_STORY_CLS, args)
+      WebPowerBenchmark.DEFAULT_STORY_CLS, args
+    )
     stories = story_filter.stories
 
     self.assertEqual(len(stories), 1)
@@ -95,16 +109,16 @@ class WebPowerConsolidatedStoryFilterTestCase(BaseCrossbenchTestCase):
 
   def _expected_canonical_stories(self) -> set[str]:
     return {
-        "web-power-idle-msn",
-        "web-power-idle-cnn",
-        "web-power-idle-ajnews",
-        "web-power-scroll-msn",
-        "web-power-scroll-cnn",
-        "web-power-scroll-ajnews",
-        "web-power-page-load-msn",
-        "web-power-page-load-cnn",
-        "web-power-page-load-ajnews",
-        "web-power-media-playback-youtube",
+      "web-power-idle-msn",
+      "web-power-idle-cnn",
+      "web-power-idle-ajnews",
+      "web-power-scroll-msn",
+      "web-power-scroll-cnn",
+      "web-power-scroll-ajnews",
+      "web-power-page-load-msn",
+      "web-power-page-load-cnn",
+      "web-power-page-load-ajnews",
+      "web-power-media-playback-youtube",
     }
 
   def test_stories_from_names_tag_canonical(self) -> None:
@@ -112,22 +126,27 @@ class WebPowerConsolidatedStoryFilterTestCase(BaseCrossbenchTestCase):
     parser = WebPowerBenchmark.add_cli_arguments(parser)
     args = parser.parse_args(["--stories=#canonical"])
     story_filter = WebPowerConsolidatedStoryFilter.from_cli_args(
-        WebPowerBenchmark.DEFAULT_STORY_CLS, args)
-    self.assertEqual({story.name for story in story_filter.stories},
-                     self._expected_canonical_stories())
+      WebPowerBenchmark.DEFAULT_STORY_CLS, args
+    )
+    self.assertEqual(
+      {story.name for story in story_filter.stories},
+      self._expected_canonical_stories(),
+    )
 
   def test_stories_from_names_default(self) -> None:
     parser = CBArgumentParser()
     parser = WebPowerBenchmark.add_cli_arguments(parser)
     args = parser.parse_args([])
     story_filter = WebPowerConsolidatedStoryFilter.from_cli_args(
-        WebPowerBenchmark.DEFAULT_STORY_CLS, args)
-    self.assertEqual({story.name for story in story_filter.stories},
-                     self._expected_canonical_stories())
+      WebPowerBenchmark.DEFAULT_STORY_CLS, args
+    )
+    self.assertEqual(
+      {story.name for story in story_filter.stories},
+      self._expected_canonical_stories(),
+    )
 
 
 class WebPowerBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
-
   @property
   @override
   def benchmark_cls(self) -> type[WebPowerBenchmark]:
@@ -140,10 +159,10 @@ class WebPowerBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
     self.assertEqual(len(stories), 10)
 
     counts: dict[type[WebPowerStory], int] = {
-        WebPowerIdleStory: 0,
-        WebPowerScrollStory: 0,
-        WebPowerPageLoadStory: 0,
-        WebPowerMediaPlaybackStory: 0,
+      WebPowerIdleStory: 0,
+      WebPowerScrollStory: 0,
+      WebPowerPageLoadStory: 0,
+      WebPowerMediaPlaybackStory: 0,
     }
     for story in stories:
       story_type = type(story)
@@ -163,8 +182,9 @@ class WebPowerBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
       if not isinstance(story, WebPowerIdleStory):
         continue
       self.assertEqual(story.idle_duration, WebPowerIdleStory.DEFAULT_DURATION)
-      self.assertEqual(story.stabilization_time,
-                       story.site_config.default_stabilization_time)
+      self.assertEqual(
+        story.stabilization_time, story.site_config.default_stabilization_time
+      )
 
   def test_kwargs_from_cli_defaults_scroll(self) -> None:
     kwargs = WebPowerBenchmark.kwargs_from_cli(self.parse_args())
@@ -173,11 +193,13 @@ class WebPowerBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
     for story in self.extract_stories(kwargs):
       if not isinstance(story, WebPowerScrollStory):
         continue
-      self.assertEqual(story.scroll_count,
-                       WebPowerScrollStory.DEFAULT_SCROLL_COUNT)
+      self.assertEqual(
+        story.scroll_count, WebPowerScrollStory.DEFAULT_SCROLL_COUNT
+      )
       self.assertEqual(story.input_rate, WebPowerScrollStory.DEFAULT_INPUT_RATE)
-      self.assertEqual(story.stabilization_time,
-                       story.site_config.default_stabilization_time)
+      self.assertEqual(
+        story.stabilization_time, story.site_config.default_stabilization_time
+      )
 
   def test_kwargs_from_cli_defaults_page_load(self) -> None:
     kwargs = WebPowerBenchmark.kwargs_from_cli(self.parse_args())
@@ -187,13 +209,15 @@ class WebPowerBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
       if not isinstance(story, WebPowerPageLoadStory):
         continue
       expected_count = (
-          WebPowerPageLoadStory.DEFAULT_CNN_PAGE_LOAD_COUNT
-          if story.name.endswith("cnn") else
-          WebPowerPageLoadStory.DEFAULT_PAGE_LOAD_COUNT)
+        WebPowerPageLoadStory.DEFAULT_CNN_PAGE_LOAD_COUNT
+        if story.name.endswith("cnn")
+        else WebPowerPageLoadStory.DEFAULT_PAGE_LOAD_COUNT
+      )
       self.assertEqual(story.page_load_count, expected_count)
       self.assertEqual(story.interval, WebPowerPageLoadStory.DEFAULT_INTERVAL)
-      self.assertEqual(story.stabilization_time,
-                       story.site_config.default_stabilization_time)
+      self.assertEqual(
+        story.stabilization_time, story.site_config.default_stabilization_time
+      )
 
   def test_kwargs_from_cli_defaults_media_playback(self) -> None:
     kwargs = WebPowerBenchmark.kwargs_from_cli(self.parse_args())
@@ -202,24 +226,29 @@ class WebPowerBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
     for story in self.extract_stories(kwargs):
       if not isinstance(story, WebPowerMediaPlaybackStory):
         continue
-      self.assertEqual(story.playback_duration,
-                       WebPowerMediaPlaybackStory.DEFAULT_DURATION)
-      self.assertEqual(story.stabilization_time,
-                       story.site_config.default_stabilization_time)
+      self.assertEqual(
+        story.playback_duration, WebPowerMediaPlaybackStory.DEFAULT_DURATION
+      )
+      self.assertEqual(
+        story.stabilization_time, story.site_config.default_stabilization_time
+      )
       self.assertEqual(story.stats, WebPowerMediaPlaybackStory.DEFAULT_STATS)
       self.assertEqual(story.volume, WebPowerMediaPlaybackStory.DEFAULT_VOLUME)
-      self.assertEqual(story.ambient_mode,
-                       WebPowerMediaPlaybackStory.DEFAULT_AMBIENT_MODE)
+      self.assertEqual(
+        story.ambient_mode, WebPowerMediaPlaybackStory.DEFAULT_AMBIENT_MODE
+      )
 
   def test_kwargs_from_cli_custom_duration_override(self) -> None:
     # Specifying an explicit --duration should override duration for all tests
     # that support this flag. (Pick a value that would avoid false positives.)
     expected_duration: Final[int] = 42
-    self.assertNotEqual(expected_duration,
-                        WebPowerIdleStory.DEFAULT_DURATION.total_seconds())
     self.assertNotEqual(
-        expected_duration,
-        WebPowerMediaPlaybackStory.DEFAULT_DURATION.total_seconds())
+      expected_duration, WebPowerIdleStory.DEFAULT_DURATION.total_seconds()
+    )
+    self.assertNotEqual(
+      expected_duration,
+      WebPowerMediaPlaybackStory.DEFAULT_DURATION.total_seconds(),
+    )
     args = self.parse_args(f"--duration={expected_duration}s")
     kwargs = WebPowerBenchmark.kwargs_from_cli(args)
     stories = self.extract_stories(kwargs)
@@ -228,24 +257,26 @@ class WebPowerBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
     for story in stories:
       match story:
         case WebPowerIdleStory():
-          self.assertEqual(story.idle_duration,
-                           dt.timedelta(seconds=expected_duration))
+          self.assertEqual(
+            story.idle_duration, dt.timedelta(seconds=expected_duration)
+          )
         case WebPowerMediaPlaybackStory():
-          self.assertEqual(story.playback_duration,
-                           dt.timedelta(seconds=expected_duration))
+          self.assertEqual(
+            story.playback_duration, dt.timedelta(seconds=expected_duration)
+          )
 
   def test_kwargs_from_cli_custom_scenario_arguments(self) -> None:
     args = self.parse_args(
-        "--stories=idle-msn,scroll-cnn,page-load-cnn,media-playback-youtube",
-        "--duration=45s",
-        "--stabilization-time=5s",
-        "--scrolls=12",
-        "--input-rate=120",
-        "--page-loads=15",
-        "--interval=4s",
-        "--stats",
-        "--volume=off",
-        "--ambient-mode=unchanged",
+      "--stories=idle-msn,scroll-cnn,page-load-cnn,media-playback-youtube",
+      "--duration=45s",
+      "--stabilization-time=5s",
+      "--scrolls=12",
+      "--input-rate=120",
+      "--page-loads=15",
+      "--interval=4s",
+      "--stats",
+      "--volume=off",
+      "--ambient-mode=unchanged",
     )
     kwargs = WebPowerBenchmark.kwargs_from_cli(args)
 
@@ -283,7 +314,8 @@ class WebPowerBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
 
   def test_extra_flags_story_autoplay_assignment(self) -> None:
     args = self.parse_args(
-        "--stories=idle-msn,page-load-cnn,media-playback-youtube")
+      "--stories=idle-msn,page-load-cnn,media-playback-youtube"
+    )
     benchmark = WebPowerBenchmark.from_cli_args(args)
 
     for story in benchmark.stories:
@@ -295,16 +327,16 @@ class WebPowerBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
 
   def test_kwargs_from_cli_fullscreen(self) -> None:
     args = self.parse_args(
-        "--stories=media-playback-youtube",
-        "--fullscreen",
+      "--stories=media-playback-youtube",
+      "--fullscreen",
     )
     kwargs = WebPowerBenchmark.kwargs_from_cli(args)
     story = self.extract_single_story(kwargs, WebPowerMediaPlaybackStory)
     self.assertTrue(story.fullscreen)
 
     args = self.parse_args(
-        "--stories=media-playback-youtube",
-        "--no-fullscreen",
+      "--stories=media-playback-youtube",
+      "--no-fullscreen",
     )
     kwargs = WebPowerBenchmark.kwargs_from_cli(args)
     story = self.extract_single_story(kwargs, WebPowerMediaPlaybackStory)
@@ -319,17 +351,17 @@ class WebPowerBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
 
   def test_from_cli_args_combined_options(self) -> None:
     args = self.parse_args(
-        "--stories=idle-msn,scroll-cnn,page-load-cnn,media-playback-youtube",
-        "--duration=50s",
-        "--stabilization-time=8s",
-        "--scrolls=14",
-        "--input-rate=110",
-        "--page-loads=16",
-        "--interval=5s",
-        "--stats",
-        "--volume=off",
-        "--ambient-mode=on",
-        "--no-fullscreen",
+      "--stories=idle-msn,scroll-cnn,page-load-cnn,media-playback-youtube",
+      "--duration=50s",
+      "--stabilization-time=8s",
+      "--scrolls=14",
+      "--input-rate=110",
+      "--page-loads=16",
+      "--interval=5s",
+      "--stats",
+      "--volume=off",
+      "--ambient-mode=on",
+      "--no-fullscreen",
     )
     benchmark = WebPowerBenchmark.from_cli_args(args)
     stories = benchmark.stories
@@ -363,13 +395,13 @@ class WebPowerBenchmarkTestCase(BaseWebPowerBenchmarkTestCase):
 
 
 class WebPowerConsolidatedCliTestCase(BaseCliTestCase):
-
   @override
   def setUp(self) -> None:
     super().setUp()
     self.setup_config_dir(QUERIES_DIR / "web_power")
     perfetto_basic = (
-        config.config_dir() / "benchmark/web_power/perfetto_basic.txtpb")
+      config.config_dir() / "benchmark/web_power/perfetto_basic.txtpb"
+    )
     if not self.fs.exists(perfetto_basic):
       self.fs.create_file(perfetto_basic, contents="duration_ms: 1000")
     self.fs.add_real_file(WebPowerProbe.METRIC_DEFINITIONS_FILE)
@@ -377,39 +409,44 @@ class WebPowerConsolidatedCliTestCase(BaseCliTestCase):
     mock_archive = pth.LocalPath("/mock/archive.wprgo")
     self.fs.create_file(mock_archive)
     archive_patcher = mock.patch(
-        "crossbench.network.replay.base.ReplayNetwork.ensure_archive",
-        return_value=mock_archive)
+      "crossbench.network.replay.base.ReplayNetwork.ensure_archive",
+      return_value=mock_archive,
+    )
     self.addCleanup(archive_patcher.stop)
     archive_patcher.start()
     wpr_patcher = mock.patch(
-        "crossbench.network.replay.wpr.WprGoFinder.wpr",
-        return_value=pth.LocalPath("/mock/wpr.go"))
+      "crossbench.network.replay.wpr.WprGoFinder.wpr",
+      return_value=pth.LocalPath("/mock/wpr.go"),
+    )
     self.addCleanup(wpr_patcher.stop)
     wpr_patcher.start()
     tp_validate_patcher = mock.patch.object(
-        TraceProcessorProbe, "validate_env", return_value=None)
+      TraceProcessorProbe, "validate_env", return_value=None
+    )
     self.addCleanup(tp_validate_patcher.stop)
     tp_validate_patcher.start()
     # Prevent BitsProbe from enforcing Android or attempting to launch the
     # BITS daemon / query devices during mock CLI dry-runs.
     bits_validate_patcher = mock.patch.object(
-        BitsProbe, "validate_browser", return_value=None)
+      BitsProbe, "validate_browser", return_value=None
+    )
     self.addCleanup(bits_validate_patcher.stop)
     bits_validate_patcher.start()
     bits_setup_patcher = mock.patch.object(
-        BitsProbe, "setup", return_value=None)
+      BitsProbe, "setup", return_value=None
+    )
     self.addCleanup(bits_setup_patcher.stop)
     bits_setup_patcher.start()
 
   def _get_runner_probe_names(self, *extra_args: str) -> tuple[str, ...]:
     with self._patch_get_browser_cls():
       cli = self.run_cli(
-          "web-power",
-          "--stories=idle-cnn",
-          "--browser=chrome",
-          "--fast",
-          "--dry-run",
-          *extra_args,
+        "web-power",
+        "--stories=idle-cnn",
+        "--browser=chrome",
+        "--fast",
+        "--dry-run",
+        *extra_args,
       )
       subcommand = cli.last_subcommand
       assert isinstance(subcommand, BenchmarkSubcommand)
@@ -441,8 +478,9 @@ class WebPowerConsolidatedCliTestCase(BaseCliTestCase):
   def test_bits_path_with_explicit_perfetto_probe(self) -> None:
     bits_path = pth.LocalPath("/mock/bits")
     self.fs.create_file(bits_path)
-    probe_names = self._get_runner_probe_names(f"--bits-path={bits_path}",
-                                               "--probe=perfetto")
+    probe_names = self._get_runner_probe_names(
+      f"--bits-path={bits_path}", "--probe=perfetto"
+    )
     self.assertIn("bits", probe_names)
     self.assertIn("perfetto", probe_names)
     self.assertIn("trace_processor", probe_names)

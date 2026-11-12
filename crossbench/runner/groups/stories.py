@@ -14,8 +14,9 @@ if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
   from crossbench.probes.probe import Probe
   from crossbench.probes.results import ProbeResult
-  from crossbench.runner.groups.cache_temperatures import \
-      CacheTemperaturesRunGroup
+  from crossbench.runner.groups.cache_temperatures import (
+    CacheTemperaturesRunGroup,
+  )
   from crossbench.runner.groups.repetitions import RepetitionsRunGroup
   from crossbench.runner.run import Run
   from crossbench.stories.story import Story
@@ -33,15 +34,17 @@ class StoriesRunGroup(RunGroup):
     self._browser: Browser | None = None
 
   @classmethod
-  def groups(cls,
-             run_groups: Iterable[RepetitionsRunGroup],
-             throw: bool = False) -> tuple[Self, ...]:
+  def groups(
+    cls, run_groups: Iterable[RepetitionsRunGroup], throw: bool = False
+  ) -> tuple[Self, ...]:
     return tuple(
-        collection_helper.group_by_custom(
-            run_groups,
-            key=lambda run_group: run_group.browser,
-            group=lambda _: cls(throw),
-            sort_key=None).values())
+      collection_helper.group_by_custom(
+        run_groups,
+        key=lambda run_group: run_group.browser,
+        group=lambda _: cls(throw),
+        sort_key=None,
+      ).values()
+    )
 
   def append(self, group: RepetitionsRunGroup) -> None:
     if self._path is None:
@@ -84,26 +87,26 @@ class StoriesRunGroup(RunGroup):
   @override
   def info_stack(self) -> exception.TInfoStack:
     return (
-        "Merging results from multiple stories",
-        f"browser={self.browser.unique_name}",
+      "Merging results from multiple stories",
+      f"browser={self.browser.unique_name}",
     )
 
   @property
   @override
   def info(self) -> JsonMapping:
     info: JsonDict = {
-        "label": self.browser.label,
-        "browser": self.browser.app_name.title(),
-        "version": self.browser.version.parts_str,
-        "major_version": self.browser.version.major,
-        "channel": self.browser.version.channel_name,
-        "os": self.browser.platform.full_version,
-        "model": self.browser.platform.model,
-        "cpu": self.browser.platform.cpu,
-        "binary": str(self.browser.path),
-        "flags": str(self.browser.flags),
-        "runs": len(tuple(self.runs)),
-        "failed runs": len(tuple(self.failed_runs)),
+      "label": self.browser.label,
+      "browser": self.browser.app_name.title(),
+      "version": self.browser.version.parts_str,
+      "major_version": self.browser.version.major,
+      "channel": self.browser.version.channel_name,
+      "os": self.browser.platform.full_version,
+      "model": self.browser.platform.model,
+      "cpu": self.browser.platform.cpu,
+      "binary": str(self.browser.path),
+      "flags": str(self.browser.flags),
+      "runs": len(tuple(self.runs)),
+      "failed runs": len(tuple(self.failed_runs)),
     }
     info.update(super().info)
     return info

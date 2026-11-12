@@ -17,8 +17,12 @@ from crossbench.helper import fs_helper
 from crossbench.parse import DurationParser, NumberParser, PathParser
 from crossbench.probes.bits import merge as bits_merge
 from crossbench.probes.cb_perfetto.perfetto import PerfettoProbe
-from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext, \
-    ProbeIncompatibleBrowser
+from crossbench.probes.probe import (
+  Probe,
+  ProbeConfigParser,
+  ProbeContext,
+  ProbeIncompatibleBrowser,
+)
 from crossbench.probes.probe_error import ProbeValidationError
 from crossbench.probes.results import LocalProbeResult
 
@@ -43,6 +47,7 @@ class _ClockSync:
   shortest round trip is kept, with the host time taken as the midpoint.
   That round trip bounds the error of the pairing.
   """
+
   SAMPLE_COUNT: ClassVar[int] = 3
 
   def __init__(self, device: plt.Platform) -> None:
@@ -70,20 +75,23 @@ class _ClockSync:
 
   def to_json(self) -> JsonDict:
     return {
-        "host_realtime_ns": self.host_realtime_ns,
-        "device_boottime_ns": self.device_boottime_ns,
-        "offset_ns": self.offset_ns,
-        "round_trip_ns": self.round_trip_ns,
+      "host_realtime_ns": self.host_realtime_ns,
+      "device_boottime_ns": self.device_boottime_ns,
+      "offset_ns": self.offset_ns,
+      "round_trip_ns": self.round_trip_ns,
     }
 
 
 class BitsMergePolicy(ConfigEnum):
   """What to do with the BITS Perfetto traces once all runs are done."""
+
   SEPARATE = ("separate", "Keep the BITS trace of each run as is.")
-  MERGE = ("merge",
-           "Additionally zip the BITS trace of each run with the device's "
-           "Perfetto trace and a perfetto_manifest aligning their clocks, "
-           "like the bits-merge subcommand. Requires the perfetto probe.")
+  MERGE = (
+    "merge",
+    "Additionally zip the BITS trace of each run with the device's "
+    "Perfetto trace and a perfetto_manifest aligning their clocks, "
+    "like the bits-merge subcommand. Requires the perfetto probe.",
+  )
 
 
 class BitsProbe(Probe):
@@ -118,6 +126,7 @@ class BitsProbe(Probe):
   running the bits-merge subcommand on the results directory, see
   crossbench.probes.bits.merge; the archives end up in its bits/ directory.
   """
+
   NAME: ClassVar[str] = "bits"
   BITS_JSON_NAME: ClassVar[str] = "bits.json"
   BITS_CHANNEL_AVERAGES_CSV_NAME: ClassVar[str] = "bits_channel_averages.csv"
@@ -130,54 +139,60 @@ class BitsProbe(Probe):
   def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
-        "bits_path",
-        aliases=("path",),
-        type=PathParser.existing_file_path,
-        required=True,
-        help="Path to the BITS external tool binary on the host.")
+      "bits_path",
+      aliases=("path",),
+      type=PathParser.existing_file_path,
+      required=True,
+      help="Path to the BITS external tool binary on the host.",
+    )
     parser.add_argument(
-        "bits_out",
-        aliases=(
-            "out",
-            "collection",
-        ),
-        type=str,
-        required=False,
-        default="",
-        help="Output identifier for the BITS tool.")
+      "bits_out",
+      aliases=(
+        "out",
+        "collection",
+      ),
+      type=str,
+      required=False,
+      default="",
+      help="Output identifier for the BITS tool.",
+    )
     parser.add_argument(
-        "bits_device",
-        aliases=("device",),
-        type=str,
-        default="",
-        help="Device identifier for the BITS tool.")
+      "bits_device",
+      aliases=("device",),
+      type=str,
+      default="",
+      help="Device identifier for the BITS tool.",
+    )
     parser.add_argument(
-        "duration",
-        type=DurationParser.positive_duration,
-        default=cls.DEFAULT_DURATION,
-        help="Duration for the BITS tool to run.")
+      "duration",
+      type=DurationParser.positive_duration,
+      default=cls.DEFAULT_DURATION,
+      help="Duration for the BITS tool to run.",
+    )
     parser.add_argument(
-        "port",
-        type=NumberParser.positive_int,
-        default=cls.DEFAULT_PORT,
-        help="Port number for the BITS tool.")
+      "port",
+      type=NumberParser.positive_int,
+      default=cls.DEFAULT_PORT,
+      help="Port number for the BITS tool.",
+    )
     parser.add_argument(
-        "merge_policy",
-        aliases=("merge-policy",),
-        type=BitsMergePolicy,
-        default=BitsMergePolicy.SEPARATE,
-        help="Whether to also merge the BITS Perfetto trace of each run with "
-        "the device's Perfetto trace once all runs are done.")
+      "merge_policy",
+      aliases=("merge-policy",),
+      type=BitsMergePolicy,
+      default=BitsMergePolicy.SEPARATE,
+      help="Whether to also merge the BITS Perfetto trace of each run with "
+      "the device's Perfetto trace once all runs are done.",
+    )
     return parser
 
   def __init__(
-      self,
-      bits_path: pth.LocalPath,
-      bits_out: str = "",
-      bits_device: str = "",
-      duration: dt.timedelta = DEFAULT_DURATION,
-      port: int = DEFAULT_PORT,
-      merge_policy: BitsMergePolicy = BitsMergePolicy.SEPARATE,
+    self,
+    bits_path: pth.LocalPath,
+    bits_out: str = "",
+    bits_device: str = "",
+    duration: dt.timedelta = DEFAULT_DURATION,
+    port: int = DEFAULT_PORT,
+    merge_policy: BitsMergePolicy = BitsMergePolicy.SEPARATE,
   ) -> None:
     super().__init__()
     if duration < dt.timedelta(seconds=1):
@@ -185,7 +200,8 @@ class BitsProbe(Probe):
     self._bits_path: Final[pth.LocalPath] = bits_path
     assert self._bits_path.is_file()
     self._bits_service_path: Final[pth.LocalPath] = (
-        bits_path.parent / "bits_service.sh")
+      bits_path.parent / "bits_service.sh"
+    )
     self._bits_out: Final[str] = bits_out
     self._bits_device: Final[str] = bits_device
     self._duration: Final[dt.timedelta] = duration
@@ -215,12 +231,12 @@ class BitsProbe(Probe):
 
   def _get_connected_devices(self) -> list[str] | None:
     res = self.host_platform.sh(
-        self.bits_path,
-        "--list_devices",
-        "--service_port",
-        str(self._port),
-        check=False,
-        capture_output=True,
+      self.bits_path,
+      "--list_devices",
+      "--service_port",
+      str(self._port),
+      check=False,
+      capture_output=True,
     )
     if res.returncode != 0:
       return None
@@ -230,17 +246,18 @@ class BitsProbe(Probe):
     return [d.strip() for d in stdout.strip().splitlines() if d.strip()]
 
   def _start_service(
-      self, timeout: dt.timedelta = dt.timedelta(seconds=15)) -> None:
+    self, timeout: dt.timedelta = dt.timedelta(seconds=15)
+  ) -> None:
     assert self._service_proc is None
     if not self.host_platform.is_file(self._bits_service_path):
       raise ProbeValidationError(self, f"No script: {self._bits_service_path}")
     logging.info("Starting BITS service in background...")
     self._service_proc = self.host_platform.popen(
-        str(self._bits_service_path),
-        "--port",
-        str(self._port),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
+      str(self._bits_service_path),
+      "--port",
+      str(self._port),
+      stdout=subprocess.PIPE,
+      stderr=subprocess.STDOUT,
     )
     assert self._service_proc.stdout
 
@@ -322,7 +339,8 @@ class BitsProbe(Probe):
     super().validate_browser(env, browser)
     if not browser.platform.is_android:
       raise ProbeIncompatibleBrowser(
-          self, browser, "BITS probe is only supported on Android devices.")
+        self, browser, "BITS probe is only supported on Android devices."
+      )
 
   @override
   def get_context_cls(self) -> type[BitsProbeContext]:
@@ -335,7 +353,8 @@ class BitsProbe(Probe):
         return super().merge_browsers(group)
       case BitsMergePolicy.MERGE:
         archives = bits_merge.merge_results(
-            group.path, group.get_local_probe_result_path(self))
+          group.path, group.get_local_probe_result_path(self)
+        )
         return LocalProbeResult(file=archives)
       case _:
         raise ValueError(f"Unknown merge policy: {self._merge_policy}")
@@ -343,8 +362,10 @@ class BitsProbe(Probe):
   @override
   def log_browsers_result(self, group: BrowsersRunGroup) -> None:
     traces = [
-        trace for run in group.runs if self in run.results
-        for trace in run.results[self].get_all("pftrace")
+      trace
+      for run in group.runs
+      if self in run.results
+      for trace in run.results[self].get_all("pftrace")
     ]
     if group_results := group.results.get(self):
       traces.extend(group_results.get_all("zip"))
@@ -357,11 +378,11 @@ class BitsProbe(Probe):
 
 
 class BitsProbeContext(ProbeContext[BitsProbe]):
-
   def __init__(self, probe: BitsProbe, run: Run) -> None:
     super().__init__(probe, run)
-    self._bits_out_id: Final[str] = self.probe.bits_out or dt.datetime.now(
-    ).strftime("%Y%m%d_%H%M%S")
+    self._bits_out_id: Final[str] = (
+      self.probe.bits_out or dt.datetime.now().strftime("%Y%m%d_%H%M%S")
+    )
     self._clock_sync: _ClockSync | None = None
 
   @property
@@ -372,8 +393,10 @@ class BitsProbeContext(ProbeContext[BitsProbe]):
   def _log_files(self, mode: str) -> Iterator[tuple[IO[str], IO[str]]]:
     stdout_path = self.local_result_path / "stdout.txt"
     stderr_path = self.local_result_path / "stderr.txt"
-    with stdout_path.open(mode, encoding="utf-8") as stdout, \
-         stderr_path.open(mode, encoding="utf-8") as stderr:
+    with (
+      stdout_path.open(mode, encoding="utf-8") as stdout,
+      stderr_path.open(mode, encoding="utf-8") as stderr,
+    ):
       yield stdout, stderr
 
   def _write_bits_json(self) -> None:
@@ -381,8 +404,9 @@ class BitsProbeContext(ProbeContext[BitsProbe]):
     if self._clock_sync is not None:
       bits_json["clock_sync"] = self._clock_sync.to_json()
     self.host_platform.write_text(
-        self.local_result_path / self.probe.BITS_JSON_NAME,
-        json.dumps(bits_json, indent=2))
+      self.local_result_path / self.probe.BITS_JSON_NAME,
+      json.dumps(bits_json, indent=2),
+    )
 
   def _start_collection(self) -> None:
     logging.info("Starting BITS collection (ID: %s)", self.bits_out_id)
@@ -395,31 +419,33 @@ class BitsProbeContext(ProbeContext[BitsProbe]):
     # `--create` returns once the collectors are online and sampling, which
     # takes about a second; data must be flowing before the story starts.
     self._run_service_cmd(
-        "--create",
-        self.bits_out_id,
-        "--duration",
-        f"{self.probe.duration.total_seconds():.0f}s",
-        *device_args,
+      "--create",
+      self.bits_out_id,
+      "--duration",
+      f"{self.probe.duration.total_seconds():.0f}s",
+      *device_args,
     )
 
   def _stop_collection(self) -> None:
     logging.info("Stopping BITS collection (ID: %s)", self.bits_out_id)
     self._run_service_cmd("--stop", self.bits_out_id)
     avg_path = (
-        self.local_result_path / self.probe.BITS_CHANNEL_AVERAGES_CSV_NAME)
+      self.local_result_path / self.probe.BITS_CHANNEL_AVERAGES_CSV_NAME
+    )
 
     with avg_path.open("w", encoding="utf-8") as avg_file:
       self._run_service_cmd(
-          "--print_channel_averages", self.bits_out_id, stdout_file=avg_file)
+        "--print_channel_averages", self.bits_out_id, stdout_file=avg_file
+      )
 
     perfetto_path = self.local_result_path / f"{self.bits_out_id}.pftrace"
     self._run_service_cmd(
-        "--collection",
-        self.bits_out_id,
-        "--channels",
-        self.probe.PERFETTO_CHANNELS,
-        "--write_perfetto",
-        perfetto_path,
+      "--collection",
+      self.bits_out_id,
+      "--channels",
+      self.probe.PERFETTO_CHANNELS,
+      "--write_perfetto",
+      perfetto_path,
     )
     if not self.host_platform.is_file(perfetto_path):
       logging.critical("Missing BITS Perfetto trace: %s", perfetto_path)
@@ -428,20 +454,23 @@ class BitsProbeContext(ProbeContext[BitsProbe]):
     """Reads how the device's CLOCK_BOOTTIME relates to the host's
     CLOCK_REALTIME, see BitsProbe."""
     sync = _ClockSync(self.browser_platform)
-    logging.info("BITS clock sync: device - host = %d ns (+/- %d ns)",
-                 sync.offset_ns, sync.round_trip_ns // 2)
+    logging.info(
+      "BITS clock sync: device - host = %d ns (+/- %d ns)",
+      sync.offset_ns,
+      sync.round_trip_ns // 2,
+    )
     return sync
 
   def _run_service_cmd(
-      self,
-      *args: pth.AnyPathLike,
-      stdout_file: IO[str] | None = None,
+    self,
+    *args: pth.AnyPathLike,
+    stdout_file: IO[str] | None = None,
   ) -> None:
     cmd = (
-        self.probe.bits_path,
-        *args,
-        "--service_port",
-        str(self.probe.port),
+      self.probe.bits_path,
+      *args,
+      "--service_port",
+      str(self.probe.port),
     )
     with self._log_files("a") as (stdout, stderr):
       self.host_platform.sh(*cmd, stdout=stdout_file or stdout, stderr=stderr)
@@ -472,8 +501,9 @@ class BitsProbeContext(ProbeContext[BitsProbe]):
   def teardown(self) -> ProbeResult:
     if self.host_platform.exists(self.local_result_path):
       files = [
-          f for f in self.local_result_path.iterdir()
-          if self.host_platform.is_file(f)
+        f
+        for f in self.local_result_path.iterdir()
+        if self.host_platform.is_file(f)
       ]
       return self.local_result(file=files)
     return self.empty_result()

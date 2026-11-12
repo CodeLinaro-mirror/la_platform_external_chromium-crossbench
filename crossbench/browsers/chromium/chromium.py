@@ -12,13 +12,14 @@ from crossbench.browsers.chromium_based.chromium_based import ChromiumBased
 
 
 class Chromium(ChromiumBaseMixin, ChromiumBased):
-
   @classmethod
   @override
   def attributes(cls) -> BrowserAttributes:
-    return (super().attributes()
-            | BrowserAttributes.CHROMIUM
-            | BrowserAttributes.DESKTOP)
+    return (
+      super().attributes()
+      | BrowserAttributes.CHROMIUM
+      | BrowserAttributes.DESKTOP
+    )
 
   @classmethod
   @override

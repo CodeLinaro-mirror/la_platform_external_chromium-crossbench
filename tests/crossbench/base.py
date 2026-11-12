@@ -11,8 +11,15 @@ import datetime as dt
 import io
 import logging
 import pathlib
-from typing import TYPE_CHECKING, Any, Callable, Final, Iterator, Sequence, \
-    override
+from typing import (
+  TYPE_CHECKING,
+  Any,
+  Callable,
+  Final,
+  Iterator,
+  Sequence,
+  override,
+)
 from unittest import mock
 
 from pyfakefs import fake_filesystem_unittest
@@ -20,15 +27,18 @@ from pyfakefs import fake_filesystem_unittest
 import crossbench
 from crossbench import path as pth
 from crossbench import plt
-from crossbench.action_runner.action.wait_for_ready_state import \
-    WaitForReadyStateAction
-from crossbench.benchmarks.loading.browser_startup import \
-    BrowserStartupBenchmark
-from crossbench.benchmarks.loading.playback_controller import \
-    PlaybackController
+from crossbench.action_runner.action.wait_for_ready_state import (
+  WaitForReadyStateAction,
+)
+from crossbench.benchmarks.loading.browser_startup import (
+  BrowserStartupBenchmark,
+)
+from crossbench.benchmarks.loading.playback_controller import PlaybackController
 from crossbench.benchmarks.loading.tab_controller import TabController
-from crossbench.benchmarks.loadline import LoadLine1TabletBenchmark, \
-    LoadLine2TabletBenchmark
+from crossbench.benchmarks.loadline import (
+  LoadLine1TabletBenchmark,
+  LoadLine2TabletBenchmark,
+)
 from crossbench.browsers.settings import Settings
 from crossbench.cli.config.browser_variants import BaseBrowserVariantsConfig
 from crossbench.cli.config.env import EnvConfig
@@ -42,8 +52,11 @@ from crossbench.probes.cb_perfetto.perfetto import TraceConfig
 from crossbench.runner.groups.session import BrowserSessionRunGroup
 from crossbench.runner.runner import Runner
 from tests.crossbench import mock_browser
-from tests.crossbench.mock_helper import MockCLI, MockPlatform, \
-    MockPlatformMixin
+from tests.crossbench.mock_helper import (
+  MockCLI,
+  MockPlatform,
+  MockPlatformMixin,
+)
 from tests.crossbench.runner.mocks import MockRun, MockRunner
 
 if TYPE_CHECKING:
@@ -53,14 +66,15 @@ if TYPE_CHECKING:
 
 
 class CrossbenchFakeFsTestCase(
-    fake_filesystem_unittest.TestCase, metaclass=abc.ABCMeta):
-
+  fake_filesystem_unittest.TestCase, metaclass=abc.ABCMeta
+):
   def setUp(self) -> None:
     super().setUp()
     self.setUpPyfakefs(modules_to_reload=[crossbench, mock_browser, pth, plt])
     # gettext is used extensively in argparse
     gettext_patcher = mock.patch(
-        "gettext.dgettext", side_effect=lambda domain, message: message)
+      "gettext.dgettext", side_effect=lambda domain, message: message
+    )
     gettext_patcher.start()
     self.addCleanup(gettext_patcher.stop)
 
@@ -89,9 +103,10 @@ class CrossbenchFakeFsTestCase(
 
   def mock_platform_default_tmp_dir(self, platform_cls: type) -> None:
     patcher = mock.patch.object(
-        platform_cls,
-        "_create_default_tmp_dir",
-        return_value=pth.AnyPosixPath("/var/tmp"))
+      platform_cls,
+      "_create_default_tmp_dir",
+      return_value=pth.AnyPosixPath("/var/tmp"),
+    )
     self.addCleanup(patcher.stop)
     patcher.start()
 
@@ -100,45 +115,45 @@ TEST_WARNING = "Test Warning"
 
 
 class CrossbenchMockArgsMixin:
-
   def mock_args(self, **kwargs) -> CBNamespace:
     args = CBNamespace(
-        wraps=kwargs.pop("wraps", False),
-        throw=kwargs.pop("throw", False),
-        browser=kwargs.pop("browser", []),
-        driver_path=kwargs.pop("driver_path", None),
-        remote_driver_path=kwargs.pop("remote_driver_path", None),
-        network_config=kwargs.pop("network_config", NetworkConfig.default()),
-        browser_config=kwargs.pop("browser_config", None),
-        probe_config=kwargs.pop("probe_config", None),
-        viewport=kwargs.pop("viewport", None),
-        splash_screen=kwargs.pop("splash_screen", None),
-        start_browser=kwargs.pop("start_browser", True),
-        secrets=kwargs.pop("secrets", Secrets()),
-        driver_logging=kwargs.pop("driver_logging", False),
-        wipe_system_user_data=kwargs.pop("wipe_system_user_data", False),
-        http_request_timeout=kwargs.pop("", dt.timedelta()),
-        cache_dir=pathlib.Path("test_cache_dir"),
-        browser_cache_dir=kwargs.pop("browser_cache_dir", None),
-        clear_browser_cache_dir=kwargs.pop("clear_browser_cache_dir", None),
-        enable_features=kwargs.pop("enable_features", None),
-        disable_features=kwargs.pop("disable_features", None),
-        js_flags=kwargs.pop("js_flags", None),
-        sandbox=kwargs.pop("sandbox", None),
-        enable_field_trial_config=kwargs.pop("enable_field_trial_config", None),
-        network=kwargs.pop("network", NetworkConfig.default()),
-        probe=kwargs.pop("probe", []),
-        no_probe=kwargs.pop("no_probe", []),
-        extra_browser_args=kwargs.pop("extra_browser_args", []),
-        other_browser_args=kwargs.pop("other_browser_args", []),
-        playback=kwargs.pop("playback", PlaybackController.default()),
-        tabs=kwargs.pop("tabs", TabController.default()),
-        about_blank_duration=kwargs.pop("about_blank_duration", dt.timedelta()),
-        run_login=kwargs.pop("run_login", True),
-        run_setup=kwargs.pop("run_setup", True),
-        env_config=kwargs.pop("env_config", EnvConfig.default()),
-        binary_overrides=kwargs.pop("binary_overrides", []),
-        action_runner_config=kwargs.pop("action_runner_config", None))
+      wraps=kwargs.pop("wraps", False),
+      throw=kwargs.pop("throw", False),
+      browser=kwargs.pop("browser", []),
+      driver_path=kwargs.pop("driver_path", None),
+      remote_driver_path=kwargs.pop("remote_driver_path", None),
+      network_config=kwargs.pop("network_config", NetworkConfig.default()),
+      browser_config=kwargs.pop("browser_config", None),
+      probe_config=kwargs.pop("probe_config", None),
+      viewport=kwargs.pop("viewport", None),
+      splash_screen=kwargs.pop("splash_screen", None),
+      start_browser=kwargs.pop("start_browser", True),
+      secrets=kwargs.pop("secrets", Secrets()),
+      driver_logging=kwargs.pop("driver_logging", False),
+      wipe_system_user_data=kwargs.pop("wipe_system_user_data", False),
+      http_request_timeout=kwargs.pop("", dt.timedelta()),
+      cache_dir=pathlib.Path("test_cache_dir"),
+      browser_cache_dir=kwargs.pop("browser_cache_dir", None),
+      clear_browser_cache_dir=kwargs.pop("clear_browser_cache_dir", None),
+      enable_features=kwargs.pop("enable_features", None),
+      disable_features=kwargs.pop("disable_features", None),
+      js_flags=kwargs.pop("js_flags", None),
+      sandbox=kwargs.pop("sandbox", None),
+      enable_field_trial_config=kwargs.pop("enable_field_trial_config", None),
+      network=kwargs.pop("network", NetworkConfig.default()),
+      probe=kwargs.pop("probe", []),
+      no_probe=kwargs.pop("no_probe", []),
+      extra_browser_args=kwargs.pop("extra_browser_args", []),
+      other_browser_args=kwargs.pop("other_browser_args", []),
+      playback=kwargs.pop("playback", PlaybackController.default()),
+      tabs=kwargs.pop("tabs", TabController.default()),
+      about_blank_duration=kwargs.pop("about_blank_duration", dt.timedelta()),
+      run_login=kwargs.pop("run_login", True),
+      run_setup=kwargs.pop("run_setup", True),
+      env_config=kwargs.pop("env_config", EnvConfig.default()),
+      binary_overrides=kwargs.pop("binary_overrides", []),
+      action_runner_config=kwargs.pop("action_runner_config", None),
+    )
     assert not kwargs, f"got unused kwargs: {kwargs}"
     return args
 
@@ -148,13 +163,16 @@ class CrossbenchConfigTestMixin:
 
   def setup_loadline_configs(self):
     self.setup_config_dir(
-        LoadLine1TabletBenchmark.default_network_config_path().parent)
+      LoadLine1TabletBenchmark.default_network_config_path().parent
+    )
     self.setup_config_dir(
-        LoadLine2TabletBenchmark.default_network_config_path().parent)
+      LoadLine2TabletBenchmark.default_network_config_path().parent
+    )
 
   def setup_browser_startup_configs(self) -> None:
     self.setup_config_dir(
-        BrowserStartupBenchmark.default_probe_config_path().parent)
+      BrowserStartupBenchmark.default_probe_config_path().parent
+    )
 
   def setup_perfetto_config_presets(self):
     self.setup_config_dir(TraceConfig.preset_dir())
@@ -170,8 +188,9 @@ class CrossbenchPlatformMockMixin:
     addCleanup: Callable[..., None]  # noqa: N815
 
   def setup_platform_mock(self) -> None:
-    platform_id_patcher = mock.patch("crossbench.plt.base._NEXT_PLATFORM_ID",
-                                     777)
+    platform_id_patcher = mock.patch(
+      "crossbench.plt.base._NEXT_PLATFORM_ID", 777
+    )
     platform_id_patcher.start()
     self.addCleanup(platform_id_patcher.stop)
 
@@ -181,12 +200,12 @@ class CrossbenchPlatformMockMixin:
 
 
 class BaseCrossbenchTestCase(
-    CrossbenchConfigTestMixin,
-    CrossbenchMockArgsMixin,
-    CrossbenchPlatformMockMixin,
-    CrossbenchFakeFsTestCase,
-    metaclass=abc.ABCMeta):
-
+  CrossbenchConfigTestMixin,
+  CrossbenchMockArgsMixin,
+  CrossbenchPlatformMockMixin,
+  CrossbenchFakeFsTestCase,
+  metaclass=abc.ABCMeta,
+):
   def filter_splashscreen_urls(self, urls: Sequence[str]) -> list[str]:
     return [url for url in urls if not url.startswith("data:")]
 
@@ -209,14 +228,17 @@ class BaseCrossbenchTestCase(
     for mock_browser_cls in mock_browser.ALL:
       mock_browser_cls.setup_fs(self.fs, self.platform)
       self.assertTrue(
-          self.platform.exists(mock_browser_cls.mock_app_path(self.platform)))
+        self.platform.exists(mock_browser_cls.mock_app_path(self.platform))
+      )
     self.out_dir = pathlib.Path("/crossbench-test/results/test")
     self.out_dir.parent.mkdir(parents=True)
     self.browsers: list[mock_browser.MockBrowser] = [
-        mock_browser.MockChromeDev(
-            "dev", settings=Settings(platform=self.platform)),
-        mock_browser.MockChromeStable(
-            "stable", settings=Settings(platform=self.platform)),
+      mock_browser.MockChromeDev(
+        "dev", settings=Settings(platform=self.platform)
+      ),
+      mock_browser.MockChromeStable(
+        "stable", settings=Settings(platform=self.platform)
+      ),
     ]
     for browser in self.browsers:
       self.assertSequenceEqual(browser.expected_js, [])
@@ -230,28 +252,27 @@ class BaseCrossbenchTestCase(
     super().tearDown()
 
   def mock_run(
-      self,
-      runner: Any | None = None,
-      browser: Any | None = None,
-      story: str = "story",
+    self,
+    runner: Any | None = None,
+    browser: Any | None = None,
+    story: str = "story",
   ) -> MockRun:
     runner = runner or MockRunner()
     browser = browser or self.browsers[0]
     session = BrowserSessionRunGroup(
-        runner.env,
-        runner.probes,
-        browser,
-        Flags(),
-        1,
-        pathlib.Path(),
-        True,
-        True,
+      runner.env,
+      runner.probes,
+      browser,
+      Flags(),
+      1,
+      pathlib.Path(),
+      True,
+      True,
     )
     return MockRun(runner, session, story)
 
 
 class SysExitTestException(Exception):
-
   def __init__(self, exit_code=0):
     super().__init__("sys.exit")
     self.exit_code = exit_code
@@ -264,7 +285,6 @@ class IoCapture:
 
 
 class BaseCliTestCase(BaseCrossbenchTestCase):
-
   SPLASH_URLS_LEN: Final[int] = 2
 
   @override
@@ -300,16 +320,18 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
 
   def setup_wait_for_ready_state_patcher(self):
     patcher = mock.patch.object(
-        WaitForReadyStateAction, "run_with", return_value=True)
+      WaitForReadyStateAction, "run_with", return_value=True
+    )
     self.addCleanup(patcher.stop)
     patcher.start()
 
   @contextlib.contextmanager
   def capture_io(self) -> Iterator[IoCapture]:
     io_capture = IoCapture()
-    with mock.patch(
-        "sys.stdout", new_callable=io.StringIO) as mock_stdout, mock.patch(
-            "sys.stderr", new_callable=io.StringIO) as mock_stderr:
+    with (
+      mock.patch("sys.stdout", new_callable=io.StringIO) as mock_stdout,
+      mock.patch("sys.stderr", new_callable=io.StringIO) as mock_stderr,
+    ):
       try:
         yield io_capture
       finally:
@@ -319,10 +341,9 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
         mock_stdout.close()
         mock_stderr.close()
 
-  def run_cli_output(self,
-                     *args,
-                     raises=None,
-                     enable_logging: bool = True) -> tuple[MockCLI, str, str]:
+  def run_cli_output(
+    self, *args, raises=None, enable_logging: bool = True
+  ) -> tuple[MockCLI, str, str]:
     with self.capture_io() as io_capture:
       cli = self.run_cli(*args, raises=raises, enable_logging=enable_logging)
     return cli, io_capture.stdout, io_capture.stderr
@@ -330,43 +351,48 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
   @contextlib.contextmanager
   def _patch_get_runner(self) -> Iterator[None]:
     with mock.patch.object(
-        BenchmarkSubcommand, "_get_runner", side_effect=self._mock_get_runner):
+      BenchmarkSubcommand, "_get_runner", side_effect=self._mock_get_runner
+    ):
       yield
 
-  def _mock_get_runner(self, args, benchmark, probes, env_config,
-                       env_validation_mode, timing):
+  def _mock_get_runner(
+    self, args, benchmark, probes, env_config, env_validation_mode, timing
+  ):
     if not args.out_dir:
       # Use stable mock out dir
       args.out_dir = pathlib.Path("/results")
       assert not args.out_dir.exists()
     runner_kwargs = Runner.kwargs_from_cli(args)
     runner = Runner(
-        benchmark=benchmark,
-        probes=probes,
-        env_config=env_config,
-        env_validation_mode=env_validation_mode,
-        timing=timing,
-        **runner_kwargs,
-        # Use custom platform
-        platform=self.platform,
-        in_memory_result_db=True)
+      benchmark=benchmark,
+      probes=probes,
+      env_config=env_config,
+      env_validation_mode=env_validation_mode,
+      timing=timing,
+      **runner_kwargs,
+      # Use custom platform
+      platform=self.platform,
+      in_memory_result_db=True,
+    )
     return runner
 
   @contextlib.contextmanager
   def _patch_sys_exit(self) -> Iterator[None]:
-    with mock.patch(
-        "sys.exit", side_effect=SysExitTestException), mock.patch.object(
-            plt, "PLATFORM", self.platform):
+    with (
+      mock.patch("sys.exit", side_effect=SysExitTestException),
+      mock.patch.object(plt, "PLATFORM", self.platform),
+    ):
       yield
 
   @contextlib.contextmanager
-  def _patch_get_browser_cls(self,
-                             return_value: type[Browser] | None = None,
-                             **kwargs) -> Iterator[mock.MagicMock]:
+  def _patch_get_browser_cls(
+    self, return_value: type[Browser] | None = None, **kwargs
+  ) -> Iterator[mock.MagicMock]:
     if not kwargs:
       kwargs["return_value"] = return_value or mock_browser.MockChromeStable
-    with mock.patch.object(BaseBrowserVariantsConfig, "get_browser_cls",
-                           **kwargs) as patcher:
+    with mock.patch.object(
+      BaseBrowserVariantsConfig, "get_browser_cls", **kwargs
+    ) as patcher:
       yield patcher
 
   @contextlib.contextmanager
@@ -375,10 +401,9 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
     with self._patch_sys_exit(), self._patch_get_runner():
       yield cli
 
-  def run_cli(self,
-              *args,
-              raises=None,
-              enable_logging: bool = False) -> MockCLI:
+  def run_cli(
+    self, *args, raises=None, enable_logging: bool = False
+  ) -> MockCLI:
     with self.cli(enable_logging=enable_logging) as cli:
       if raises:
         with self.assertRaises(raises):
@@ -389,11 +414,12 @@ class BaseCliTestCase(BaseCrossbenchTestCase):
 
   @contextlib.contextmanager
   def _patch_get_browser(
-      self,
-      return_value: Sequence[Browser] | None = None,
+    self,
+    return_value: Sequence[Browser] | None = None,
   ) -> Iterator[None]:
     if not return_value:
       return_value = self.browsers
     with mock.patch.object(
-        BenchmarkSubcommand, "_get_browsers", return_value=return_value):
+      BenchmarkSubcommand, "_get_browsers", return_value=return_value
+    ):
       yield

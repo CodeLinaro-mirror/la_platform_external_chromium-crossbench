@@ -63,8 +63,9 @@ class CliSlowTestCase(BaseCliTestCase):
           print(subcommand)
           self.verify_subcommand_describe_subcommand(cli, subcommand)
 
-  def verify_subcommand_describe_subcommand(self, cli: MockCLI,
-                                            subcommand: str):
+  def verify_subcommand_describe_subcommand(
+    self, cli: MockCLI, subcommand: str
+  ):
     with self.assertRaises(SysExitTestException) as cm:
       cli.run([subcommand, "describe"])
     self.assertEqual(cm.exception.exit_code, 0)
@@ -80,17 +81,20 @@ class CliSlowTestCase(BaseCliTestCase):
   def test_browser_identifiers(self):
     # Use BrowserAliasesTestCase for more detailed aliases
     browsers: dict[str, type[mock_browser.MockBrowser]] = {
-        "chrome": mock_browser.MockChromeStable,
-        "edge": mock_browser.MockEdgeStable,
-        "firefox": mock_browser.MockFirefox,
+      "chrome": mock_browser.MockChromeStable,
+      "edge": mock_browser.MockEdgeStable,
+      "firefox": mock_browser.MockFirefox,
     }
     if self.platform.is_macos:
-      browsers.update({
+      browsers.update(
+        {
           "safari": mock_browser.MockSafari,
-      })
+        }
+      )
 
     items_chunk: list[tuple[str, type[mock_browser.MockBrowser]]] = list(
-        browsers.items())
+      browsers.items()
+    )
     with self.cli() as cli:
       for identifier, browser_cls in items_chunk:
         self.verify_browser_identifier(cli, identifier, browser_cls)
@@ -100,13 +104,15 @@ class CliSlowTestCase(BaseCliTestCase):
     self.assertFalse(out_dir.exists())
     with self._patch_get_browser_cls(browser_cls) as get_browser_cls:
       url = "http://test.com"
-      cli.run([
+      cli.run(
+        [
           "loading",
           f"--browser={identifier}",
           f"--urls={url}",
           "--env-validation=skip",
           f"--out-dir={out_dir}",
-      ])
+        ]
+      )
       self.assertTrue(out_dir.exists())
       get_browser_cls.assert_called_once()
       result_files = list(out_dir.glob(f"**/{ResultsSummaryProbe.NAME}.json"))
@@ -122,10 +128,10 @@ class CliSlowTestCase(BaseCliTestCase):
     self.fs.create_file(local_server_path / "index.html", st_size=100)
     config_file = pathlib.Path("/config.hjson")
     config_data = {
-        "probes": {},
-        "env": {},
-        "browsers": {},
-        "network": str(local_server_path),
+      "probes": {},
+      "env": {},
+      "browsers": {},
+      "network": str(local_server_path),
     }
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
@@ -134,22 +140,32 @@ class CliSlowTestCase(BaseCliTestCase):
 
     def get_browser(self, args: argparse.Namespace):
       session = Settings(
-          platform=self.cli.platform,
-          network=args.network_config.create_network(self.cli.platform))
+        platform=self.cli.platform,
+        network=args.network_config.create_network(self.cli.platform),
+      )
       browsers = [
-          mock_browser.MockChromeDev("dev", settings=session),
+        mock_browser.MockChromeDev("dev", settings=session),
       ]
       return browsers
 
-    with (mock.patch.object(BenchmarkSubcommand, "_get_browsers", get_browser),
-          mock.patch.object(LocalFileNetwork, "_open_local_file_server") as
-          mock_network_open):
+    with (
+      mock.patch.object(BenchmarkSubcommand, "_get_browsers", get_browser),
+      mock.patch.object(
+        LocalFileNetwork, "_open_local_file_server"
+      ) as mock_network_open,
+    ):
       url = "http://test.com"
-      self.run_cli("loading", f"--config={config_file}", f"--urls={url}",
-                   "--env-validation=skip")
+      self.run_cli(
+        "loading",
+        f"--config={config_file}",
+        f"--urls={url}",
+        "--env-validation=skip",
+      )
       mock_network_open.assert_called_once()
       for browser in browsers:
-        self.assertSequenceEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
+        self.assertSequenceEqual(
+          [url], browser.url_list[self.SPLASH_URLS_LEN :]
+        )
         assert isinstance(browser.network, LocalFileNetwork)
         network: LocalFileNetwork = browser.network
         self.assertFalse(network.is_live)
@@ -157,39 +173,48 @@ class CliSlowTestCase(BaseCliTestCase):
 
   def test_multiple_browser_compatible_flags(self):
     mock_browsers: list[type[mock_browser.MockBrowser]] = [
-        mock_browser.MockChromeStable,
-        mock_browser.MockFirefox,
-        mock_browser.MockChromeDev,
+      mock_browser.MockChromeStable,
+      mock_browser.MockFirefox,
+      mock_browser.MockChromeDev,
     ]
 
     def mock_get_browser_cls(browser_config: BrowserConfig):
-      self.assertEqual(browser_config.driver.driver_type,
-                       BrowserDriverType.WEB_DRIVER)
+      self.assertEqual(
+        browser_config.driver.driver_type, BrowserDriverType.WEB_DRIVER
+      )
       for mock_browser_cls in mock_browsers:
         if mock_browser_cls.mock_app_path(self.platform) == browser_config.path:
           return mock_browser_cls
       raise ValueError("Unknown browser path")
 
     with self.cli() as cli:
-      for chrome_flag in ("--js-flags=--no-opt", "--enable-features=Foo",
-                          "--disable-features=bar"):
+      for chrome_flag in (
+        "--js-flags=--no-opt",
+        "--enable-features=Foo",
+        "--disable-features=bar",
+      ):
         # Fail for chrome flags for non-chrome browser
-        with self.assertRaises(
-            argparse.ArgumentTypeError), self._patch_get_browser_cls(
-                side_effect=mock_get_browser_cls):
-          cli.run([
+        with (
+          self.assertRaises(argparse.ArgumentTypeError),
+          self._patch_get_browser_cls(side_effect=mock_get_browser_cls),
+        ):
+          cli.run(
+            [
               "loading",
               "--urls=http://test.com",
               "--env-validation=skip",
               "--throw",
               "--browser=firefox",
               chrome_flag,
-          ])
+            ]
+          )
         # Fail for mixed browsers and chrome flags
-        with self.assertRaises(
-            argparse.ArgumentTypeError), self._patch_get_browser_cls(
-                side_effect=mock_get_browser_cls):
-          cli.run([
+        with (
+          self.assertRaises(argparse.ArgumentTypeError),
+          self._patch_get_browser_cls(side_effect=mock_get_browser_cls),
+        ):
+          cli.run(
+            [
               "loading",
               "--urls=http://test.com",
               "--env-validation=skip",
@@ -197,11 +222,14 @@ class CliSlowTestCase(BaseCliTestCase):
               "--browser=chrome",
               "--browser=firefox",
               chrome_flag,
-          ])
-        with self.assertRaises(
-            argparse.ArgumentTypeError), self._patch_get_browser_cls(
-                side_effect=mock_get_browser_cls):
-          cli.run([
+            ]
+          )
+        with (
+          self.assertRaises(argparse.ArgumentTypeError),
+          self._patch_get_browser_cls(side_effect=mock_get_browser_cls),
+        ):
+          cli.run(
+            [
               "loading",
               "--urls=http://test.com",
               "--env-validation=skip",
@@ -210,10 +238,12 @@ class CliSlowTestCase(BaseCliTestCase):
               "--browser=firefox",
               "--",
               chrome_flag,
-          ])
+            ]
+          )
       # Flags for the same type are allowed.
       with self._patch_get_browser():
-        cli.run([
+        cli.run(
+          [
             "loading",
             "--urls=http://test.com",
             "--env-validation=skip",
@@ -222,7 +252,8 @@ class CliSlowTestCase(BaseCliTestCase):
             "--browser=chrome-dev",
             "--",
             "--js-flags=--no-opt",
-        ])
+          ]
+        )
 
 
 if __name__ == "__main__":

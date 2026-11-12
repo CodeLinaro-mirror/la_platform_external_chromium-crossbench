@@ -8,8 +8,11 @@ import unittest
 from typing import Callable, ClassVar
 
 from crossbench.helper.class_helper import get_all_subclasses
-from crossbench.helper.version import Version, VersionParseError, \
-    VersionPartsData
+from crossbench.helper.version import (
+  Version,
+  VersionParseError,
+  VersionPartsData,
+)
 from tests import test_helper
 
 
@@ -17,7 +20,8 @@ class VersionTestCase(unittest.TestCase):
   VERSION_CLS: ClassVar[type[Version]] = Version
 
   def _version_factories(
-      self) -> tuple[Callable[[VersionPartsData], Version], ...]:
+    self,
+  ) -> tuple[Callable[[VersionPartsData], Version], ...]:
     return (self.VERSION_CLS,)
 
   def test_basic(self):

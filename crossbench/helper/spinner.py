@@ -74,7 +74,9 @@ class Spinner:
 
   def _write_interactive_message(self) -> None:
     stdout = sys.stdout
-    stdout.write(f"{terminal.STORE_CURSOR_POS} {self._cursor} "
-                 f"{self._title}{self._message}{terminal.CLEAR_END}"
-                 f"{terminal.RESTORE_CURSOR_POS}")
+    stdout.write(
+      f"{terminal.STORE_CURSOR_POS} {self._cursor} "
+      f"{self._title}{self._message}{terminal.CLEAR_END}"
+      f"{terminal.RESTORE_CURSOR_POS}"
+    )
     stdout.flush()

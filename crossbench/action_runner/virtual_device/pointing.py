@@ -9,8 +9,9 @@ import dataclasses
 import functools
 from typing import TYPE_CHECKING, ClassVar, Self, override
 
-from crossbench.action_runner.virtual_device.virtual_device_config import \
-    VirtualDeviceConfig
+from crossbench.action_runner.virtual_device.virtual_device_config import (
+  VirtualDeviceConfig,
+)
 from crossbench.parse import NumberParser
 
 if TYPE_CHECKING:
@@ -38,10 +39,11 @@ class PointingVirtualDeviceConfig(VirtualDeviceConfig, metaclass=abc.ABCMeta):
     parser.add_argument("width", type=NumberParser.positive_int, default=None)
     parser.add_argument("height", type=NumberParser.positive_int, default=None)
     parser.add_argument(
-        "polling_rate_hz",
-        aliases=("polling_rate", "rate", "frequency"),
-        type=NumberParser.positive_int,
-        default=cls.DEFAULT_POLLING_RATE_HZ)
+      "polling_rate_hz",
+      aliases=("polling_rate", "rate", "frequency"),
+      type=NumberParser.positive_int,
+      default=cls.DEFAULT_POLLING_RATE_HZ,
+    )
     return parser
 
   @override
@@ -53,11 +55,13 @@ class PointingVirtualDeviceConfig(VirtualDeviceConfig, metaclass=abc.ABCMeta):
       raise ValueError(f"Expected positive height, but got {self.height}")
     if (self.width is None) != (self.height is None):
       raise ValueError(
-          "Width and height must both be set or both unset, but got: "
-          f"width={self.width}, height={self.height}")
+        "Width and height must both be set or both unset, but got: "
+        f"width={self.width}, height={self.height}"
+      )
     if self.polling_rate_hz <= 0:
       raise ValueError(
-          f"Expected positive polling_rate_hz, but got {self.polling_rate_hz}")
+        f"Expected positive polling_rate_hz, but got {self.polling_rate_hz}"
+      )
 
   @override
   def to_json(self) -> JsonDict:

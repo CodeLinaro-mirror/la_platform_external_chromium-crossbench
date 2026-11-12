@@ -14,20 +14,25 @@ from crossbench.plt.ssh_port_manager import SshPortManager
 if TYPE_CHECKING:
   from crossbench import path as pth
   from crossbench.plt.port_manager import PortManager
-  from crossbench.plt.types import CmdArg, CmdArgs, ListCmdArgs, ProcessInfo, \
-      TupleCmdArgs
+  from crossbench.plt.types import (
+    CmdArg,
+    CmdArgs,
+    ListCmdArgs,
+    ProcessInfo,
+    TupleCmdArgs,
+  )
 
 
 class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
   SSH_OPTIONS: Final[TupleCmdArgs] = (
-      "-o",
-      "ControlMaster=auto",
-      "-o",
-      "ControlPath=/tmp/crossbench-ssh-%C",
-      "-o",
-      "ControlPersist=600",
-      "-o",
-      "CanonicalizeHostname=no",
+    "-o",
+    "ControlMaster=auto",
+    "-o",
+    "ControlPath=/tmp/crossbench-ssh-%C",
+    "-o",
+    "ControlPersist=600",
+    "-o",
+    "CanonicalizeHostname=no",
   )
 
   def _create_port_manager(self) -> PortManager:
@@ -39,11 +44,13 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
     return "linux"
 
   @override
-  def build_ssh_cmd(self,
-                    *args: CmdArg,
-                    shell: bool = False,
-                    env: Mapping[str, str] | None = None,
-                    cwd: pth.AnyPath | None = None) -> ListCmdArgs:
+  def build_ssh_cmd(
+    self,
+    *args: CmdArg,
+    shell: bool = False,
+    env: Mapping[str, str] | None = None,
+    cwd: pth.AnyPath | None = None,
+  ) -> ListCmdArgs:
     self.validate_shell_args(args, shell)
     ssh_cmd = self.build_shell_cmd(*args, shell=False, env=env, cwd=cwd)
     if not shell:
@@ -52,11 +59,11 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
 
   @override
   def build_shell_cmd(
-      self,
-      *args: CmdArg,
-      shell: bool = False,
-      env: Mapping[str, str] | None = None,
-      cwd: pth.AnyPath | None = None,
+    self,
+    *args: CmdArg,
+    shell: bool = False,
+    env: Mapping[str, str] | None = None,
+    cwd: pth.AnyPath | None = None,
   ) -> ListCmdArgs:
     if env:
       # TODO: support env with "export FOO=bar;" prefixes
@@ -67,12 +74,12 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
     self.validate_shell_args(args, shell)
     remote_cmd = str(args[0]) if shell else shlex.join(map(str, args))
     return [
-        "ssh",
-        *self.SSH_OPTIONS,
-        "-p",
-        f"{self._ssh_port}",
-        f"{self._ssh_user}@{self._host}",
-        remote_cmd,
+      "ssh",
+      *self.SSH_OPTIONS,
+      "-p",
+      f"{self._ssh_port}",
+      f"{self._ssh_user}@{self._host}",
+      remote_cmd,
     ]
 
   def processes(self, attrs: list[str] | None = None) -> list[ProcessInfo]:
@@ -93,10 +100,10 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
     self.mkdir(to_path.parent, parents=True, exist_ok=True)
 
     scp_cmd: ListCmdArgs = [
-        "scp",
-        *self.SSH_OPTIONS,
-        "-P",
-        f"{self._ssh_port}",
+      "scp",
+      *self.SSH_OPTIONS,
+      "-P",
+      f"{self._ssh_port}",
     ]
     if from_path.is_dir():
       scp_cmd.append("-r")
@@ -104,17 +111,18 @@ class LinuxSshPlatform(SshPlatformMixin, RemoteLinuxPlatform):
     self._host_platform.sh_stdout(*scp_cmd)
     return to_path
 
-  def pull(self, from_path: pth.AnyPath,
-           to_path: pth.LocalPath) -> pth.LocalPath:
+  def pull(
+    self, from_path: pth.AnyPath, to_path: pth.LocalPath
+  ) -> pth.LocalPath:
     self._host_platform.mkdir(to_path.parent, parents=True, exist_ok=True)
 
     scp_cmd: CmdArgs = [
-        "scp",
-        *self.SSH_OPTIONS,
-        "-P",
-        f"{self._ssh_port}",
-        f"{self._ssh_user}@{self._host}:{from_path}",
-        to_path,
+      "scp",
+      *self.SSH_OPTIONS,
+      "-P",
+      f"{self._ssh_port}",
+      f"{self._ssh_user}@{self._host}:{from_path}",
+      to_path,
     ]
     self._host_platform.sh_stdout(*scp_cmd)
     return to_path

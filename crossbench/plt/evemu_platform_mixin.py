@@ -15,13 +15,21 @@ from typing import TYPE_CHECKING, ClassVar, Final, Iterable, override
 from immutabledict import immutabledict
 
 from crossbench.action_runner.action.enums import ButtonClick
-from crossbench.action_runner.input_events import InputEvent, KeyEvent, \
-    MouseButtonEvent, MouseMoveEvent, TouchEvent, WaitEvent
+from crossbench.action_runner.input_events import (
+  InputEvent,
+  KeyEvent,
+  MouseButtonEvent,
+  MouseMoveEvent,
+  TouchEvent,
+  WaitEvent,
+)
 from crossbench.action_runner.virtual_device.all import DEFAULT_VIRTUAL_DEVICES
-from crossbench.action_runner.virtual_device.pointing import \
-    PointingVirtualDeviceConfig
-from crossbench.action_runner.virtual_device.virtual_device_type import \
-    VirtualDeviceType
+from crossbench.action_runner.virtual_device.pointing import (
+  PointingVirtualDeviceConfig,
+)
+from crossbench.action_runner.virtual_device.virtual_device_type import (
+  VirtualDeviceType,
+)
 from crossbench.plt.base import Platform
 
 if TYPE_CHECKING:
@@ -29,7 +37,8 @@ if TYPE_CHECKING:
 
 # Simplified mapping for common W3C to Linux EV_KEY codes
 # See linux/input-event-codes.h
-W3C_TO_LINUX: Final[immutabledict[str, int]] = immutabledict({
+W3C_TO_LINUX: Final[immutabledict[str, int]] = immutabledict(
+  {
     "KeyA": 30,
     "KeyB": 48,
     "KeyC": 46,
@@ -99,36 +108,38 @@ W3C_TO_LINUX: Final[immutabledict[str, int]] = immutabledict({
     "Delete": 111,
     "MetaLeft": 125,
     "MetaRight": 126,
-})
+  }
+)
 
 EV_SYN: Final[int] = 0x0000
 EV_KEY: Final[int] = 0x0001
 EV_ABS: Final[int] = 0x0003
 
 SYN_REPORT: Final[int] = 0x0000
-BTN_TOUCH: Final[int] = 0x014a
+BTN_TOUCH: Final[int] = 0x014A
 BTN_TOOL_MOUSE: Final[int] = 0x0146
 BTN_LEFT: Final[int] = 0x0110
 BTN_RIGHT: Final[int] = 0x0111
 BTN_MIDDLE: Final[int] = 0x0112
 
-BUTTON_CLICK_TO_LINUX: Final[immutabledict[ButtonClick, int]] = (
-    immutabledict({
-        ButtonClick.LEFT: BTN_LEFT,
-        ButtonClick.RIGHT: BTN_RIGHT,
-        ButtonClick.MIDDLE: BTN_MIDDLE,
-    }))
+BUTTON_CLICK_TO_LINUX: Final[immutabledict[ButtonClick, int]] = immutabledict(
+  {
+    ButtonClick.LEFT: BTN_LEFT,
+    ButtonClick.RIGHT: BTN_RIGHT,
+    ButtonClick.MIDDLE: BTN_MIDDLE,
+  }
+)
 
 ABS_X: Final[int] = 0x0000
 ABS_Y: Final[int] = 0x0001
 ABS_PRESSURE: Final[int] = 0x0018
-ABS_MT_SLOT: Final[int] = 0x002f
+ABS_MT_SLOT: Final[int] = 0x002F
 ABS_MT_TOUCH_MAJOR: Final[int] = 0x0030
 ABS_MT_TOUCH_MINOR: Final[int] = 0x0031
 ABS_MT_POSITION_X: Final[int] = 0x0035
 ABS_MT_POSITION_Y: Final[int] = 0x0036
 ABS_MT_TRACKING_ID: Final[int] = 0x0039
-ABS_MT_PRESSURE: Final[int] = 0x003a
+ABS_MT_PRESSURE: Final[int] = 0x003A
 
 # Note: Do not include '#' comment lines (such as '# EVEMU 1.2') in these
 # headers. ChromeOS's libutouch-evemu parses device descriptors via fscanf()
@@ -251,27 +262,30 @@ class EvemuPlatformMixin(Platform, metaclass=abc.ABCMeta):
     self._virtual_devices: Final[dict[str, VirtualDeviceState]] = {}
 
   @abc.abstractmethod
-  def _start_virtual_device(self, device_name: str,
-                            device_type: VirtualDeviceType,
-                            header: bytes) -> None:
+  def _start_virtual_device(
+    self, device_name: str, device_type: VirtualDeviceType, header: bytes
+  ) -> None:
     pass
 
   @override
   def setup_virtual_devices(
-      self, virtual_devices: tuple[VirtualDeviceConfig, ...]) -> None:
+    self, virtual_devices: tuple[VirtualDeviceConfig, ...]
+  ) -> None:
     for device_config in virtual_devices:
       if device_config.device_type == VirtualDeviceType.KEYBOARD:
         self._init_virtual_keyboard(device_config.name)
       elif device_config.device_type == VirtualDeviceType.TOUCHSCREEN:
         assert isinstance(device_config, PointingVirtualDeviceConfig)
-        self._init_pointing_virtual_device(device_config,
-                                           _EVEMU_TOUCHSCREEN_HEADER)
+        self._init_pointing_virtual_device(
+          device_config, _EVEMU_TOUCHSCREEN_HEADER
+        )
       elif device_config.device_type == VirtualDeviceType.MOUSE:
         assert isinstance(device_config, PointingVirtualDeviceConfig)
         self._init_pointing_virtual_device(device_config, _EVEMU_MOUSE_HEADER)
       else:
         raise ValueError(
-            f"Unsupported virtual device type: {device_config.device_type}")
+          f"Unsupported virtual device type: {device_config.device_type}"
+        )
     super().setup_virtual_devices(virtual_devices)
 
   def _stop_process(self, proc: subprocess.Popen) -> None:
@@ -297,45 +311,57 @@ class EvemuPlatformMixin(Platform, metaclass=abc.ABCMeta):
     state = self._virtual_devices.get(device_name)
     return state is not None and state.proc.poll() is None
 
-  def _resolve_dimensions(self, width: int | None,
-                          height: int | None) -> tuple[int, int]:
+  def _resolve_dimensions(
+    self, width: int | None, height: int | None
+  ) -> tuple[int, int]:
     if width is not None and height is not None:
       return width, height
     resolution = self.display_resolution()
     return (
-        width if width is not None else resolution.width,
-        height if height is not None else resolution.height,
+      width if width is not None else resolution.width,
+      height if height is not None else resolution.height,
     )
 
   def _init_virtual_keyboard(self, device_name: str) -> None:
     if self._is_device_running(device_name):
       return
-    self._start_virtual_device(device_name, VirtualDeviceType.KEYBOARD,
-                               _EVEMU_KEYBOARD_HEADER)
+    self._start_virtual_device(
+      device_name, VirtualDeviceType.KEYBOARD, _EVEMU_KEYBOARD_HEADER
+    )
 
-  def _init_pointing_virtual_device(self,
-                                    device_config: PointingVirtualDeviceConfig,
-                                    header_template: str) -> None:
+  def _init_pointing_virtual_device(
+    self, device_config: PointingVirtualDeviceConfig, header_template: str
+  ) -> None:
     device_name = device_config.name
     if self._is_device_running(device_name):
       return
-    width, height = self._resolve_dimensions(device_config.width,
-                                             device_config.height)
+    width, height = self._resolve_dimensions(
+      device_config.width, device_config.height
+    )
     header = header_template.format(
-        name=device_name, max_x=width, max_y=height).encode("utf-8")
-    logging.debug("Initializing virtual %s '%s' (%dx%d)",
-                  device_config.device_type.value, device_name, width, height)
+      name=device_name, max_x=width, max_y=height
+    ).encode("utf-8")
+    logging.debug(
+      "Initializing virtual %s '%s' (%dx%d)",
+      device_config.device_type.value,
+      device_name,
+      width,
+      height,
+    )
     self._start_virtual_device(device_name, device_config.device_type, header)
 
   def _execute_evemu_script(self, device_name: str, script: str) -> None:
     state = self._virtual_devices.get(device_name)
     if state is None:
-      raise RuntimeError(f"Virtual device '{device_name}' was not initialized. "
-                         "Call setup_virtual_devices() first.")
+      raise RuntimeError(
+        f"Virtual device '{device_name}' was not initialized. "
+        "Call setup_virtual_devices() first."
+      )
     if (exit_code := state.proc.poll()) is not None:
       raise RuntimeError(
-          f"Virtual device '{device_name}' process terminated unexpectedly "
-          f"with exit code {exit_code}.")
+        f"Virtual device '{device_name}' process terminated unexpectedly "
+        f"with exit code {exit_code}."
+      )
     logging.debug("EVEMU [%s]:\n%s", device_name, script)
     assert state.proc.stdin is not None
     try:
@@ -344,8 +370,9 @@ class EvemuPlatformMixin(Platform, metaclass=abc.ABCMeta):
     except (BrokenPipeError, OSError) as e:
       exit_code = state.proc.poll()
       raise RuntimeError(
-          f"Failed to write evemu script to virtual device '{device_name}' "
-          f"(exit code: {exit_code}):\n{script}") from e
+        f"Failed to write evemu script to virtual device '{device_name}' "
+        f"(exit code: {exit_code}):\n{script}"
+      ) from e
 
   def _get_or_init_virtual_device(self, device_name: str) -> VirtualDeviceState:
     if state := self._virtual_devices.get(device_name):
@@ -353,16 +380,21 @@ class EvemuPlatformMixin(Platform, metaclass=abc.ABCMeta):
     for default_device in DEFAULT_VIRTUAL_DEVICES.values():
       if default_device.name == device_name:
         logging.warning(
-            "Lazily initializing virtual device '%s' during test execution. "
-            "Consider defining virtual devices in ActionRunnerConfig so they "
-            "are initialized during test setup.", device_name)
+          "Lazily initializing virtual device '%s' during test execution. "
+          "Consider defining virtual devices in ActionRunnerConfig so they "
+          "are initialized during test setup.",
+          device_name,
+        )
         self.setup_virtual_devices((default_device,))
         return self._virtual_devices[device_name]
-    raise RuntimeError(f"Virtual device '{device_name}' was not initialized. "
-                       "Call setup_virtual_devices() first.")
+    raise RuntimeError(
+      f"Virtual device '{device_name}' was not initialized. "
+      "Call setup_virtual_devices() first."
+    )
 
-  def inject_input_events(self, device_name: str,
-                          events: Iterable[InputEvent]) -> None:
+  def inject_input_events(
+    self, device_name: str, events: Iterable[InputEvent]
+  ) -> None:
     """Injects abstract input events by translating them into an evemu script.
 
     Blocks until all events are processed. Applies a lead buffer on consecutive
@@ -410,9 +442,9 @@ class EvemuPlatformMixin(Platform, metaclass=abc.ABCMeta):
     self.sleep(duration + lead_buffer + INPUT_DRAIN_BUFFER)
 
   def _generate_evemu_events_string(
-      self,
-      events: Iterable[InputEvent],
-      start_time: dt.timedelta = dt.timedelta(),
+    self,
+    events: Iterable[InputEvent],
+    start_time: dt.timedelta = dt.timedelta(),
   ) -> tuple[str, dt.timedelta]:
     lines: list[str] = []
     current_time = start_time
@@ -439,13 +471,20 @@ class EvemuPlatformMixin(Platform, metaclass=abc.ABCMeta):
     usec = current_time.microseconds
     return f"{sec}.{usec:06d}"
 
-  def _add_line(self, lines: list[str], current_time: dt.timedelta,
-                event_type: int, code: int, value: int) -> None:
+  def _add_line(
+    self,
+    lines: list[str],
+    current_time: dt.timedelta,
+    event_type: int,
+    code: int,
+    value: int,
+  ) -> None:
     timestamp = self._format_evemu_timestamp(current_time)
     lines.append(f"E: {timestamp} {event_type:04x} {code:04x} {value:04d}")
 
-  def _generate_key_event(self, lines: list[str], event: KeyEvent,
-                          current_time: dt.timedelta) -> None:
+  def _generate_key_event(
+    self, lines: list[str], event: KeyEvent, current_time: dt.timedelta
+  ) -> None:
     linux_code = self._SUPPORTED_KEY_CODES.get(event.key_code)
     if linux_code is None:
       raise ValueError(f"Key code '{event.key_code}' is not supported.")
@@ -454,16 +493,20 @@ class EvemuPlatformMixin(Platform, metaclass=abc.ABCMeta):
     self._add_line(lines, current_time, EV_KEY, linux_code, value)
     self._add_line(lines, current_time, EV_SYN, SYN_REPORT, 0)
 
-  def _generate_touch_event(self, lines: list[str], event: TouchEvent,
-                            current_time: dt.timedelta) -> None:
+  def _generate_touch_event(
+    self, lines: list[str], event: TouchEvent, current_time: dt.timedelta
+  ) -> None:
     if event.is_down:
       self._add_line(lines, current_time, EV_ABS, ABS_MT_SLOT, event.slot)
-      self._add_line(lines, current_time, EV_ABS, ABS_MT_TRACKING_ID,
-                     event.slot)
-      self._add_line(lines, current_time, EV_ABS, ABS_MT_POSITION_X,
-                     event.position.x)
-      self._add_line(lines, current_time, EV_ABS, ABS_MT_POSITION_Y,
-                     event.position.y)
+      self._add_line(
+        lines, current_time, EV_ABS, ABS_MT_TRACKING_ID, event.slot
+      )
+      self._add_line(
+        lines, current_time, EV_ABS, ABS_MT_POSITION_X, event.position.x
+      )
+      self._add_line(
+        lines, current_time, EV_ABS, ABS_MT_POSITION_Y, event.position.y
+      )
       self._add_line(lines, current_time, EV_ABS, ABS_MT_PRESSURE, 50)
       self._add_line(lines, current_time, EV_ABS, ABS_MT_TOUCH_MAJOR, 5)
       self._add_line(lines, current_time, EV_ABS, ABS_MT_TOUCH_MINOR, 5)
@@ -478,9 +521,9 @@ class EvemuPlatformMixin(Platform, metaclass=abc.ABCMeta):
       self._add_line(lines, current_time, EV_KEY, BTN_TOUCH, 0)
       self._add_line(lines, current_time, EV_SYN, SYN_REPORT, 0)
 
-  def _generate_mouse_button_event(self, lines: list[str],
-                                   event: MouseButtonEvent,
-                                   current_time: dt.timedelta) -> None:
+  def _generate_mouse_button_event(
+    self, lines: list[str], event: MouseButtonEvent, current_time: dt.timedelta
+  ) -> None:
     linux_code = BUTTON_CLICK_TO_LINUX.get(event.button)
     if linux_code is None:
       raise ValueError(f"Button click '{event.button}' is not supported.")
@@ -489,14 +532,17 @@ class EvemuPlatformMixin(Platform, metaclass=abc.ABCMeta):
     self._add_line(lines, current_time, EV_KEY, linux_code, value)
     self._add_line(lines, current_time, EV_SYN, SYN_REPORT, 0)
 
-  def _generate_mouse_move_event(self, lines: list[str], event: MouseMoveEvent,
-                                 current_time: dt.timedelta) -> None:
+  def _generate_mouse_move_event(
+    self, lines: list[str], event: MouseMoveEvent, current_time: dt.timedelta
+  ) -> None:
     self._add_line(lines, current_time, EV_KEY, BTN_TOOL_MOUSE, 1)
     self._add_line(lines, current_time, EV_KEY, BTN_TOUCH, 1)
     self._add_line(lines, current_time, EV_ABS, ABS_MT_SLOT, 0)
     self._add_line(lines, current_time, EV_ABS, ABS_MT_TRACKING_ID, 0)
-    self._add_line(lines, current_time, EV_ABS, ABS_MT_POSITION_X,
-                   event.position.x)
-    self._add_line(lines, current_time, EV_ABS, ABS_MT_POSITION_Y,
-                   event.position.y)
+    self._add_line(
+      lines, current_time, EV_ABS, ABS_MT_POSITION_X, event.position.x
+    )
+    self._add_line(
+      lines, current_time, EV_ABS, ABS_MT_POSITION_Y, event.position.y
+    )
     self._add_line(lines, current_time, EV_SYN, SYN_REPORT, 0)

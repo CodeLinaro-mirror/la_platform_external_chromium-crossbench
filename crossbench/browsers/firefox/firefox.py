@@ -20,30 +20,32 @@ if TYPE_CHECKING:
 
 
 class Firefox(Browser):
-
   @classmethod
   def default_path(cls, platform: plt.Platform) -> pth.AnyPath:
     return platform.search_app_or_executable(
-        "Firefox",
-        macos=["Firefox.app"],
-        linux=["firefox"],
-        win=["Mozilla Firefox/firefox.exe"])
+      "Firefox",
+      macos=["Firefox.app"],
+      linux=["firefox"],
+      win=["Mozilla Firefox/firefox.exe"],
+    )
 
   @classmethod
   def developer_edition_path(cls, platform: plt.Platform) -> pth.AnyPath:
     return platform.search_app_or_executable(
-        "Firefox Developer Edition",
-        macos=["Firefox Developer Edition.app"],
-        linux=["firefox-developer-edition"],
-        win=["Firefox Developer Edition/firefox.exe"])
+      "Firefox Developer Edition",
+      macos=["Firefox Developer Edition.app"],
+      linux=["firefox-developer-edition"],
+      win=["Firefox Developer Edition/firefox.exe"],
+    )
 
   @classmethod
   def nightly_path(cls, platform: plt.Platform) -> pth.AnyPath:
     return platform.search_app_or_executable(
-        "Firefox Nightly",
-        macos=["Firefox Nightly.app"],
-        linux=["firefox-nightly", "firefox-trunk"],
-        win=["Firefox Nightly/firefox.exe"])
+      "Firefox Nightly",
+      macos=["Firefox Nightly.app"],
+      linux=["firefox-nightly", "firefox-trunk"],
+      win=["Firefox Nightly/firefox.exe"],
+    )
 
   @classmethod
   @override
@@ -53,9 +55,11 @@ class Firefox(Browser):
   @classmethod
   @override
   def attributes(cls) -> BrowserAttributes:
-    return (super().attributes()
-            | BrowserAttributes.FIREFOX
-            | BrowserAttributes.DESKTOP)
+    return (
+      super().attributes()
+      | BrowserAttributes.FIREFOX
+      | BrowserAttributes.DESKTOP
+    )
 
   @override
   def _setup_cache_dir(self) -> pth.AnyPath | None:
@@ -69,7 +73,8 @@ class Firefox(Browser):
 
   @override
   def _get_browser_flags_for_session(
-      self, session: BrowserSessionRunGroup) -> tuple[str, ...]:
+    self, session: BrowserSessionRunGroup
+  ) -> tuple[str, ...]:
     flags_copy = self.flags.copy()
     flags_copy.update(session.extra_flags)
     flags_copy.update(self.network.extra_flags(self.attributes()))
@@ -88,17 +93,19 @@ class Firefox(Browser):
         new_width = int(flags["--width"])
         update_size = True
       else:
-        assert self.viewport.width == int(
-            flags["--width"]), ("Mismatching viewport.width and --width flag: "
-                                f"{self.viewport.width} != {flags['--width']}")
+        assert self.viewport.width == int(flags["--width"]), (
+          "Mismatching viewport.width and --width flag: "
+          f"{self.viewport.width} != {flags['--width']}"
+        )
     if "--height" in flags:
       if self.viewport.is_default:
         new_height = int(flags["--height"])
         update_size = True
       else:
         assert self.viewport.height == int(flags["--height"]), (
-            "Mismatching viewport.height and --height flag: "
-            f"{self.viewport.height} != {flags['--height']}")
+          "Mismatching viewport.height and --height flag: "
+          f"{self.viewport.height} != {flags['--height']}"
+        )
     if update_size:
       assert self.viewport.is_default, "Expected default viewport"
       self.viewport = Viewport(new_width, new_height)
@@ -106,16 +113,23 @@ class Firefox(Browser):
       flags["--width"] = str(self.viewport.width)
       flags["--height"] = str(self.viewport.height)
 
-    self._sync_viewport_flag(flags, "--kiosk", self.viewport.is_fullscreen,
-                             Viewport.FULLSCREEN)
-    self._sync_viewport_flag(flags, "--headless", self.viewport.is_headless,
-                             Viewport.HEADLESS)
+    self._sync_viewport_flag(
+      flags, "--kiosk", self.viewport.is_fullscreen, Viewport.FULLSCREEN
+    )
+    self._sync_viewport_flag(
+      flags, "--headless", self.viewport.is_headless, Viewport.HEADLESS
+    )
 
     if self.viewport.has_size and not self.viewport.is_default:
-      if not isinstance(self, WebDriverBrowser) and self.viewport.size != (0,
-                                                                           0):
-        raise ValueError(f"Browser {self} cannot handle viewport position: "
-                         f"{self.viewport.position}")
+      if not isinstance(self, WebDriverBrowser) and self.viewport.size != (
+        0,
+        0,
+      ):
+        raise ValueError(
+          f"Browser {self} cannot handle viewport position: "
+          f"{self.viewport.position}"
+        )
     elif not isinstance(self, WebDriverBrowser):
       raise ValueError(
-          f"Browser {self} cannot handle viewport mode: {self.viewport}")
+        f"Browser {self} cannot handle viewport mode: {self.viewport}"
+      )

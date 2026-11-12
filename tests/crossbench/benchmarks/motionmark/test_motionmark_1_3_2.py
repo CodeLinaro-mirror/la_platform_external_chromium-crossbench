@@ -6,18 +6,21 @@ from __future__ import annotations
 
 from typing import override
 
-from crossbench.benchmarks.motionmark.motionmark_1_3_2 import \
-    MotionMark132Benchmark, MotionMark132Probe, MotionMark132ProbeContext, \
-    MotionMark132Story
+from crossbench.benchmarks.motionmark.motionmark_1_3_2 import (
+  MotionMark132Benchmark,
+  MotionMark132Probe,
+  MotionMark132ProbeContext,
+  MotionMark132Story,
+)
 from crossbench.env.runner_env import EnvConfig, ValidationMode
 from crossbench.runner.runner import Runner
 from tests import test_helper
-from tests.crossbench.benchmarks.motionmark.helper import \
-    MotionMark1BaseTestCase
+from tests.crossbench.benchmarks.motionmark.helper import (
+  MotionMark1BaseTestCase,
+)
 
 
 class MotionMark132TestCase(MotionMark1BaseTestCase):
-
   @property
   @override
   def benchmark_cls(self):
@@ -43,14 +46,15 @@ class MotionMark132TestCase(MotionMark1BaseTestCase):
     stories = self.story_cls.from_names(["Multiply"])
     benchmark = self.benchmark_cls(stories)
     runner = Runner(
-        self.out_dir,
-        self.browsers,
-        benchmark,
-        env_config=EnvConfig(),
-        env_validation_mode=ValidationMode.SKIP,
-        platform=self.platform,
-        throw=True,
-        in_memory_result_db=True)
+      self.out_dir,
+      self.browsers,
+      benchmark,
+      env_config=EnvConfig(),
+      env_validation_mode=ValidationMode.SKIP,
+      platform=self.platform,
+      throw=True,
+      in_memory_result_db=True,
+    )
     with self.assertRaises(ValueError) as cm:
       benchmark.validate_url(runner)
     self.assertIn("is not officially hosted yet", str(cm.exception))

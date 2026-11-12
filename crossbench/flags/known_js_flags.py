@@ -10,7 +10,8 @@ from typing import Final
 # - Run `d8 --print-flag-value`
 # - Strip "--no-" prefixes
 # - Sort list
-KNOWN_JS_FLAGS: Final[frozenset[str]] = frozenset({
+KNOWN_JS_FLAGS: Final[frozenset[str]] = frozenset(
+  {
     "--abort-on-bad-builtin-profile-data",
     "--abort-on-contradictory-flags",
     "--abort-on-far-code-range",
@@ -791,4 +792,5 @@ KNOWN_JS_FLAGS: Final[frozenset[str]] = frozenset({
     "--wasm-wrapper-tiering-budget",
     "--win64-unwinding-info",
     "--zone-stats-tolerance",
-})
+  }
+)

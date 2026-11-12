@@ -9,6 +9,7 @@ import functools
 import pathlib
 import platform
 import shutil
+import subprocess
 import sys
 from typing import TYPE_CHECKING, Final
 
@@ -23,29 +24,60 @@ USE_PYTHON3: Final[bool] = True
 SOURCE_SKIP_RE: Final[tuple[str, ...]] = (r"^third_party/.*",)
 
 POETRY_FILES: Final[frozenset[str]] = frozenset(
-    ("pyproject.toml", "poetry.lock"))
+  ("pyproject.toml", "poetry.lock")
+)
 
 
 def CheckChange(
-    input_api: InputApi,
-    output_api: OutputApi,
-    on_commit: bool,
+  input_api: InputApi,
+  output_api: OutputApi,
+  on_commit: bool,
 ) -> list[object]:
   local_path = input_api.PresubmitLocalPath()
   if local_path not in sys.path:
     sys.path.insert(0, local_path)
 
+  root_path = pathlib.Path(local_path)
+
+  # ---------------------------------------------------------------------------
+  # Ruff (MUST BE THE FIRST CHECK BECAUSE IT MODIFIES FILES WITH --fix):
+  # ---------------------------------------------------------------------------
+  # Ruff is fast, let's run it on all sources, excludes are configured
+  # separately in pyproject.toml. We explicitly exclude untracked files.
+  ruff_cmd = [
+    input_api.python3_executable,
+    "-m",
+    "ruff",
+    "check",
+    "--fix",
+    "--exit-non-zero-on-fix",
+    str(root_path),
+  ]
+  for untracked_file in GetUntrackedFiles(input_api):
+    if untracked_file.endswith(".py"):
+      ruff_cmd.extend(["--extend-exclude", untracked_file])
+
+  proc = subprocess.run(ruff_cmd, check=False, capture_output=True, text=True)
+  if proc.returncode != 0:
+    return [
+      output_api.PresubmitError(
+        "Ruff check failed. Some files may have been auto-fixed, "
+        f"commit them:\n{proc.stdout}\n{proc.stderr}"
+      )
+    ]
+
   tests: list[object] = []
   results: list[object] = []
   testing_env = dict(input_api.environ)
-  root_path = pathlib.Path(local_path)
   crossbench_test_path = root_path / "tests" / "crossbench"
   testing_env["PYTHONPATH"] = input_api.os_path.pathsep.join(
-      map(str, [root_path, crossbench_test_path]))
+    map(str, [root_path, crossbench_test_path])
+  )
 
   modified_py_files: list[str] = ModifiedFiles(input_api, on_commit)
   modified_hjson_files: list[str] = ModifiedFiles(
-      input_api, False, filename_pattern="*.hjson")
+    input_api, False, filename_pattern="*.hjson"
+  )
 
   # ---------------------------------------------------------------------------
   # VPython Spec:
@@ -57,10 +89,10 @@ def CheckChange(
   # PanProject Checks:
   # ---------------------------------------------------------------------------
   results += input_api.canned_checks.PanProjectChecks(
-      input_api,
-      output_api,
-      excluded_paths=SOURCE_SKIP_RE,
-      owners_check=False,
+    input_api,
+    output_api,
+    excluded_paths=SOURCE_SKIP_RE,
+    owners_check=False,
   )
 
   # ---------------------------------------------------------------------------
@@ -70,108 +102,91 @@ def CheckChange(
   # so skip the check (and the missing-poetry warning) for all other CLs.
   poetry_files_affected: bool = PoetryFilesAffected(input_api)
   if poetry_files_affected and shutil.which(
-      "poetry", path=input_api.environ.get("PATH")):
+    "poetry", path=input_api.environ.get("PATH")
+  ):
     tests.append(
-        input_api.Command(
-            name="poetry check --lock",
-            cmd=[
-                "poetry",
-                "check",
-                "--no-interaction",
-                "--lock",
-                "-C",
-                str(root_path),
-            ],
-            message=output_api.PresubmitError,
-            kwargs={},
-            python3=True,
-        ))
+      input_api.Command(
+        name="poetry check --lock",
+        cmd=[
+          "poetry",
+          "check",
+          "--no-interaction",
+          "--lock",
+          "-C",
+          str(root_path),
+        ],
+        message=output_api.PresubmitError,
+        kwargs={},
+        python3=True,
+      )
+    )
   elif poetry_files_affected:
     results.append(
-        output_api.PresubmitPromptWarning(
-            "poetry not found in PATH, skipping lock file validation."))
-
-  # ---------------------------------------------------------------------------
-  # Ruff:
-  # ---------------------------------------------------------------------------
-  # Ruff is fast, let's run it on all sources, excludes are configured
-  # separately in pyproject.toml. We explicitly exclude untracked files.
-  ruff_cmd = [
-      input_api.python3_executable,
-      "-m",
-      "ruff",
-      "check",
-      str(root_path),
-  ]
-  for untracked_file in GetUntrackedFiles(input_api):
-    if untracked_file.endswith(".py"):
-      ruff_cmd.extend(["--extend-exclude", untracked_file])
-
-  tests.append(
-      input_api.Command(
-          name="ruff",
-          cmd=ruff_cmd,
-          message=output_api.PresubmitError,
-          kwargs={},
-          python3=True,
-      ))
+      output_api.PresubmitPromptWarning(
+        "poetry not found in PATH, skipping lock file validation."
+      )
+    )
 
   # ---------------------------------------------------------------------------
   # Pyrefly:
   # ---------------------------------------------------------------------------
-  typer_files_to_check: list[str] = TyperPaths(input_api, on_commit,
-                                               modified_py_files)
-  if typer_files_to_check and (platform.system() != "Linux" or
-                               platform.machine() == "x86_64"):
+  typer_files_to_check: list[str] = TyperPaths(
+    input_api, on_commit, modified_py_files
+  )
+  if typer_files_to_check and (
+    platform.system() != "Linux" or platform.machine() == "x86_64"
+  ):
     from tools.presubmit.pyrefly_check import ParsePyreflyOutput
-    tests.append(
-        input_api.Command(
-            name="pyrefly",
-            cmd=[
-                input_api.python3_executable,
-                "-m",
-                "pyrefly",
-                "check",
-                f"--python-interpreter-path={input_api.python3_executable}",
-                "--output-format=json",
-                "-c",
-                str(root_path / "pyproject.toml"),
-            ] + typer_files_to_check,
-            message=output_api.PresubmitError,
-            kwargs={},
-            python3=True,
-            output_parser=functools.partial(ParsePyreflyOutput, output_api,
-                                            root_path),
-        ))
 
-  # ---------------------------------------------------------------------------
-  # isort:
-  # ---------------------------------------------------------------------------
-  from tools.presubmit.import_sorter import SortImports
-  results += SortImports(input_api, output_api, modified_py_files)
+    tests.append(
+      input_api.Command(
+        name="pyrefly",
+        cmd=[
+          input_api.python3_executable,
+          "-m",
+          "pyrefly",
+          "check",
+          f"--python-interpreter-path={input_api.python3_executable}",
+          "--output-format=json",
+          "-c",
+          str(root_path / "pyproject.toml"),
+        ]
+        + typer_files_to_check,
+        message=output_api.PresubmitError,
+        kwargs={},
+        python3=True,
+        output_parser=functools.partial(
+          ParsePyreflyOutput, output_api, root_path
+        ),
+      )
+    )
 
   # ---------------------------------------------------------------------------
   # js:
   # ---------------------------------------------------------------------------
   results += input_api.canned_checks.CheckPatchFormatted(
-      input_api, output_api, check_js=True)
+    input_api, output_api, check_js=True
+  )
 
   # ---------------------------------------------------------------------------
   # hjson:
   # ---------------------------------------------------------------------------
   from tools.presubmit.hjson_formatter import FormatHjsonFiles
+
   results += FormatHjsonFiles(input_api, output_api, modified_hjson_files)
 
   # ---------------------------------------------------------------------------
   # AST Checks (Banned builtins, Constants marked Final):
   # ---------------------------------------------------------------------------
   from tools.presubmit.ast_checks import CombinedAstVisitor
+
   results += CombinedAstVisitor.check(input_api, output_api)
 
   # ---------------------------------------------------------------------------
   # Top-level files:
   # ---------------------------------------------------------------------------
   from tools.presubmit.toplevel_files import CheckNoNewToplevelFiles
+
   results += CheckNoNewToplevelFiles(input_api, output_api)
 
   # ---------------------------------------------------------------------------
@@ -182,8 +197,9 @@ def CheckChange(
   # ---------------------------------------------------------------------------
   # Unittest:
   # ---------------------------------------------------------------------------
-  if pytest_cmd := GetPytestCommand(input_api, output_api, on_commit,
-                                    crossbench_test_path, testing_env):
+  if pytest_cmd := GetPytestCommand(
+    input_api, output_api, on_commit, crossbench_test_path, testing_env
+  ):
     tests.append(pytest_cmd)
 
   # ---------------------------------------------------------------------------
@@ -197,13 +213,14 @@ def CheckChange(
 
 
 def ModifiedFiles(
-    input_api: InputApi,
-    on_commit: bool,
-    filename_pattern: str = "*.py",
+  input_api: InputApi,
+  on_commit: bool,
+  filename_pattern: str = "*.py",
 ) -> list[str]:
   if on_commit:
     return []
   from tools.presubmit.common import PresubmitCheck
+
   files_to_check: list[str] = []
   for file in input_api.AffectedFiles(include_deletes=False):
     file_path: str = file.LocalPath()
@@ -219,24 +236,26 @@ def ModifiedFiles(
 
 def PoetryFilesAffected(input_api: InputApi) -> bool:
   return any(
-      file.LocalPath() in POETRY_FILES for file in input_api.AffectedFiles())
+    file.LocalPath() in POETRY_FILES for file in input_api.AffectedFiles()
+  )
 
 
 def GetUntrackedFiles(input_api: InputApi) -> list[str]:
   try:
     return input_api.subprocess.check_output(
-        ["git", "ls-files", "--others", "--exclude-standard"],
-        encoding="utf-8").splitlines()
+      ["git", "ls-files", "--others", "--exclude-standard"], encoding="utf-8"
+    ).splitlines()
   except input_api.subprocess.CalledProcessError:
     return []
 
 
 def TyperPaths(
-    input_api: InputApi,
-    on_commit: bool,
-    modified_py_files: Sequence[str],
+  input_api: InputApi,
+  on_commit: bool,
+  modified_py_files: Sequence[str],
 ) -> list[str]:
   from tools.presubmit.common import PresubmitCheck
+
   root_path = pathlib.Path(input_api.PresubmitLocalPath())
   typer_files_to_check = {"PRESUBMIT.py"}
   crossbench_path = root_path / "crossbench"
@@ -255,8 +274,8 @@ def TyperPaths(
 
 
 def TestFilePatternsToCheck(
-    on_commit: bool,
-    crossbench_test_path: pathlib.Path,
+  on_commit: bool,
+  crossbench_test_path: pathlib.Path,
 ) -> tuple[pathlib.Path, str]:
   # Only run test_cli to speed up the presubmit checks
   if on_commit:
@@ -270,44 +289,47 @@ def TestFilePatternsToCheck(
 
 
 def GetPytestCommand(
-    input_api: InputApi,
-    output_api: OutputApi,
-    on_commit: bool,
-    crossbench_test_path: pathlib.Path,
-    testing_env: dict[str, str],
+  input_api: InputApi,
+  output_api: OutputApi,
+  on_commit: bool,
+  crossbench_test_path: pathlib.Path,
+  testing_env: dict[str, str],
 ) -> CommandData | None:
-  test_dir, file_pattern = TestFilePatternsToCheck(on_commit,
-                                                   crossbench_test_path)
+  test_dir, file_pattern = TestFilePatternsToCheck(
+    on_commit, crossbench_test_path
+  )
   pytest_cmd = [
-      input_api.python3_executable,
-      "-m",
-      "pytest",
-      "-n=auto",
-      "-q",
+    input_api.python3_executable,
+    "-m",
+    "pytest",
+    "-n=auto",
+    "-q",
   ]
   if on_commit:
     pytest_cmd.append(str(test_dir))
   else:
     unit_tests = [
-        str(path) for path in sorted(test_dir.glob(f"**/{file_pattern}"))
+      str(path) for path in sorted(test_dir.glob(f"**/{file_pattern}"))
     ]
     if not unit_tests:
       return None
     pytest_cmd.extend(unit_tests)
 
   return input_api.Command(
-      name="pytest",
-      cmd=pytest_cmd,
-      message=output_api.PresubmitError,
-      kwargs={"env": testing_env},
+    name="pytest",
+    cmd=pytest_cmd,
+    message=output_api.PresubmitError,
+    kwargs={"env": testing_env},
   )
 
 
-def CheckChangeOnUpload(input_api: InputApi,
-                        output_api: OutputApi) -> list[object]:
+def CheckChangeOnUpload(
+  input_api: InputApi, output_api: OutputApi
+) -> list[object]:
   return CheckChange(input_api, output_api, on_commit=False)
 
 
-def CheckChangeOnCommit(input_api: InputApi,
-                        output_api: OutputApi) -> list[object]:
+def CheckChangeOnCommit(
+  input_api: InputApi, output_api: OutputApi
+) -> list[object]:
   return CheckChange(input_api, output_api, on_commit=True)

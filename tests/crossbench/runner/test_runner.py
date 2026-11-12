@@ -14,8 +14,11 @@ from unittest import mock
 
 from crossbench.browsers.settings import Settings
 from crossbench.browsers.webdriver import RemoteWebDriver
-from crossbench.device_config import DeviceConfig, DeviceConfigValueError, \
-    RequiredDeviceConfigMode
+from crossbench.device_config import (
+  DeviceConfig,
+  DeviceConfigValueError,
+  RequiredDeviceConfigMode,
+)
 from crossbench.exception import MultiException
 from crossbench.flags.base import Flags
 from crossbench.helper import input_helper
@@ -24,20 +27,32 @@ from crossbench.network.live import LiveNetwork
 from crossbench.probes import all as all_probes
 from crossbench.probes.js import JSProbe
 from crossbench.probes.probe import ProbeIncompatibleBrowser, ProbePriority
-from crossbench.probes.trace_processor.trace_processor import \
-    TraceProcessorProbe
+from crossbench.probes.trace_processor.trace_processor import (
+  TraceProcessorProbe,
+)
 from crossbench.runner.groups.session import BrowserSessionRunGroup
 from crossbench.runner.groups.thread import RunThreadGroup
 from crossbench.runner.pause_controller import ResumeMode
-from crossbench.runner.runner import CacheTemperature, Runner, \
-    RunnerException, ThreadMode
+from crossbench.runner.runner import (
+  CacheTemperature,
+  Runner,
+  RunnerException,
+  ThreadMode,
+)
 from tests import test_helper
 from tests.crossbench.browsers.test_webdriver import FakeWebDriver
 from tests.crossbench.mock_browser import MockChromeDev
 from tests.crossbench.mock_helper import MockBenchmark
 from tests.crossbench.mock_helper import MockPlatform as FullMockPlatform
-from tests.crossbench.runner.helper import BaseRunnerTestCase, MockBrowser, \
-    MockPlatform, MockProbe, MockProbeContext, MockRun, MockRunner
+from tests.crossbench.runner.helper import (
+  BaseRunnerTestCase,
+  MockBrowser,
+  MockPlatform,
+  MockProbe,
+  MockProbeContext,
+  MockRun,
+  MockRunner,
+)
 
 if TYPE_CHECKING:
   from crossbench.browsers.attributes import BrowserAttributes
@@ -50,17 +65,17 @@ if TYPE_CHECKING:
 
 # Skip strict type checks for better mocking
 class TestThreadModeTestCase(unittest.TestCase):
-
   def create_session(self, browser, index) -> BrowserSessionRunGroup:
     return BrowserSessionRunGroup(
-        self.env,
-        self.probes,
-        browser,
-        Flags(),
-        index,
-        self.root_dir,
-        create_symlinks=True,
-        throw=True)
+      self.env,
+      self.probes,
+      browser,
+      Flags(),
+      index,
+      self.root_dir,
+      create_symlinks=True,
+      throw=True,
+    )
 
   @override
   def setUp(self) -> None:
@@ -75,14 +90,14 @@ class TestThreadModeTestCase(unittest.TestCase):
     self.env = self.runner.env
     self.probes: list[Probe] = []
     self.runs: list[Run] = [
-        MockRun(self.runner, self.create_session(self.browser_a_1, 1), "run 1"),
-        MockRun(self.runner, self.create_session(self.browser_a_2, 2), "run 2"),
-        MockRun(self.runner, self.create_session(self.browser_a_1, 3), "run 3"),
-        MockRun(self.runner, self.create_session(self.browser_a_2, 4), "run 4"),
-        MockRun(self.runner, self.create_session(self.browser_b_1, 5), "run 5"),
-        MockRun(self.runner, self.create_session(self.browser_b_2, 6), "run 6"),
-        MockRun(self.runner, self.create_session(self.browser_b_1, 7), "run 7"),
-        MockRun(self.runner, self.create_session(self.browser_b_2, 8), "run 8"),
+      MockRun(self.runner, self.create_session(self.browser_a_1, 1), "run 1"),
+      MockRun(self.runner, self.create_session(self.browser_a_2, 2), "run 2"),
+      MockRun(self.runner, self.create_session(self.browser_a_1, 3), "run 3"),
+      MockRun(self.runner, self.create_session(self.browser_a_2, 4), "run 4"),
+      MockRun(self.runner, self.create_session(self.browser_b_1, 5), "run 5"),
+      MockRun(self.runner, self.create_session(self.browser_b_2, 6), "run 6"),
+      MockRun(self.runner, self.create_session(self.browser_b_1, 7), "run 7"),
+      MockRun(self.runner, self.create_session(self.browser_b_2, 8), "run 8"),
     ]
     self.runner.runs = tuple(self.runs)
 
@@ -127,10 +142,10 @@ class TestThreadModeTestCase(unittest.TestCase):
     session_1 = self.create_session(self.browser_a_1, 1)
     session_2 = self.create_session(self.browser_a_2, 2)
     runs: list[Run] = [
-        MockRun(self.runner, session_1, "story 1"),
-        MockRun(self.runner, session_2, "story 2"),
-        MockRun(self.runner, session_1, "story 3"),
-        MockRun(self.runner, session_2, "story 4"),
+      MockRun(self.runner, session_1, "story 1"),
+      MockRun(self.runner, session_2, "story 2"),
+      MockRun(self.runner, session_1, "story 3"),
+      MockRun(self.runner, session_2, "story 4"),
     ]
     groups = ThreadMode.SESSION.group(runs)
     group_a, group_b = groups
@@ -141,14 +156,12 @@ class TestThreadModeTestCase(unittest.TestCase):
 
 
 class FailingMockProbeContext(MockProbeContext):
-
   @override
   def setup(self):
     raise CustomException("failing setup")
 
 
 class MockNonLiveNetwork(LiveNetwork):
-
   @property
   @override
   def is_live(self) -> bool:
@@ -156,7 +169,6 @@ class MockNonLiveNetwork(LiveNetwork):
 
 
 class RunnerTestCase(BaseRunnerTestCase):
-
   def test_default_instance(self):
     runner = self.default_runner()
     self.assertSequenceEqual(self.stories, runner.stories)
@@ -167,7 +179,8 @@ class RunnerTestCase(BaseRunnerTestCase):
     default_probes = list(runner.default_probes)
     self.assertSequenceEqual(list(runner.probes), default_probes)
     self.assertEqual(
-        len(default_probes), len(all_probes.DEFAULT_INTERNAL_PROBES))
+      len(default_probes), len(all_probes.DEFAULT_INTERNAL_PROBES)
+    )
     self.assertEqual(len(runner.runs), 0)
     # no runs => is_success == false
     self.assertFalse(runner.is_success)
@@ -179,8 +192,9 @@ class RunnerTestCase(BaseRunnerTestCase):
 
     # Test default (no flag)
     args = parser.parse_args(["--out-dir", "out"])
-    self.assertSequenceEqual(args.cache_temperatures,
-                             [CacheTemperature.DEFAULT])
+    self.assertSequenceEqual(
+      args.cache_temperatures, [CacheTemperature.DEFAULT]
+    )
 
     # Test flag present (no args)
     args = parser.parse_args(["--cache-temperatures", "--out-dir", "out"])
@@ -204,13 +218,15 @@ class RunnerTestCase(BaseRunnerTestCase):
 
     # Test flag without value when CROSSBENCH_RESULT_UPLOAD_TARGET is set.
     with mock.patch.dict(
-        "os.environ", {"CROSSBENCH_RESULT_UPLOAD_TARGET": "gs://env-bucket"}):
+      "os.environ", {"CROSSBENCH_RESULT_UPLOAD_TARGET": "gs://env-bucket"}
+    ):
       args = parser.parse_args(["--upload-results"])
       self.assertEqual(args.upload_results, "gs://env-bucket")
 
     # Test explicit URL takes precedence over CROSSBENCH_RESULT_UPLOAD_TARGET.
     with mock.patch.dict(
-        "os.environ", {"CROSSBENCH_RESULT_UPLOAD_TARGET": "gs://env-bucket"}):
+      "os.environ", {"CROSSBENCH_RESULT_UPLOAD_TARGET": "gs://env-bucket"}
+    ):
       args = parser.parse_args(["--upload-results", "gs://explicit-bucket"])
       self.assertEqual(args.upload_results, "gs://explicit-bucket")
       args = parser.parse_args(["--upload-results=gs://explicit-bucket"])
@@ -239,7 +255,8 @@ class RunnerTestCase(BaseRunnerTestCase):
 
       if not is_dry_run:
         self.assertEqual(
-            len(run.results), len(all_probes.DEFAULT_INTERNAL_PROBES))
+          len(run.results), len(all_probes.DEFAULT_INTERNAL_PROBES)
+        )
         for probe in runner.probes:
           self.assertIn(probe, run.results)
 
@@ -258,24 +275,27 @@ class RunnerTestCase(BaseRunnerTestCase):
       self._validate_successful_run(run, runner, probe, "custom_probe_data")
     for browser in runner.browsers:
       runs_symlinks = list(
-          (runner.out_dir / browser.unique_name / "runs").iterdir())
+        (runner.out_dir / browser.unique_name / "runs").iterdir()
+      )
       self.assertEqual(len(runs_symlinks), 2)
 
   def test_run_one_browser_startup_failure_writes_results(self):
     browser = self.mock_chrome_dev
     runner = Runner(
-        self.out_dir,
-        browsers=[browser],
-        benchmark=self.benchmark,
-        platform=self.platform,
-        repetitions=2,
-        throw=False,
-        in_memory_result_db=True)
+      self.out_dir,
+      browsers=[browser],
+      benchmark=self.benchmark,
+      platform=self.platform,
+      repetitions=2,
+      throw=False,
+      in_memory_result_db=True,
+    )
     original_start = browser.start
     start_count = 0
 
-    def mock_start_fail_once(session: BrowserSessionRunGroup,
-                             startup_urls: Sequence[str] = ()) -> None:
+    def mock_start_fail_once(
+      session: BrowserSessionRunGroup, startup_urls: Sequence[str] = ()
+    ) -> None:
       nonlocal start_count
       start_count += 1
       if start_count == 2:
@@ -297,11 +317,11 @@ class RunnerTestCase(BaseRunnerTestCase):
   def test_story_specific_extra_flags(self) -> None:
 
     class StoryCustomFlagsBenchmark(MockBenchmark):
-
       @classmethod
       @override
-      def extra_flags(cls, browser_attributes: BrowserAttributes,
-                      story: Story) -> Flags:
+      def extra_flags(
+        cls, browser_attributes: BrowserAttributes, story: Story
+      ) -> Flags:
         if story.name == "story_1":
           return Flags({"--story-one-flag": None})
         if story.name == "story_2":
@@ -320,19 +340,19 @@ class RunnerTestCase(BaseRunnerTestCase):
       flags = details["flags"]
       assert isinstance(flags, tuple)
       self.assertEqual(
-          "--story-one-flag" in flags,
-          run.story.name == "story_1",
+        "--story-one-flag" in flags,
+        run.story.name == "story_1",
       )
       self.assertEqual(
-          "--story-two-flag=some-string-value" in flags,
-          run.story.name == "story_2",
+        "--story-two-flag=some-string-value" in flags,
+        run.story.name == "story_2",
       )
 
   def test_run_remote_web_driver(self) -> None:
     driver = FakeWebDriver(
-        handles=["leftover-tab", "active-tab"],
-        current_handle="active-tab",
-        invalidate_session_on_last_close=True,
+      handles=["leftover-tab", "active-tab"],
+      current_handle="active-tab",
+      invalidate_session_on_last_close=True,
     )
     browser = RemoteWebDriver("test-driver", driver)
     runner = self.default_runner(browsers=[browser])
@@ -395,12 +415,11 @@ class RunnerTestCase(BaseRunnerTestCase):
   def test_single_story_run_mock_probe_calls(self):
     # Make sure start / stop are called.
     runner = self.single_story_runner(throw=True)
-    with mock.patch.object(FailingMockProbeContext,
-                           "setup") as setup_mock, mock.patch.object(
-                               FailingMockProbeContext,
-                               "start") as start_mock, mock.patch.object(
-                                   FailingMockProbeContext,
-                                   "stop") as stop_mock:
+    with (
+      mock.patch.object(FailingMockProbeContext, "setup") as setup_mock,
+      mock.patch.object(FailingMockProbeContext, "start") as start_mock,
+      mock.patch.object(FailingMockProbeContext, "stop") as stop_mock,
+    ):
       probe = MockProbe("custom_probe_data", FailingMockProbeContext)
       runner.attach_probe(probe)
       runner.run()
@@ -412,12 +431,11 @@ class RunnerTestCase(BaseRunnerTestCase):
   def test_single_story_run_mock_probe_partial_setup_fail_mock(self):
     # Make sure start / stop / teardown are not called after a setup failure
     runner = self.single_story_runner(throw=False)
-    with mock.patch.object(FailingMockProbeContext,
-                           "start") as start_mock, mock.patch.object(
-                               FailingMockProbeContext,
-                               "stop") as stop_mock, mock.patch.object(
-                                   FailingMockProbeContext,
-                                   "teardown") as teardown_mock:
+    with (
+      mock.patch.object(FailingMockProbeContext, "start") as start_mock,
+      mock.patch.object(FailingMockProbeContext, "stop") as stop_mock,
+      mock.patch.object(FailingMockProbeContext, "teardown") as teardown_mock,
+    ):
       probe = MockProbe("custom_probe_data", FailingMockProbeContext)
       runner.attach_probe(probe)
       with self.assertRaises(MultiException) as cm:
@@ -434,7 +452,6 @@ class RunnerTestCase(BaseRunnerTestCase):
     setup_count = 0
 
     class PartialFailingMockProbeContext(MockProbeContext):
-
       @override
       def setup(self):
         nonlocal setup_count
@@ -503,8 +520,10 @@ class RunnerTestCase(BaseRunnerTestCase):
 
     probe_list = list(runner.probes)
     self.assertLess(
-        probe_list.index(probe_internal), probe_list.index(probe_1),
-        "Probes were not sorted correctly upon attach_probe().")
+      probe_list.index(probe_internal),
+      probe_list.index(probe_1),
+      "Probes were not sorted correctly upon attach_probe().",
+    )
 
   def test_attach_incompatible_probe(self):
     runner = self.default_runner()
@@ -560,19 +579,23 @@ class RunnerTestCase(BaseRunnerTestCase):
 
   def test_has_any_live_network_false(self):
     mock_chrome = MockChromeDev(
-        "chrome-dev_non_live",
-        settings=Settings(platform=self.platform, network=MockNonLiveNetwork()))
+      "chrome-dev_non_live",
+      settings=Settings(platform=self.platform, network=MockNonLiveNetwork()),
+    )
     runner = self.default_runner(browsers=(mock_chrome,))
     self.assertFalse(runner.has_any_live_network())
 
   def test_has_any_live_network_multi_browser(self):
     mock_chrome = MockChromeDev(
-        "chrome-dev_non_live",
-        settings=Settings(platform=self.platform, network=MockNonLiveNetwork()))
-    runner = self.default_runner(browsers=(
+      "chrome-dev_non_live",
+      settings=Settings(platform=self.platform, network=MockNonLiveNetwork()),
+    )
+    runner = self.default_runner(
+      browsers=(
         *self.browsers,
         mock_chrome,
-    ))
+      )
+    )
     self.assertTrue(runner.has_any_live_network())
 
   def test_has_all_live_network(self):
@@ -581,19 +604,23 @@ class RunnerTestCase(BaseRunnerTestCase):
 
   def test_has_all_live_network_false(self):
     mock_chrome = MockChromeDev(
-        "chrome-dev_non_live",
-        settings=Settings(platform=self.platform, network=MockNonLiveNetwork()))
+      "chrome-dev_non_live",
+      settings=Settings(platform=self.platform, network=MockNonLiveNetwork()),
+    )
     runner = self.default_runner(browsers=(mock_chrome,))
     self.assertFalse(runner.has_all_live_network())
 
   def test_has_all_live_network_false_multi_browser(self):
     mock_chrome = MockChromeDev(
-        "chrome-dev_non_live",
-        settings=Settings(platform=self.platform, network=MockNonLiveNetwork()))
-    runner = self.default_runner(browsers=(
+      "chrome-dev_non_live",
+      settings=Settings(platform=self.platform, network=MockNonLiveNetwork()),
+    )
+    runner = self.default_runner(
+      browsers=(
         *self.browsers,
         mock_chrome,
-    ))
+      )
+    )
     self.assertFalse(runner.has_all_live_network())
 
   def test_has_only_single_run_platforms_multi_runs(self):
@@ -618,13 +645,13 @@ class RunnerTestCase(BaseRunnerTestCase):
     # FullMockPlatform is dynamically bound to an OS-specific mock class.
     # pyrefly: ignore[invalid-inheritance]
     class RemoteMockPlatform(FullMockPlatform):
-
       @property
       def key(self) -> tuple[str, ...]:
         return ("remote", "remote-mock-platform")
 
     mock_remote_chrome = MockChromeDev(
-        "chrome-dev_remote", settings=Settings(platform=RemoteMockPlatform()))
+      "chrome-dev_remote", settings=Settings(platform=RemoteMockPlatform())
+    )
     browsers = (self.browsers[0], mock_remote_chrome)
     runner = self.default_runner(browsers=browsers, benchmark=benchmark)
     runner.run()
@@ -636,13 +663,13 @@ class RunnerTestCase(BaseRunnerTestCase):
     # FullMockPlatform is dynamically bound to an OS-specific mock class.
     # pyrefly: ignore[invalid-inheritance]
     class RemoteMockPlatform(FullMockPlatform):
-
       @property
       def key(self) -> tuple[str, ...]:
         return ("remote", "remote-mock-platform")
 
     mock_remote_chrome = MockChromeDev(
-        "chrome-dev_remote", settings=Settings(platform=RemoteMockPlatform()))
+      "chrome-dev_remote", settings=Settings(platform=RemoteMockPlatform())
+    )
     browsers = (self.browsers[0], mock_remote_chrome)
     runner = self.default_runner(browsers=browsers)
     runner.run()
@@ -666,10 +693,12 @@ class RunnerTestCase(BaseRunnerTestCase):
   def test_trace_processor_probe_last(self):
     trace_processor_probe = TraceProcessorProbe.parse_dict({})
     js_probe = JSProbe(js="return []")
-    runner = self.default_runner(probes=(
+    runner = self.default_runner(
+      probes=(
         js_probe,
         trace_processor_probe,
-    ))
+      )
+    )
     probes = list(runner.probes)
     self.assertTrue(probes)
     self.assertEqual(probes[-1], js_probe)
@@ -681,7 +710,6 @@ class CustomException(Exception):
 
 
 class RunThreadGroupTestCase(BaseRunnerTestCase):
-
   @override
   def tearDown(self) -> None:
     for browser in self.browsers:
@@ -696,11 +724,13 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
     runs_a = list(self.default_runner()._get_runs())
     self.out_dir = self.out_dir.parent / "second_out_dir"
     runner_b = Runner(
-        self.out_dir, [MockChromeDev("chrome-dev-2")],
-        self.benchmark,
-        platform=self.platform,
-        throw=True,
-        in_memory_result_db=True)
+      self.out_dir,
+      [MockChromeDev("chrome-dev-2")],
+      self.benchmark,
+      platform=self.platform,
+      throw=True,
+      in_memory_result_db=True,
+    )
     runs_b = list(runner_b._get_runs())
     self.assertNotEqual(runs_a[0].runner, runs_b[0].runner)
     with self.assertRaises(AssertionError) as cm:
@@ -710,8 +740,8 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
   @contextlib.contextmanager
   def patch_teardown_run(self, runner) -> Iterator[mock.MagicMock]:
     with mock.patch.object(
-        runner.results_db, "teardown_run",
-        side_effect=None) as teardown_run_mock:
+      runner.results_db, "teardown_run", side_effect=None
+    ) as teardown_run_mock:
       yield teardown_run_mock
 
   def test_simple_runs(self):
@@ -733,8 +763,8 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
 
     for run in runs:
       run.run = (  # noqa: PLC3002
-          lambda run_method: lambda is_dry_run: test_run(run_method))(
-              run.run)
+        lambda run_method: lambda is_dry_run: test_run(run_method)
+      )(run.run)
     with self.patch_teardown_run(runner) as teardown_run_mock:
       thread.run()
       self.assertEqual(teardown_run_mock.call_count, len(runs))
@@ -831,11 +861,12 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
     # 2 runs, same story, different browsers
     benchmark = MockBenchmark(stories=[self.stories[0]])
     runner = Runner(
-        self.out_dir,
-        self.browsers,
-        benchmark,
-        platform=self.platform,
-        in_memory_result_db=True)
+      self.out_dir,
+      self.browsers,
+      benchmark,
+      platform=self.platform,
+      in_memory_result_db=True,
+    )
     runner._setup_runs()
     runs = tuple(runner.all_runs)
     thread = RunThreadGroup(runs)
@@ -845,8 +876,9 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
 
     setup_fail_count = 0
 
-    def mock_start_fail(session: BrowserSessionRunGroup,
-                        startup_urls: Sequence[str] = ()) -> None:
+    def mock_start_fail(
+      session: BrowserSessionRunGroup, startup_urls: Sequence[str] = ()
+    ) -> None:
       del session, startup_urls
       nonlocal setup_fail_count
       setup_fail_count += 1
@@ -947,8 +979,10 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
       exception_entry = exceptions[0]
       self.assertIsInstance(exception_entry.exception, CustomException)
 
-    with (mock.patch.object(runner, "_ignore_partial_failures", True),
-          mock.patch.object(runner, "_measured_runs", runs)):
+    with (
+      mock.patch.object(runner, "_ignore_partial_failures", True),
+      mock.patch.object(runner, "_measured_runs", runs),
+    ):
       runner.assert_successful_sessions_and_runs()
 
   def test_setup_creates_patch_diff(self):
@@ -962,11 +996,14 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
         stdout.write(diff_content)
       return mock.MagicMock()
 
-    with mock.patch.object(
+    with (
+      mock.patch.object(
         runner.platform,
         "crossbench_details",
-        return_value={"canonical_parent_hash": "abcdef123"}), mock.patch.object(
-            runner.platform, "sh", side_effect=mock_sh):
+        return_value={"canonical_parent_hash": "abcdef123"},
+      ),
+      mock.patch.object(runner.platform, "sh", side_effect=mock_sh),
+    ):
       runner._setup()
     patch_file = runner.out_dir / "patch.diff"
     self.assertTrue(patch_file.exists())
@@ -975,11 +1012,14 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
   def test_setup_creates_patch_diff_no_changes(self):
     """Verifies an empty patch.diff is created when there are no git changes."""
     runner = self.default_runner()
-    with mock.patch.object(
+    with (
+      mock.patch.object(
         runner.platform,
         "crossbench_details",
-        return_value={"canonical_parent_hash": "abcdef123"}), mock.patch.object(
-            runner.platform, "sh", return_value=mock.MagicMock()):
+        return_value={"canonical_parent_hash": "abcdef123"},
+      ),
+      mock.patch.object(runner.platform, "sh", return_value=mock.MagicMock()),
+    ):
       runner._setup()
     patch_file = runner.out_dir / "patch.diff"
     self.assertTrue(patch_file.exists())
@@ -989,7 +1029,8 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
     """Verifies patch.diff is skipped when parent git hash is unavailable."""
     runner = self.default_runner()
     with mock.patch.object(
-        runner.platform, "crossbench_details", return_value={}):
+      runner.platform, "crossbench_details", return_value={}
+    ):
       runner._setup()
     patch_file = runner.out_dir / "patch.diff"
     self.assertFalse(patch_file.exists())
@@ -997,11 +1038,16 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
   def test_setup_handles_git_patch_exception(self):
     """Verifies setup handles exceptions during git patch generation."""
     runner = self.default_runner()
-    with mock.patch.object(
+    with (
+      mock.patch.object(
         runner.platform,
         "crossbench_details",
-        return_value={"canonical_parent_hash": "abcdef123"}), mock.patch.object(
-            runner.platform, "sh", side_effect=OSError("Git failed")):
+        return_value={"canonical_parent_hash": "abcdef123"},
+      ),
+      mock.patch.object(
+        runner.platform, "sh", side_effect=OSError("Git failed")
+      ),
+    ):
       runner._setup()
 
   def test_pause_on_error_flag_disabled_by_default(self):
@@ -1020,7 +1066,8 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
   def test_stop_early_filters_skipped_runs(self):
     runner = self.default_runner()
     with mock.patch.object(
-        runner._pause_controller, "check_pause", return_value=ResumeMode.STOP):
+      runner._pause_controller, "check_pause", return_value=ResumeMode.STOP
+    ):
       runner.run()
     self.assertEqual(len(runner.runs), 1)
     self.assertFalse(runner.all_runs[0].is_skipped)
@@ -1029,32 +1076,33 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
 
 
 class DeviceConfigRunnerTestCase(BaseRunnerTestCase):
-
-  def _valid_device_config(self,
-                           platform: str = "",
-                           value: str = "test_val") -> dict[str, Any]:
+  def _valid_device_config(
+    self, platform: str = "", value: str = "test_val"
+  ) -> dict[str, Any]:
     return {
-        platform or self.platform.name: {
-            "settings": {
-                "secure": {
-                    "test_key": value,
-                },
-            },
+      platform or self.platform.name: {
+        "settings": {
+          "secure": {
+            "test_key": value,
+          },
         },
+      },
     }
 
   def _setup_runner(
-      self,
-      required: DeviceConfig,
-      actual: dict[str, Any],
-      mode: RequiredDeviceConfigMode,
+    self,
+    required: DeviceConfig,
+    actual: dict[str, Any],
+    mode: RequiredDeviceConfigMode,
   ) -> Runner:
     runner = self.default_runner()
     runner._required_device_config_mode = mode
-    with mock.patch.object(
-        runner.benchmark, "required_device_config",
-        return_value=required), mock.patch.object(
-            runner.platform, "device_config", return_value=actual):
+    with (
+      mock.patch.object(
+        runner.benchmark, "required_device_config", return_value=required
+      ),
+      mock.patch.object(runner.platform, "device_config", return_value=actual),
+    ):
       runner._setup()
     return runner
 
@@ -1062,30 +1110,34 @@ class DeviceConfigRunnerTestCase(BaseRunnerTestCase):
     """Verifies setup succeeds when required device config matches."""
     config = self._valid_device_config()
     self._setup_runner(
-        required=config, actual=config, mode=RequiredDeviceConfigMode.THROW)
+      required=config, actual=config, mode=RequiredDeviceConfigMode.THROW
+    )
 
   def test_setup_skips_unmatched_platform_device_config(self):
     """Verifies setup skips required device config for unmatched platforms."""
     self._setup_runner(
-        required=self._valid_device_config("unmatched_platform"),
-        actual=self._valid_device_config(value="wrong_val"),
-        mode=RequiredDeviceConfigMode.THROW)
+      required=self._valid_device_config("unmatched_platform"),
+      actual=self._valid_device_config(value="wrong_val"),
+      mode=RequiredDeviceConfigMode.THROW,
+    )
 
   def test_setup_validates_required_device_config_error(self):
     """Verifies setup raises DeviceConfigValueError on a device discrepancy."""
     with self.assertRaises(DeviceConfigValueError):
       self._setup_runner(
-          required=self._valid_device_config(),
-          actual=self._valid_device_config(value="wrong_val"),
-          mode=RequiredDeviceConfigMode.THROW)
+        required=self._valid_device_config(),
+        actual=self._valid_device_config(value="wrong_val"),
+        mode=RequiredDeviceConfigMode.THROW,
+      )
 
   def test_setup_validates_required_device_config_warn(self):
     """Verifies setup logs critical and succeeds when mode is warn."""
     with self.assertLogs(level=logging.CRITICAL) as cm:
       self._setup_runner(
-          required=self._valid_device_config(),
-          actual=self._valid_device_config(value="wrong_val"),
-          mode=RequiredDeviceConfigMode.WARN)
+        required=self._valid_device_config(),
+        actual=self._valid_device_config(value="wrong_val"),
+        mode=RequiredDeviceConfigMode.WARN,
+      )
     self.assertTrue(any("test_key" in log for log in cm.output))
 
   def test_setup_validates_required_device_config_from_json_file(self):
@@ -1094,15 +1146,18 @@ class DeviceConfigRunnerTestCase(BaseRunnerTestCase):
     json_path = self.out_dir.parent / "required_device_config.json"
     json_path.write_text(json.dumps(config), encoding="utf-8")
     self._setup_runner(
-        required=json_path, actual=config, mode=RequiredDeviceConfigMode.THROW)
+      required=json_path, actual=config, mode=RequiredDeviceConfigMode.THROW
+    )
 
   def test_setup_validates_required_device_config_case_insensitive_platform(
-      self):
+    self,
+  ):
     """Verifies setup validates config when platform key has uppercase."""
     config = {self.platform.name.upper(): {"test_prop": "expected_val"}}
     actual = {self.platform.name: {"test_prop": "expected_val"}}
     self._setup_runner(
-        required=config, actual=actual, mode=RequiredDeviceConfigMode.THROW)
+      required=config, actual=actual, mode=RequiredDeviceConfigMode.THROW
+    )
 
   def test_setup_validates_required_device_config_from_json_file_error(self):
     """Verifies setup raises DeviceConfigValueError on a file discrepancy."""
@@ -1111,18 +1166,21 @@ class DeviceConfigRunnerTestCase(BaseRunnerTestCase):
     json_path.write_text(json.dumps(config), encoding="utf-8")
     with self.assertRaises(DeviceConfigValueError):
       self._setup_runner(
-          required=json_path,
-          actual=self._valid_device_config(value="wrong_val"),
-          mode=RequiredDeviceConfigMode.THROW)
+        required=json_path,
+        actual=self._valid_device_config(value="wrong_val"),
+        mode=RequiredDeviceConfigMode.THROW,
+      )
 
   def test_setup_validates_required_device_config_file_not_found(self):
     """Verifies setup raises an argument error when config file is missing."""
-    with self.assertRaisesRegex(argparse.ArgumentTypeError,
-                                "Path does not exist"):
+    with self.assertRaisesRegex(
+      argparse.ArgumentTypeError, "Path does not exist"
+    ):
       self._setup_runner(
-          required=self.out_dir.parent / "non_existent.json",
-          actual=self._valid_device_config(),
-          mode=RequiredDeviceConfigMode.THROW)
+        required=self.out_dir.parent / "non_existent.json",
+        actual=self._valid_device_config(),
+        mode=RequiredDeviceConfigMode.THROW,
+      )
 
   def test_setup_validates_required_device_config_invalid_json(self):
     """Verifies setup raises ValueError on invalid configuration syntax."""
@@ -1130,13 +1188,13 @@ class DeviceConfigRunnerTestCase(BaseRunnerTestCase):
     invalid_json_path.write_text("{not-json", encoding="utf-8")
     with self.assertRaises(ValueError):
       self._setup_runner(
-          required=invalid_json_path,
-          actual=self._valid_device_config(),
-          mode=RequiredDeviceConfigMode.THROW)
+        required=invalid_json_path,
+        actual=self._valid_device_config(),
+        mode=RequiredDeviceConfigMode.THROW,
+      )
 
 
 class SetDeviceConfigRunnerTestCase(BaseRunnerTestCase):
-
   @override
   def setUp(self) -> None:
     super().setUp()
@@ -1150,14 +1208,17 @@ class SetDeviceConfigRunnerTestCase(BaseRunnerTestCase):
       real_set(key_path, val)
 
     patcher = mock.patch.object(
-        self.platform, "set_device_config_value", side_effect=set_or_raise)
+      self.platform, "set_device_config_value", side_effect=set_or_raise
+    )
     patcher.start()
     self.addCleanup(patcher.stop)
 
-  def _runner(self,
-              value: str | None,
-              mode: RequiredDeviceConfigMode = RequiredDeviceConfigMode.SET,
-              throw: bool = True) -> Runner:
+  def _runner(
+    self,
+    value: str | None,
+    mode: RequiredDeviceConfigMode = RequiredDeviceConfigMode.SET,
+    throw: bool = True,
+  ) -> Runner:
     """Returns a runner requiring test_key to be test_val.
 
     The platform's test_key starts as value, or absent if None.
@@ -1165,16 +1226,17 @@ class SetDeviceConfigRunnerTestCase(BaseRunnerTestCase):
     runner = self.default_runner(throw=throw)
     runner._required_device_config_mode = mode
     required = {
-        self.platform.name: {
-            "settings": {
-                "secure": {
-                    "test_key": "test_val",
-                },
-            },
+      self.platform.name: {
+        "settings": {
+          "secure": {
+            "test_key": "test_val",
+          },
         },
+      },
     }
     patcher = mock.patch.object(
-        runner.benchmark, "required_device_config", return_value=required)
+      runner.benchmark, "required_device_config", return_value=required
+    )
     patcher.start()
     self.addCleanup(patcher.stop)
     secure = {} if value is None else {"test_key": value}
@@ -1184,14 +1246,16 @@ class SetDeviceConfigRunnerTestCase(BaseRunnerTestCase):
   def _run_failing(self, runner: Runner, target: Any, attribute: str) -> None:
     """Runs, with target.attribute raising a ValueError."""
     with mock.patch.object(
-        target, attribute, side_effect=ValueError("Failed.")):
+      target, attribute, side_effect=ValueError("Failed.")
+    ):
       with self.assertRaisesRegex(ValueError, "Failed."):
         runner.run()
 
   @property
   def value(self) -> str | None:
     return self.platform.device_config_data["settings"]["secure"].get(
-        "test_key")
+      "test_key"
+    )
 
   @property
   def writes(self) -> list[str | None]:

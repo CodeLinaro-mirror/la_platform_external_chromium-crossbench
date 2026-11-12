@@ -16,17 +16,17 @@ from tests.crossbench.pinpoint.http_requests_mixin import MockHttpRequestsMixin
 
 
 class ListBotsTest(MockHttpRequestsMixin):
-
   def setUp(self):
     super().setUp()
 
     def mock_post_side_effect(url, *args, **kwargs):
-      self.assertEqual(url, PINPOINT_CONFIG_API_URL,
-                       f"Unexpected URL called: {url}")
+      self.assertEqual(
+        url, PINPOINT_CONFIG_API_URL, f"Unexpected URL called: {url}"
+      )
 
       mock_response = mock.Mock()
       mock_response.json.return_value = {
-          "configurations": ["bot1", "bot2", "bot3"],
+        "configurations": ["bot1", "bot2", "bot3"],
       }
       mock_response.raise_for_status.return_value = None
       return mock_response

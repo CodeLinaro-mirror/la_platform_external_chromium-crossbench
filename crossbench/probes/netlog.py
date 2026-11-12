@@ -39,10 +39,14 @@ class NetLogCaptureMode(StrEnumWithHelp):
       return NetLogCaptureMode.EVERYTHING
     return super()._missing_(value)
 
-  DEFAULT = ("default",
-             "Logs default set of events, excluding sensitive information.")
-  INCLUDE_SENSITIVE = ("include_sensitive",
-                       "Includes sensitive data like cookies and credentials.")
+  DEFAULT = (
+    "default",
+    "Logs default set of events, excluding sensitive information.",
+  )
+  INCLUDE_SENSITIVE = (
+    "include_sensitive",
+    "Includes sensitive data like cookies and credentials.",
+  )
   EVERYTHING = ("everything", "Logs all events and transferred socket bytes.")
 
   @property
@@ -62,6 +66,7 @@ class NetLogProbe(ChromiumProbe):
   JSON file. The resulting netlog dump can be analyzed with tools like Catapult
   NetLog Viewer.
   """
+
   NAME: ClassVar[str] = "netlog"
   RESULT_LOCATION: ClassVar[ResultLocation] = ResultLocation.BROWSER
 
@@ -70,15 +75,16 @@ class NetLogProbe(ChromiumProbe):
   def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     parser.add_default_argument(
-        "capture_mode",
-        type=NetLogCaptureMode,
-        default=NetLogCaptureMode.DEFAULT,
-        help="Capture mode for netlog.")
+      "capture_mode",
+      type=NetLogCaptureMode,
+      default=NetLogCaptureMode.DEFAULT,
+      help="Capture mode for netlog.",
+    )
     return parser
 
   def __init__(
-      self,
-      capture_mode: NetLogCaptureMode = NetLogCaptureMode.DEFAULT,
+    self,
+    capture_mode: NetLogCaptureMode = NetLogCaptureMode.DEFAULT,
   ) -> None:
     super().__init__()
     self._capture_mode: Final[NetLogCaptureMode] = capture_mode
@@ -103,7 +109,8 @@ class NetLogProbe(ChromiumProbe):
     for flag in ("--log-net-log", "--net-log-capture-mode"):
       if flag in browser.flags:
         raise ProbeValidationError(
-            self, f"Browser already has conflicting {flag} flag")
+          self, f"Browser already has conflicting {flag} flag"
+        )
 
   @override
   def get_context_cls(self) -> type[NetLogProbeContext]:
@@ -130,12 +137,12 @@ class NetLogProbe(ChromiumProbe):
 
 
 class NetLogProbeContext(ProbeContext[NetLogProbe]):
-
   @override
   def setup(self) -> None:
     self.session.extra_flags["--log-net-log"] = str(self.result_path)
-    self.session.extra_flags[
-        "--net-log-capture-mode"] = self.probe.capture_mode.flag_value
+    self.session.extra_flags["--net-log-capture-mode"] = (
+      self.probe.capture_mode.flag_value
+    )
 
   @override
   def start(self) -> None:

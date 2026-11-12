@@ -34,10 +34,12 @@ class Point(ConfigObject):
     parts = ObjectParser.non_empty_str(value, "point").split(",")
     if len(parts) != 2:
       raise ValueError(
-          f"Expected 'x,y' format for {cls.__name__}, but got {value!r}")
+        f"Expected 'x,y' format for {cls.__name__}, but got {value!r}"
+      )
     return cls(
-        x=NumberParser.any_int(parts[0].strip(), "x"),
-        y=NumberParser.any_int(parts[1].strip(), "y"))
+      x=NumberParser.any_int(parts[0].strip(), "x"),
+      y=NumberParser.any_int(parts[1].strip(), "y"),
+    )
 
   @classmethod
   @override

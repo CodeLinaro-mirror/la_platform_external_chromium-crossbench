@@ -31,7 +31,6 @@ def _has_swift_toolchain() -> bool:
 
 
 class VideoProbeTestCase(unittest.TestCase):
-
   def test_default(self):
     probe = VideoProbe.parse_dict({})
     self.assertEqual(probe.primary_orientation, Orientation.HORIZONTAL)
@@ -75,7 +74,8 @@ class VideoProbeTestCase(unittest.TestCase):
     probe.setup(runner)
     binary = pth.LocalPath("/out/ios_usb_screen_recorder")
     runner.platform.sh.assert_called_once_with(
-        "swiftc", "-O", VideoProbe.IOS_USB_RECORDER_SOURCE, "-o", binary)
+      "swiftc", "-O", VideoProbe.IOS_USB_RECORDER_SOURCE, "-o", binary
+    )
     self.assertEqual(probe.ios_usb_recorder, binary)
 
   @unittest.skipIf(not _has_swift_toolchain(), "needs a macOS Swift toolchain")
@@ -94,24 +94,29 @@ class VideoProbeContextIOSTestCase(unittest.TestCase):
     self.result_path = pth.LocalPath(self.tmp_dir.name) / "video.mp4"
     self.context = mock.MagicMock(spec=VideoProbeContext)
     self.context.IOS_RECORDER_READY_WAIT = wait.WaitRange(
-        min=dt.timedelta(milliseconds=10),
-        max=dt.timedelta(milliseconds=10),
-        timeout=dt.timedelta(milliseconds=300))
+      min=dt.timedelta(milliseconds=10),
+      max=dt.timedelta(milliseconds=10),
+      timeout=dt.timedelta(milliseconds=300),
+    )
     self.context.IOS_RECORDER_STOP_TIMEOUT = dt.timedelta(seconds=1)
     self.context.result_path = self.result_path
     self.context.local_result_path = self.result_path
     self.context._recorder_log_path = self.result_path.with_suffix(
-        ".recorder.log")
+      ".recorder.log"
+    )
     self.context.host_platform = mock.MagicMock()
     self.context.probe = mock.MagicMock(
-        FRAMERATE=60, ios_usb_recorder=pth.LocalPath("/out/recorder"))
+      FRAMERATE=60, ios_usb_recorder=pth.LocalPath("/out/recorder")
+    )
     self.context._record_process = mock.MagicMock()
     self.context._record_process.poll.return_value = None
     self.context._recorder_log_file = None
-    self.context._ios_recorder_is_ready = (
-        lambda: VideoProbeContext._ios_recorder_is_ready(self.context))
-    self.context._stop_ios_recorder = (
-        lambda: VideoProbeContext._stop_ios_recorder(self.context))
+    self.context._ios_recorder_is_ready = lambda: (
+      VideoProbeContext._ios_recorder_is_ready(self.context)
+    )
+    self.context._stop_ios_recorder = lambda: (
+      VideoProbeContext._stop_ios_recorder(self.context)
+    )
 
   def _ios_platform(self, is_simulator: bool) -> mock.MagicMock:
     platform = mock.MagicMock(spec=IOSPlatform)
@@ -123,23 +128,25 @@ class VideoProbeContextIOSTestCase(unittest.TestCase):
 
   def test_default_result_path_is_local_on_ios(self):
     self.context.browser_platform = self._ios_platform(is_simulator=False)
-    self.context.run.get_local_probe_result_path.return_value = (
-        self.result_path)
+    self.context.run.get_local_probe_result_path.return_value = self.result_path
     path = VideoProbeContext.get_default_result_path(self.context)
     self.assertEqual(path, self.result_path)
     self.context.run.get_local_probe_result_path.assert_called_once_with(
-        self.context.probe)
+      self.context.probe
+    )
 
   def test_recorder_platform(self):
     self.assertIsNotNone(VideoProbeContext._recorder_platform.fget)
     self.context.browser_platform = self._ios_platform(is_simulator=False)
     self.assertIs(
-        VideoProbeContext._recorder_platform.fget(self.context),
-        self.context.host_platform)
+      VideoProbeContext._recorder_platform.fget(self.context),
+      self.context.host_platform,
+    )
     self.context.browser_platform = mock.MagicMock(is_ios=False)
     self.assertIs(
-        VideoProbeContext._recorder_platform.fget(self.context),
-        self.context.browser_platform)
+      VideoProbeContext._recorder_platform.fget(self.context),
+      self.context.browser_platform,
+    )
 
   def test_start_waits_for_ready_on_ios(self):
     self.context.browser_platform = self._ios_platform(is_simulator=False)
@@ -165,17 +172,20 @@ class VideoProbeContextIOSTestCase(unittest.TestCase):
     self.context.browser_platform = self._ios_platform(is_simulator=False)
     cmd = VideoProbeContext._record_cmd(self.context, mock.MagicMock())
     self.assertEqual(
-        cmd, ("/out/recorder", "iPhone 18 - 3", str(self.result_path), "60"))
+      cmd, ("/out/recorder", "iPhone 18 - 3", str(self.result_path), "60")
+    )
 
   def test_wait_for_ios_recorder_ready(self):
     self.context._recorder_log_path.write_text(
-        "starting\nREADY\n", encoding="utf-8")
+      "starting\nREADY\n", encoding="utf-8"
+    )
     VideoProbeContext._wait_for_ios_recorder_ready(self.context)
     self.context.host_platform.terminate_gracefully.assert_not_called()
 
   def test_wait_for_ios_recorder_ready_needs_whole_line(self):
     self.context._recorder_log_path.write_text(
-        "NOT READY YET\n", encoding="utf-8")
+      "NOT READY YET\n", encoding="utf-8"
+    )
     with self.assertRaisesRegex(RuntimeError, "not ready after"):
       VideoProbeContext._wait_for_ios_recorder_ready(self.context)
 
@@ -203,7 +213,8 @@ class VideoProbeContextIOSTestCase(unittest.TestCase):
     self.context._record_process.poll.side_effect = [None, 0]
     VideoProbeContext.stop(self.context)
     self.context._record_process.communicate.assert_called_once_with(
-        timeout=1.0)
+      timeout=1.0
+    )
     self.context.host_platform.terminate_gracefully.assert_not_called()
     self.context.stop_process.assert_not_called()
 
@@ -218,18 +229,21 @@ class VideoProbeContextIOSTestCase(unittest.TestCase):
   def test_stop_device_terminates_when_stuck(self):
     self.context.browser_platform = self._ios_platform(is_simulator=False)
     self.context._record_process.communicate.side_effect = (
-        subprocess.TimeoutExpired("recorder", 1))
+      subprocess.TimeoutExpired("recorder", 1)
+    )
     self.context._record_process.poll.side_effect = [None, -9]
     with self.assertRaisesRegex(RuntimeError, "exit code -9"):
       VideoProbeContext.stop(self.context)
     self.context.host_platform.terminate_gracefully.assert_called_once_with(
-        self.context._record_process)
+      self.context._record_process
+    )
     self.context.stop_process.assert_called_once_with()
 
   def test_stop_device_keeps_file_finished_during_grace_period(self):
     self.context.browser_platform = self._ios_platform(is_simulator=False)
     self.context._record_process.communicate.side_effect = (
-        subprocess.TimeoutExpired("recorder", 1))
+      subprocess.TimeoutExpired("recorder", 1)
+    )
     # SIGTERM let it finish after all.
     self.context._record_process.poll.side_effect = [None, 0]
     VideoProbeContext.stop(self.context)

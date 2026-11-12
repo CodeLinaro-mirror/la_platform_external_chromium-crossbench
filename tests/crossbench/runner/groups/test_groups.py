@@ -8,8 +8,9 @@ from typing import TYPE_CHECKING, Iterable
 
 from crossbench import exception
 from crossbench.runner.groups.browsers import BrowsersRunGroup
-from crossbench.runner.groups.cache_temperatures import \
-    CacheTemperaturesRunGroup
+from crossbench.runner.groups.cache_temperatures import (
+  CacheTemperaturesRunGroup,
+)
 from crossbench.runner.groups.repetitions import RepetitionsRunGroup
 from crossbench.runner.groups.stories import StoriesRunGroup
 from tests import test_helper
@@ -21,12 +22,13 @@ if TYPE_CHECKING:
 
 
 class RunGroupTestCase(BaseRunGroupTestCase):
-
   def create_groups(self, runs: Iterable[Run], throw: bool = True):
     cache_temperatures_groups = CacheTemperaturesRunGroup.groups(
-        runs, throw=throw)
-    repetitions_groups = RepetitionsRunGroup.groups(cache_temperatures_groups,
-                                                    throw)
+      runs, throw=throw
+    )
+    repetitions_groups = RepetitionsRunGroup.groups(
+      cache_temperatures_groups, throw
+    )
     story_groups = StoriesRunGroup.groups(repetitions_groups, throw)
     browser_group = BrowsersRunGroup(story_groups, throw)
     return browser_group
@@ -62,27 +64,35 @@ class RunGroupTestCase(BaseRunGroupTestCase):
     self.assertSequenceEqual(list(cache_temp_groups[0].runs), [run_0])
     self.assertSequenceEqual(list(cache_temp_groups[1].runs), [run_1])
     cache_temp_repetitions_group = list(
-        repetitions_group.cache_temperature_repetitions_groups)
+      repetitions_group.cache_temperature_repetitions_groups
+    )
     self.assertEqual(len(cache_temp_repetitions_group), 1)
     self.assertSequenceEqual(
-        list(cache_temp_repetitions_group[0].runs), [run_0, run_1])
-    self.assertEqual(cache_temp_repetitions_group[0].cache_temperature,
-                     "default")
+      list(cache_temp_repetitions_group[0].runs), [run_0, run_1]
+    )
+    self.assertEqual(
+      cache_temp_repetitions_group[0].cache_temperature, "default"
+    )
 
   def test_single_story_multiple_repetitions_cache_temperatures(self):
     session = self.default_session(throw=True)
     run_0 = MockRun(
-        self.runner, session, "story 0", None, repetition=0, temperature="cold")
+      self.runner, session, "story 0", None, repetition=0, temperature="cold"
+    )
     run_1 = MockRun(
-        self.runner, session, "story 0", None, repetition=0, temperature="warm")
+      self.runner, session, "story 0", None, repetition=0, temperature="warm"
+    )
     run_2 = MockRun(
-        self.runner, session, "story 0", None, repetition=1, temperature="cold")
+      self.runner, session, "story 0", None, repetition=1, temperature="cold"
+    )
     run_3 = MockRun(
-        self.runner, session, "story 0", None, repetition=1, temperature="warm")
+      self.runner, session, "story 0", None, repetition=1, temperature="warm"
+    )
 
     browser_group = self.create_groups([run_0, run_1, run_2, run_3])
     self.assertSequenceEqual(
-        list(browser_group.runs), [run_0, run_1, run_2, run_3])
+      list(browser_group.runs), [run_0, run_1, run_2, run_3]
+    )
     story_groups = list(browser_group.story_groups)
     self.assertEqual(len(story_groups), 1)
     repetitions_groups = list(story_groups[0].repetitions_groups)
@@ -93,12 +103,15 @@ class RunGroupTestCase(BaseRunGroupTestCase):
     self.assertSequenceEqual(list(cache_temp_groups[0].runs), [run_0, run_1])
     self.assertSequenceEqual(list(cache_temp_groups[1].runs), [run_2, run_3])
     cache_temp_repetitions_group = list(
-        repetitions_group.cache_temperature_repetitions_groups)
+      repetitions_group.cache_temperature_repetitions_groups
+    )
     self.assertEqual(len(cache_temp_groups), 2)
     self.assertSequenceEqual(
-        list(cache_temp_repetitions_group[0].runs), [run_0, run_2])
+      list(cache_temp_repetitions_group[0].runs), [run_0, run_2]
+    )
     self.assertSequenceEqual(
-        list(cache_temp_repetitions_group[1].runs), [run_1, run_3])
+      list(cache_temp_repetitions_group[1].runs), [run_1, run_3]
+    )
     self.assertEqual(cache_temp_repetitions_group[0].cache_temperature, "cold")
     self.assertEqual(cache_temp_repetitions_group[1].cache_temperature, "warm")
 
@@ -116,11 +129,12 @@ class RunGroupTestCase(BaseRunGroupTestCase):
     session._exceptions.append(RuntimeError("Session error"))
 
     cache_temperatures_groups = list(
-        CacheTemperaturesRunGroup.groups([run_0, run_1], throw=False))
+      CacheTemperaturesRunGroup.groups([run_0, run_1], throw=False)
+    )
     cache_temperatures_groups[0].exceptions.append(KeyError("Cache error"))
 
     exc_types_cache = [
-        type(e.exception) for e in cache_temperatures_groups[0].all_exceptions
+      type(e.exception) for e in cache_temperatures_groups[0].all_exceptions
     ]
     self.assertIn(KeyError, exc_types_cache)
     self.assertIn(ValueError, exc_types_cache)
@@ -128,11 +142,12 @@ class RunGroupTestCase(BaseRunGroupTestCase):
     self.assertEqual(exc_types_cache.count(RuntimeError), 1)
 
     repetitions_groups = list(
-        RepetitionsRunGroup.groups(cache_temperatures_groups, throw=False))
+      RepetitionsRunGroup.groups(cache_temperatures_groups, throw=False)
+    )
     repetitions_groups[0].exceptions.append(IndexError("Repetition error"))
 
     exc_types_rep = [
-        type(e.exception) for e in repetitions_groups[0].all_exceptions
+      type(e.exception) for e in repetitions_groups[0].all_exceptions
     ]
     self.assertIn(IndexError, exc_types_rep)
     self.assertIn(KeyError, exc_types_rep)
@@ -145,7 +160,7 @@ class RunGroupTestCase(BaseRunGroupTestCase):
     story_groups[0].exceptions.append(AttributeError("Story error"))
 
     exc_types_story = [
-        type(e.exception) for e in story_groups[0].all_exceptions
+      type(e.exception) for e in story_groups[0].all_exceptions
     ]
     self.assertIn(AttributeError, exc_types_story)
     self.assertIn(IndexError, exc_types_story)
@@ -159,7 +174,7 @@ class RunGroupTestCase(BaseRunGroupTestCase):
     browser_group.exceptions.append(EOFError("Browser error"))
 
     exc_types_browser = [
-        type(e.exception) for e in browser_group.all_exceptions
+      type(e.exception) for e in browser_group.all_exceptions
     ]
     self.assertIn(EOFError, exc_types_browser)
     self.assertIn(AttributeError, exc_types_browser)

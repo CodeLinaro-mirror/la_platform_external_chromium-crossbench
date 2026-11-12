@@ -15,7 +15,6 @@ SessionDecoratorT = TypeVar("SessionDecoratorT", bound="SessionDecorator")
 
 
 class SessionDecorator(base.Decorator[Run]):
-
   def runs(self) -> set[Run]:
     return self._targets
 
@@ -24,9 +23,9 @@ class SessionDecorator(base.Decorator[Run]):
     pass
 
 
-class SessionDecoratorContext(base.DecoratorContext[SessionDecoratorT,
-                                                    BrowserSessionRunGroup]):
-
+class SessionDecoratorContext(
+  base.DecoratorContext[SessionDecoratorT, BrowserSessionRunGroup]
+):
   @property
   def browser_session(self) -> BrowserSessionRunGroup:
     return self._target

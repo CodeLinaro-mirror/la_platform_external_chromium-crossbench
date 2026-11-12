@@ -14,7 +14,6 @@ RunDecoratorT = TypeVar("RunDecoratorT", bound="RunDecorator")
 
 
 class RunDecorator(base.Decorator[Run]):
-
   def runs(self) -> set[Run]:
     return self._targets
 
@@ -24,7 +23,6 @@ class RunDecorator(base.Decorator[Run]):
 
 
 class RunDecoratorContext(base.DecoratorContext[RunDecoratorT, Run]):
-
   @property
   def run(self) -> Run:
     return self._target

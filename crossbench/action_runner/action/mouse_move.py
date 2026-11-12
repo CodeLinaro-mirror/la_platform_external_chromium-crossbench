@@ -33,24 +33,25 @@ class MouseMoveAction(DurationAction):
 
   waypoints: tuple[Point, ...] = ()
   source_device: str = dataclasses.field(
-      default=DEFAULT_VIRTUAL_DEVICES[InputSource.MOUSE].name, kw_only=True)
+    default=DEFAULT_VIRTUAL_DEVICES[InputSource.MOUSE].name, kw_only=True
+  )
 
   @classmethod
   @override
   def create(
-      cls: type[Self],
-      waypoints: Iterable[Point] = (),
-      duration: dt.timedelta = dt.timedelta(),
-      source_device: str = DEFAULT_VIRTUAL_DEVICES[InputSource.MOUSE].name,
-      timeout: dt.timedelta = ACTION_TIMEOUT,
-      index: int = 0,
+    cls: type[Self],
+    waypoints: Iterable[Point] = (),
+    duration: dt.timedelta = dt.timedelta(),
+    source_device: str = DEFAULT_VIRTUAL_DEVICES[InputSource.MOUSE].name,
+    timeout: dt.timedelta = ACTION_TIMEOUT,
+    index: int = 0,
   ) -> Self:
     return cls(
-        waypoints=tuple(waypoints),
-        duration=duration,
-        source_device=source_device,
-        timeout=timeout,
-        index=index,
+      waypoints=tuple(waypoints),
+      duration=duration,
+      source_device=source_device,
+      timeout=timeout,
+      index=index,
     )
 
   @classmethod
@@ -59,24 +60,28 @@ class MouseMoveAction(DurationAction):
   def config_parser(cls: type[Self]) -> ConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
-        "waypoints",
-        aliases=("points", "positions", "path", "coordinates"),
-        type=Point,
-        is_list=True,
-        required=True)
+      "waypoints",
+      aliases=("points", "positions", "path", "coordinates"),
+      type=Point,
+      is_list=True,
+      required=True,
+    )
     parser.add_argument(
-        "source_device",
-        type=ObjectParser.non_empty_str,
-        required=False,
-        default=DEFAULT_VIRTUAL_DEVICES[InputSource.MOUSE].name)
+      "source_device",
+      type=ObjectParser.non_empty_str,
+      required=False,
+      default=DEFAULT_VIRTUAL_DEVICES[InputSource.MOUSE].name,
+    )
     return parser
 
   @override
   def validate(self) -> None:
     super().validate()
     if len(self.waypoints) < 2:
-      raise ValueError(f"{self}.waypoints must contain at least 2 points, "
-                       f"got {len(self.waypoints)}")
+      raise ValueError(
+        f"{self}.waypoints must contain at least 2 points, "
+        f"got {len(self.waypoints)}"
+      )
     ObjectParser.non_empty_str(self.source_device, f"{self}.source_device")
 
   @override

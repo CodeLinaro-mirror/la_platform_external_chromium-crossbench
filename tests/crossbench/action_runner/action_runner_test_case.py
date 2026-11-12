@@ -10,8 +10,10 @@ from unittest import mock
 
 from crossbench.action_runner.action_runner import SCRIPTS_DIR
 from crossbench.action_runner.agent_driver import PROMPTS_DIR
-from tests.crossbench.base import CrossbenchFakeFsTestCase, \
-    CrossbenchMockArgsMixin
+from tests.crossbench.base import (
+  CrossbenchFakeFsTestCase,
+  CrossbenchMockArgsMixin,
+)
 
 if TYPE_CHECKING:
   from crossbench.cli.parser import CBNamespace
@@ -36,8 +38,11 @@ class ActionRunnerTestCase(CrossbenchMockArgsMixin, CrossbenchFakeFsTestCase):
 
     def sleep_side_effect(seconds):
       self.datetime_mock.now.return_value += dt.timedelta(seconds=seconds)
-      logging.debug("mocked time advanced %fs to %s", seconds,
-                    self.datetime_mock.now.return_value)
+      logging.debug(
+        "mocked time advanced %fs to %s",
+        seconds,
+        self.datetime_mock.now.return_value,
+      )
 
     self.sleep_mock.side_effect = sleep_side_effect
 
@@ -52,10 +57,12 @@ class ActionRunnerTestCase(CrossbenchMockArgsMixin, CrossbenchFakeFsTestCase):
   def tearDown(self):
     expected_sh_cmds = self.platform.expected_sh_cmds
     if expected_sh_cmds is not None:
-      self.assertSequenceEqual(expected_sh_cmds, [],
-                               "Got additional unused shell cmds.")
+      self.assertSequenceEqual(
+        expected_sh_cmds, [], "Got additional unused shell cmds."
+      )
 
     expected_js = self.browser.expected_js
     if expected_js is not None:
-      self.assertSequenceEqual(expected_js, [],
-                               "Got additional unused expected JS.")
+      self.assertSequenceEqual(
+        expected_js, [], "Got additional unused expected JS."
+      )

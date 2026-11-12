@@ -18,17 +18,22 @@ from crossbench.config import ConfigObject, config_dir
 from crossbench.helper import fs_helper
 from crossbench.helper.collection_helper import close_matches_message
 from crossbench.parse import PROTOBUF_ALL_SUFFIX, ObjectParser, PathParser
-from crossbench.probes.cb_perfetto.context.android import \
-    AndroidPerfettoProbeContext
-from crossbench.probes.cb_perfetto.context.chromeos import \
-    ChromeOsPerfettoProbeContext
-from crossbench.probes.cb_perfetto.context.desktop import \
-    DesktopPerfettoProbeContext
+from crossbench.probes.cb_perfetto.context.android import (
+  AndroidPerfettoProbeContext,
+)
+from crossbench.probes.cb_perfetto.context.chromeos import (
+  ChromeOsPerfettoProbeContext,
+)
+from crossbench.probes.cb_perfetto.context.desktop import (
+  DesktopPerfettoProbeContext,
+)
 from crossbench.probes.cb_perfetto.context.macos import MacPerfettoProbeContext
-from crossbench.probes.cb_perfetto.context.windows import \
-    WindowsPerfettoProbeContext
-from crossbench.probes.cb_perfetto.start_tracing_sequence import \
-    StartTracingSequence
+from crossbench.probes.cb_perfetto.context.windows import (
+  WindowsPerfettoProbeContext,
+)
+from crossbench.probes.cb_perfetto.start_tracing_sequence import (
+  StartTracingSequence,
+)
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeKeyT
 from crossbench.probes.result_location import ResultLocation
 from crossbench.probes.trace_processor import profile_helper
@@ -45,11 +50,13 @@ if TYPE_CHECKING:
 
 @dataclasses.dataclass(frozen=True)
 class TraceConfig(ConfigObject):
-  """ See https://perfetto.dev/docs/reference/trace-config-proto for more
+  """See https://perfetto.dev/docs/reference/trace-config-proto for more
   details."""
+
   VALID_EXTENSIONS: ClassVar[tuple[str, ...]] = PROTOBUF_ALL_SUFFIX
   trace_config: trace_config_pb2.TraceConfig = dataclasses.field(
-      default_factory=trace_config_pb2.TraceConfig)
+    default_factory=trace_config_pb2.TraceConfig
+  )
 
   @classmethod
   @override
@@ -59,8 +66,9 @@ class TraceConfig(ConfigObject):
     presets = cls.presets()
     if preset_file := presets.get(value):
       return cls.parse_path(preset_file)
-    error_message, alternative = close_matches_message(value, presets.keys(),
-                                                       "TraceConfig preset")
+    error_message, alternative = close_matches_message(
+      value, presets.keys(), "TraceConfig preset"
+    )
     if not alternative:
       raise ValueError(error_message)
     logging.error(error_message)
@@ -82,7 +90,8 @@ class TraceConfig(ConfigObject):
   @classmethod
   def parse_json(cls, config: dict[str, object]) -> Self:
     with exception.annotate_argparsing(
-        f"Parsing {cls.__name__} dict as json proto"):
+      f"Parsing {cls.__name__} dict as json proto"
+    ):
       trace_config = trace_config_pb2.TraceConfig()
       json_format.ParseDict(config, trace_config)
       return cls(trace_config=trace_config)
@@ -143,10 +152,12 @@ def has_v8_code_data_source(trace_config: trace_config_pb2.TraceConfig) -> bool:
   return has_data_source(trace_config, "dev.v8.code")
 
 
-def has_data_source(trace_config: trace_config_pb2.TraceConfig,
-                    name: str) -> bool:
-  return any(data_source.config.name == name
-             for data_source in trace_config.data_sources)
+def has_data_source(
+  trace_config: trace_config_pb2.TraceConfig, name: str
+) -> bool:
+  return any(
+    data_source.config.name == name for data_source in trace_config.data_sources
+  )
 
 
 class PerfettoProbe(Probe):
@@ -173,6 +184,7 @@ class PerfettoProbe(Probe):
   After the run, the trace will be found among the results as
   "perfetto.trace.pb.gz".
   """
+
   NAME: ClassVar = "perfetto"
   RESULT_LOCATION: ClassVar = ResultLocation.BROWSER
 
@@ -188,64 +200,76 @@ class PerfettoProbe(Probe):
   def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     parser.add_default_argument(
-        "trace_config",
-        aliases=("config", "textproto", "preset"),
-        type=TraceConfig,
-        help=("Serialized perfetto configuration. "
-              "See probe instructions for more details"))
+      "trace_config",
+      aliases=("config", "textproto", "preset"),
+      type=TraceConfig,
+      help=(
+        "Serialized perfetto configuration. "
+        "See probe instructions for more details"
+      ),
+    )
     parser.add_argument(
-        "perfetto_bin",
-        aliases=("perfetto",),
-        type=PathParser.any_path,
-        default=pth.AnyPath("perfetto"),
-        help="Perfetto binary on the browser device (android, chrome-os)")
+      "perfetto_bin",
+      aliases=("perfetto",),
+      type=PathParser.any_path,
+      default=pth.AnyPath("perfetto"),
+      help="Perfetto binary on the browser device (android, chrome-os)",
+    )
     parser.add_argument(
-        "tracebox_bin",
-        aliases=("tracebox",),
-        type=PathParser.any_path,
-        default=pth.AnyPath("tracebox"),
-        help="Tracebox binary on the browser device (linux, macos). "
-        "Auto downloaded on local devices.")
+      "tracebox_bin",
+      aliases=("tracebox",),
+      type=PathParser.any_path,
+      default=pth.AnyPath("tracebox"),
+      help="Tracebox binary on the browser device (linux, macos). "
+      "Auto downloaded on local devices.",
+    )
     parser.add_argument(
-        "enabled_tags",
-        aliases=("tags",),
-        is_list=True,
-        type=str,
-        default=(),
-        help="Enabled tags, will be combined with the 'trace_config'.")
+      "enabled_tags",
+      aliases=("tags",),
+      is_list=True,
+      type=str,
+      default=(),
+      help="Enabled tags, will be combined with the 'trace_config'.",
+    )
     parser.add_argument(
-        "disabled_tags",
-        is_list=True,
-        type=str,
-        default=(),
-        help="Disabled tags, will be combined with the 'trace_config'.")
+      "disabled_tags",
+      is_list=True,
+      type=str,
+      default=(),
+      help="Disabled tags, will be combined with the 'trace_config'.",
+    )
     parser.add_argument(
-        "enabled_categories",
-        aliases=("categories",),
-        is_list=True,
-        type=str,
-        default=(),
-        help="Enabled categories, will be combined with the 'trace_config'.")
+      "enabled_categories",
+      aliases=("categories",),
+      is_list=True,
+      type=str,
+      default=(),
+      help="Enabled categories, will be combined with the 'trace_config'.",
+    )
     parser.add_argument(
-        "disabled_categories",
-        is_list=True,
-        type=str,
-        default=(),
-        help="Disabled categories, will be combined with the 'trace_config'.")
+      "disabled_categories",
+      is_list=True,
+      type=str,
+      default=(),
+      help="Disabled categories, will be combined with the 'trace_config'.",
+    )
     parser.add_argument(
-        "trace_browser_startup",
-        type=ObjectParser.bool,
-        default=False,
-        help="Start perfetto tracing before launching the browser.")
+      "trace_browser_startup",
+      type=ObjectParser.bool,
+      default=False,
+      help="Start perfetto tracing before launching the browser.",
+    )
     parser.add_argument(
-        "start_tracing_sequence",
-        type=StartTracingSequence,
-        default=StartTracingSequence.PROBE_START)
+      "start_tracing_sequence",
+      type=StartTracingSequence,
+      default=StartTracingSequence.PROBE_START,
+    )
     parser.add_argument(
-        "config_via_stdin",
-        type=ObjectParser.bool,
-        default=False,
-        help="Pass perfetto tracing config via stdin.")
+      "config_via_stdin",
+      type=ObjectParser.bool,
+      default=False,
+      help="Pass perfetto tracing config via stdin.",
+    )
     return parser
 
   @classmethod
@@ -270,23 +294,24 @@ class PerfettoProbe(Probe):
       else:
         enabled_tags.append(tag)
     return cls(
-        trace_config=trace_config_pb2.TraceConfig(),
-        enabled_tags=enabled_tags,
-        disabled_tags=disabled_tags)
+      trace_config=trace_config_pb2.TraceConfig(),
+      enabled_tags=enabled_tags,
+      disabled_tags=disabled_tags,
+    )
 
   def __init__(
-      self,
-      trace_config: trace_config_pb2.TraceConfig | None = None,
-      perfetto_bin: pth.AnyPath = pth.AnyPath("perfetto"),
-      tracebox_bin: pth.AnyPath = pth.AnyPath("tracebox"),
-      enabled_tags: Iterable[str] = (),
-      disabled_tags: Iterable[str] = (),
-      enabled_categories: Iterable[str] = (),
-      disabled_categories: Iterable[str] = (),
-      trace_browser_startup: bool = False,
-      start_tracing_sequence: StartTracingSequence = StartTracingSequence
-      .PROBE_START,
-      config_via_stdin: bool = False) -> None:
+    self,
+    trace_config: trace_config_pb2.TraceConfig | None = None,
+    perfetto_bin: pth.AnyPath = pth.AnyPath("perfetto"),
+    tracebox_bin: pth.AnyPath = pth.AnyPath("tracebox"),
+    enabled_tags: Iterable[str] = (),
+    disabled_tags: Iterable[str] = (),
+    enabled_categories: Iterable[str] = (),
+    disabled_categories: Iterable[str] = (),
+    trace_browser_startup: bool = False,
+    start_tracing_sequence: StartTracingSequence = StartTracingSequence.PROBE_START,
+    config_via_stdin: bool = False,
+  ) -> None:
     super().__init__()
     if not trace_config:
       trace_config = TraceConfig.parse_str("default").trace_config
@@ -296,41 +321,52 @@ class PerfettoProbe(Probe):
     self._enabled_tags: Final[tuple[str, ...]] = tuple(enabled_tags)
     self._disabled_tags: Final[tuple[str, ...]] = tuple(disabled_tags)
     self._enabled_categories: Final[tuple[str, ...]] = tuple(enabled_categories)
-    self._disabled_categories: Final[tuple[str, ...]] = (
-        tuple(disabled_categories))
+    self._disabled_categories: Final[tuple[str, ...]] = tuple(
+      disabled_categories
+    )
     self._trace_browser_startup: Final[bool] = trace_browser_startup
-    self._start_tracing_sequence: Final[
-        StartTracingSequence] = start_tracing_sequence
+    self._start_tracing_sequence: Final[StartTracingSequence] = (
+      start_tracing_sequence
+    )
     self._config_via_stdin: Final[bool] = config_via_stdin
     self._needs_v8_code_logger: Final[bool] = has_v8_code_data_source(
-        self.trace_config)
+      self.trace_config
+    )
     self._validate_trace_config()
 
   def _validate_trace_config(self) -> None:
     if self.trace_config.ByteSize() == 0:
       raise argparse.ArgumentTypeError(
-          "Perfetto trace config cannot be empty."
-          "Either specify a trace_configs, tags or categories.")
+        "Perfetto trace config cannot be empty."
+        "Either specify a trace_configs, tags or categories."
+      )
 
   @property
   @override
   def key(self) -> ProbeKeyT:
-    return (*super().key, ("textproto", str(self._trace_config_obj)),
-            ("perfetto_bin", str(self.perfetto_bin)), ("tracebox_bin",
-                                                       str(self.tracebox_bin)),
-            ("trace_browser_startup", str(self.trace_browser_startup)),
-            ("start_tracing_sequence", str(self.start_tracing_sequence)),
-            ("config_via_stdin",
-             str(self.config_via_stdin)), ("enabled_tags", self.enabled_tags),
-            ("disabled_tags", self.disabled_tags), ("enabled_categories",
-                                                    self.enabled_categories),
-            ("disabled_categories", self.disabled_categories))
+    return (
+      *super().key,
+      ("textproto", str(self._trace_config_obj)),
+      ("perfetto_bin", str(self.perfetto_bin)),
+      ("tracebox_bin", str(self.tracebox_bin)),
+      ("trace_browser_startup", str(self.trace_browser_startup)),
+      ("start_tracing_sequence", str(self.start_tracing_sequence)),
+      ("config_via_stdin", str(self.config_via_stdin)),
+      ("enabled_tags", self.enabled_tags),
+      ("disabled_tags", self.disabled_tags),
+      ("enabled_categories", self.enabled_categories),
+      ("disabled_categories", self.disabled_categories),
+    )
 
   @property
   def trace_config(self) -> trace_config_pb2.TraceConfig:
     base_config = self._trace_config_obj
-    if (not self.enabled_tags and not self.disabled_tags and
-        not self.enabled_categories and not self.disabled_categories):
+    if (
+      not self.enabled_tags
+      and not self.disabled_tags
+      and not self.enabled_categories
+      and not self.disabled_categories
+    ):
       return base_config
     trace_config = trace_config_pb2.TraceConfig()
     trace_config.CopyFrom(base_config)
@@ -416,8 +452,9 @@ class PerfettoProbe(Probe):
     logging.critical("Perfetto trace results:")
     for run in runs:
       for result_file in run.results[self].file_list:
-        logging.critical("  - %s : %s", result_file,
-                         fs_helper.get_file_size(result_file))
+        logging.critical(
+          "  - %s : %s", result_file, fs_helper.get_file_size(result_file)
+        )
 
   @override
   def create_context(self, run: Run) -> PerfettoProbeContext:

@@ -9,8 +9,16 @@ import base64
 import datetime as dt
 import logging
 import os
-from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Sequence, \
-    TextIO, TypeAlias, override
+from typing import (
+  TYPE_CHECKING,
+  ClassVar,
+  Final,
+  Iterable,
+  Sequence,
+  TextIO,
+  TypeAlias,
+  override,
+)
 
 import requests
 import selenium.common.exceptions
@@ -19,10 +27,14 @@ from selenium.webdriver.chromium.service import ChromiumService
 from selenium.webdriver.chromium.webdriver import ChromiumDriver
 
 from crossbench.browsers.attributes import BrowserAttributes
-from crossbench.browsers.chromium.driver_finder import ChromeDriverFinder, \
-    DriverNotFoundError
-from crossbench.browsers.chromium.version import ChromeDriverVersion, \
-    ChromiumVersion
+from crossbench.browsers.chromium.driver_finder import (
+  ChromeDriverFinder,
+  DriverNotFoundError,
+)
+from crossbench.browsers.chromium.version import (
+  ChromeDriverVersion,
+  ChromiumVersion,
+)
 from crossbench.browsers.chromium_based import helper
 from crossbench.browsers.chromium_based.chromium_based import ChromiumBased
 from crossbench.browsers.chromium_based.devtools_tracer import DevToolsTracer
@@ -30,8 +42,9 @@ from crossbench.browsers.webdriver import WebDriverBrowser
 from crossbench.flags.chrome import ChromeFlags
 from crossbench.helper import wait
 from crossbench.helper.url_helper import get
-from third_party.protoc.gen.protos.perfetto.common.track_event_descriptor_pb2 import \
-    TrackEventDescriptor
+from third_party.protoc.gen.protos.perfetto.common.track_event_descriptor_pb2 import (
+  TrackEventDescriptor,
+)
 
 if TYPE_CHECKING:
   import re
@@ -49,8 +62,8 @@ ScriptIdKwargs: TypeAlias = dict[str, object]
 
 
 class ChromiumBasedWebDriver(
-    WebDriverBrowser, ChromiumBased, metaclass=abc.ABCMeta):
-
+  WebDriverBrowser, ChromiumBased, metaclass=abc.ABCMeta
+):
   WEB_DRIVER_OPTIONS: type[ChromiumOptions] = ChromiumOptions
   WEB_DRIVER_SERVICE: type[ChromiumService] = ChromiumService
   UNSUPPORTED_FLAGS: tuple[str, ...] = ()
@@ -64,9 +77,11 @@ class ChromiumBasedWebDriver(
   @classmethod
   @override
   def attributes(cls) -> BrowserAttributes:
-    return (super().attributes()
-            | BrowserAttributes.CHROMIUM
-            | BrowserAttributes.DESKTOP)
+    return (
+      super().attributes()
+      | BrowserAttributes.CHROMIUM
+      | BrowserAttributes.DESKTOP
+    )
 
   def use_local_chromedriver(self) -> bool:
     return self.version.major == 0 or self.is_locally_compiled()
@@ -79,17 +94,22 @@ class ChromiumBasedWebDriver(
       return self.host_platform.local_path(path)
     return None
 
-  def _execute_cdp_cmd(self, driver: webdriver.Remote, cmd: str,
-                       cmd_args: dict[str, object]) -> dict[str, object]:
-    return driver.execute("executeCdpCommand", {
+  def _execute_cdp_cmd(
+    self, driver: webdriver.Remote, cmd: str, cmd_args: dict[str, object]
+  ) -> dict[str, object]:
+    return driver.execute(
+      "executeCdpCommand",
+      {
         "cmd": cmd,
         "params": cmd_args,
-    })["value"]
+      },
+    )["value"]
 
   def perfetto_categories(self) -> TrackEventDescriptor:
     descriptor = TrackEventDescriptor()
-    response = self._execute_cdp_cmd(self._private_driver,
-                                     "Tracing.getTrackEventDescriptor", {})
+    response = self._execute_cdp_cmd(
+      self._private_driver, "Tracing.getTrackEventDescriptor", {}
+    )
     if descriptor_b64 := response.get("descriptor", ""):
       assert isinstance(descriptor_b64, str)
       data = base64.b64decode(descriptor_b64)
@@ -97,8 +117,9 @@ class ChromiumBasedWebDriver(
       return descriptor
 
     # Fallback to get plain category names without descriptions or tags.
-    res = self._execute_cdp_cmd(self._private_driver, "Tracing.getCategories",
-                                {})
+    res = self._execute_cdp_cmd(
+      self._private_driver, "Tracing.getCategories", {}
+    )
     categories = res.get("categories", [])
     assert isinstance(categories, list)
     for c in categories:
@@ -113,8 +134,9 @@ class ChromiumBasedWebDriver(
       if flag not in flags:
         continue
       flag_value = flags.pop(flag, None)
-      logging.debug("Chromium: Removed unsupported flag: %s=%s", flag,
-                    flag_value)
+      logging.debug(
+        "Chromium: Removed unsupported flag: %s=%s", flag, flag_value
+      )
     return flags
 
   @override
@@ -133,12 +155,15 @@ class ChromiumBasedWebDriver(
     if self.platform.is_local:
       capabilities = self._private_driver.capabilities
       if isinstance(capabilities, dict) and isinstance(
-          pid := capabilities.get("goog:processID"), int):
+        pid := capabilities.get("goog:processID"), int
+      ):
         self._pid = pid
         return
     logging.debug(
-        "Could not find unique browser process for webdriver: %s, got %s",
-        self, candidates)
+      "Could not find unique browser process for webdriver: %s, got %s",
+      self,
+      candidates,
+    )
 
   @override
   def _find_driver(self) -> pth.AnyPath:
@@ -152,8 +177,10 @@ class ChromiumBasedWebDriver(
       return finder.download()
     except DriverNotFoundError as original_download_error:
       logging.debug(
-          "Could not download chromedriver, "
-          "falling back to finding local build: %s", original_download_error)
+        "Could not download chromedriver, "
+        "falling back to finding local build: %s",
+        original_download_error,
+      )
       try:
         return finder.find_local_build()
       except DriverNotFoundError as e:
@@ -171,21 +198,27 @@ class ChromiumBasedWebDriver(
     if self.attributes().is_desktop and not self.platform.is_chromeos:
       return
     raise NotImplementedError(
-        "startup_urls is only supported on desktop Chromium, not "
-        f"{type(self).__name__} ({self.platform}): {startup_urls}")
+      "startup_urls is only supported on desktop Chromium, not "
+      f"{type(self).__name__} ({self.platform}): {startup_urls}"
+    )
 
   @override
-  def _start_driver(self,
-                    session: BrowserSessionRunGroup,
-                    driver_path: pth.AnyPath,
-                    startup_urls: Sequence[str] = ()) -> webdriver.Remote:
+  def _start_driver(
+    self,
+    session: BrowserSessionRunGroup,
+    driver_path: pth.AnyPath,
+    startup_urls: Sequence[str] = (),
+  ) -> webdriver.Remote:
     return self._start_chromedriver(
-        session, driver_path, startup_urls=startup_urls)
+      session, driver_path, startup_urls=startup_urls
+    )
 
-  def _start_chromedriver(self,
-                          session: BrowserSessionRunGroup,
-                          driver_path: pth.AnyPath,
-                          startup_urls: Sequence[str] = ()) -> ChromiumDriver:
+  def _start_chromedriver(
+    self,
+    session: BrowserSessionRunGroup,
+    driver_path: pth.AnyPath,
+    startup_urls: Sequence[str] = (),
+  ) -> ChromiumDriver:
     assert not self._is_running
     assert self.log_file, "Missing log file"
     args = self._get_browser_flags_for_session(session)
@@ -195,8 +228,8 @@ class ChromiumBasedWebDriver(
     service_args: list[str] = []
     if self._settings.driver_logging:
       service_args += [
-          "--verbose",
-          f"--log-path={os.fspath(self._setup_driver_log_file())}",
+        "--verbose",
+        f"--log-path={os.fspath(self._setup_driver_log_file())}",
       ]
 
     adb_port = os.environ.get("ANDROID_ADB_SERVER_PORT")
@@ -204,8 +237,9 @@ class ChromiumBasedWebDriver(
       service_args += ["--adb-port=" + adb_port]
 
     assert self._stdout_log_file is None, (
-        " stdout_log_file should have been unset, but got "
-        f"{self._stdout_log_file}")
+      " stdout_log_file should have been unset, but got "
+      f"{self._stdout_log_file}"
+    )
     # On desktop platforms service logs contain browser stdout, hence the name.
     stdout_log_path = self.log_file.with_stem("browser.stdout")
     if stdout_log_path.exists():
@@ -213,52 +247,62 @@ class ChromiumBasedWebDriver(
     else:
       self._stdout_log_file = stdout_log_path.open("w+")
     service = self.WEB_DRIVER_SERVICE(
-        executable_path=os.fspath(driver_path),
-        service_args=service_args,
-        log_output=self._stdout_log_file,
+      executable_path=os.fspath(driver_path),
+      service_args=service_args,
+      log_output=self._stdout_log_file,
     )
 
     # TODO: support remote platforms
     driver = self._create_driver(options, service)
     # Prevent debugging overhead.
-    self._execute_cdp_cmd(driver, "Runtime.setMaxCallStackSizeToCapture",
-                          {"size": 0})
+    self._execute_cdp_cmd(
+      driver, "Runtime.setMaxCallStackSizeToCapture", {"size": 0}
+    )
     return driver
 
-  def _create_options(self,
-                      session: BrowserSessionRunGroup,
-                      args: Sequence[str],
-                      startup_urls: Sequence[str] = ()) -> ChromiumOptions:
+  def _create_options(
+    self,
+    session: BrowserSessionRunGroup,
+    args: Sequence[str],
+    startup_urls: Sequence[str] = (),
+  ) -> ChromiumOptions:
     assert not self._is_running
     self._validate_startup_urls(startup_urls)
     options: ChromiumOptions = self.WEB_DRIVER_OPTIONS()
     options.set_capability("browserVersion", str(self.version.major))
     # Don't wait for document-ready.
     options.set_capability("pageLoadStrategy", "none")
-    if ("--allow-background-interventions" in args and
-        not self.platform.is_chromeos):
+    if (
+      "--allow-background-interventions" in args
+      and not self.platform.is_chromeos
+    ):
       # chromedriver will silently add additional args that interfere
       # with background optimizations. Disable those args when the test is
       # run with background interventions allowed.
-      options.add_experimental_option("excludeSwitches", [
+      options.add_experimental_option(
+        "excludeSwitches",
+        [
           "disable-background-timer-throttling",
           "disable-backgrounding-occluded-windows",
-      ])
+        ],
+      )
     for arg in args:
       options.add_argument(arg)
     options.binary_location = os.fspath(self.path)
     session.setup_selenium_options(options)
     if startup_urls:
       prefs: dict[str, object] = dict(
-          options.experimental_options.get("prefs", {}))
+        options.experimental_options.get("prefs", {})
+      )
       prefs["session.restore_on_startup"] = self.SESSION_RESTORE_URLS_PREF
       prefs["session.startup_urls"] = list(startup_urls)
       options.add_experimental_option("prefs", prefs)
     return options
 
   @abc.abstractmethod
-  def _create_driver(self, options: ChromiumOptions,
-                     service: ChromiumService) -> ChromiumDriver:
+  def _create_driver(
+    self, options: ChromiumOptions, service: ChromiumService
+  ) -> ChromiumDriver:
     pass
 
   @override
@@ -268,63 +312,80 @@ class ChromiumBasedWebDriver(
       local_build_dir = self.local_build_dir()
       assert local_build_dir is not None, "expected local_build_dir to be set"
       hints.append(
-          helper.get_chromedriver_build_instructions(
-              local_build_dir, self.platform.is_android))
+        helper.get_chromedriver_build_instructions(
+          local_build_dir, self.platform.is_android
+        )
+      )
     return hints
 
   @override
   def _validate_driver_version(self) -> None:
     error_message = None
     if self.is_local and helper.is_build_dir(
-        self.platform.local_path(self.app_path.parent), self.platform):
+      self.platform.local_path(self.app_path.parent), self.platform
+    ):
       error_message = self._validate_locally_built_driver(
-          self.platform.local_path(self.driver_path))
+        self.platform.local_path(self.driver_path)
+      )
     else:
       error_message = self._validate_any_driver_version(self.driver_path)
     if error_message:
       raise RuntimeError("\n".join(error_message))
 
   def _validate_locally_built_driver(
-      self, driver_path: pth.LocalPath) -> Iterable[str] | None:
+    self, driver_path: pth.LocalPath
+  ) -> Iterable[str] | None:
     # TODO: migrate to version object on the browser
     browser_version: BrowserVersion = self.version
     assert isinstance(browser_version, ChromiumVersion)
     driver_version = ChromeDriverVersion.parse(
-        self.platform.app_version(driver_path))
+      self.platform.app_version(driver_path)
+    )
     if browser_version.parts == driver_version.parts:
       return None
     local_build_dir = self.local_build_dir()
     assert local_build_dir is not None, "expected local_build_dir to be set"
-    return (f"Chromedriver version mismatch: driver={driver_version.parts_str} "
-            f"browser={browser_version.parts_str} ({self}).",
-            helper.get_chromedriver_build_instructions(
-                local_build_dir, self.platform.is_android))
+    return (
+      f"Chromedriver version mismatch: driver={driver_version.parts_str} "
+      f"browser={browser_version.parts_str} ({self}).",
+      helper.get_chromedriver_build_instructions(
+        local_build_dir, self.platform.is_android
+      ),
+    )
 
   def _validate_any_driver_version(
-      self, driver_path: pth.AnyPath) -> Iterable[str] | None:
+    self, driver_path: pth.AnyPath
+  ) -> Iterable[str] | None:
     raw_version_str = self.host_platform.sh_stdout(driver_path, "--version")
     driver_version = ChromeDriverVersion.parse(raw_version_str)
     if driver_version.major == self.version.major:
       return None
-    return (f"Chromedriver version mismatch: driver={driver_version} "
-            f"browser={self.version} ({self})",)
+    return (
+      f"Chromedriver version mismatch: driver={driver_version} "
+      f"browser={self.version} ({self})",
+    )
 
   @override
   def clear_cache(self) -> None:
     self._execute_cdp_cmd(self._private_driver, "Network.clearBrowserCache", {})
-    self._execute_cdp_cmd(self._private_driver, "Network.clearBrowserCookies",
-                          {})
+    self._execute_cdp_cmd(
+      self._private_driver, "Network.clearBrowserCookies", {}
+    )
 
   @override
   def run_script_on_new_document(self, script: str) -> None:
     window_id = self.current_window_id()
     if window_id in self._script_id_kwargs_by_window_id:
-      self._execute_cdp_cmd(self._private_driver,
-                            "Page.removeScriptToEvaluateOnNewDocument",
-                            self._script_id_kwargs_by_window_id[window_id])
+      self._execute_cdp_cmd(
+        self._private_driver,
+        "Page.removeScriptToEvaluateOnNewDocument",
+        self._script_id_kwargs_by_window_id[window_id],
+      )
     self._script_id_kwargs_by_window_id[window_id] = self._execute_cdp_cmd(
-        self._private_driver, "Page.addScriptToEvaluateOnNewDocument",
-        {"source": script})
+      self._private_driver,
+      "Page.addScriptToEvaluateOnNewDocument",
+      {"source": script},
+    )
 
   @override
   def quit(self) -> None:
@@ -341,12 +402,12 @@ class ChromiumBasedWebDriver(
 
   @override
   def switch_tab(
-      self,
-      title: re.Pattern | None = None,
-      url: re.Pattern | None = None,
-      tab_index: int | None = None,
-      relative_tab_index: int | None = None,
-      timeout: dt.timedelta = _DEFAULT_TAB_TIMEOUT,
+    self,
+    title: re.Pattern | None = None,
+    url: re.Pattern | None = None,
+    tab_index: int | None = None,
+    relative_tab_index: int | None = None,
+    timeout: dt.timedelta = _DEFAULT_TAB_TIMEOUT,
   ) -> str:
     assert not (tab_index is not None and relative_tab_index is not None)
     driver = self._private_driver
@@ -365,11 +426,14 @@ class ChromiumBasedWebDriver(
         tab_index = (i + relative_tab_index) % len(driver.window_handles)
       if tab_index is not None:
         handles = [driver.window_handles[tab_index]]
-      elif (original_handle is not None and
-            original_handle in driver.window_handles):
+      elif (
+        original_handle is not None and original_handle in driver.window_handles
+      ):
         # Start searching with the tab after the current tab.
         i = driver.window_handles.index(original_handle)
-        handles = driver.window_handles[i + 1:] + driver.window_handles[:i + 1]
+        handles = (
+          driver.window_handles[i + 1 :] + driver.window_handles[: i + 1]
+        )
       else:
         handles = driver.window_handles
 
@@ -393,20 +457,21 @@ class ChromiumBasedWebDriver(
 
   @override
   def close_tab(
-      self,
-      title: re.Pattern | None = None,
-      url: re.Pattern | None = None,
-      tab_index: int | None = None,
-      relative_tab_index: int | None = None,
-      timeout: dt.timedelta = _DEFAULT_TAB_TIMEOUT,
+    self,
+    title: re.Pattern | None = None,
+    url: re.Pattern | None = None,
+    tab_index: int | None = None,
+    relative_tab_index: int | None = None,
+    timeout: dt.timedelta = _DEFAULT_TAB_TIMEOUT,
   ) -> None:
     driver = self._private_driver
     original_handle = driver.current_window_handle
     tab_to_close = original_handle
 
     if title or url or (tab_index is not None):
-      tab_to_close = self.switch_tab(title, url, tab_index, relative_tab_index,
-                                     timeout)
+      tab_to_close = self.switch_tab(
+        title, url, tab_index, relative_tab_index, timeout
+      )
 
     driver.close()
 
@@ -462,26 +527,35 @@ class ChromiumBasedWebDriver(
   def debugger_address(self) -> str:
     capabilities = self._private_driver.capabilities
     if "goog:chromeOptions" not in capabilities:
-      raise RuntimeError("Browser does not support remote debugging. "
-                         f"Capabilities: {capabilities}")
+      raise RuntimeError(
+        "Browser does not support remote debugging. "
+        f"Capabilities: {capabilities}"
+      )
     if "debuggerAddress" not in capabilities["goog:chromeOptions"]:
       raise RuntimeError(
-          "Browser was not started with remote debugging enabled. "
-          f"Capabilities: {capabilities['goog:chromeOptions']}")
+        "Browser was not started with remote debugging enabled. "
+        f"Capabilities: {capabilities['goog:chromeOptions']}"
+      )
 
     return self._private_driver.capabilities["goog:chromeOptions"][
-        "debuggerAddress"]
+      "debuggerAddress"
+    ]
 
   @property
   def ws_endpoint(self) -> str:
     try:
       json_response = get(
-          f"http://{self.debugger_address}/json/version", retry=3).json()
+        f"http://{self.debugger_address}/json/version", retry=3
+      ).json()
       if "webSocketDebuggerUrl" not in json_response:
-        raise RuntimeError("Could not find webSocketDebuggerUrl in response. "
-                           f"Response: {json_response}")
+        raise RuntimeError(
+          "Could not find webSocketDebuggerUrl in response. "
+          f"Response: {json_response}"
+        )
 
       return json_response["webSocketDebuggerUrl"]
     except requests.exceptions.RequestException as e:
-      raise RuntimeError("Could not get target list from "
-                         f"http://{self.debugger_address}/json/version") from e
+      raise RuntimeError(
+        "Could not get target list from "
+        f"http://{self.debugger_address}/json/version"
+      ) from e

@@ -16,8 +16,9 @@ from crossbench.helper.wait import WaitRange, wait_with_backoff
 if TYPE_CHECKING:
   from crossbench import path as pth
   from crossbench.plt.macos import MacOSPlatform
-  from crossbench.probes.xcode_instruments.instrument_package import \
-      InstrumentPackage
+  from crossbench.probes.xcode_instruments.instrument_package import (
+    InstrumentPackage,
+  )
 
 _START_TIMEOUT_S: Final[int] = 30
 _DEFAULT_STOP_TIMEOUT_S: Final[int] = 3 * 60
@@ -30,13 +31,15 @@ _RECORDING_STARTED_MARKER: Final[str] = "Ctrl-C to stop the recording"
 class XctraceRecorder:
   """Drives an `xctrace record` subprocess."""
 
-  def __init__(self,
-               host_platform: MacOSPlatform,
-               package: InstrumentPackage,
-               output_path: pth.AnyPath,
-               attach_pid: int | None = None,
-               device_udid: str | None = None,
-               stop_timeout_s: int = _DEFAULT_STOP_TIMEOUT_S) -> None:
+  def __init__(
+    self,
+    host_platform: MacOSPlatform,
+    package: InstrumentPackage,
+    output_path: pth.AnyPath,
+    attach_pid: int | None = None,
+    device_udid: str | None = None,
+    stop_timeout_s: int = _DEFAULT_STOP_TIMEOUT_S,
+  ) -> None:
     """Initialize an XctraceRecorder.
 
     Args:
@@ -64,29 +67,35 @@ class XctraceRecorder:
 
   def start(self) -> None:
     assert self._host_platform.exists(self._package.path), (
-        f"Didn't find instrument package {self._package.path}")
+      f"Didn't find instrument package {self._package.path}"
+    )
     # Finalize even if the run is interrupted, so the trace is not corrupted.
     atexit.register(self.finalize)
 
-    process_filter = (["--attach", str(self._attach_pid)]
-                      if self._attach_pid is not None else ["--all-processes"])
-    device_args = (["--device", self._device_udid] if self._device_udid else [])
+    process_filter = (
+      ["--attach", str(self._attach_pid)]
+      if self._attach_pid is not None
+      else ["--all-processes"]
+    )
+    device_args = ["--device", self._device_udid] if self._device_udid else []
     self._recording_started.clear()
     self._process = self._host_platform.popen(
-        "xctrace",
-        "record",
-        *self._package.record_args,
-        *device_args,
-        *process_filter,
-        "--output",
-        self._output_path,
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        encoding="utf-8")
+      "xctrace",
+      "record",
+      *self._package.record_args,
+      *device_args,
+      *process_filter,
+      "--output",
+      self._output_path,
+      stdin=subprocess.PIPE,
+      stdout=subprocess.PIPE,
+      stderr=subprocess.STDOUT,
+      encoding="utf-8",
+    )
     assert self._process.stdout, "Missing xctrace stdout pipe"
     self._output_thread = threading.Thread(
-        target=self._read_output, args=(self._process.stdout,), daemon=True)
+      target=self._read_output, args=(self._process.stdout,), daemon=True
+    )
     self._output_thread.start()
     self._wait_for_recording_started()
 
@@ -109,8 +118,9 @@ class XctraceRecorder:
         if self._process.poll() is not None:
           raise ValueError("Could not start xctrace record")
     except TimeoutError:
-      logging.warning("xctrace took too long to start recording. "
-                      "Samples might be missing.")
+      logging.warning(
+        "xctrace took too long to start recording. Samples might be missing."
+      )
 
   def request_stop(self) -> None:
     """Signals `xctrace` to stop recording without blocking.
@@ -120,8 +130,9 @@ class XctraceRecorder:
     for the trace file to be fully written.
     """
     assert self._process, "Recording was not started"
-    self._host_platform.send_signal(self._process,
-                                    self._host_platform.signals.SIGINT)
+    self._host_platform.send_signal(
+      self._process, self._host_platform.signals.SIGINT
+    )
 
   def finalize(self) -> None:
     """Waits for `xctrace` to finish writing the trace bundle to disk.
@@ -135,13 +146,16 @@ class XctraceRecorder:
     logging.info("  Waiting for xctrace to finalize the trace (slow)...")
     with ui.spinner():
       self._host_platform.terminate_gracefully(
-          self._process,
-          signal=self._host_platform.signals.SIGINT,
-          timeout=self._stop_timeout_s)
+        self._process,
+        signal=self._host_platform.signals.SIGINT,
+        timeout=self._stop_timeout_s,
+      )
     success_file = self._output_path / "open.creq"
     if not self._host_platform.exists(success_file):
-      logging.error("xctrace failed to flush cleanly. "
-                    "The trace bundle might be corrupted or empty.")
+      logging.error(
+        "xctrace failed to flush cleanly. "
+        "The trace bundle might be corrupted or empty."
+      )
     self._process = None
     if self._output_thread:
       self._output_thread.join(timeout=_OUTPUT_THREAD_JOIN_TIMEOUT_S)

@@ -9,17 +9,21 @@ import unittest
 from unittest import mock
 
 from crossbench.browsers.chromium_based.webdriver import ChromiumBasedWebDriver
-from crossbench.probes.perfetto_info import CategoryDescription, \
-    PerfettoInfoProbe, PerfettoInfoProbeContext
+from crossbench.probes.perfetto_info import (
+  CategoryDescription,
+  PerfettoInfoProbe,
+  PerfettoInfoProbeContext,
+)
 from tests import test_helper
-from third_party.protoc.gen.protos.perfetto.common.tracing_service_state_pb2 import \
-    TracingServiceState
-from third_party.protoc.gen.protos.perfetto.common.track_event_descriptor_pb2 import \
-    TrackEventDescriptor
+from third_party.protoc.gen.protos.perfetto.common.tracing_service_state_pb2 import (
+  TracingServiceState,
+)
+from third_party.protoc.gen.protos.perfetto.common.track_event_descriptor_pb2 import (
+  TrackEventDescriptor,
+)
 
 
 class TestPerfettoInfoProbe(unittest.TestCase):
-
   def _create_context(self, browser):
     run = mock.MagicMock()
     run.browser = browser
@@ -54,8 +58,9 @@ class TestPerfettoInfoProbe(unittest.TestCase):
     self.assertIn("blink", categories_dict)
     self.assertEqual(categories_dict["blink"].name, "blink")
     self.assertEqual(categories_dict["blink"].description, "Blink engine")
-    self.assertSequenceEqual(categories_dict["blink"].tags,
-                             ("benchmark", "loading"))
+    self.assertSequenceEqual(
+      categories_dict["blink"].tags, ("benchmark", "loading")
+    )
     self.assertEqual(categories_dict["blink"].data_source, "track_event")
 
     self.assertIn("v8", categories_dict)
@@ -96,7 +101,8 @@ class TestPerfettoInfoProbe(unittest.TestCase):
     self.assertEqual(sched_cat.data_source, "linux.ftrace")
 
     empty_cat = next(
-        cat for cat in categories if cat.data_source == "android.heapprofd")
+      cat for cat in categories if cat.data_source == "android.heapprofd"
+    )
     self.assertEqual(empty_cat.name, "")
     self.assertEqual(empty_cat.data_source, "android.heapprofd")
 
@@ -127,11 +133,10 @@ class TestPerfettoInfoProbe(unittest.TestCase):
 
 
 class CategoryDescriptionTestCase(unittest.TestCase):
-
   def test_parse_minimal(self):
     data = {
-        "data_source": "track_event",
-        "name": "blink",
+      "data_source": "track_event",
+      "name": "blink",
     }
     cat = CategoryDescription.parse(data)
     self.assertEqual(cat.data_source, "track_event")
@@ -141,10 +146,10 @@ class CategoryDescriptionTestCase(unittest.TestCase):
 
   def test_parse_full(self):
     data = {
-        "data_source": "track_event",
-        "name": "v8",
-        "description": "V8 engine",
-        "tags": ["js", "v8"],
+      "data_source": "track_event",
+      "name": "v8",
+      "description": "V8 engine",
+      "tags": ["js", "v8"],
     }
     cat = CategoryDescription.parse(data)
     self.assertEqual(cat.data_source, "track_event")

@@ -23,7 +23,6 @@ from tests.crossbench.base import BaseCrossbenchTestCase
 
 
 class OpenResultDBMixin:
-
   @contextlib.contextmanager
   def open_results_db(self, in_memory: bool = False) -> Iterator[ResultsDB]:
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -36,7 +35,6 @@ class OpenResultDBMixin:
 
 
 class ResultsDBTestCase(OpenResultDBMixin, unittest.TestCase):
-
   def test_init_in_memory(self):
     db = ResultsDB()
     self.assertTrue(db.is_in_memory)
@@ -74,7 +72,6 @@ class ResultsDBTestCase(OpenResultDBMixin, unittest.TestCase):
 
 
 class ResultDBMockTestCase(OpenResultDBMixin, BaseCrossbenchTestCase):
-
   def test_add_browser(self):
     with self.open_results_db(in_memory=True) as db:
       with self.assertRaisesRegex(IntegrityError, "platform"):
@@ -90,20 +87,22 @@ class ResultDBMockTestCase(OpenResultDBMixin, BaseCrossbenchTestCase):
     mock_story = mock.Mock()
     mock_story.name = "story_a"
     mock_runs = [
-        mock.Mock(
-            index=0,
-            repetition=0,
-            temperature="cold",
-            story=mock_story,
-            browser=self.browsers[0],
-            browser_platform=self.browsers[0].platform),
-        mock.Mock(
-            index=1,
-            repetition=0,
-            temperature="cold",
-            story=mock_story,
-            browser=self.browsers[1],
-            browser_platform=self.browsers[1].platform),
+      mock.Mock(
+        index=0,
+        repetition=0,
+        temperature="cold",
+        story=mock_story,
+        browser=self.browsers[0],
+        browser_platform=self.browsers[0].platform,
+      ),
+      mock.Mock(
+        index=1,
+        repetition=0,
+        temperature="cold",
+        story=mock_story,
+        browser=self.browsers[1],
+        browser_platform=self.browsers[1].platform,
+      ),
     ]
     mock_runs[0].name = "run_0_story_a"
     mock_runs[1].name = "run_1_story_a"
@@ -118,10 +117,12 @@ class ResultDBMockTestCase(OpenResultDBMixin, BaseCrossbenchTestCase):
         self.assertEqual(run_1.name, "run_1_story_a")
         self.assertEqual(run_0.browser.label, self.browsers[0].label)
         self.assertEqual(run_1.browser.label, self.browsers[1].label)
-        self.assertEqual(run_0.browser.platform.label,
-                         str(self.browsers[0].platform))
-        self.assertEqual(run_1.browser.platform.label,
-                         str(self.browsers[1].platform))
+        self.assertEqual(
+          run_0.browser.platform.label, str(self.browsers[0].platform)
+        )
+        self.assertEqual(
+          run_1.browser.platform.label, str(self.browsers[1].platform)
+        )
       with self.assertRaises(IntegrityError):
         db.setup_runs(mock_runs)
 

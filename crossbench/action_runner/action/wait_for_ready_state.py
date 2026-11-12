@@ -30,7 +30,8 @@ class WaitForReadyStateAction(Action):
   def config_parser(cls: type[Self]) -> ConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
-        "ready_state", type=ReadyState.parse, default=ReadyState.COMPLETE)
+      "ready_state", type=ReadyState.parse, default=ReadyState.COMPLETE
+    )
     return parser
 
   @override

@@ -19,9 +19,10 @@ class CrossbenchDevToolsRecorderProxy:
   @classmethod
   def add_cli_arguments(cls, subparsers: Subparsers) -> argparse.ArgumentParser:
     return subparsers.add_parser(
-        "devtools-recorder-proxy",
-        aliases=["devtools"],
-        help="Unsupported operation")
+      "devtools-recorder-proxy",
+      aliases=["devtools"],
+      help="Unsupported operation",
+    )
 
   @classmethod
   def run_subcommand(cls, args: argparse.Namespace) -> None:

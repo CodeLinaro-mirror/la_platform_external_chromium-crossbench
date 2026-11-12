@@ -36,19 +36,24 @@ class Timing:
   def __post_init__(self) -> None:
     if self.cool_down_time.total_seconds() < 0:
       raise ValueError(
-          f"Timing.cool_down_time must be >= 0, but got: {self.cool_down_time}")
+        f"Timing.cool_down_time must be >= 0, but got: {self.cool_down_time}"
+      )
     if self.unit.total_seconds() <= 0:
       raise ValueError(f"Timing.unit must be > 0, but got {self.unit}")
     if self.timeout_unit:
       if self.timeout_unit.total_seconds() <= 0:
         raise ValueError(
-            f"Timing.timeout_unit must be > 0, but got {self.timeout_unit}")
+          f"Timing.timeout_unit must be > 0, but got {self.timeout_unit}"
+        )
       if self.timeout_unit < self.unit:
-        raise ValueError(f"Timing.unit must be <= Timing.timeout_unit: "
-                         f"{self.unit} vs. {self.timeout_unit}")
+        raise ValueError(
+          f"Timing.unit must be <= Timing.timeout_unit: "
+          f"{self.unit} vs. {self.timeout_unit}"
+        )
     if self.run_timeout.total_seconds() < 0:
       raise ValueError(
-          f"Timing.run_timeout, must be >= 0, but got {self.run_timeout}")
+        f"Timing.run_timeout, must be >= 0, but got {self.run_timeout}"
+      )
 
   def units(self, time: AnyTime, absolute_time: bool = False) -> int | float:
     """Convert absolute time (seconds, timedelta) to relative time units."""
@@ -64,16 +69,17 @@ class Timing:
       return seconds
     return seconds / self.unit.total_seconds()
 
-  def timedelta(self,
-                time_units: AnyTimeUnit,
-                absolute_time: bool = False) -> dt.timedelta:
+  def timedelta(
+    self, time_units: AnyTimeUnit, absolute_time: bool = False
+  ) -> dt.timedelta:
     """Converts relative time units to absolute time."""
     return self._to_timedelta(
-        time_units, self.unit, absolute_time, allow_max=True)
+      time_units, self.unit, absolute_time, allow_max=True
+    )
 
-  def timeout_timedelta(self,
-                        time_units: AnyTimeUnit,
-                        absolute_time: bool = False) -> dt.timedelta:
+  def timeout_timedelta(
+    self, time_units: AnyTimeUnit, absolute_time: bool = False
+  ) -> dt.timedelta:
     """Converts relative time units to absolute time for timeouts.
     Note that timeouts can have a separate time unit."""
     if self.has_no_timeout:
@@ -81,11 +87,13 @@ class Timing:
     timeout_unit = self.timeout_unit or self.unit
     return self._to_timedelta(time_units, timeout_unit, absolute_time)
 
-  def _to_timedelta(self,
-                    time_units: AnyTimeUnit,
-                    time_unit_duration: dt.timedelta,
-                    absolute_time: bool = False,
-                    allow_max: bool = False) -> dt.timedelta:
+  def _to_timedelta(
+    self,
+    time_units: AnyTimeUnit,
+    time_unit_duration: dt.timedelta,
+    absolute_time: bool = False,
+    allow_max: bool = False,
+  ) -> dt.timedelta:
     time_units_f: float | int = self._to_units_f(time_units)
     if allow_max and time_units_f == math.inf:
       return dt.timedelta.max
@@ -118,8 +126,8 @@ class Timing:
 
   def to_json(self) -> dict[str, float]:
     return {
-        "coolDownTime": self.cool_down_time.total_seconds(),
-        "unit": self.unit.total_seconds(),
-        "timeoutUnit": self.timeout_unit.total_seconds(),
-        "runTimeout": self.run_timeout.total_seconds(),
+      "coolDownTime": self.cool_down_time.total_seconds(),
+      "unit": self.unit.total_seconds(),
+      "timeoutUnit": self.timeout_unit.total_seconds(),
+      "runTimeout": self.run_timeout.total_seconds(),
     }

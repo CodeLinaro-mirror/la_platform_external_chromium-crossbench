@@ -7,26 +7,36 @@ from __future__ import annotations
 import datetime as dt
 import json
 import logging
-from typing import TYPE_CHECKING, ClassVar, Final, NotRequired, Sequence, \
-    TypedDict, cast, override
+from typing import (
+  TYPE_CHECKING,
+  ClassVar,
+  Final,
+  NotRequired,
+  Sequence,
+  TypedDict,
+  cast,
+  override,
+)
 
 import selenium.common.exceptions
 import urllib3.exceptions
 
 from crossbench import path as pth
 from crossbench.action_runner.action.js import JsAction
-from crossbench.action_runner.action_runner_listener import \
-    ActionRunnerListener
+from crossbench.action_runner.action_runner_listener import ActionRunnerListener
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.benchmarks.loading.config.blocks import ActionBlock
-from crossbench.benchmarks.loading.loading_benchmark import LoadingBenchmark, \
-    LoadingPageFilter
+from crossbench.benchmarks.loading.loading_benchmark import (
+  LoadingBenchmark,
+  LoadingPageFilter,
+)
 from crossbench.benchmarks.loading.page.base import Page
 from crossbench.benchmarks.loading.page.live import LivePage
-from crossbench.benchmarks.loading.playback_controller import \
-    PlaybackController
-from crossbench.benchmarks.loading.tab_controller import RepeatTabController, \
-    TabController
+from crossbench.benchmarks.loading.playback_controller import PlaybackController
+from crossbench.benchmarks.loading.tab_controller import (
+  RepeatTabController,
+  TabController,
+)
 from crossbench.parse import NumberParser
 from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
 from crossbench.probes.metric import MetricsMerger
@@ -63,6 +73,7 @@ class MemoryProbe(BenchmarkProbeMixin, JsonResultProbe):
   Memory-specific Probe.
   Extracts the number of alive tabs.
   """
+
   NAME: ClassVar[str] = "memory_probe"
 
   @override
@@ -71,7 +82,8 @@ class MemoryProbe(BenchmarkProbeMixin, JsonResultProbe):
 
   def to_json(self, actions: Actions) -> JsonDict:
     raise NotImplementedError(
-        "should not be called, data comes from memory probe context")
+      "should not be called, data comes from memory probe context"
+    )
 
   @override
   def log_run_result(self, run: Run) -> None:
@@ -81,8 +93,9 @@ class MemoryProbe(BenchmarkProbeMixin, JsonResultProbe):
   def log_browsers_result(self, group: BrowsersRunGroup) -> None:
     self._log_result(group.results, single_result=False)
 
-  def _log_result(self, result_dict: ProbeResultDict,
-                  single_result: bool) -> None:
+  def _log_result(
+    self, result_dict: ProbeResultDict, single_result: bool
+  ) -> None:
 
     if self not in result_dict:
       return
@@ -100,8 +113,9 @@ class MemoryProbe(BenchmarkProbeMixin, JsonResultProbe):
           logging.critical("Score %s", data["final_surviving_tabs_count"])
         else:
           scores = [
-              v for k, v in data.items()
-              if k.endswith("/final_surviving_tabs_count")
+            v
+            for k, v in data.items()
+            if k.endswith("/final_surviving_tabs_count")
           ]
           logging.critical("Scores %s", scores)
       else:
@@ -110,19 +124,21 @@ class MemoryProbe(BenchmarkProbeMixin, JsonResultProbe):
   @override
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
     merged = MetricsMerger.merge_json_list(
-        repetitions_group.results[self].json
-        for repetitions_group in group.repetitions_groups)
+      repetitions_group.results[self].json
+      for repetitions_group in group.repetitions_groups
+    )
     return self.write_group_result(group, merged)
 
   @override
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
     return self.merge_browsers_json_list(group).merge(
-        self.merge_browsers_csv_list(group))
+      self.merge_browsers_csv_list(group)
+    )
 
 
-class MemoryProbeContext(ActionRunnerListener,
-                         JsonResultProbeContext[MemoryProbe]):
-
+class MemoryProbeContext(
+  ActionRunnerListener, JsonResultProbeContext[MemoryProbe]
+):
   def __init__(self, probe: MemoryProbe, run: Run) -> None:
     super().__init__(probe, run)
     benchmark = probe.benchmark
@@ -155,42 +171,43 @@ class MemoryProbeContext(ActionRunnerListener,
       return
 
     playback_metrics: PlaybackMetrics = {
-        "final_surviving_tabs_count":
-            len(self._navigation_time_ms),
-        "alive_tabs_by_tab_index":
-            dict(self._alive_tabs_by_tab_index),
-        "page_load_duration_ms_by_tab_index":
-            dict(self._page_load_duration_ms_by_tab_index),
-        "allocation_duration_ms_by_tab_index":
-            dict(self._allocation_duration_ms_by_tab_index),
-        "tab_index_at_first_kill":
-            self._tab_index_at_first_kill,
+      "final_surviving_tabs_count": len(self._navigation_time_ms),
+      "alive_tabs_by_tab_index": dict(self._alive_tabs_by_tab_index),
+      "page_load_duration_ms_by_tab_index": dict(
+        self._page_load_duration_ms_by_tab_index
+      ),
+      "allocation_duration_ms_by_tab_index": dict(
+        self._allocation_duration_ms_by_tab_index
+      ),
+      "tab_index_at_first_kill": self._tab_index_at_first_kill,
     }
 
     if self._page_load_duration_ms_by_tab_index:
-      playback_metrics["average_page_load_duration_ms"] = (
-          sum(self._page_load_duration_ms_by_tab_index.values()) /
-          len(self._page_load_duration_ms_by_tab_index))
+      playback_metrics["average_page_load_duration_ms"] = sum(
+        self._page_load_duration_ms_by_tab_index.values()
+      ) / len(self._page_load_duration_ms_by_tab_index)
 
     if self._allocation_duration_ms_by_tab_index:
-      playback_metrics["average_allocation_duration_ms"] = (
-          sum(self._allocation_duration_ms_by_tab_index.values()) /
-          len(self._allocation_duration_ms_by_tab_index))
+      playback_metrics["average_allocation_duration_ms"] = sum(
+        self._allocation_duration_ms_by_tab_index.values()
+      ) / len(self._allocation_duration_ms_by_tab_index)
 
     if self._tab_index_at_first_kill is not None:
       after_kill = [
-          count for idx, count in self._alive_tabs_by_tab_index.items()
-          if int(idx) >= self._tab_index_at_first_kill
+        count
+        for idx, count in self._alive_tabs_by_tab_index.items()
+        if int(idx) >= self._tab_index_at_first_kill
       ]
       if after_kill:
         avg = sum(after_kill) / len(after_kill)
         playback_metrics["average_alive_tabs_after_first_kill"] = avg
         try:
           self.run.browser.js(
-              "performance.mark('crossbench_avg_tabs_alive', {"
-              " detail: { tab_index_at_first_kill: "
-              f"{self._tab_index_at_first_kill},"
-              f" average_alive_tabs_after_first_kill: {avg} }} }})")
+            "performance.mark('crossbench_avg_tabs_alive', {"
+            " detail: { tab_index_at_first_kill: "
+            f"{self._tab_index_at_first_kill},"
+            f" average_alive_tabs_after_first_kill: {avg} }} }})"
+          )
         except (ValueError, selenium.common.exceptions.WebDriverException) as e:
           logging.debug("Could not inject avg tabs mark: %s", e)
 
@@ -221,30 +238,41 @@ class MemoryProbeContext(ActionRunnerListener,
     with run.actions("_record_navigation_time", measure=False) as action:
       cur_handle: str = action.current_window_id()
       navigation_start_time = action.js(
-          "return window.performance.timing.navigationStart")
+        "return window.performance.timing.navigationStart"
+      )
       assert isinstance(navigation_start_time, float)
-      logging.debug("Browser: %s. Navigation starttime for handle %s is %s.",
-                    run.browser.unique_name, cur_handle, navigation_start_time)
+      logging.debug(
+        "Browser: %s. Navigation starttime for handle %s is %s.",
+        run.browser.unique_name,
+        cur_handle,
+        navigation_start_time,
+      )
       self._navigation_time_ms[cur_handle] = navigation_start_time
 
       tab_index = self._tab_count - 1
       page_loaded = action.js(
-          f"return performance.getEntriesByName('page-loaded~{tab_index}')"
-          "[0].startTime")
+        f"return performance.getEntriesByName('page-loaded~{tab_index}')"
+        "[0].startTime"
+      )
       assert isinstance(page_loaded, float)
-      alloc_start = action.js("return performance.getEntriesByName"
-                              f"('allocation-start~{tab_index}')[0].startTime")
+      alloc_start = action.js(
+        "return performance.getEntriesByName"
+        f"('allocation-start~{tab_index}')[0].startTime"
+      )
       assert isinstance(alloc_start, float)
-      alloc_done = action.js("return performance.getEntriesByName"
-                             f"('allocation-done~{tab_index}')[0].startTime")
+      alloc_done = action.js(
+        "return performance.getEntriesByName"
+        f"('allocation-done~{tab_index}')[0].startTime"
+      )
       assert isinstance(alloc_done, float)
       alloc_dur = alloc_done - alloc_start
       self._page_load_duration_ms_by_tab_index[str(tab_index)] = page_loaded
       self._allocation_duration_ms_by_tab_index[str(tab_index)] = alloc_dur
       action.js(
-          "performance.mark('crossbench_tab_timing', { detail: {"
-          f" tab_index: {tab_index}, page_load_duration_ms: {page_loaded},"
-          f" allocation_duration_ms: {alloc_dur} }} }})")
+        "performance.mark('crossbench_tab_timing', { detail: {"
+        f" tab_index: {tab_index}, page_load_duration_ms: {page_loaded},"
+        f" allocation_duration_ms: {alloc_dur} }} }})"
+      )
       return cur_handle
 
   def _check_liveness(self, run: Run) -> int:
@@ -257,12 +285,14 @@ class MemoryProbeContext(ActionRunnerListener,
     dead_handles = []
     with run.actions("_check_liveness", measure=False) as action:
       for handle, handle_navigation_time_ms in self._navigation_time_ms.items():
-        logging.debug("Browser: %s. Liveness checking for handle: %s",
-                      run.browser, handle)
+        logging.debug(
+          "Browser: %s. Liveness checking for handle: %s", run.browser, handle
+        )
         try:
           action.switch_window(handle)
           navigation_start_time = action.js(
-              "return window.performance.timing.navigationStart", timeout=2)
+            "return window.performance.timing.navigationStart", timeout=2
+          )
           assert isinstance(navigation_start_time, float)
           if navigation_start_time == handle_navigation_time_ms:
             alive_count += 1
@@ -282,15 +312,19 @@ class MemoryProbeContext(ActionRunnerListener,
 
   def _error_msg_is_tab_kill(self, e: Exception) -> bool:
     if isinstance(e, selenium.common.exceptions.WebDriverException) and (
-        "page crash" in str(e) or "tab crashed" in str(e)):
+      "page crash" in str(e) or "tab crashed" in str(e)
+    ):
       return True
     if isinstance(e, selenium.common.exceptions.TimeoutException):
       return True
     if isinstance(e, urllib3.exceptions.ReadTimeoutError):
       return True
     # Error msg from `Could not execute JS` due to page crash.
-    if isinstance(e, ValueError) and ("page crash" in str(e) or "tab crashed"
-                                      in str(e) or "script timeout" in str(e)):
+    if isinstance(e, ValueError) and (
+      "page crash" in str(e)
+      or "tab crashed" in str(e)
+      or "script timeout" in str(e)
+    ):
       return True
     return False
 
@@ -309,10 +343,12 @@ class MemoryProbeContext(ActionRunnerListener,
       alive_count = self._check_liveness(run)
       if self._tab_count == skip_until + 1 and alive_count < self._tab_count:
         logging.warning(
-            "A dead tab was found during the first liveness check! "
-            "This means a tab died while checks were skipped. "
-            "The memory metrics may be inaccurate. You should decrease "
-            "--skip-liveness-checks-until (currently %s).", skip_until)
+          "A dead tab was found during the first liveness check! "
+          "This means a tab died while checks were skipped. "
+          "The memory metrics may be inaccurate. You should decrease "
+          "--skip-liveness-checks-until (currently %s).",
+          skip_until,
+        )
 
     tab_index = self._tab_count - 1
     self._alive_tabs_by_tab_index[str(tab_index)] = alive_count
@@ -325,8 +361,9 @@ class MemoryProbeContext(ActionRunnerListener,
         tab_index = self._tab_count - 1
         try:
           action.js(
-              "performance.mark('tabs_alive', { detail: {"
-              f" tab_index: {tab_index}, alive_count: {alive_count} }} }})")
+            "performance.mark('tabs_alive', { detail: {"
+            f" tab_index: {tab_index}, alive_count: {alive_count} }} }})"
+          )
         except (ValueError, selenium.common.exceptions.WebDriverException) as e:
           logging.warning("Failed to record alive tabs mark: %s", e)
 
@@ -343,20 +380,23 @@ class MemoryBenchmarkStoryFilter(LoadingPageFilter):
   @classmethod
   @override
   def add_cli_arguments(
-      cls, parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+    cls, parser: argparse.ArgumentParser
+  ) -> argparse.ArgumentParser:
     parser = super().add_cli_arguments(parser)
     parser.set_defaults(tabs=RepeatTabController(100))
     parser.add_argument(
-        "--memory-percent",
-        type=NumberParser.positive_float,
-        default=2.0,
-        help="Percentage of system memory to allocate per tab. Default is 2.0.")
+      "--memory-percent",
+      type=NumberParser.positive_float,
+      default=2.0,
+      help="Percentage of system memory to allocate per tab. Default is 2.0.",
+    )
     parser.add_argument(
-        "--skip-liveness-checks-until",
-        type=NumberParser.positive_zero_int,
-        default=40,
-        help="Number of tabs to open before checking for liveness. "
-        "Default is 40.")
+      "--skip-liveness-checks-until",
+      type=NumberParser.positive_zero_int,
+      default=40,
+      help="Number of tabs to open before checking for liveness. "
+      "Default is 40.",
+    )
     return parser
 
   @override
@@ -367,26 +407,33 @@ class MemoryBenchmarkStoryFilter(LoadingPageFilter):
   def stories_from_cli_args(cls, args: argparse.Namespace) -> tuple[Page, ...]:
     args_dict = vars(args)
     page = MemoryPage(
-        "memory",
-        args_dict.get("memory_percent", 2.0),
-        args_dict.get("skip_liveness_checks_until", 40),
-        dt.timedelta(seconds=2),
-        tabs=args_dict.get("tabs", RepeatTabController(100)),
-        playback=args_dict.get("playback", PlaybackController.default()))
+      "memory",
+      args_dict.get("memory_percent", 2.0),
+      args_dict.get("skip_liveness_checks_until", 40),
+      dt.timedelta(seconds=2),
+      tabs=args_dict.get("tabs", RepeatTabController(100)),
+      playback=args_dict.get("playback", PlaybackController.default()),
+    )
     return (page,)
 
 
 class MemoryPage(LivePage):
-
-  def __init__(self, name: str, memory_percent: float,
-               skip_liveness_checks_until: int, duration: dt.timedelta,
-               tabs: TabController, playback: PlaybackController) -> None:
+  def __init__(
+    self,
+    name: str,
+    memory_percent: float,
+    skip_liveness_checks_until: int,
+    duration: dt.timedelta,
+    tabs: TabController,
+    playback: PlaybackController,
+  ) -> None:
     self.memory_percent: Final[float] = memory_percent
     self.skip_liveness_checks_until: Final[int] = skip_liveness_checks_until
     self._current_tab_index = 0
     self._cached_blocksize: int | None = None
     super().__init__(
-        name, "about:blank", duration=duration, tabs=tabs, playback=playback)
+      name, "about:blank", duration=duration, tabs=tabs, playback=playback
+    )
 
   @override
   def run_once(self, run: Run) -> None:
@@ -407,7 +454,8 @@ class MemoryPage(LivePage):
       if self._cached_blocksize is None:
         total_memory_mb = action_runner.browser_platform.total_memory_mb()
         self._cached_blocksize = max(
-            1, int(total_memory_mb * (self.memory_percent / 100.0)))
+          1, int(total_memory_mb * (self.memory_percent / 100.0))
+        )
       blocksize = self._cached_blocksize
 
       tab_index = self._current_tab_index
@@ -416,12 +464,17 @@ class MemoryPage(LivePage):
       # Allocations are done via an injected script instead of via a test
       # page to ensure that if a killed tab is reloaded it does not attempt
       # to reallocate its payload.
-      actions = (JsAction.create(
+      actions = (
+        JsAction.create(
           script_path=pth.LocalPath(__file__).parent / "scripts" / "alloc.js",
-          replacements=Replacements.create({
+          replacements=Replacements.create(
+            {
               "TARGET_MB": str(blocksize),
               "TAB_INDEX": str(tab_index),
-          })),)
+            }
+          ),
+        ),
+      )
       block = ActionBlock(actions=actions)
       action_runner.run_block(block)
 
@@ -460,8 +513,9 @@ class MemoryBenchmark(LoadingBenchmark):
 
   @classmethod
   @override
-  def extra_flags(cls, browser_attributes: BrowserAttributes,
-                  story: Story) -> Flags:
+  def extra_flags(
+    cls, browser_attributes: BrowserAttributes, story: Story
+  ) -> Flags:
     flags: Flags = super().extra_flags(browser_attributes, story)
     if browser_attributes.is_chromium_based:
       flags.set("--allow-background-interventions")

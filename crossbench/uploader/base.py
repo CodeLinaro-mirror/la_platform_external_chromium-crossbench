@@ -12,7 +12,6 @@ if TYPE_CHECKING:
 
 
 class BaseUploader(abc.ABC):
-
   def __init__(self, url: str) -> None:
     self._url: Final[str] = url
 

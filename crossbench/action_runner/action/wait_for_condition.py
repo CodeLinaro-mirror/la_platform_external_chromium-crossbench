@@ -30,7 +30,8 @@ class WaitForConditionAction(Action):
   def config_parser(cls: type[Self]) -> ConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
-        "condition", type=ObjectParser.non_empty_str, required=True)
+      "condition", type=ObjectParser.non_empty_str, required=True
+    )
     return parser
 
   @override
@@ -44,7 +45,8 @@ class WaitForConditionAction(Action):
       raise ValueError(f"{self}.condition is missing.")
     if "return" not in self.condition:
       raise ValueError(
-          f"Missing return statement in condition: {self.condition}")
+        f"Missing return statement in condition: {self.condition}"
+      )
 
   @override
   def to_json(self) -> JsonDict:

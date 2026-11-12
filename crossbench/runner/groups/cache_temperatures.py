@@ -28,11 +28,13 @@ class CacheTemperaturesRunGroup(RunGroup):
   @classmethod
   def groups(cls, runs: Iterable[Run], throw: bool = False) -> tuple[Self, ...]:
     return tuple(
-        collection_helper.group_by_custom(
-            runs,
-            key=lambda run: (run.story, run.browser, run.repetition),
-            group=lambda _: cls(throw),
-            sort_key=None).values())
+      collection_helper.group_by_custom(
+        runs,
+        key=lambda run: (run.story, run.browser, run.repetition),
+        group=lambda _: cls(throw),
+        sort_key=None,
+      ).values()
+    )
 
   def __init__(self, throw: bool = False) -> None:
     super().__init__(throw)
@@ -91,18 +93,18 @@ class CacheTemperaturesRunGroup(RunGroup):
   @override
   def info_stack(self) -> exception.TInfoStack:
     return (
-        "Merging results from multiple cache temperatures",
-        f"browser={self.browser.unique_name}",
-        f"story={self.story}",
-        f"repetition={self.repetition}",
+      "Merging results from multiple cache temperatures",
+      f"browser={self.browser.unique_name}",
+      f"story={self.story}",
+      f"repetition={self.repetition}",
     )
 
   @property
   @override
   def info(self) -> JsonMapping:
     info: JsonDict = {
-        "story": str(self.story),
-        "repetition": self.repetition,
+      "story": str(self.story),
+      "repetition": self.repetition,
     }
     info.update(super().info)
     return info

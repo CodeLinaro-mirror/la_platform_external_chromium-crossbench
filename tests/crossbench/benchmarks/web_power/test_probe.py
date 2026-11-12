@@ -26,10 +26,13 @@ from crossbench.probes.bits import BitsProbe
 from crossbench.probes.probe_context import EmptyProbeContext
 from crossbench.probes.probe_error import ProbeMissingDataError
 from crossbench.probes.trace_processor.constants import QUERIES_DIR
-from crossbench.probes.trace_processor.query_config import \
-    DeviceSpecificTraceProcessorQuery, TraceProcessorQueryConfig
-from crossbench.probes.trace_processor.trace_processor import \
-    TraceProcessorProbe
+from crossbench.probes.trace_processor.query_config import (
+  DeviceSpecificTraceProcessorQuery,
+  TraceProcessorQueryConfig,
+)
+from crossbench.probes.trace_processor.trace_processor import (
+  TraceProcessorProbe,
+)
 
 if TYPE_CHECKING:
   from crossbench.probes.probe import Probe
@@ -39,12 +42,12 @@ from tests.crossbench.base import CrossbenchFakeFsTestCase
 
 
 class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
-
   def setUp(self):
     super().setUp()
     self.mock_benchmark = mock.MagicMock(bits_probe=None)
     self.mock_benchmark.version.return_value = tuple(
-        map(int, VERSION_STRING.split(".")))
+      map(int, VERSION_STRING.split("."))
+    )
     self.probe = WebPowerProbe(benchmark=self.mock_benchmark)
     self.group = mock.MagicMock()
     self.group.results = mock.MagicMock()
@@ -58,11 +61,11 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
 
   def _assert_log_browsers_result(self, critical_mock: mock.MagicMock) -> str:
     critical_mock.assert_called_once_with(
-        "%s Benchmark (%s)\n%s scores:\n%s",
-        self.probe.BENCHMARK_NAME,
-        self._benchmark_version_str(),
-        self.probe.BENCHMARK_NAME,
-        mock.ANY,
+      "%s Benchmark (%s)\n%s scores:\n%s",
+      self.probe.BENCHMARK_NAME,
+      self._benchmark_version_str(),
+      self.probe.BENCHMARK_NAME,
+      mock.ANY,
     )
     return str(critical_mock.call_args.args[-1])
 
@@ -98,47 +101,50 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
     generated as expected."""
     csv_file = pth.LocalPath("power_scores.csv")
     self.fs.create_file(
-        csv_file, contents="browser,story,score\n"
-        "chrome,test,10\n")
+      csv_file, contents="browser,story,score\nchrome,test,10\n"
+    )
     self.group.results.get.return_value = mock.MagicMock(csv=csv_file)
 
     self.probe.log_browsers_result(self.group)
     self.assertRegex(
-        self._assert_log_browsers_result(critical_mock),
-        r"^browser\s+story\s+score\s*\nchrome\s+test\s+10\s*$")
+      self._assert_log_browsers_result(critical_mock),
+      r"^browser\s+story\s+score\s*\nchrome\s+test\s+10\s*$",
+    )
 
   @mock.patch("logging.critical")
   def test_log_browsers_result_bits_success(self, critical_mock):
     csv_file = pth.LocalPath("power_scores.csv")
     self.fs.create_file(
-        csv_file,
-        contents="cb_browser,cb_story,bits_cpu_mw,bits_soc_total_mw\n"
-        "chrome,test,1020.796,1925.195\n")
+      csv_file,
+      contents="cb_browser,cb_story,bits_cpu_mw,bits_soc_total_mw\n"
+      "chrome,test,1020.796,1925.195\n",
+    )
     self.group.results.get.return_value = mock.MagicMock(csv=csv_file)
 
     self.probe.log_browsers_result(self.group)
     self.assertRegex(
-        self._assert_log_browsers_result(critical_mock),
-        r"^cb_browser\s+cb_story\s+bits_cpu_mw\s+bits_soc_total_mw\s*\n"
-        r"chrome\s+test\s+1020\.8\s+1925\.19\s*$")
+      self._assert_log_browsers_result(critical_mock),
+      r"^cb_browser\s+cb_story\s+bits_cpu_mw\s+bits_soc_total_mw\s*\n"
+      r"chrome\s+test\s+1020\.8\s+1925\.19\s*$",
+    )
 
   def _extract_csv_records(
-      self, result, metrics: tuple[str,
-                                   ...] = ("odpm_total_mw",)) -> list[dict]:
+    self, result, metrics: tuple[str, ...] = ("odpm_total_mw",)
+  ) -> list[dict]:
     self.assertTrue(result.csv)
     self.assertEqual(result.csv, pth.LocalPath("results_dir/power_scores.csv"))
     df = pd.read_csv(result.csv)
 
     # Verify schema.
     self.assertEqual(
-        list(df.columns),
-        [
-            "cb_browser",
-            "cb_story",
-            "odpm_total_mw",
-            "bits_cpu_mw",
-            "bits_soc_total_mw",
-        ],
+      list(df.columns),
+      [
+        "cb_browser",
+        "cb_story",
+        "odpm_total_mw",
+        "bits_cpu_mw",
+        "bits_soc_total_mw",
+      ],
     )
 
     # Default to NaN.
@@ -147,15 +153,18 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
         self.assertTrue(df[col].isna().all())
 
     keep_cols = ["cb_browser", "cb_story", *metrics]
-    df = df[keep_cols].sort_values(by=["cb_browser", "cb_story"]).reset_index(
-        drop=True)
+    df = (
+      df[keep_cols]
+      .sort_values(by=["cb_browser", "cb_story"])
+      .reset_index(drop=True)
+    )
     return df.to_dict(orient="records")
 
   def _test_merge_browsers_bits(
-      self,
-      bits_files: dict[pth.LocalPath, str] | None = None,
-      tp_csv_contents: str | None = None,
-      metrics: tuple[str, ...] = ("bits_cpu_mw", "bits_soc_total_mw"),
+    self,
+    bits_files: dict[pth.LocalPath, str] | None = None,
+    tp_csv_contents: str | None = None,
+    metrics: tuple[str, ...] = ("bits_cpu_mw", "bits_soc_total_mw"),
   ) -> list[dict]:
     result_path = pth.LocalPath("results_dir/web_power_probe")
     self.fs.create_dir(result_path.parent)
@@ -166,8 +175,9 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
       tp_csv = pth.LocalPath("results_dir/trace_processor/power_rails.csv")
       self.fs.create_file(tp_csv, contents=tp_csv_contents)
       tp_result.csv_list = [tp_csv]
-      self.group.results.get_by_name.side_effect = (
-          lambda name: tp_result if name == "trace_processor" else None)
+      self.group.results.get_by_name.side_effect = lambda name: (
+        tp_result if name == "trace_processor" else None
+      )
     else:
       self.group.results.get_by_name.return_value = None
 
@@ -178,199 +188,236 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
     return self._extract_csv_records(result, metrics)
 
   def _test_merge_browsers(
-      self,
-      csv_contents: str,
-      metrics: tuple[str, ...] = ("odpm_total_mw",),
+    self,
+    csv_contents: str,
+    metrics: tuple[str, ...] = ("odpm_total_mw",),
   ) -> list[dict]:
     return self._test_merge_browsers_bits(
-        tp_csv_contents=csv_contents,
-        metrics=metrics,
+      tp_csv_contents=csv_contents,
+      metrics=metrics,
     )
 
   def test_merge_browsers_single_run(self):
     """Simulate a single benchmark run being successfully merged.
     The multiple rows represent different power rails (e.g., CPU, Display)."""
-    csv_contents = ("cb_browser,cb_story,cb_run,name,avg_power_mw\n"
-                    "chrome,test,0,rail_1,10.0\n"
-                    "chrome,test,0,rail_2,20.0\n")
+    csv_contents = (
+      "cb_browser,cb_story,cb_run,name,avg_power_mw\n"
+      "chrome,test,0,rail_1,10.0\n"
+      "chrome,test,0,rail_2,20.0\n"
+    )
     records = self._test_merge_browsers(csv_contents)
-    self.assertSequenceEqual(records, [
+    self.assertSequenceEqual(
+      records,
+      [
         {
-            "cb_browser": "chrome",
-            "cb_story": "test",
-            "odpm_total_mw": 10.0 + 20.0,
+          "cb_browser": "chrome",
+          "cb_story": "test",
+          "odpm_total_mw": 10.0 + 20.0,
         },
-    ])
+      ],
+    )
 
   def test_merge_browsers_multiple_runs(self):
     """Simulate multiple benchmark runs (repetitions) being correctly merged and
     averaged across their power rails."""
-    csv_contents = ("cb_browser,cb_story,cb_run,name,avg_power_mw\n"
-                    "chrome,test,0,rail_1,10.0\n"
-                    "chrome,test,0,rail_2,20.0\n"
-                    "chrome,test,1,rail_1,200.0\n"
-                    "chrome,test,1,rail_2,400.0\n")
+    csv_contents = (
+      "cb_browser,cb_story,cb_run,name,avg_power_mw\n"
+      "chrome,test,0,rail_1,10.0\n"
+      "chrome,test,0,rail_2,20.0\n"
+      "chrome,test,1,rail_1,200.0\n"
+      "chrome,test,1,rail_2,400.0\n"
+    )
     records = self._test_merge_browsers(csv_contents)
-    self.assertSequenceEqual(records, [
+    self.assertSequenceEqual(
+      records,
+      [
         {
-            "cb_browser": "chrome",
-            "cb_story": "test",
-            "odpm_total_mw": ((10.0 + 20.0) + (200.0 + 400.0)) / 2.0,
+          "cb_browser": "chrome",
+          "cb_story": "test",
+          "odpm_total_mw": ((10.0 + 20.0) + (200.0 + 400.0)) / 2.0,
         },
-    ])
+      ],
+    )
 
   def test_merge_browsers_four_runs_simple_mean(self):
     """Verify that if there are 4 or less runs, all totals are kept and averaged
     without discarding outliers."""
     csv_contents = (
-        "cb_browser,cb_story,cb_run,name,avg_power_mw\n"
-        # Run 0
-        "chrome,test,0,rail_1,10.0\n"
-        "chrome,test,0,rail_2,20.0\n"
-        # Run 1
-        "chrome,test,1,rail_1,30.0\n"
-        "chrome,test,1,rail_2,40.0\n"
-        # Run 2
-        "chrome,test,2,rail_1,50.0\n"
-        "chrome,test,2,rail_2,60.0\n"
-        # Run 3
-        "chrome,test,3,rail_1,70.0\n"
-        "chrome,test,3,rail_2,80.0\n")
+      "cb_browser,cb_story,cb_run,name,avg_power_mw\n"
+      # Run 0
+      "chrome,test,0,rail_1,10.0\n"
+      "chrome,test,0,rail_2,20.0\n"
+      # Run 1
+      "chrome,test,1,rail_1,30.0\n"
+      "chrome,test,1,rail_2,40.0\n"
+      # Run 2
+      "chrome,test,2,rail_1,50.0\n"
+      "chrome,test,2,rail_2,60.0\n"
+      # Run 3
+      "chrome,test,3,rail_1,70.0\n"
+      "chrome,test,3,rail_2,80.0\n"
+    )
     records = self._test_merge_browsers(csv_contents)
     score = ((10 + 20) + (30 + 40) + (50 + 60) + (70 + 80)) / 4.0
-    self.assertSequenceEqual(records, [
+    self.assertSequenceEqual(
+      records,
+      [
         {
-            "cb_browser": "chrome",
-            "cb_story": "test",
-            "odpm_total_mw": score,
+          "cb_browser": "chrome",
+          "cb_story": "test",
+          "odpm_total_mw": score,
         },
-    ])
+      ],
+    )
 
   def test_merge_browsers_five_runs_outliers_dropped_ordered(self):
     """Verify that if there are 5 or more runs, the top and bottom totals are
     discarded."""
     csv_contents = (
-        "cb_browser,cb_story,cb_run,name,avg_power_mw\n"
-        # Run 0
-        "chrome,test,0,rail_1,10.0\n"
-        "chrome,test,0,rail_2,20.0\n"
-        # Run 1
-        "chrome,test,1,rail_1,30.0\n"
-        "chrome,test,1,rail_2,40.0\n"
-        # Run 2
-        "chrome,test,2,rail_1,50.0\n"
-        "chrome,test,2,rail_2,60.0\n"
-        # Run 3
-        "chrome,test,3,rail_1,70.0\n"
-        "chrome,test,3,rail_2,80.0\n"
-        # Run 4
-        "chrome,test,4,rail_1,90.0\n"
-        "chrome,test,4,rail_2,100.0\n")
+      "cb_browser,cb_story,cb_run,name,avg_power_mw\n"
+      # Run 0
+      "chrome,test,0,rail_1,10.0\n"
+      "chrome,test,0,rail_2,20.0\n"
+      # Run 1
+      "chrome,test,1,rail_1,30.0\n"
+      "chrome,test,1,rail_2,40.0\n"
+      # Run 2
+      "chrome,test,2,rail_1,50.0\n"
+      "chrome,test,2,rail_2,60.0\n"
+      # Run 3
+      "chrome,test,3,rail_1,70.0\n"
+      "chrome,test,3,rail_2,80.0\n"
+      # Run 4
+      "chrome,test,4,rail_1,90.0\n"
+      "chrome,test,4,rail_2,100.0\n"
+    )
     records = self._test_merge_browsers(csv_contents)
-    self.assertSequenceEqual(records, [
+    self.assertSequenceEqual(
+      records,
+      [
         {
-            "cb_browser": "chrome",
-            "cb_story": "test",
-            "odpm_total_mw": ((20 + 70) + (30 + 80) + (40 + 90)) / 3.0,
+          "cb_browser": "chrome",
+          "cb_story": "test",
+          "odpm_total_mw": ((20 + 70) + (30 + 80) + (40 + 90)) / 3.0,
         },
-    ])
+      ],
+    )
 
   def test_merge_browsers_five_runs_outliers_dropped_unordered(self):
     """Verify that outliers are correctly identified and discarded even when the
     run scores are not chronologically ordered by magnitude."""
     csv_contents = (
-        "cb_browser,cb_story,cb_run,name,avg_power_mw\n"
-        # Run 0
-        "chrome,test,0,rail_1,70.0\n"
-        "chrome,test,0,rail_2,80.0\n"
-        # Run 1
-        "chrome,test,1,rail_1,90.0\n"
-        "chrome,test,1,rail_2,100.0\n"
-        # Run 2
-        "chrome,test,2,rail_1,50.0\n"
-        "chrome,test,2,rail_2,60.0\n"
-        # Run 3
-        "chrome,test,3,rail_1,10.0\n"
-        "chrome,test,3,rail_2,20.0\n"
-        # Run 4
-        "chrome,test,4,rail_1,30.0\n"
-        "chrome,test,4,rail_2,40.0\n")
+      "cb_browser,cb_story,cb_run,name,avg_power_mw\n"
+      # Run 0
+      "chrome,test,0,rail_1,70.0\n"
+      "chrome,test,0,rail_2,80.0\n"
+      # Run 1
+      "chrome,test,1,rail_1,90.0\n"
+      "chrome,test,1,rail_2,100.0\n"
+      # Run 2
+      "chrome,test,2,rail_1,50.0\n"
+      "chrome,test,2,rail_2,60.0\n"
+      # Run 3
+      "chrome,test,3,rail_1,10.0\n"
+      "chrome,test,3,rail_2,20.0\n"
+      # Run 4
+      "chrome,test,4,rail_1,30.0\n"
+      "chrome,test,4,rail_2,40.0\n"
+    )
     records = self._test_merge_browsers(csv_contents)
-    self.assertSequenceEqual(records, [
+    self.assertSequenceEqual(
+      records,
+      [
         {
-            "cb_browser": "chrome",
-            "cb_story": "test",
-            "odpm_total_mw": ((20 + 70) + (30 + 80) + (40 + 90)) / 3.0,
+          "cb_browser": "chrome",
+          "cb_story": "test",
+          "odpm_total_mw": ((20 + 70) + (30 + 80) + (40 + 90)) / 3.0,
         },
-    ])
+      ],
+    )
 
   def test_merge_browsers_many_runs_outliers_dropped_unordered(self):
     """Verify that outliers are discarded for 10 runs. Ensure it's always
     one outlier on the top and one on the bottom, regardless of the number
     of runs."""
-    csv_contents = ("cb_browser,cb_story,cb_run,name,avg_power_mw\n"
-                    "chrome,test,0,rail,10.0\n"
-                    "chrome,test,1,rail,20.0\n"
-                    "chrome,test,2,rail,30.0\n"
-                    "chrome,test,3,rail,40.0\n"
-                    "chrome,test,4,rail,50.0\n"
-                    "chrome,test,5,rail,60.0\n"
-                    "chrome,test,6,rail,70.0\n"
-                    "chrome,test,7,rail,80.0\n"
-                    "chrome,test,8,rail,90.0\n"
-                    "chrome,test,9,rail,100.0\n")
+    csv_contents = (
+      "cb_browser,cb_story,cb_run,name,avg_power_mw\n"
+      "chrome,test,0,rail,10.0\n"
+      "chrome,test,1,rail,20.0\n"
+      "chrome,test,2,rail,30.0\n"
+      "chrome,test,3,rail,40.0\n"
+      "chrome,test,4,rail,50.0\n"
+      "chrome,test,5,rail,60.0\n"
+      "chrome,test,6,rail,70.0\n"
+      "chrome,test,7,rail,80.0\n"
+      "chrome,test,8,rail,90.0\n"
+      "chrome,test,9,rail,100.0\n"
+    )
     records = self._test_merge_browsers(csv_contents)
-    self.assertSequenceEqual(records, [
+    self.assertSequenceEqual(
+      records,
+      [
         {
-            "cb_browser": "chrome",
-            "cb_story": "test",
-            "odpm_total_mw": (20 + 30 + 40 + 50 + 60 + 70 + 80 + 90) / 8.0,
+          "cb_browser": "chrome",
+          "cb_story": "test",
+          "odpm_total_mw": (20 + 30 + 40 + 50 + 60 + 70 + 80 + 90) / 8.0,
         },
-    ])
+      ],
+    )
 
   def test_merge_browsers_multiple_stories(self):
     """Verify that power metrics are kept isolated per story when
     aggregating."""
-    csv_contents = ("cb_browser,cb_story,cb_run,name,avg_power_mw\n"
-                    "chrome,cnn,0,rail_1,10.0\n"
-                    "chrome,cnn,0,rail_2,20.0\n"
-                    "chrome,msn,0,rail_1,5000.0\n"
-                    "chrome,msn,0,rail_2,6000.0\n")
+    csv_contents = (
+      "cb_browser,cb_story,cb_run,name,avg_power_mw\n"
+      "chrome,cnn,0,rail_1,10.0\n"
+      "chrome,cnn,0,rail_2,20.0\n"
+      "chrome,msn,0,rail_1,5000.0\n"
+      "chrome,msn,0,rail_2,6000.0\n"
+    )
     records = self._test_merge_browsers(csv_contents)
-    self.assertSequenceEqual(records, [
+    self.assertSequenceEqual(
+      records,
+      [
         {
-            "cb_browser": "chrome",
-            "cb_story": "cnn",
-            "odpm_total_mw": 10.0 + 20.0,
+          "cb_browser": "chrome",
+          "cb_story": "cnn",
+          "odpm_total_mw": 10.0 + 20.0,
         },
         {
-            "cb_browser": "chrome",
-            "cb_story": "msn",
-            "odpm_total_mw": 5000.0 + 6000.0,
+          "cb_browser": "chrome",
+          "cb_story": "msn",
+          "odpm_total_mw": 5000.0 + 6000.0,
         },
-    ])
+      ],
+    )
 
   def test_merge_browsers_multiple_browsers(self):
     """Verify that power metrics are kept isolated per browser when
     aggregating."""
-    csv_contents = ("cb_browser,cb_story,cb_run,name,avg_power_mw\n"
-                    "chrome,cnn,0,rail_1,10.0\n"
-                    "chrome,cnn,0,rail_2,20.0\n"
-                    "safari,cnn,0,rail_1,100.0\n"
-                    "safari,cnn,0,rail_2,200.0\n")
+    csv_contents = (
+      "cb_browser,cb_story,cb_run,name,avg_power_mw\n"
+      "chrome,cnn,0,rail_1,10.0\n"
+      "chrome,cnn,0,rail_2,20.0\n"
+      "safari,cnn,0,rail_1,100.0\n"
+      "safari,cnn,0,rail_2,200.0\n"
+    )
     records = self._test_merge_browsers(csv_contents)
-    self.assertSequenceEqual(records, [
+    self.assertSequenceEqual(
+      records,
+      [
         {
-            "cb_browser": "chrome",
-            "cb_story": "cnn",
-            "odpm_total_mw": 10.0 + 20.0,
+          "cb_browser": "chrome",
+          "cb_story": "cnn",
+          "odpm_total_mw": 10.0 + 20.0,
         },
         {
-            "cb_browser": "safari",
-            "cb_story": "cnn",
-            "odpm_total_mw": 100.0 + 200.0,
+          "cb_browser": "safari",
+          "cb_story": "cnn",
+          "odpm_total_mw": 100.0 + 200.0,
         },
-    ])
+      ],
+    )
 
   def test_merge_browsers_unsupported_device(self):
     """Verify that a run with only an unsupported/unmapped device results in
@@ -384,52 +431,62 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
 
     records = self._test_merge_browsers(csv_contents)
 
-    self.assertSequenceEqual(records, [
+    self.assertSequenceEqual(
+      records,
+      [
         {
-            "cb_browser": "safari",
-            "cb_story": "cnn",
-            "odpm_total_mw": pytest.approx(float("nan"), nan_ok=True),
+          "cb_browser": "safari",
+          "cb_story": "cnn",
+          "odpm_total_mw": pytest.approx(float("nan"), nan_ok=True),
         },
-    ])
+      ],
+    )
 
   def test_merge_browsers_multiple_browsers_and_stories(self):
     """Verify that power metrics are kept isolated per browser and story when
     aggregating."""
-    csv_contents = ("cb_browser,cb_story,cb_run,name,avg_power_mw\n"
-                    "chrome,cnn,0,rail_1,10.0\n"
-                    "chrome,cnn,0,rail_2,20.0\n"
-                    "safari,cnn,0,rail_1,200.0\n"
-                    "safari,cnn,0,rail_2,400.0\n"
-                    "chrome,msn,0,rail_1,5000.0\n"
-                    "chrome,msn,0,rail_2,6000.0\n")
+    csv_contents = (
+      "cb_browser,cb_story,cb_run,name,avg_power_mw\n"
+      "chrome,cnn,0,rail_1,10.0\n"
+      "chrome,cnn,0,rail_2,20.0\n"
+      "safari,cnn,0,rail_1,200.0\n"
+      "safari,cnn,0,rail_2,400.0\n"
+      "chrome,msn,0,rail_1,5000.0\n"
+      "chrome,msn,0,rail_2,6000.0\n"
+    )
     records = self._test_merge_browsers(csv_contents)
-    self.assertSequenceEqual(records, [
+    self.assertSequenceEqual(
+      records,
+      [
         {
-            "cb_browser": "chrome",
-            "cb_story": "cnn",
-            "odpm_total_mw": 10.0 + 20.0,
+          "cb_browser": "chrome",
+          "cb_story": "cnn",
+          "odpm_total_mw": 10.0 + 20.0,
         },
         {
-            "cb_browser": "chrome",
-            "cb_story": "msn",
-            "odpm_total_mw": 5000.0 + 6000.0,
+          "cb_browser": "chrome",
+          "cb_story": "msn",
+          "odpm_total_mw": 5000.0 + 6000.0,
         },
         {
-            "cb_browser": "safari",
-            "cb_story": "cnn",
-            "odpm_total_mw": 200.0 + 400.0,
+          "cb_browser": "safari",
+          "cb_story": "cnn",
+          "odpm_total_mw": 200.0 + 400.0,
         },
-    ])
+      ],
+    )
 
   def test_merge_browsers_multiple_mapped_devices(self):
     """Verify that multiple devices with distinct mappings (e.g. Pixel 9 and
     Pixel 10) are successfully aggregated together if they both output
     power_rails data, while any unsupported devices are padded with NaN."""
-    csv_contents = ("cb_browser,cb_story,cb_run,name,avg_power_mw\n"
-                    "chrome_pixel_9,test,0,rail_1,10.0\n"
-                    "chrome_pixel_9,test,0,rail_2,20.0\n"
-                    "chrome_pixel_10,test,0,rail_1,5000.0\n"
-                    "chrome_pixel_10,test,0,rail_2,6000.0\n")
+    csv_contents = (
+      "cb_browser,cb_story,cb_run,name,avg_power_mw\n"
+      "chrome_pixel_9,test,0,rail_1,10.0\n"
+      "chrome_pixel_9,test,0,rail_2,20.0\n"
+      "chrome_pixel_10,test,0,rail_1,5000.0\n"
+      "chrome_pixel_10,test,0,rail_2,6000.0\n"
+    )
 
     run_p9 = mock.MagicMock()
     run_p9.browser.unique_name = "chrome_pixel_9"
@@ -443,23 +500,26 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
     self.group.runs = [run_p9, run_p10, run_safari]
 
     records = self._test_merge_browsers(csv_contents)
-    self.assertSequenceEqual(records, [
+    self.assertSequenceEqual(
+      records,
+      [
         {
-            "cb_browser": "chrome_pixel_10",
-            "cb_story": "test",
-            "odpm_total_mw": 5000.0 + 6000.0,
+          "cb_browser": "chrome_pixel_10",
+          "cb_story": "test",
+          "odpm_total_mw": 5000.0 + 6000.0,
         },
         {
-            "cb_browser": "chrome_pixel_9",
-            "cb_story": "test",
-            "odpm_total_mw": 10.0 + 20.0,
+          "cb_browser": "chrome_pixel_9",
+          "cb_story": "test",
+          "odpm_total_mw": 10.0 + 20.0,
         },
         {
-            "cb_browser": "safari",
-            "cb_story": "test",
-            "odpm_total_mw": pytest.approx(float("nan"), nan_ok=True),
+          "cb_browser": "safari",
+          "cb_story": "test",
+          "odpm_total_mw": pytest.approx(float("nan"), nan_ok=True),
         },
-    ])
+      ],
+    )
 
   def test_merge_browsers_missing_trace_result(self):
     """Verify that merge gracefully handles missing trace processor result by
@@ -478,13 +538,15 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
     result = self.probe.merge_browsers(self.group)
 
     self.assertSequenceEqual(
-        self._extract_csv_records(result), [
-            {
-                "cb_browser": "chrome",
-                "cb_story": "cnn",
-                "odpm_total_mw": pytest.approx(float("nan"), nan_ok=True),
-            },
-        ])
+      self._extract_csv_records(result),
+      [
+        {
+          "cb_browser": "chrome",
+          "cb_story": "cnn",
+          "odpm_total_mw": pytest.approx(float("nan"), nan_ok=True),
+        },
+      ],
+    )
 
   def test_merge_browsers_missing_power_rails(self):
     """Verify that merge gracefully handles missing power rails CSV by padding
@@ -498,9 +560,11 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
     run.story.name = "cnn"
     self.group.runs = [run]
 
-    csv_contents = ("cb_browser,cb_story,cb_run,name,avg_power_mw\n"
-                    "chrome,test,0,rail_1,10.0\n"
-                    "chrome,test,0,rail_2,20.0\n")
+    csv_contents = (
+      "cb_browser,cb_story,cb_run,name,avg_power_mw\n"
+      "chrome,test,0,rail_1,10.0\n"
+      "chrome,test,0,rail_2,20.0\n"
+    )
 
     tp_result = mock.MagicMock()
     # Missing 'power_rails' in filename.
@@ -512,55 +576,71 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
     result = self.probe.merge_browsers(self.group)
 
     self.assertSequenceEqual(
-        self._extract_csv_records(result), [
-            {
-                "cb_browser": "chrome",
-                "cb_story": "cnn",
-                "odpm_total_mw": pytest.approx(float("nan"), nan_ok=True),
-            },
-        ])
+      self._extract_csv_records(result),
+      [
+        {
+          "cb_browser": "chrome",
+          "cb_story": "cnn",
+          "odpm_total_mw": pytest.approx(float("nan"), nan_ok=True),
+        },
+      ],
+    )
 
   def test_merge_browsers_bits_single_run(self):
     self.mock_benchmark.bits_probe = mock.MagicMock()
-    csv_file = pth.LocalPath("results_dir/chrome/stories/test/0/0_default/bits/"
-                             f"{BitsProbe.BITS_CHANNEL_AVERAGES_CSV_NAME}")
-    csv_contents = ("CHANNEL                                 ,       VALUE\n"
-                    "BIGCPU:mW                               ,      17.706\n"
-                    "MIDCPU:mW                               ,      45.123\n"
-                    "CPU:mW                                  ,    1020.796\n"
-                    "SOC_TOTAL:mW                            ,    1925.195\n")
+    csv_file = pth.LocalPath(
+      "results_dir/chrome/stories/test/0/0_default/bits/"
+      f"{BitsProbe.BITS_CHANNEL_AVERAGES_CSV_NAME}"
+    )
+    csv_contents = (
+      "CHANNEL                                 ,       VALUE\n"
+      "BIGCPU:mW                               ,      17.706\n"
+      "MIDCPU:mW                               ,      45.123\n"
+      "CPU:mW                                  ,    1020.796\n"
+      "SOC_TOTAL:mW                            ,    1925.195\n"
+    )
     records = self._test_merge_browsers_bits({csv_file: csv_contents})
-    self.assertEqual(records, [{
-        "cb_browser": "chrome",
-        "cb_story": "test",
-        "bits_cpu_mw": 1020.796,
-        "bits_soc_total_mw": 1925.195,
-    }])
+    self.assertEqual(
+      records,
+      [
+        {
+          "cb_browser": "chrome",
+          "cb_story": "test",
+          "bits_cpu_mw": 1020.796,
+          "bits_soc_total_mw": 1925.195,
+        }
+      ],
+    )
 
   def test_merge_browsers_bits_multiple_runs(self):
     self.mock_benchmark.bits_probe = mock.MagicMock()
     run0_file = pth.LocalPath(
-        "results_dir/chrome/stories/test/0/0_default/bits/"
-        f"{BitsProbe.BITS_CHANNEL_AVERAGES_CSV_NAME}")
-    run0_contents = ("CHANNEL , VALUE\n"
-                     "CPU:mW , 100.0\n"
-                     "SOC_TOTAL:mW , 500.0\n")
+      "results_dir/chrome/stories/test/0/0_default/bits/"
+      f"{BitsProbe.BITS_CHANNEL_AVERAGES_CSV_NAME}"
+    )
+    run0_contents = "CHANNEL , VALUE\nCPU:mW , 100.0\nSOC_TOTAL:mW , 500.0\n"
     run1_file = pth.LocalPath(
-        "results_dir/chrome/stories/test/1/0_default/bits/"
-        f"{BitsProbe.BITS_CHANNEL_AVERAGES_CSV_NAME}")
-    run1_contents = ("CHANNEL , VALUE\n"
-                     "CPU:mW , 200.0\n"
-                     "SOC_TOTAL:mW , 700.0\n")
-    records = self._test_merge_browsers_bits({
+      "results_dir/chrome/stories/test/1/0_default/bits/"
+      f"{BitsProbe.BITS_CHANNEL_AVERAGES_CSV_NAME}"
+    )
+    run1_contents = "CHANNEL , VALUE\nCPU:mW , 200.0\nSOC_TOTAL:mW , 700.0\n"
+    records = self._test_merge_browsers_bits(
+      {
         run0_file: run0_contents,
         run1_file: run1_contents,
-    })
-    self.assertEqual(records, [{
-        "cb_browser": "chrome",
-        "cb_story": "test",
-        "bits_cpu_mw": (100.0 + 200.0) / 2.0,
-        "bits_soc_total_mw": (500.0 + 700.0) / 2.0,
-    }])
+      }
+    )
+    self.assertEqual(
+      records,
+      [
+        {
+          "cb_browser": "chrome",
+          "cb_story": "test",
+          "bits_cpu_mw": (100.0 + 200.0) / 2.0,
+          "bits_soc_total_mw": (500.0 + 700.0) / 2.0,
+        }
+      ],
+    )
 
   def test_merge_browsers_bits_different_outliers_per_metric(self):
     self.mock_benchmark.bits_probe = mock.MagicMock()
@@ -571,67 +651,84 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
     # Run 3: Normal for CPU (120.0), normal for SOC (540.0).
     # Run 4: Max outlier for CPU (900.0), Max outlier for SOC (1000.0).
     bits_data = {
-        0: ("50.0", "500.0"),
-        1: ("100.0", "200.0"),
-        2: ("110.0", "520.0"),
-        3: ("120.0", "540.0"),
-        4: ("900.0", "1000.0"),
+      0: ("50.0", "500.0"),
+      1: ("100.0", "200.0"),
+      2: ("110.0", "520.0"),
+      3: ("120.0", "540.0"),
+      4: ("900.0", "1000.0"),
     }
     files = {
-        pth.LocalPath(f"results_dir/chrome/stories/test/{run}/0_default/bits/"
-                      f"{BitsProbe.BITS_CHANNEL_AVERAGES_CSV_NAME}"):
-            (f"CHANNEL , VALUE\n"
-             f"CPU:mW , {cpu}\n"
-             f"SOC_TOTAL:mW , {soc}\n") for run, (cpu, soc) in bits_data.items()
+      pth.LocalPath(
+        f"results_dir/chrome/stories/test/{run}/0_default/bits/"
+        f"{BitsProbe.BITS_CHANNEL_AVERAGES_CSV_NAME}"
+      ): (f"CHANNEL , VALUE\nCPU:mW , {cpu}\nSOC_TOTAL:mW , {soc}\n")
+      for run, (cpu, soc) in bits_data.items()
     }
     records = self._test_merge_browsers_bits(files)
     # CPU trims 50.0 and 900.0 -> mean(100.0, 110.0, 120.0) = 110.0
     # SOC trims 200.0 and 1000.0 -> mean(500.0, 520.0, 540.0) = 520.0
-    self.assertEqual(records, [{
-        "cb_browser": "chrome",
-        "cb_story": "test",
-        "bits_cpu_mw": (100.0 + 110.0 + 120.0) / 3.0,
-        "bits_soc_total_mw": (500.0 + 520.0 + 540.0) / 3.0,
-    }])
+    self.assertEqual(
+      records,
+      [
+        {
+          "cb_browser": "chrome",
+          "cb_story": "test",
+          "bits_cpu_mw": (100.0 + 110.0 + 120.0) / 3.0,
+          "bits_soc_total_mw": (500.0 + 520.0 + 540.0) / 3.0,
+        }
+      ],
+    )
 
   def test_merge_browsers_bits_and_perfetto(self):
     self.mock_benchmark.bits_probe = mock.MagicMock()
-    tp_contents = ("cb_browser,cb_story,cb_run,name,avg_power_mw\n"
-                   "chrome,test,0,rail_1,10.0\n"
-                   "chrome,test,0,rail_2,20.0\n")
-    csv_file = pth.LocalPath("results_dir/chrome/stories/test/0/0_default/bits/"
-                             f"{BitsProbe.BITS_CHANNEL_AVERAGES_CSV_NAME}")
-    csv_contents = ("CHANNEL , VALUE\n"
-                    "CPU:mW , 100.0\n"
-                    "SOC_TOTAL:mW , 500.0\n")
-    records = self._test_merge_browsers_bits({csv_file: csv_contents},
-                                             tp_csv_contents=tp_contents,
-                                             metrics=("odpm_total_mw",
-                                                      "bits_cpu_mw",
-                                                      "bits_soc_total_mw"))
-    self.assertEqual(records, [{
-        "cb_browser": "chrome",
-        "cb_story": "test",
-        "odpm_total_mw": 30.0,
-        "bits_cpu_mw": 100.0,
-        "bits_soc_total_mw": 500.0,
-    }])
+    tp_contents = (
+      "cb_browser,cb_story,cb_run,name,avg_power_mw\n"
+      "chrome,test,0,rail_1,10.0\n"
+      "chrome,test,0,rail_2,20.0\n"
+    )
+    csv_file = pth.LocalPath(
+      "results_dir/chrome/stories/test/0/0_default/bits/"
+      f"{BitsProbe.BITS_CHANNEL_AVERAGES_CSV_NAME}"
+    )
+    csv_contents = "CHANNEL , VALUE\nCPU:mW , 100.0\nSOC_TOTAL:mW , 500.0\n"
+    records = self._test_merge_browsers_bits(
+      {csv_file: csv_contents},
+      tp_csv_contents=tp_contents,
+      metrics=("odpm_total_mw", "bits_cpu_mw", "bits_soc_total_mw"),
+    )
+    self.assertEqual(
+      records,
+      [
+        {
+          "cb_browser": "chrome",
+          "cb_story": "test",
+          "odpm_total_mw": 30.0,
+          "bits_cpu_mw": 100.0,
+          "bits_soc_total_mw": 500.0,
+        }
+      ],
+    )
 
   def test_merge_browsers_bits_missing_channels(self):
     self.mock_benchmark.bits_probe = mock.MagicMock()
-    csv_file = pth.LocalPath("results_dir/chrome/stories/test/0/0_default/bits/"
-                             f"{BitsProbe.BITS_CHANNEL_AVERAGES_CSV_NAME}")
+    csv_file = pth.LocalPath(
+      "results_dir/chrome/stories/test/0/0_default/bits/"
+      f"{BitsProbe.BITS_CHANNEL_AVERAGES_CSV_NAME}"
+    )
     # Verify that substring channels like MIDCPU:mW do NOT match CPU:mW.
-    csv_contents = ("CHANNEL , VALUE\n"
-                    "BIGCPU:mW , 10.0\n"
-                    "MIDCPU:mW , 20.0\n")
+    csv_contents = "CHANNEL , VALUE\nBIGCPU:mW , 10.0\nMIDCPU:mW , 20.0\n"
     records = self._test_merge_browsers_bits({csv_file: csv_contents})
-    self.assertEqual(records, [{
-        "cb_browser": "chrome",
-        "cb_story": "test",
-        "bits_cpu_mw": pytest.approx(float("nan"), nan_ok=True),
-        "bits_soc_total_mw": pytest.approx(float("nan"), nan_ok=True),
-    }])
+    self.assertEqual(
+      records,
+      [
+        {
+          "cb_browser": "chrome",
+          "cb_story": "test",
+          "bits_cpu_mw": pytest.approx(float("nan"), nan_ok=True),
+          "bits_soc_total_mw": pytest.approx(float("nan"), nan_ok=True),
+        }
+      ],
+    )
 
   def test_merge_browsers_bits_unsupported_device(self):
     self.mock_benchmark.bits_probe = mock.MagicMock()
@@ -640,20 +737,29 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
     run.story.name = "cnn"
     self.group.runs = [run]
     records = self._test_merge_browsers_bits({})
-    self.assertEqual(records, [{
-        "cb_browser": "safari",
-        "cb_story": "cnn",
-        "bits_cpu_mw": pytest.approx(float("nan"), nan_ok=True),
-        "bits_soc_total_mw": pytest.approx(float("nan"), nan_ok=True),
-    }])
+    self.assertEqual(
+      records,
+      [
+        {
+          "cb_browser": "safari",
+          "cb_story": "cnn",
+          "bits_cpu_mw": pytest.approx(float("nan"), nan_ok=True),
+          "bits_soc_total_mw": pytest.approx(float("nan"), nan_ok=True),
+        }
+      ],
+    )
 
   def test_process_result_dir_no_data(self):
     """Verify that process_result_dir handles missing power_rails.csv by
     appending 'No Data' to odpm_total_mw in base_df."""
-    base_df = pd.DataFrame([{
-        "cb_browser": "chrome",
-        "cb_story": "cnn",
-    }])
+    base_df = pd.DataFrame(
+      [
+        {
+          "cb_browser": "chrome",
+          "cb_story": "cnn",
+        }
+      ]
+    )
     # In this fake filesystem test, 'results_dir' is never created,
     # ensuring that the underlying 'power_rails.csv' is missing when
     # process_result_dir is called.
@@ -665,20 +771,26 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
 
   def test_process_result_dir_from_csv(self):
     """Verify that process_result_dir can read data from a pre-existing CSV."""
-    base_df = pd.DataFrame([{
-        "cb_browser": "chrome",
-        "cb_story": "cnn",
-    }])
+    base_df = pd.DataFrame(
+      [
+        {
+          "cb_browser": "chrome",
+          "cb_story": "cnn",
+        }
+      ]
+    )
     result_dir = pth.LocalPath("results_dir")
     csv_path = result_dir / "trace_processor" / "power_rails.csv"
     self.fs.create_file(
-        csv_path,
-        contents="cb_browser,cb_story,cb_run,name,avg_power_mw\n"
-        "chrome,cnn,0,rail_1,10.0\n"
-        "chrome,cnn,0,rail_2,20.0\n")
+      csv_path,
+      contents="cb_browser,cb_story,cb_run,name,avg_power_mw\n"
+      "chrome,cnn,0,rail_1,10.0\n"
+      "chrome,cnn,0,rail_2,20.0\n",
+    )
 
     result_df = self.probe.process_result_dir(
-        result_dir, base_df, reprocess=False)
+      result_dir, base_df, reprocess=False
+    )
     self.assertEqual(len(result_df), 1)
     self.assertEqual(result_df["cb_browser"].iloc[0], "chrome")
     self.assertEqual(result_df["odpm_total_mw"].iloc[0], 30.0)
@@ -688,24 +800,35 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
     """Verify that process_result_dir ignores existing CSVs and reruns traces
     when reprocess=True.
     """
-    base_df = pd.DataFrame([{
-        "cb_browser": "chrome",
-        "cb_story": "cnn",
-        "device_model": "test_device",
-    }])
+    base_df = pd.DataFrame(
+      [
+        {
+          "cb_browser": "chrome",
+          "cb_story": "cnn",
+          "device_model": "test_device",
+        }
+      ]
+    )
     result_dir = pth.LocalPath("results_dir")
 
     # Create an old CSV that should be ignored and overwritten.
     csv_path = result_dir / "trace_processor" / "power_rails.csv"
     self.fs.create_file(
-        csv_path,
-        contents="cb_browser,cb_story,cb_run,name,avg_power_mw\n"
-        "chrome,cnn,0,rail_1,999.0\n")
+      csv_path,
+      contents="cb_browser,cb_story,cb_run,name,avg_power_mw\n"
+      "chrome,cnn,0,rail_1,999.0\n",
+    )
 
     # Create a trace file so it triggers reprocess.
     trace_file = (
-        result_dir / "chrome" / "stories" / "cnn" / "0" / "0_default" /
-        "trace.pb.gz")
+      result_dir
+      / "chrome"
+      / "stories"
+      / "cnn"
+      / "0"
+      / "0_default"
+      / "trace.pb.gz"
+    )
     self.fs.create_file(trace_file)
 
     # Create the fallback SQL file so that process_result_dir actually
@@ -714,17 +837,21 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
     self.fs.create_file(sql_file, contents="SELECT 1")
     mapping_file = QUERIES_DIR / "web_power" / "mapping.hjson"
     self.fs.create_file(
-        mapping_file, contents='{".*": "web_power/power_rails"}')
+      mapping_file, contents='{".*": "web_power/power_rails"}'
+    )
 
     btp_instance = btp_mock.return_value.__enter__.return_value
-    btp_instance.query_and_flatten.return_value = pd.DataFrame({
+    btp_instance.query_and_flatten.return_value = pd.DataFrame(
+      {
         "_path": [str(trace_file)],
         "name": ["rail_1"],
         "avg_power_mw": [50.0],
-    })
+      }
+    )
 
     result_df = self.probe.process_result_dir(
-        result_dir, base_df, reprocess=True)
+      result_dir, base_df, reprocess=True
+    )
     self.assertEqual(len(result_df), 1)
     self.assertEqual(result_df["cb_browser"].iloc[0], "chrome")
     # Should be 50.0 from the mock BTP, not 999.0 from the CSV.
@@ -735,30 +862,36 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
   def test_process_result_dir_preserves_column_order(self):
     """Verify that process_result_dir preserves the exact column order of the
     base_df, appending any newly computed metrics to the end."""
-    base_df = pd.DataFrame([{
-        "custom_first_col": "foo",
-        "cb_browser": "chrome",
-        "cb_story": "cnn",
-        "custom_middle_col": "bar",
-    }])
+    base_df = pd.DataFrame(
+      [
+        {
+          "custom_first_col": "foo",
+          "cb_browser": "chrome",
+          "cb_story": "cnn",
+          "custom_middle_col": "bar",
+        }
+      ]
+    )
     result_dir = pth.LocalPath("results_dir")
 
     # Create a minimal CSV so it falls back to reading it (reprocess=False)
     csv_path = result_dir / "trace_processor" / "power_rails.csv"
     self.fs.create_file(
-        csv_path,
-        contents="cb_browser,cb_story,cb_run,name,avg_power_mw\n"
-        "chrome,cnn,0,rail_1,10.0\n")
+      csv_path,
+      contents="cb_browser,cb_story,cb_run,name,avg_power_mw\n"
+      "chrome,cnn,0,rail_1,10.0\n",
+    )
 
     result_df = self.probe.process_result_dir(
-        result_dir, base_df, reprocess=False)
+      result_dir, base_df, reprocess=False
+    )
 
     expected_cols = [
-        "custom_first_col",
-        "cb_browser",
-        "cb_story",
-        "custom_middle_col",
-        "odpm_total_mw",
+      "custom_first_col",
+      "cb_browser",
+      "cb_story",
+      "custom_middle_col",
+      "odpm_total_mw",
     ]
     self.assertSequenceEqual(list(result_df.columns), expected_cols)
 
@@ -768,8 +901,10 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
     result_path = pth.LocalPath("results_dir/web_power_probe")
     self.group.get_local_probe_result_path.return_value = result_path
 
-    csv_contents = ("cb_browser,cb_story,cb_run,name,avg_power_mw\n"
-                    "chrome,test,0,rail_1,10.0\n")
+    csv_contents = (
+      "cb_browser,cb_story,cb_run,name,avg_power_mw\n"
+      "chrome,test,0,rail_1,10.0\n"
+    )
 
     tp_result = mock.MagicMock()
     tp_csv_1 = pth.LocalPath("results_dir/power_rails.csv")
@@ -780,12 +915,14 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
     tp_result.csv_list = [tp_csv_1, tp_csv_2]
     self.group.results.get_by_name.return_value = tp_result
 
-    with self.assertRaisesRegex(ProbeMissingDataError,
-                                "Multiple power_rails results found"):
+    with self.assertRaisesRegex(
+      ProbeMissingDataError, "Multiple power_rails results found"
+    ):
       self.probe.merge_browsers(self.group)
 
   def _test_get_extra_probes(
-      self, has_probe_side_effect: Callable[[str], bool]) -> tuple[Probe, ...]:
+    self, has_probe_side_effect: Callable[[str], bool]
+  ) -> tuple[Probe, ...]:
     """Helper to verify get_extra_probes behavior with a mocked has_probe.
 
     It creates a minimal mock mapping.hjson file in the fake filesystem
@@ -827,8 +964,9 @@ class WebPowerProbeTestCase(CrossbenchFakeFsTestCase):
     (tp_probe,) = self._test_get_extra_probes(lambda name: name == "perfetto")
     assert isinstance(tp_probe, TraceProcessorProbe)
     self.assertSequenceEqual(
-        tp_probe.metric_definitions,
-        (WebPowerProbe.METRIC_DEFINITIONS_FILE.read_text(encoding="utf-8"),))
+      tp_probe.metric_definitions,
+      (WebPowerProbe.METRIC_DEFINITIONS_FILE.read_text(encoding="utf-8"),),
+    )
 
 
 class Mapping(enum.Enum):
@@ -848,7 +986,8 @@ class WebPowerProbeMappingTestCase(CrossbenchFakeFsTestCase):
     super().setUp()
     self.mock_benchmark = mock.MagicMock(bits_probe=None)
     self.mock_benchmark.version.return_value = tuple(
-        map(int, VERSION_STRING.split(".")))
+      map(int, VERSION_STRING.split("."))
+    )
     self.probe = WebPowerProbe(benchmark=self.mock_benchmark)
     self.runner = mock.MagicMock()
     # Simulate that only the "perfetto" probe is attached.
@@ -872,20 +1011,20 @@ class WebPowerProbeMappingTestCase(CrossbenchFakeFsTestCase):
 
   def _create_mapping_file(self, mapping: Mapping, contents: str = "{}"):
     self.fs.create_file(
-        self._get_mapping_dir(mapping) / "mapping.hjson", contents=contents)
+      self._get_mapping_dir(mapping) / "mapping.hjson", contents=contents
+    )
 
-  def _setup_mapping(self,
-                     public_contents: str = "{}",
-                     internal_contents: str = "{}"):
+  def _setup_mapping(
+    self, public_contents: str = "{}", internal_contents: str = "{}"
+  ):
     self._create_mapping_dir(Mapping.PUBLIC)
     self._create_mapping_file(Mapping.PUBLIC, contents=public_contents)
     self._create_mapping_dir(Mapping.INTERNAL)
     self._create_mapping_file(Mapping.INTERNAL, contents=internal_contents)
 
-  def _create_sql_file(self,
-                       mapping: Mapping,
-                       name: str,
-                       contents: str = "SELECT 1") -> pth.LocalPath:
+  def _create_sql_file(
+    self, mapping: Mapping, name: str, contents: str = "SELECT 1"
+  ) -> pth.LocalPath:
     match mapping:
       case Mapping.PUBLIC:
         path = self._get_mapping_dir(mapping) / name
@@ -903,8 +1042,10 @@ class WebPowerProbeMappingTestCase(CrossbenchFakeFsTestCase):
     # Explicitly NOT calling self._create_mapping_dir(Mapping.PUBLIC)
     # Explicitly NOT calling self._create_mapping_file(Mapping.PUBLIC)
     with self.assertRaisesRegex(
-        ValueError, "Mapping file does not exist: " +
-        re.escape(str(QUERIES_DIR / "web_power/mapping.hjson"))):
+      ValueError,
+      "Mapping file does not exist: "
+      + re.escape(str(QUERIES_DIR / "web_power/mapping.hjson")),
+    ):
       self.probe.get_extra_probes(self.runner)
 
   def test_load_mapping_missing_public_mapping_file(self):
@@ -914,8 +1055,10 @@ class WebPowerProbeMappingTestCase(CrossbenchFakeFsTestCase):
     self._create_mapping_file(Mapping.INTERNAL)
     # Explicitly NOT calling self._create_mapping_file(Mapping.PUBLIC)
     with self.assertRaisesRegex(
-        ValueError, "Mapping file does not exist: " +
-        re.escape(str(QUERIES_DIR / "web_power/mapping.hjson"))):
+      ValueError,
+      "Mapping file does not exist: "
+      + re.escape(str(QUERIES_DIR / "web_power/mapping.hjson")),
+    ):
       self.probe.get_extra_probes(self.runner)
 
   def test_load_mapping_missing_internal_mapping_expected(self):
@@ -925,8 +1068,10 @@ class WebPowerProbeMappingTestCase(CrossbenchFakeFsTestCase):
     self._create_mapping_dir(Mapping.INTERNAL)
     # Explicitly NOT calling self._create_mapping_file(Mapping.INTERNAL)
     with self.assertRaisesRegex(
-        ValueError, "Mapping file does not exist: " +
-        re.escape(str(WebPowerProbe.INTERNAL_QUERIES_DIR / "mapping.hjson"))):
+      ValueError,
+      "Mapping file does not exist: "
+      + re.escape(str(WebPowerProbe.INTERNAL_QUERIES_DIR / "mapping.hjson")),
+    ):
       self.probe.get_extra_probes(self.runner)
 
   def test_load_mapping_missing_internal_mapping_not_expected(self):
@@ -961,8 +1106,9 @@ class WebPowerProbeMappingTestCase(CrossbenchFakeFsTestCase):
     """Verify that an invalid regex in both mapping.hjson files raises an
     error."""
     self._setup_mapping(
-        public_contents='{"[": "web_power/public_valid_sql"}',
-        internal_contents='{"[": "internal_valid_sql"}')
+      public_contents='{"[": "web_power/public_valid_sql"}',
+      internal_contents='{"[": "internal_valid_sql"}',
+    )
     self._create_sql_file(Mapping.PUBLIC, "public_valid_sql.sql")
     self._create_sql_file(Mapping.INTERNAL, "internal_valid_sql.sql")
     with self.assertRaisesRegex(argparse.ArgumentTypeError, "Invalid regexp"):
@@ -989,24 +1135,28 @@ class WebPowerProbeMappingTestCase(CrossbenchFakeFsTestCase):
     """Verify that a missing SQL file mapped in public mapping.hjson raises
     an error."""
     self._setup_mapping(public_contents='{"Device A": "web_power/missing_sql"}')
-    with self.assertRaisesRegex(argparse.ArgumentTypeError,
-                                "Mapped SQL file path does not exist"):
+    with self.assertRaisesRegex(
+      argparse.ArgumentTypeError, "Mapped SQL file path does not exist"
+    ):
       self.probe.get_extra_probes(self.runner)
 
   def test_load_mapping_missing_sql_file_internal(self):
     """Verify that a missing SQL file mapped in internal mapping.hjson raises
     an error."""
     self._setup_mapping(
-        internal_contents='{"Device A": "internal_missing_sql"}')
-    with self.assertRaisesRegex(argparse.ArgumentTypeError,
-                                "Mapped SQL file path does not exist"):
+      internal_contents='{"Device A": "internal_missing_sql"}'
+    )
+    with self.assertRaisesRegex(
+      argparse.ArgumentTypeError, "Mapped SQL file path does not exist"
+    ):
       self.probe.get_extra_probes(self.runner)
 
   def test_load_mapping_success(self):
     """Verify that get_extra_probes succeeds when mappings are valid."""
     self._setup_mapping(
-        public_contents='{"Public Device": "web_power/public_query"}',
-        internal_contents='{"Internal Device": "internal_query"}')
+      public_contents='{"Public Device": "web_power/public_query"}',
+      internal_contents='{"Internal Device": "internal_query"}',
+    )
     public_sql = self._create_sql_file(Mapping.PUBLIC, "public_query.sql")
     internal_sql = self._create_sql_file(Mapping.INTERNAL, "internal_query.sql")
 
@@ -1018,10 +1168,12 @@ class WebPowerProbeMappingTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(cpu_query.name, "web_power_cpu_time")
 
     self.assertDictEqual(
-        dict(device_query.device_override), {
-            re.compile("Public Device"): str(public_sql.resolve()),
-            re.compile("Internal Device"): str(internal_sql.resolve()),
-        })
+      dict(device_query.device_override),
+      {
+        re.compile("Public Device"): str(public_sql.resolve()),
+        re.compile("Internal Device"): str(internal_sql.resolve()),
+      },
+    )
 
 
 class WebPowerProbeRealFsTestCase(unittest.TestCase):
@@ -1029,8 +1181,9 @@ class WebPowerProbeRealFsTestCase(unittest.TestCase):
   This unlike WebPowerProbeMappingTestCase, which checked what the code
   would do with/without the dirs and files."""
 
-  def _test_real_mapping_dir(self, directory: pth.LocalPath,
-                             require_mappings: bool):
+  def _test_real_mapping_dir(
+    self, directory: pth.LocalPath, require_mappings: bool
+  ):
     probe = WebPowerProbe(benchmark=mock.MagicMock())
     mapping = probe._load_mapping(directory)
     self.assertIsInstance(mapping, dict)
@@ -1040,17 +1193,21 @@ class WebPowerProbeRealFsTestCase(unittest.TestCase):
   def test_load_mapping_public_repo_valid(self):
     """Verify that the public QUERIES_DIR mapping.hjson parses correctly."""
     self._test_real_mapping_dir(
-        QUERIES_DIR / "web_power", require_mappings=True)
+      QUERIES_DIR / "web_power", require_mappings=True
+    )
 
   def test_public_mapping_resolves_pixel_models(self) -> None:
     """Verify public mapping resolves Pixel 9, 9a, 10a, and 10 models."""
     mapping = WebPowerProbe._load_mapping(QUERIES_DIR / "web_power")
     query = DeviceSpecificTraceProcessorQuery.create(
-        name=WebPowerProbe.QUERY_NAME, device_override=mapping)
-    tensor_g4_sql = (QUERIES_DIR / "web_power" /
-                     "power_rails_tensor_g4.sql").read_text()
-    tensor_g5_sql = (QUERIES_DIR / "web_power" /
-                     "power_rails_tensor_g5.sql").read_text()
+      name=WebPowerProbe.QUERY_NAME, device_override=mapping
+    )
+    tensor_g4_sql = (
+      QUERIES_DIR / "web_power" / "power_rails_tensor_g4.sql"
+    ).read_text()
+    tensor_g5_sql = (
+      QUERIES_DIR / "web_power" / "power_rails_tensor_g5.sql"
+    ).read_text()
 
     for model in ("Pixel 9", "Pixel 9 Pro", "Pixel 9a", "Pixel 10a"):
       resolved = query.resolve_for_device_model(model)
@@ -1064,12 +1221,15 @@ class WebPowerProbeRealFsTestCase(unittest.TestCase):
       assert resolved is not None
       self.assertEqual(resolved.sql, tensor_g5_sql)
 
-  @unittest.skipIf(not WebPowerProbe.INTERNAL_QUERIES_DIR.is_dir(),
-                   "Internal queries directory does not exist.")
+  @unittest.skipIf(
+    not WebPowerProbe.INTERNAL_QUERIES_DIR.is_dir(),
+    "Internal queries directory does not exist.",
+  )
   def test_load_mapping_internal_repo_valid(self):
     """Verify that the internal mapping.hjson (if present) parses correctly."""
     self._test_real_mapping_dir(
-        WebPowerProbe.INTERNAL_QUERIES_DIR, require_mappings=False)
+      WebPowerProbe.INTERNAL_QUERIES_DIR, require_mappings=False
+    )
 
 
 class WebPowerProbeQueryValidationTestCase(unittest.TestCase):
@@ -1097,14 +1257,13 @@ class WebPowerProbeQueryValidationTestCase(unittest.TestCase):
     self._metric_definitions = default_tp_probe.metric_definitions
     self._query_name = raw_query.name
     self._device_to_path = {
-        str(i): path
-        for i, path in enumerate(raw_query.device_override.values())
+      str(i): path for i, path in enumerate(raw_query.device_override.values())
     }
     self.query, self.tp_probe = self._create_probe(self._device_to_path)
 
   def _create_probe(
-      self,
-      overrides: dict[str, str],
+    self,
+    overrides: dict[str, str],
   ) -> tuple[DeviceSpecificTraceProcessorQuery, TraceProcessorProbe]:
     """
     Build a DeviceSpecificTraceProcessorQuery and TraceProcessorProbe via public
@@ -1112,11 +1271,12 @@ class WebPowerProbeQueryValidationTestCase(unittest.TestCase):
     file is validated once without mutating private probe attributes.
     """
     query = DeviceSpecificTraceProcessorQuery.create(
-        name=self._query_name, device_override=overrides)
+      name=self._query_name, device_override=overrides
+    )
     tp_probe = TraceProcessorProbe(
-        queries=[query, self.cpu_query],
-        module_paths=self._module_paths,
-        metric_definitions=self._metric_definitions,
+      queries=[query, self.cpu_query],
+      module_paths=self._module_paths,
+      metric_definitions=self._metric_definitions,
     )
     for device_name in overrides:
       browser = mock.MagicMock()
@@ -1243,35 +1403,42 @@ class WebPowerProbeQueryValidationTestCase(unittest.TestCase):
           self.assertIsNotNone(resolved)
           df = tp.query(resolved.sql).as_pandas_dataframe()
           self.assertListEqual(
-              list(df.columns), ["power_rail_name", "avg_power_mw"])
+            list(df.columns), ["power_rail_name", "avg_power_mw"]
+          )
           self.assertGreaterEqual(
-              len(df), 2, f"Expected >=2 matched rails in {sql_path}")
+            len(df), 2, f"Expected >=2 matched rails in {sql_path}"
+          )
 
           expected_rails = dict(
-              zip(df["power_rail_name"], df["avg_power_mw"], strict=True))
+            zip(df["power_rail_name"], df["avg_power_mw"], strict=True)
+          )
           self.assertEqual(len(expected_rails), len(df))
           for rail_name, mw in expected_rails.items():
             self.assertIn(
-                mw, expected_valid_mw,
-                f"Unexpected power {mw} mW for {rail_name} in {sql_path}")
+              mw,
+              expected_valid_mw,
+              f"Unexpected power {mw} mW for {rail_name} in {sql_path}",
+            )
           self.assertIn(50.0, expected_rails.values())
 
           summary = tp.trace_summary(specs=specs)
           bundles_by_id = {
-              bundle.specs[0].id: bundle for bundle in summary.metric_bundles
+            bundle.specs[0].id: bundle for bundle in summary.metric_bundles
           }
           rails_bundle = bundles_by_id["web_power.power_rails_avg_power_mw"]
           self.assertEqual(len(rails_bundle.row), len(df))
           rails_values = {
-              row.dimension[0].string_value: row.values[0].double_value
-              for row in rails_bundle.row
+            row.dimension[0].string_value: row.values[0].double_value
+            for row in rails_bundle.row
           }
           self.assertEqual(rails_values, expected_rails)
 
           total_bundle = bundles_by_id["web_power.total_power_mw"]
           self.assertEqual(len(total_bundle.row), 1)
-          self.assertAlmostEqual(total_bundle.row[0].values[0].double_value,
-                                 sum(expected_rails.values()))
+          self.assertAlmostEqual(
+            total_bundle.row[0].values[0].double_value,
+            sum(expected_rails.values()),
+          )
 
 
 if __name__ == "__main__":

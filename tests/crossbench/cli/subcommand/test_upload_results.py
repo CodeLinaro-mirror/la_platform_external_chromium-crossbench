@@ -17,7 +17,6 @@ _UPLOAD_RETURN_VALUE = "gs://test-bucket/results/archive.tar.gz"
 
 
 class UploadResultsSubcommandTest(BaseCliTestCase):
-
   def setUp(self) -> None:
     super().setUp()
     self.cli_instance = CrossBenchCLI()
@@ -30,27 +29,32 @@ class UploadResultsSubcommandTest(BaseCliTestCase):
 
   def test_run_success(self) -> None:
     with mock.patch(
-        _UPLOAD_PATCH_TARGET, return_value=_UPLOAD_RETURN_VALUE) as mock_upload:
+      _UPLOAD_PATCH_TARGET, return_value=_UPLOAD_RETURN_VALUE
+    ) as mock_upload:
       self.run_cli("upload-results", str(self.test_dir), self.target_url)
       mock_upload.assert_called_once_with(
-          source=self.test_dir, target=self.target_url)
+        source=self.test_dir, target=self.target_url
+      )
 
   def test_run_alias_success(self) -> None:
     with mock.patch(
-        _UPLOAD_PATCH_TARGET, return_value=_UPLOAD_RETURN_VALUE) as mock_upload:
+      _UPLOAD_PATCH_TARGET, return_value=_UPLOAD_RETURN_VALUE
+    ) as mock_upload:
       self.run_cli("upload_results", str(self.test_dir), self.target_url)
       mock_upload.assert_called_once_with(
-          source=self.test_dir, target=self.target_url)
+        source=self.test_dir, target=self.target_url
+      )
 
   def test_run_failure(self) -> None:
     with (
-        mock.patch(_UPLOAD_PATCH_TARGET, return_value=None) as mock_upload,
-        self.assertRaises(SysExitTestException) as cm,
+      mock.patch(_UPLOAD_PATCH_TARGET, return_value=None) as mock_upload,
+      self.assertRaises(SysExitTestException) as cm,
     ):
       self.run_cli("upload-results", str(self.test_dir), self.target_url)
     self.assertEqual(cm.exception.exit_code, 0)
     mock_upload.assert_called_once_with(
-        source=self.test_dir, target=self.target_url)
+      source=self.test_dir, target=self.target_url
+    )
 
   def test_invalid_result_dir(self) -> None:
     non_existent_dir = self.out_dir / "does_not_exist"
@@ -63,25 +67,29 @@ class UploadResultsSubcommandTest(BaseCliTestCase):
 
   def test_unsupported_target_url(self) -> None:
     with self.assertRaises(SysExitTestException):
-      self.run_cli("upload-results", str(self.test_dir),
-                   "https://unsupported-bucket/path")
+      self.run_cli(
+        "upload-results", str(self.test_dir), "https://unsupported-bucket/path"
+      )
 
   def test_default_env_var_target(self) -> None:
     env_target = "gs://env-bucket/results"
     with (
-        mock.patch.dict("os.environ",
-                        {"CROSSBENCH_RESULT_UPLOAD_TARGET": env_target}),
-        mock.patch(_UPLOAD_PATCH_TARGET, return_value=_UPLOAD_RETURN_VALUE) as
-        mock_upload,
+      mock.patch.dict(
+        "os.environ", {"CROSSBENCH_RESULT_UPLOAD_TARGET": env_target}
+      ),
+      mock.patch(
+        _UPLOAD_PATCH_TARGET, return_value=_UPLOAD_RETURN_VALUE
+      ) as mock_upload,
     ):
       self.run_cli("upload-results", str(self.test_dir))
       mock_upload.assert_called_once_with(
-          source=self.test_dir, target=env_target)
+        source=self.test_dir, target=env_target
+      )
 
   def test_missing_target_url_no_env_var(self) -> None:
     with (
-        mock.patch.dict("os.environ", {}, clear=True),
-        self.assertRaises(SysExitTestException),
+      mock.patch.dict("os.environ", {}, clear=True),
+      self.assertRaises(SysExitTestException),
     ):
       self.run_cli("upload-results", str(self.test_dir))
 
@@ -89,24 +97,29 @@ class UploadResultsSubcommandTest(BaseCliTestCase):
     env_target = "gs://env-bucket/results"
     explicit_target = "gs://explicit-bucket/results"
     with (
-        mock.patch.dict("os.environ",
-                        {"CROSSBENCH_RESULT_UPLOAD_TARGET": env_target}),
-        mock.patch(_UPLOAD_PATCH_TARGET, return_value=_UPLOAD_RETURN_VALUE) as
-        mock_upload,
+      mock.patch.dict(
+        "os.environ", {"CROSSBENCH_RESULT_UPLOAD_TARGET": env_target}
+      ),
+      mock.patch(
+        _UPLOAD_PATCH_TARGET, return_value=_UPLOAD_RETURN_VALUE
+      ) as mock_upload,
     ):
       self.run_cli("upload-results", str(self.test_dir), explicit_target)
       mock_upload.assert_called_once_with(
-          source=self.test_dir, target=explicit_target)
+        source=self.test_dir, target=explicit_target
+      )
 
   def test_run_symlink_success(self) -> None:
     """Verifies that single-hop symlinks to result directories are followed."""
     symlink = self.out_dir / "latest"
     symlink.symlink_to(self.test_dir)
     with mock.patch(
-        _UPLOAD_PATCH_TARGET, return_value=_UPLOAD_RETURN_VALUE) as mock_upload:
+      _UPLOAD_PATCH_TARGET, return_value=_UPLOAD_RETURN_VALUE
+    ) as mock_upload:
       self.run_cli("upload-results", str(symlink), self.target_url)
       mock_upload.assert_called_once_with(
-          source=self.test_dir, target=self.target_url)
+        source=self.test_dir, target=self.target_url
+      )
 
   def test_run_chained_symlink_success(self) -> None:
     """Verifies that chained symlinks to result directories are followed."""
@@ -115,10 +128,12 @@ class UploadResultsSubcommandTest(BaseCliTestCase):
     symlink_2 = self.out_dir / "link2"
     symlink_2.symlink_to(symlink_1)
     with mock.patch(
-        _UPLOAD_PATCH_TARGET, return_value=_UPLOAD_RETURN_VALUE) as mock_upload:
+      _UPLOAD_PATCH_TARGET, return_value=_UPLOAD_RETURN_VALUE
+    ) as mock_upload:
       self.run_cli("upload-results", str(symlink_2), self.target_url)
       mock_upload.assert_called_once_with(
-          source=self.test_dir, target=self.target_url)
+        source=self.test_dir, target=self.target_url
+      )
 
   def test_run_file_fails(self) -> None:
     """Verifies that passing a file instead of a directory fails validation."""

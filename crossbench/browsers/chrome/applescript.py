@@ -19,16 +19,17 @@ if TYPE_CHECKING:
 
 
 class ChromeAppleScript(ChromeBaseMixin, ChromiumAppleScript):
-
   WEB_DRIVER_OPTIONS = ChromeOptions
   WEB_DRIVER_SERVICE = ChromeService
 
   @classmethod
   @override
   def attributes(cls) -> BrowserAttributes:
-    return ((super().attributes() & ~BrowserAttributes.CHROMIUM)
-            | BrowserAttributes.CHROME)
+    return (
+      super().attributes() & ~BrowserAttributes.CHROMIUM
+    ) | BrowserAttributes.CHROME
 
-  def _create_driver(self, options: ChromeOptions,
-                     service: ChromeService) -> ChromiumDriver:
+  def _create_driver(
+    self, options: ChromeOptions, service: ChromeService
+  ) -> ChromiumDriver:
     return webdriver.Chrome(options=options, service=service)

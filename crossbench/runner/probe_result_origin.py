@@ -13,7 +13,6 @@ if TYPE_CHECKING:
 
 
 class ProbeResultOrigin(typing.Protocol):
-
   @property
   def browser_platform(self) -> Platform:
     raise NotImplementedError

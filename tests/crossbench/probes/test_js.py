@@ -16,12 +16,12 @@ from crossbench.runner.run import Run
 from tests import test_helper
 from tests.crossbench.probes.helper import GenericProbeTestCase
 
-JS_PROBE_EXAMPLE_CONFIG: Final = test_helper.config_dir(
-) / "doc/probe/js.config.hjson"
+JS_PROBE_EXAMPLE_CONFIG: Final = (
+  test_helper.config_dir() / "doc/probe/js.config.hjson"
+)
 
 
 class JSProbeTestCase(GenericProbeTestCase):
-
   def test_parse_example_config(self):
     # Wrap in pyfakefs path again
     config_file = pth.LocalPath(JS_PROBE_EXAMPLE_CONFIG)
@@ -44,8 +44,8 @@ class JSProbeTestCase(GenericProbeTestCase):
 
   def test_parse_config(self):
     config = {
-        "setup": "globalThis.metrics = {};",
-        "js": "return globalThis.metrics;",
+      "setup": "globalThis.metrics = {};",
+      "js": "return globalThis.metrics;",
     }
     probe = JSProbe.parse_dict(config)
     self.assertIsInstance(probe, JSProbe)
@@ -59,29 +59,30 @@ class JSProbeTestCase(GenericProbeTestCase):
 
   def test_simple_loading_case(self):
     config = {
-        "setup": "globalThis.metrics = {};",
-        "js": "return globalThis.metrics;",
+      "setup": "globalThis.metrics = {};",
+      "js": "return globalThis.metrics;",
     }
     probe = JSProbe.parse_dict(config)
     stories = [
-        LivePage("google", "https://google.com"),
-        LivePage("amazon", "https://amazon.com"),
+      LivePage("google", "https://google.com"),
+      LivePage("amazon", "https://amazon.com"),
     ]
     repetitions = 2
     runner = self.create_runner(
-        stories,
-        js_side_effects=[
-            # setup:
-            None,
-            # js:
-            {
-                "metric1": 1.1,
-                "metric2": 2.2,
-            },
-        ],
-        repetitions=repetitions,
-        separate=True,
-        throw=True)
+      stories,
+      js_side_effects=[
+        # setup:
+        None,
+        # js:
+        {
+          "metric1": 1.1,
+          "metric2": 2.2,
+        },
+      ],
+      repetitions=repetitions,
+      separate=True,
+      throw=True,
+    )
     runner.attach_probe(probe)
     runner.run()
     self.assertTrue(runner.is_success)
@@ -96,8 +97,9 @@ class JSProbeTestCase(GenericProbeTestCase):
     result_count += 1
     self.assertEqual(len(js_result_files), result_count)
 
-    (story_data, repetitions_data, stories_data,
-     browsers_data) = self.get_non_empty_json_results(runner, probe)
+    (story_data, repetitions_data, stories_data, browsers_data) = (
+      self.get_non_empty_json_results(runner, probe)
+    )
     self.assertIsInstance(story_data, dict)
     self.assertIsInstance(repetitions_data, dict)
     self.assertIsInstance(stories_data, dict)
@@ -106,29 +108,30 @@ class JSProbeTestCase(GenericProbeTestCase):
 
   def test_merge_with_missing_results(self):
     config = {
-        "setup": "globalThis.metrics = {};",
-        "js": "return globalThis.metrics;",
+      "setup": "globalThis.metrics = {};",
+      "js": "return globalThis.metrics;",
     }
     probe = JSProbe.parse_dict(config)
     stories = [
-        LivePage("google", "https://google.com"),
-        LivePage("amazon", "https://amazon.com"),
+      LivePage("google", "https://google.com"),
+      LivePage("amazon", "https://amazon.com"),
     ]
     repetitions = 2
     runner = self.create_runner(
-        stories,
-        js_side_effects=[
-            # setup:
-            None,
-            # js:
-            {
-                "metric1": 1.1,
-                "metric2": 2.2,
-            },
-        ],
-        repetitions=repetitions,
-        separate=True,
-        throw=True)
+      stories,
+      js_side_effects=[
+        # setup:
+        None,
+        # js:
+        {
+          "metric1": 1.1,
+          "metric2": 2.2,
+        },
+      ],
+      repetitions=repetitions,
+      separate=True,
+      throw=True,
+    )
     with mock.patch.object(JSProbeContext, "teardown") as mock_teardown:
       mock_teardown.side_effect = EmptyProbeResult
       runner.attach_probe(probe)
@@ -148,41 +151,49 @@ class JSProbeTestCase(GenericProbeTestCase):
 
   def test_invoke(self):
     config = {
-        "js": "return {'finalValue': 2};",
+      "js": "return {'finalValue': 2};",
     }
     probe = JSProbe.parse_dict(config)
-    blocks = (ActionBlock.parse_sequence([{
-        "action": "probe",
-        "probe": "js",
-        "kwargs": {
-            "js": "return {'intermediateValue': 1};",
-        },
-    }]),)
+    blocks = (
+      ActionBlock.parse_sequence(
+        [
+          {
+            "action": "probe",
+            "probe": "js",
+            "kwargs": {
+              "js": "return {'intermediateValue': 1};",
+            },
+          }
+        ]
+      ),
+    )
     page = InteractivePage(
-        name="test_page",
-        blocks=blocks,
+      name="test_page",
+      blocks=blocks,
     )
     stories = [page]
     runner = self.create_runner(
-        stories,
-        js_side_effects=[
-            # probe invoke js:
-            {
-                "intermediateValue": 1,
-            },
-            # probe teardown js:
-            {
-                "finalValue": 2,
-            },
-        ],
-        repetitions=1,
-        throw=True)
+      stories,
+      js_side_effects=[
+        # probe invoke js:
+        {
+          "intermediateValue": 1,
+        },
+        # probe teardown js:
+        {
+          "finalValue": 2,
+        },
+      ],
+      repetitions=1,
+      throw=True,
+    )
     runner.attach_probe(probe)
     runner.run()
     self.assertTrue(runner.is_success)
 
-    (story_data, repetitions_data, stories_data,
-     browsers_data) = self.get_non_empty_json_results(runner, probe)
+    (story_data, repetitions_data, stories_data, browsers_data) = (
+      self.get_non_empty_json_results(runner, probe)
+    )
     self.assertEqual(story_data, {"intermediateValue": 1, "finalValue": 2})
 
   def test_update_metrics(self):

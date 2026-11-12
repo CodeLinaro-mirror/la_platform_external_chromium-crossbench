@@ -14,8 +14,12 @@ from typing import TYPE_CHECKING, ClassVar, Final, Self, Sequence, override
 from crossbench import plt
 from crossbench.helper.path_finder import ChromiumBuildBinaryFinder
 from crossbench.parse import DurationParser, ObjectParser
-from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext, \
-    ProbeKeyT
+from crossbench.probes.probe import (
+  Probe,
+  ProbeConfigParser,
+  ProbeContext,
+  ProbeKeyT,
+)
 from crossbench.probes.probe_error import ProbeValidationError
 from crossbench.probes.result_location import ResultLocation
 from crossbench.str_enum_with_help import StrEnumWithHelp
@@ -31,18 +35,30 @@ if TYPE_CHECKING:
 
 @enum.unique
 class SamplerType(StrEnumWithHelp):
-  MAIN_DISPLAY = ("main_display",
-                  "Samples the backlight level of the main display.")
+  MAIN_DISPLAY = (
+    "main_display",
+    "Samples the backlight level of the main display.",
+  )
   BATTERY = ("battery", "Provides data retrieved from the IOPMPowerSource.")
-  SMC = ("smc", ("Samples power usage from various hardware components "
-                 "from the System Management Controller (SMC)"))
+  SMC = (
+    "smc",
+    (
+      "Samples power usage from various hardware components "
+      "from the System Management Controller (SMC)"
+    ),
+  )
   M1 = ("m1", "Samples the temperature of M1 P-Cores and E-Cores.")
   USER_IDLE_LEVEL = (
-      "user_idle_level",
-      "Samples the machdep.user_idle_level sysctl value if it exists")
-  RESOURCE_COALITION = ("resource_coalition", (
+    "user_idle_level",
+    "Samples the machdep.user_idle_level sysctl value if it exists",
+  )
+  RESOURCE_COALITION = (
+    "resource_coalition",
+    (
       "Provides resource usage data for a group of tasks that are part of a "
-      "'resource coalition', including those that have died."))
+      "'resource coalition', including those that have died."
+    ),
+  )
 
 
 class PowerSamplerProbe(Probe):
@@ -56,35 +72,43 @@ class PowerSamplerProbe(Probe):
   NAME: ClassVar = "powersampler"
   RESULT_LOCATION: ClassVar = ResultLocation.BROWSER
   BATTERY_ONLY: ClassVar[bool] = True
-  SAMPLERS: ClassVar[tuple[SamplerType, ...]] = (SamplerType.SMC,
-                                                 SamplerType.USER_IDLE_LEVEL,
-                                                 SamplerType.MAIN_DISPLAY)
+  SAMPLERS: ClassVar[tuple[SamplerType, ...]] = (
+    SamplerType.SMC,
+    SamplerType.USER_IDLE_LEVEL,
+    SamplerType.MAIN_DISPLAY,
+  )
 
   @classmethod
   @override
   def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     parser.add_default_argument(
-        "bin_path", type=plt.PLATFORM.parse_local_binary_path)
+      "bin_path", type=plt.PLATFORM.parse_local_binary_path
+    )
     parser.add_argument(
-        "sampling_interval",
-        type=DurationParser.positive_duration,
-        default=dt.timedelta(seconds=10))
+      "sampling_interval",
+      type=DurationParser.positive_duration,
+      default=dt.timedelta(seconds=10),
+    )
     parser.add_argument(
-        "samplers", type=SamplerType, default=cls.SAMPLERS, is_list=True)
+      "samplers", type=SamplerType, default=cls.SAMPLERS, is_list=True
+    )
     parser.add_argument(
-        "wait_for_battery",
-        type=ObjectParser.bool,
-        default=True,
-        help="Wait for the first non-100% battery measurement before "
-        "running the benchmark to ensure accurate readings.")
+      "wait_for_battery",
+      type=ObjectParser.bool,
+      default=True,
+      help="Wait for the first non-100% battery measurement before "
+      "running the benchmark to ensure accurate readings.",
+    )
     return parser
 
-  def __init__(self,
-               bin_path: pth.AnyPath | None = None,
-               sampling_interval: dt.timedelta = dt.timedelta(),
-               samplers: Sequence[SamplerType] = SAMPLERS,
-               wait_for_battery: bool = True) -> None:
+  def __init__(
+    self,
+    bin_path: pth.AnyPath | None = None,
+    sampling_interval: dt.timedelta = dt.timedelta(),
+    samplers: Sequence[SamplerType] = SAMPLERS,
+    wait_for_battery: bool = True,
+  ) -> None:
     super().__init__()
     self._bin_path: Final[pth.AnyPath | None] = bin_path
     if not self._bin_path:
@@ -99,11 +123,13 @@ class PowerSamplerProbe(Probe):
   @property
   @override
   def key(self) -> ProbeKeyT:
-    return (*super().key, ("bin_path", str(self.bin_path)),
-            ("sampling_interval", self.sampling_interval.total_seconds()),
-            ("samplers", tuple(map(str,
-                                   self.samplers))), ("wait_for_battery",
-                                                      self.wait_for_battery))
+    return (
+      *super().key,
+      ("bin_path", str(self.bin_path)),
+      ("sampling_interval", self.sampling_interval.total_seconds()),
+      ("samplers", tuple(map(str, self.samplers))),
+      ("wait_for_battery", self.wait_for_battery),
+    )
 
   @property
   def bin_path(self) -> pth.AnyPath | None:
@@ -125,8 +151,10 @@ class PowerSamplerProbe(Probe):
   def validate_browser(self, env: RunnerEnv, browser: Browser) -> None:
     self.expect_macos(browser)
     if not browser.platform.is_battery_powered:
-      env.handle_warning("Power Sampler only works on battery power, "
-                         f"but Browser {browser} is connected to power.")
+      env.handle_warning(
+        "Power Sampler only works on battery power, "
+        f"but Browser {browser} is connected to power."
+      )
     # TODO() warn when external monitors are connected
     # TODO() warn about open terminals
     self.find_power_sampler_bin(browser)
@@ -139,8 +167,9 @@ class PowerSamplerProbe(Probe):
     #  .../chrome/src/out/x64.Release/App.path
     # Don't use parents[] access to stop at the root.
     maybe_build_dir: pth.AnyPath = browser.app_path.parent
-    finder = ChromiumBuildBinaryFinder(browser_platform, "power_sampler",
-                                       (maybe_build_dir,))
+    finder = ChromiumBuildBinaryFinder(
+      browser_platform, "power_sampler", (maybe_build_dir,)
+    )
     if maybe_path := finder.path:
       if browser_platform.is_file(maybe_path):
         logging.info("Using fallback power_sampler: %s", maybe_path)
@@ -148,16 +177,17 @@ class PowerSamplerProbe(Probe):
     raise self.missing_power_sampler_error(browser_platform, maybe_build_dir)
 
   def missing_power_sampler_error(
-      self, browser_platform: Platform,
-      maybe_build_dir: pth.AnyPath) -> ProbeValidationError:
+    self, browser_platform: Platform, maybe_build_dir: pth.AnyPath
+  ) -> ProbeValidationError:
     is_build_dir = browser_platform.is_file(maybe_build_dir / "args.gn")
     if not is_build_dir:
       maybe_build_dir = browser_platform.path(
-          "path/to/chromium/src/out/Release")
+        "path/to/chromium/src/out/Release"
+      )
     error_message = [
-        "Could not find custom chromium power_sampler helper binary.",
-        "Please build 'power_sampler manually for local builds'",
-        f"autoninja -C {maybe_build_dir} power_sampler",
+      "Could not find custom chromium power_sampler helper binary.",
+      "Please build 'power_sampler manually for local builds'",
+      f"autoninja -C {maybe_build_dir} power_sampler",
     ]
     return ProbeValidationError(self, "\n".join(error_message))
 
@@ -167,25 +197,28 @@ class PowerSamplerProbe(Probe):
 
 
 class PowerSamplerProbeContext(ProbeContext[PowerSamplerProbe]):
-
   def __init__(self, probe: PowerSamplerProbe, run: Run) -> None:
     super().__init__(probe, run)
     self._bin_path: Final[pth.AnyPath] = probe.find_power_sampler_bin(
-        self.browser)
+      self.browser
+    )
     self._active_user_process: subprocess.Popen | None = None
     self._power_process: subprocess.Popen | None = None
     self._power_battery_process: subprocess.Popen | None = None
     self._power_output: Final[pth.AnyPath] = self.result_path.with_suffix(
-        ".power.json")
-    self._power_battery_output: Final[
-        pth.AnyPath] = self.result_path.with_suffix(".power_battery.json")
+      ".power.json"
+    )
+    self._power_battery_output: Final[pth.AnyPath] = (
+      self.result_path.with_suffix(".power_battery.json")
+    )
 
   def setup(self) -> None:
     self._active_user_process = self.browser_platform.popen(
-        self._bin_path,
-        "--no-samplers",
-        "--simulate-user-active",
-        stdout=subprocess.DEVNULL)
+      self._bin_path,
+      "--no-samplers",
+      "--simulate-user-active",
+      stdout=subprocess.DEVNULL,
+    )
     if self._active_user_process.poll():
       raise ValueError("Could not start active user background sampler")
     if self.probe.wait_for_battery:
@@ -195,21 +228,23 @@ class PowerSamplerProbeContext(ProbeContext[PowerSamplerProbe]):
     assert self._active_user_process
     if sampling_interval := self.probe.sampling_interval.total_seconds():
       self._power_process = self.browser_platform.popen(
-          self._bin_path,
-          f"--sample-interval={int(sampling_interval)}",
-          f"--samplers={','.join(map(str, self.probe.samplers))}",
-          f"--json-output-file={self._power_output}",
-          f"--resource-coalition-pid={self.browser_pid}",
-          stdout=subprocess.DEVNULL)
+        self._bin_path,
+        f"--sample-interval={int(sampling_interval)}",
+        f"--samplers={','.join(map(str, self.probe.samplers))}",
+        f"--json-output-file={self._power_output}",
+        f"--resource-coalition-pid={self.browser_pid}",
+        stdout=subprocess.DEVNULL,
+      )
       if self._power_process.poll():
         raise ValueError("Could not start power sampler")
     self._power_battery_process = self.browser_platform.popen(
-        self._bin_path,
-        "--sample-on-notification",
-        f"--samplers={','.join(map(str, self.probe.samplers))+',battery'}",
-        f"--json-output-file={self._power_battery_output}",
-        f"--resource-coalition-pid={self.browser_pid}",
-        stdout=subprocess.DEVNULL)
+      self._bin_path,
+      "--sample-on-notification",
+      f"--samplers={','.join(map(str, self.probe.samplers)) + ',battery'}",
+      f"--json-output-file={self._power_battery_output}",
+      f"--resource-coalition-pid={self.browser_pid}",
+      stdout=subprocess.DEVNULL,
+    )
     if self._power_battery_process.poll():
       raise ValueError("Could not start power and battery sampler")
 
@@ -223,7 +258,8 @@ class PowerSamplerProbeContext(ProbeContext[PowerSamplerProbe]):
     self.stop_processes()
     if self.probe.sampling_interval:
       return self.browser_result(
-          json=[self._power_output, self._power_battery_output])
+        json=[self._power_output, self._power_battery_output]
+      )
     return self.browser_result(json=[self._power_battery_output])
 
   def stop_processes(self) -> None:
@@ -246,15 +282,21 @@ class PowerSamplerProbeContext(ProbeContext[PowerSamplerProbe]):
     battery is no longer reporting being fully charged before crossbench.
     """
     del run
-    logging.info("POWER SAMPLER: Waiting for non-100% battery or "
-                 "initial sample to synchronize")
+    logging.info(
+      "POWER SAMPLER: Waiting for non-100% battery or "
+      "initial sample to synchronize"
+    )
     while True:
       assert self.browser_platform.is_battery_powered, (
-          "Cannot wait for draining if power is connected.")
+        "Cannot wait for draining if power is connected."
+      )
 
       power_sampler_output = self.browser_platform.sh_stdout(
-          self._bin_path, "--sample-on-notification", "--samplers=battery",
-          "--sample-count=1")
+        self._bin_path,
+        "--sample-on-notification",
+        "--samplers=battery",
+        "--sample-count=1",
+      )
 
       for row in csv.DictReader(power_sampler_output.splitlines()):
         max_capacity = float(row["battery_max_capacity(Ah)"])

@@ -19,8 +19,9 @@ if TYPE_CHECKING:
 SAFARIDRIVER_PATH: Final = pth.AnyPosixPath("/usr/bin/safaridriver")
 
 
-def find_safaridriver(bin_path: pth.AnyPath,
-                      platform: plt.Platform) -> pth.AnyPath:
+def find_safaridriver(
+  bin_path: pth.AnyPath, platform: plt.Platform
+) -> pth.AnyPath:
   if platform.is_ios:
     # Given that Safari will be running on the iOS device, but the driver lives
     # on the host, it doesn't make sense to look for a path relative to Safari
@@ -32,12 +33,12 @@ def find_safaridriver(bin_path: pth.AnyPath,
     return driver_path
   # The system-default Safari version doesn't come with the driver
   assert bin_path.is_relative_to(Safari.default_path(platform)), (
-      f"Expected default Safari.app binary but got {bin_path}")
+    f"Expected default Safari.app binary but got {bin_path}"
+  )
   return SAFARIDRIVER_PATH
 
 
 class Safari(Browser):
-
   @classmethod
   def default_path(cls, platform: plt.Platform) -> pth.AnyPath:
     return platform.path("/Applications/Safari.app")
@@ -54,14 +55,15 @@ class Safari(Browser):
   @classmethod
   @override
   def attributes(cls) -> BrowserAttributes:
-    return (super().attributes()
-            | BrowserAttributes.SAFARI
-            | BrowserAttributes.DESKTOP)
+    return (
+      super().attributes()
+      | BrowserAttributes.SAFARI
+      | BrowserAttributes.DESKTOP
+    )
 
-  def __init__(self,
-               label: str,
-               path: pth.AnyPath,
-               settings: Settings | None = None) -> None:
+  def __init__(
+    self, label: str, path: pth.AnyPath, settings: Settings | None = None
+  ) -> None:
     self.bundle_name: str = ""
     super().__init__(label, path, settings=settings)
     assert self.platform.is_apple, "Safari only works on Apple platforms"
@@ -77,7 +79,8 @@ class Safari(Browser):
     assert self.path, "Missing browser path"
     app_version: str = self.platform.app_version(self.path)
     driver_version = self.host_platform.app_version(
-        find_safaridriver(self.path, self.platform))
+      find_safaridriver(self.path, self.platform)
+    )
     return SafariVersion.parse(f"{app_version} {driver_version}")
 
   @property
@@ -86,12 +89,14 @@ class Safari(Browser):
     """Returns the Safari-specific cache directory."""
     assert self.bundle_name, "Missing bundle_name"
     return self.platform.home() / (
-        f"Library/Containers/com.apple.{self.bundle_name}/Data/Library/Caches")
+      f"Library/Containers/com.apple.{self.bundle_name}/Data/Library/Caches"
+    )
 
   @override
   def _setup_cache_dir(self) -> pth.AnyPath | None:
     assert self.settings.cache_dir is None, (
-        "Cannot set custom cache dir for Safari")
+      "Cannot set custom cache dir for Safari"
+    )
     cache_dir = self.cache_dir
     if not self.platform.exists(cache_dir.parent):
       logging.warning("Could not find existing config dir for %s.", self)

@@ -14,7 +14,6 @@ if TYPE_CHECKING:
 
 
 class ChromiumBaseMixin:
-
   @classmethod
   def version_cls(cls) -> type[ChromiumVersion]:
     return ChromiumVersion
@@ -26,10 +25,11 @@ class ChromiumBaseMixin:
   @classmethod
   def canary_path(cls, platform: Platform) -> pth.AnyPath:
     return platform.search_app_or_executable(
-        "Chromium",
-        macos=["Chromium.app"],
-        linux=["google-chromium", "chromium"],
-        win=["Google/Chromium/Application/chromium.exe"])
+      "Chromium",
+      macos=["Chromium.app"],
+      linux=["google-chromium", "chromium"],
+      win=["Google/Chromium/Application/chromium.exe"],
+    )
 
   @classmethod
   def type_name(cls) -> str:

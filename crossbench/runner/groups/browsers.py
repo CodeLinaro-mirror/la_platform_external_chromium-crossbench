@@ -19,9 +19,9 @@ if TYPE_CHECKING:
 
 
 class BrowsersRunGroup(RunGroup):
-
-  def __init__(self, story_groups: Iterable[StoriesRunGroup],
-               throw: bool) -> None:
+  def __init__(
+    self, story_groups: Iterable[StoriesRunGroup], throw: bool
+  ) -> None:
     super().__init__(throw)
     self._story_groups: Final[tuple[StoriesRunGroup, ...]] = tuple(story_groups)
     if not story_groups:

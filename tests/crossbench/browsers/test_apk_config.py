@@ -12,7 +12,6 @@ from tests.crossbench.base import CrossbenchFakeFsTestCase
 
 
 class ApkConfigTestCase(CrossbenchFakeFsTestCase):
-
   def test_parse_str_apk(self) -> None:
     created_path = self.create_file("/tmp/app.apk", contents="data")
     config = ApkConfig.parse(str(created_path))
@@ -26,11 +25,13 @@ class ApkConfigTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse_dict(self) -> None:
     created_path = self.create_file("/tmp/app.apk", contents="data")
-    config = ApkConfig.parse({
+    config = ApkConfig.parse(
+      {
         "path": str(created_path),
         "reinstall": False,
         "modules": "base",
-    })
+      }
+    )
     self.assertTrue(config.path.exists())
     self.assertEqual(config.path.name, "app.apk")
     self.assertFalse(config.reinstall)
@@ -51,28 +52,36 @@ class ApkConfigTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse_reinstall_true(self) -> None:
     created_path = self.create_file("/tmp/app.apk", contents="data")
-    config = ApkConfig.parse({
+    config = ApkConfig.parse(
+      {
         "path": str(created_path),
         "force": True,
-    })
+      }
+    )
     self.assertTrue(config.reinstall)
-    config = ApkConfig.parse({
+    config = ApkConfig.parse(
+      {
         "path": str(created_path),
         "reinstall": True,
-    })
+      }
+    )
     self.assertTrue(config.reinstall)
 
   def test_parse_reinstall_false(self) -> None:
     created_path = self.create_file("/tmp/app.apk", contents="data")
-    config = ApkConfig.parse({
+    config = ApkConfig.parse(
+      {
         "path": str(created_path),
         "force": False,
-    })
+      }
+    )
     self.assertFalse(config.reinstall)
-    config = ApkConfig.parse({
+    config = ApkConfig.parse(
+      {
         "path": str(created_path),
         "reinstall": False,
-    })
+      }
+    )
     self.assertFalse(config.reinstall)
 
 

@@ -8,14 +8,17 @@ import argparse
 import unittest
 
 from crossbench import path as pth
-from crossbench.cli.parser import ArgumentGroupHelp, ArgumentHelp, \
-    CBArgumentParser, CBNamespace
+from crossbench.cli.parser import (
+  ArgumentGroupHelp,
+  ArgumentHelp,
+  CBArgumentParser,
+  CBNamespace,
+)
 from crossbench.parse import NumberParser, ObjectParser
 from tests import test_helper
 
 
 class CBNamespaceTestCase(unittest.TestCase):
-
   def test_init(self) -> None:
     ns = CBNamespace(foo="bar", num=42)
     self.assertEqual(ns.foo, "bar")
@@ -68,7 +71,6 @@ class CBNamespaceTestCase(unittest.TestCase):
 
 
 class CBArgumentParserTestCase(unittest.TestCase):
-
   def test_parse_args_returns_crossbench_namespace(self) -> None:
     parser = CBArgumentParser()
     parser.add_argument("--test-flag", default="default_value")
@@ -109,10 +111,12 @@ class CBArgumentParserTestCase(unittest.TestCase):
   def test_reject_type_int_and_float(self) -> None:
     parser = CBArgumentParser()
     with self.assertRaisesRegex(
-        ValueError, "type=int is forbidden.*NumberParser\\.positive_int"):
+      ValueError, "type=int is forbidden.*NumberParser\\.positive_int"
+    ):
       parser.add_argument("--flag", type=int)
     with self.assertRaisesRegex(
-        ValueError, "type=float is forbidden.*NumberParser\\.positive_float"):
+      ValueError, "type=float is forbidden.*NumberParser\\.positive_float"
+    ):
       parser.add_argument("--flag2", type=float)
 
   def test_reject_type_collections(self) -> None:
@@ -121,7 +125,8 @@ class CBArgumentParserTestCase(unittest.TestCase):
       with self.subTest(banned_type=banned_type.__name__):
         with self.assertRaisesRegex(ValueError, "is forbidden"):
           parser.add_argument(
-              f"--flag-{banned_type.__name__}", type=banned_type)
+            f"--flag-{banned_type.__name__}", type=banned_type
+          )
 
   def test_reject_raw_lambda(self) -> None:
     parser = CBArgumentParser()
@@ -145,51 +150,61 @@ class CBArgumentParserTestCase(unittest.TestCase):
   def test_reject_action_store_boolean_default(self) -> None:
     parser = CBArgumentParser()
     with self.assertRaisesRegex(
-        ValueError, "Invalid action='store' with boolean default=False"):
+      ValueError, "Invalid action='store' with boolean default=False"
+    ):
       parser.add_argument("--flag", action="store", default=False)
     with self.assertRaisesRegex(
-        ValueError, "Invalid action='store' with boolean default=True"):
+      ValueError, "Invalid action='store' with boolean default=True"
+    ):
       parser.add_argument("--flag", action="store", default=True)
 
   def test_reject_action_store_true_default_true(self) -> None:
     parser = CBArgumentParser()
-    with self.assertRaisesRegex(ValueError,
-                                "action='store_true' with default=True"):
+    with self.assertRaisesRegex(
+      ValueError, "action='store_true' with default=True"
+    ):
       parser.add_argument("--flag", action="store_true", default=True)
 
   def test_reject_action_store_false_default_false(self) -> None:
     parser = CBArgumentParser()
-    with self.assertRaisesRegex(ValueError,
-                                "action='store_false' with default=False"):
+    with self.assertRaisesRegex(
+      ValueError, "action='store_false' with default=False"
+    ):
       parser.add_argument("--flag", action="store_false", default=False)
 
   def test_reject_action_append_non_appendable_default(self) -> None:
     parser = CBArgumentParser()
     with self.assertRaisesRegex(
-        ValueError, "Invalid non-appendable default=False for action='append'"):
+      ValueError, "Invalid non-appendable default=False for action='append'"
+    ):
       parser.add_argument("--flag", action="append", default=False)
     with self.assertRaisesRegex(
-        ValueError, "Invalid non-appendable default='bad' for action='append'"):
+      ValueError, "Invalid non-appendable default='bad' for action='append'"
+    ):
       parser.add_argument("--flag", action="append", default="bad")
     with self.assertRaisesRegex(
-        ValueError, "Invalid non-appendable default=123 for action='append'"):
+      ValueError, "Invalid non-appendable default=123 for action='append'"
+    ):
       parser.add_argument("--flag", action="append", default=123)
     with self.assertRaisesRegex(
-        ValueError,
-        r"Invalid non-appendable default=set\(\) for action='append'"):
+      ValueError, r"Invalid non-appendable default=set\(\) for action='append'"
+    ):
       parser.add_argument("--flag", action="append", default=set())
     with self.assertRaisesRegex(
-        ValueError, r"Invalid non-appendable default=\(\) for action='append'"):
+      ValueError, r"Invalid non-appendable default=\(\) for action='append'"
+    ):
       parser.add_argument("--flag", action="append", default=())
     with self.assertRaisesRegex(
-        ValueError, "Invalid non-appendable default=False for action='extend'"):
+      ValueError, "Invalid non-appendable default=False for action='extend'"
+    ):
       parser.add_argument("--flag", action="extend", default=False)
     with self.assertRaisesRegex(
-        ValueError,
-        r"Invalid non-appendable default=set\(\) for action='extend'"):
+      ValueError, r"Invalid non-appendable default=set\(\) for action='extend'"
+    ):
       parser.add_argument("--flag", action="extend", default=set())
     with self.assertRaisesRegex(
-        ValueError, r"Invalid non-appendable default=\(\) for action='extend'"):
+      ValueError, r"Invalid non-appendable default=\(\) for action='extend'"
+    ):
       parser.add_argument("--flag", action="extend", default=())
 
   def test_allow_valid_arguments(self) -> None:
@@ -207,7 +222,8 @@ class CBArgumentParserTestCase(unittest.TestCase):
     parser.add_argument("--app1", action="append")
     parser.add_argument("--app2", action="append", default=[])
     parser.add_argument("--ext1", action="extend", nargs="+", default=[])
-    args = parser.parse_args([
+    args = parser.parse_args(
+      [
         "--b1",
         "--b4=True",
         "--s1=hello",
@@ -219,7 +235,8 @@ class CBArgumentParserTestCase(unittest.TestCase):
         "--app2=val2",
         "--ext1",
         "val3",
-    ])
+      ]
+    )
     self.assertTrue(args.b1)
     self.assertTrue(args.b2)
     self.assertFalse(args.b3)
@@ -236,15 +253,15 @@ class CBArgumentParserTestCase(unittest.TestCase):
 
 
 class ArgumentHelpTest(unittest.TestCase):
-
   def test_from_action_options(self) -> None:
     parser = argparse.ArgumentParser()
     action = parser.add_argument(
-        "--test-flag",
-        "-t",
-        default="default_val",
-        choices=["a", "b"],
-        help="Help text")
+      "--test-flag",
+      "-t",
+      default="default_val",
+      choices=["a", "b"],
+      help="Help text",
+    )
     arg_help = ArgumentHelp.from_action(action)
     self.assertEqual(arg_help.name, "--test-flag")
     self.assertEqual(arg_help.aliases, ("-t",))
@@ -274,7 +291,8 @@ class ArgumentHelpTest(unittest.TestCase):
     parser = argparse.ArgumentParser()
     path_val = pth.LocalPath("/tmp/foo")
     action = parser.add_argument(
-        "--path", required=True, default=path_val, help="Path")
+      "--path", required=True, default=path_val, help="Path"
+    )
     arg_help = ArgumentHelp.from_action(action)
     self.assertTrue(arg_help.required)
     self.assertEqual(arg_help.default, path_val)
@@ -285,7 +303,6 @@ class ArgumentHelpTest(unittest.TestCase):
 
 
 class ArgumentGroupHelpTest(unittest.TestCase):
-
   def test_from_parser(self) -> None:
     parser = argparse.ArgumentParser()
     group = parser.add_argument_group("Test Group", "Group description")
@@ -306,38 +323,47 @@ class ArgumentGroupHelpTest(unittest.TestCase):
     parser.add_argument("--custom-opt", help="Custom option")
 
     groups = ArgumentGroupHelp.from_parser(
-        parser, default_title="Custom Options")
+      parser, default_title="Custom Options"
+    )
     self.assertEqual(len(groups), 1)
     self.assertEqual(groups[0].name, "Custom Options")
 
   def test_extract_group_title(self) -> None:
     parser = argparse.ArgumentParser()
     group = parser.add_argument_group("custom")
-    self.assertEqual(ArgumentGroupHelp._extract_group_title(group),
-                     "custom")  # noqa: SLF001
+    self.assertEqual(ArgumentGroupHelp._extract_group_title(group), "custom")  # noqa: SLF001
     self.assertEqual(
-        ArgumentGroupHelp._extract_group_title(  # noqa: SLF001
-            group, "Default"),
-        "custom")
+      ArgumentGroupHelp._extract_group_title(  # noqa: SLF001
+        group, "Default"
+      ),
+      "custom",
+    )
 
     empty_group = parser.add_argument_group("")
     self.assertEqual(
-        ArgumentGroupHelp._extract_group_title(empty_group),  # noqa: SLF001
-        "Options")
+      ArgumentGroupHelp._extract_group_title(empty_group),  # noqa: SLF001
+      "Options",
+    )
     self.assertEqual(
-        ArgumentGroupHelp._extract_group_title(  # noqa: SLF001
-            empty_group, "Default"),
-        "Default")
+      ArgumentGroupHelp._extract_group_title(  # noqa: SLF001
+        empty_group, "Default"
+      ),
+      "Default",
+    )
 
     default_options_group = parser._action_groups[1]  # noqa: SLF001
     self.assertEqual(
-        ArgumentGroupHelp._extract_group_title(  # noqa: SLF001
-            default_options_group),
-        "options")
+      ArgumentGroupHelp._extract_group_title(  # noqa: SLF001
+        default_options_group
+      ),
+      "options",
+    )
     self.assertEqual(
-        ArgumentGroupHelp._extract_group_title(  # noqa: SLF001
-            default_options_group, "Default"),
-        "Default")
+      ArgumentGroupHelp._extract_group_title(  # noqa: SLF001
+        default_options_group, "Default"
+      ),
+      "Default",
+    )
 
   def test_crossbench_argument_parser_extract_argument_groups(self) -> None:
     parser = CBArgumentParser()

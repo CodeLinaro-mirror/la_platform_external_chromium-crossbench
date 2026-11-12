@@ -37,11 +37,10 @@ if TYPE_CHECKING:
 
 
 class Browser(abc.ABC):
-
   @classmethod
-  def default_flags(cls,
-                    initial_data: FlagsData = None,
-                    milestone: int = 0) -> Flags:
+  def default_flags(
+    cls, initial_data: FlagsData = None, milestone: int = 0
+  ) -> Flags:
     del milestone
     return Flags(initial_data)
 
@@ -55,10 +54,12 @@ class Browser(abc.ABC):
   def attributes(cls) -> BrowserAttributes:
     return BrowserAttributes(0)
 
-  def __init__(self,
-               label: str,
-               path: pth.AnyPath | None = None,
-               settings: Settings | None = None) -> None:
+  def __init__(
+    self,
+    label: str,
+    path: pth.AnyPath | None = None,
+    settings: Settings | None = None,
+  ) -> None:
     self._settings: Final[Settings] = settings or Settings()
     self._platform: Final[plt.Platform] = self._settings.platform
     self.label: Final[str] = label
@@ -94,13 +95,15 @@ class Browser(abc.ABC):
     # TODO clean up
     if not self.platform.is_android:
       assert self.path.is_absolute(), (
-          f"Expected absolute path but got {self.path}")
+        f"Expected absolute path but got {self.path}"
+      )
     self._version = self._extract_version()
     self.unique_name = f"{self.type_name()}_v{self.version.major}_{self.label}"
 
   def _init_flags(self, settings: Settings) -> Flags:
     assert not self._settings.js_flags, (
-        f"{self} doesn't support custom js_flags")
+      f"{self} doesn't support custom js_flags"
+    )
     return self.default_flags(settings.flags, self.version.major)
 
   @property
@@ -240,8 +243,9 @@ class Browser(abc.ABC):
   def meminfo(self, timeout: dt.timedelta) -> list[ProcessMeminfo]:
     return self.platform.process_meminfo(str(self.path), timeout)
 
-  def dump_java_heap(self, label: str, trace_buffer_size_kb: int,
-                     timeout: dt.timedelta) -> pth.AnyPath:
+  def dump_java_heap(
+    self, label: str, trace_buffer_size_kb: int, timeout: dt.timedelta
+  ) -> pth.AnyPath:
     del label, trace_buffer_size_kb, timeout
     raise NotImplementedError(f"dump_java_heap not implemented for {self}.")
 
@@ -264,7 +268,7 @@ class Browser(abc.ABC):
 
   @property
   def allow_existing_process(self) -> bool:
-    """ Per browser class setting to eng-validate whether we already have
+    """Per browser class setting to eng-validate whether we already have
     the same browser running"""
     return False
 
@@ -293,23 +297,25 @@ class Browser(abc.ABC):
   def driver_log_file(self) -> pth.LocalPath | None:
     return None
 
-  def _resolve_binary(self,
-                      path: pth.AnyPath) -> tuple[pth.AnyPath, pth.AnyPath]:
+  def _resolve_binary(
+    self, path: pth.AnyPath
+  ) -> tuple[pth.AnyPath, pth.AnyPath]:
     path = self.platform.absolute(path)
     assert self.platform.exists(path), f"Binary at path={path} does not exist."
     if self.platform.is_macos:
       return self._resolve_macos_binary(path)
-    assert self.platform.is_file(path), (
-        f"Binary at path={path} is not a file.")
+    assert self.platform.is_file(path), f"Binary at path={path} is not a file."
     app_path = path
     return app_path, path
 
   def _resolve_macos_binary(
-      self, path: pth.AnyPath) -> tuple[pth.AnyPath, pth.AnyPath]:
+    self, path: pth.AnyPath
+  ) -> tuple[pth.AnyPath, pth.AnyPath]:
     app_path = self.platform.search_app(path)
     if not app_path:
-      raise ValueError("Invalid macos binary. "
-                       f"Could noy find .app bundle: {path}")
+      raise ValueError(
+        f"Invalid macos binary. Could noy find .app bundle: {path}"
+      )
     assert self.platform.is_macos, f"Unsupported platform: {self.platform}"
     candidate = self.platform.search_binary(path)
     if not candidate or not self.platform.is_file(candidate):
@@ -324,18 +330,18 @@ class Browser(abc.ABC):
 
   def details_json(self) -> JsonDict:
     return {
-        "label": self.label,
-        "browser": self.type_name(),
-        "unique_name": self.unique_name,
-        "app_name": self.app_name,
-        "version": self.version.parts_str,
-        "channel": self.version.channel_name,
-        "flags": tuple(self.flags),
-        "js_flags": (),
-        "path": os.fspath(self.path),
-        "clear_cache_dir": self.clear_cache_dir,
-        "major_version": self.version.major,
-        "log": {},
+      "label": self.label,
+      "browser": self.type_name(),
+      "unique_name": self.unique_name,
+      "app_name": self.app_name,
+      "version": self.version.parts_str,
+      "channel": self.version.channel_name,
+      "flags": tuple(self.flags),
+      "js_flags": (),
+      "path": os.fspath(self.path),
+      "clear_cache_dir": self.clear_cache_dir,
+      "major_version": self.version.major,
+      "log": {},
     }
 
   def validate(self) -> None:
@@ -344,15 +350,15 @@ class Browser(abc.ABC):
     self.validate_network()
 
   def validate_flags(self) -> None:
-    """ Helper method is called from the Runner before any Runs / Sessions
+    """Helper method is called from the Runner before any Runs / Sessions
     have started."""
 
   def validate_binary(self) -> None:
-    """ Helper method is called from the Runner before any Runs / Sessions
+    """Helper method is called from the Runner before any Runs / Sessions
     have started."""
 
   def validate_network(self) -> None:
-    """ Helper method is called from the Runner before any Runs / Sessions
+    """Helper method is called from the Runner before any Runs / Sessions
     have started."""
     self.network.validate(self)
 
@@ -360,7 +366,8 @@ class Browser(abc.ABC):
     assert not self._is_running, "setup() called in wrong order."
     self._setup_binary()
     assert not self._cache_dir, (
-        f"Cache dir should not have been setup, but got {self._cache_dir}")
+      f"Cache dir should not have been setup, but got {self._cache_dir}"
+    )
     self._cache_dir = self._setup_cache_dir()
 
   def teardown(self) -> None:
@@ -371,12 +378,12 @@ class Browser(abc.ABC):
       self._teardown_cache_dir()
 
   def _setup_binary(self) -> None:
-    """ This helper is called in the setup steps of each Session.
-    This can be used to install a custom binary on remote devices. """
+    """This helper is called in the setup steps of each Session.
+    This can be used to install a custom binary on remote devices."""
 
-  def is_logged_in(self,
-                   secret: UsernamePassword,
-                   strict: bool = False) -> bool:
+  def is_logged_in(
+    self, secret: UsernamePassword, strict: bool = False
+  ) -> bool:
     """Determines whether the browser is already logged in with the given
     credentials.
 
@@ -414,34 +421,38 @@ class Browser(abc.ABC):
     finally:
       self._cache_dir = None
 
-  def start(self,
-            session: BrowserSessionRunGroup,
-            startup_urls: Sequence[str] = ()) -> None:
+  def start(
+    self, session: BrowserSessionRunGroup, startup_urls: Sequence[str] = ()
+  ) -> None:
     del session
     assert not self._is_running, (
-        "Previously used browser was not correctly stopped.")
+      "Previously used browser was not correctly stopped."
+    )
     self._validate_startup_urls(startup_urls)
 
   def _validate_startup_urls(self, startup_urls: Sequence[str]) -> None:
     if startup_urls:
       raise NotImplementedError(
-          f"startup_urls is not supported on {type(self).__name__}: "
-          f"{startup_urls}")
+        f"startup_urls is not supported on {type(self).__name__}: "
+        f"{startup_urls}"
+      )
 
-  def _log_browser_start(self,
-                         args: tuple[str, ...],
-                         driver_path: pth.AnyPath | None = None) -> None:
+  def _log_browser_start(
+    self, args: tuple[str, ...], driver_path: pth.AnyPath | None = None
+  ) -> None:
     logging.info("🌐 STARTING BROWSER Binary:  %s", self.path)
     logging.info("🏷️  STARTING BROWSER Version: %s", self.version)
     if driver_path:
       logging.info("🐎 STARTING BROWSER Driver:  %s", driver_path)
     logging.info("🛜  STARTING BROWSER Network: %s", self.network)
-    logging.info("🩺 STARTING BROWSER Probes:  %s",
-                 ", ".join(p.NAME for p in self.probes))
+    logging.info(
+      "🩺 STARTING BROWSER Probes:  %s", ", ".join(p.NAME for p in self.probes)
+    )
     logging.info("🚩 STARTING BROWSER Flags:   %s", shlex.join(args))
 
   def _get_browser_flags_for_session(
-      self, session: BrowserSessionRunGroup) -> tuple[str, ...]:
+    self, session: BrowserSessionRunGroup
+  ) -> tuple[str, ...]:
     flags_copy: Flags = self.flags.copy()
     flags_copy.update(session.extra_flags)
     flags_copy.update(self.network.extra_flags(self.attributes()))
@@ -483,10 +494,10 @@ class Browser(abc.ABC):
 
   @abc.abstractmethod
   def js(
-      self,
-      script: str,
-      timeout: dt.timedelta | None = None,
-      arguments: Sequence[object] = (),
+    self,
+    script: str,
+    timeout: dt.timedelta | None = None,
+    arguments: Sequence[object] = (),
   ) -> object:
     pass
 
@@ -496,7 +507,8 @@ class Browser(abc.ABC):
   def run_script_on_new_document(self, script: str) -> None:
     del script
     raise NotImplementedError(
-        f"New document script injection is not supported by {self}")
+      f"New document script injection is not supported by {self}"
+    )
 
   def current_window_id(self) -> str:
     raise NotImplementedError(f"current_window_id is not implemented by {self}")
@@ -506,12 +518,12 @@ class Browser(abc.ABC):
     raise NotImplementedError(f"switch_window is not implemented by {self}")
 
   def switch_tab(
-      self,
-      title: re.Pattern | None = None,
-      url: re.Pattern | None = None,
-      tab_index: int | None = None,
-      relative_tab_index: int | None = None,
-      timeout: dt.timedelta = dt.timedelta(seconds=0),
+    self,
+    title: re.Pattern | None = None,
+    url: re.Pattern | None = None,
+    tab_index: int | None = None,
+    relative_tab_index: int | None = None,
+    timeout: dt.timedelta = dt.timedelta(seconds=0),
   ) -> str:
     del title
     del url
@@ -521,12 +533,12 @@ class Browser(abc.ABC):
     raise NotImplementedError(f"Switching tabs is not supported by {self}")
 
   def close_tab(
-      self,
-      title: re.Pattern | None = None,
-      url: re.Pattern | None = None,
-      tab_index: int | None = None,
-      relative_tab_index: int | None = None,
-      timeout: dt.timedelta = dt.timedelta(seconds=0),
+    self,
+    title: re.Pattern | None = None,
+    url: re.Pattern | None = None,
+    tab_index: int | None = None,
+    relative_tab_index: int | None = None,
+    timeout: dt.timedelta = dt.timedelta(seconds=0),
   ) -> None:
     del title
     del url
@@ -546,9 +558,9 @@ class Browser(abc.ABC):
     raise NotImplementedError(f"Getting current url is not supported by {self}")
 
   @abc.abstractmethod
-  def show_url(self,
-               url: str,
-               target: WindowTarget = WindowTarget.SELF) -> None:
+  def show_url(
+    self, url: str, target: WindowTarget = WindowTarget.SELF
+  ) -> None:
     pass
 
   def switch_to_new_tab(self) -> None:
@@ -564,9 +576,13 @@ class Browser(abc.ABC):
     # TODO: implement screenshot on browser and platform.
     raise NotImplementedError(f"Taking screenshots is not supported by {self}")
 
-  def _sync_viewport_flag(self, flags: Flags, flag: str,
-                          is_requested_by_viewport: bool,
-                          replacement: Viewport) -> None:
+  def _sync_viewport_flag(
+    self,
+    flags: Flags,
+    flag: str,
+    is_requested_by_viewport: bool,
+    replacement: Viewport,
+  ) -> None:
     if is_requested_by_viewport:
       flags.set(flag)
     elif flag in flags:
@@ -574,7 +590,8 @@ class Browser(abc.ABC):
         self.viewport = replacement
       else:
         raise ValueError(
-            f"{flag} conflicts with requested --viewport={self.viewport}")
+          f"{flag} conflicts with requested --viewport={self.viewport}"
+        )
 
   def __str__(self) -> str:
     platform_prefix = ""
@@ -586,22 +603,25 @@ class Browser(abc.ABC):
     # Poor-man's hash, browsers should be unique.
     return hash(id(self))
 
-  def performance_mark(self,
-                       name: str,
-                       detail: Json = None,
-                       prefix: str = "crossbench-") -> None:
+  def performance_mark(
+    self, name: str, detail: Json = None, prefix: str = "crossbench-"
+  ) -> None:
     full_name = prefix + name
     if not self._is_running:
       logging.warning(
-          "%s: cannot set performance_mark %r because the browser is not "
-          "running.", self, full_name)
+        "%s: cannot set performance_mark %r because the browser is not "
+        "running.",
+        self,
+        full_name,
+      )
       return
     if detail is None:
       self.js("performance.mark(arguments[0]);", arguments=[full_name])
     else:
       self.js(
-          "performance.mark(arguments[0],{detail: arguments[1]});",
-          arguments=[full_name, detail])
+        "performance.mark(arguments[0],{detail: arguments[1]});",
+        arguments=[full_name, detail],
+      )
 
   @property
   def ws_endpoint(self) -> str:

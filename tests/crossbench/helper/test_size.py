@@ -11,7 +11,6 @@ from tests import test_helper
 
 
 class SizeTestCase(unittest.TestCase):
-
   def test_enum_members_and_values(self) -> None:
     self.assertIsInstance(Size.KiB, int)
     self.assertIsInstance(Size.KiB, Size)
@@ -63,8 +62,8 @@ class SizeTestCase(unittest.TestCase):
     members = list(Size)
     self.assertEqual(len(members), 5)
     self.assertEqual(
-        members,
-        [Size.B, Size.KiB, Size.MiB, Size.GiB, Size.TiB],
+      members,
+      [Size.B, Size.KiB, Size.MiB, Size.GiB, Size.TiB],
     )
     self.assertEqual(SIZE_UNITS, tuple(member.name for member in Size))
     for member in Size:
@@ -74,11 +73,11 @@ class SizeTestCase(unittest.TestCase):
   def test_size_units_order_and_values(self) -> None:
     expected_units = ("B", "KiB", "MiB", "GiB", "TiB")
     expected_values = (
-        1,
-        1024,
-        1024 * 1024,
-        1024 * 1024 * 1024,
-        1024 * 1024 * 1024 * 1024,
+      1,
+      1024,
+      1024 * 1024,
+      1024 * 1024 * 1024,
+      1024 * 1024 * 1024 * 1024,
     )
     self.assertEqual(SIZE_UNITS, expected_units)
     self.assertEqual(tuple(member.name for member in Size), expected_units)
@@ -138,7 +137,8 @@ class SizeTestCase(unittest.TestCase):
     self.assertEqual(Size.format(int(1.75 * Size.TiB)), "1.75 TiB")
     self.assertEqual(Size.format(int(3.14159 * Size.TiB)), "3.14 TiB")
     self.assertEqual(
-        Size.format(2048 * 1024 * 1024 * 1024 * 1024), "2048.00 TiB")
+      Size.format(2048 * 1024 * 1024 * 1024 * 1024), "2048.00 TiB"
+    )
 
   def test_format_digits(self) -> None:
     self.assertEqual(Size.format(1536, digits=0), "2 KiB")

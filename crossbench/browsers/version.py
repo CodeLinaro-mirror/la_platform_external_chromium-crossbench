@@ -11,8 +11,11 @@ import functools
 import re
 from typing import Final, Generic, NamedTuple, Self, TypeVar, override
 
-from crossbench.helper.version import Version, VersionParseError, \
-    VersionPartsData
+from crossbench.helper.version import (
+  Version,
+  VersionParseError,
+  VersionPartsData,
+)
 
 
 @dataclasses.dataclass
@@ -54,7 +57,6 @@ class VersionParseResult(NamedTuple):
 
 
 class PartialBrowserVersionError(ValueError):
-
   def __init__(self, version: BrowserVersion):
     self.version: Final[BrowserVersion] = version
     msg = f"Got partial browser version: {version!r}"
@@ -70,7 +72,6 @@ _VERSION_DIGITS_ONLY_RE: re.Pattern[str] = re.compile(r"\d+(\.\d+)*")
 
 @functools.total_ordering
 class BrowserVersion(Version, metaclass=abc.ABCMeta):
-
   @classmethod
   def default_channel(cls) -> BrowserVersionChannel:
     return BrowserVersionChannel.STABLE
@@ -82,13 +83,14 @@ class BrowserVersion(Version, metaclass=abc.ABCMeta):
     be unambiguously associated with a specific BrowserVersion."""
     if _VERSION_DIGITS_ONLY_RE.fullmatch(str(value)):
       raise cls.parse_error(
-          "Ambiguous version, missing browser specific prefix or suffix", value)
+        "Ambiguous version, missing browser specific prefix or suffix", value
+      )
     return cls.parse(value)
 
   @classmethod
-  def parse(cls,
-            value: str,
-            channel: BrowserVersionChannel | None = None) -> Self:
+  def parse(
+    cls, value: str, channel: BrowserVersionChannel | None = None
+  ) -> Self:
     parsed = cls._parse(value)
     parts = cls._validate_parts(parsed.parts, value)
     return cls(parts, channel or parsed.channel, parsed.version_str)
@@ -130,13 +132,16 @@ class BrowserVersion(Version, metaclass=abc.ABCMeta):
   def pre_alpha(cls, parts: VersionPartsData, version_str: str = "") -> Self:
     return cls(parts, BrowserVersionChannel.PRE_ALPHA, version_str)
 
-  def __init__(self,
-               parts: VersionPartsData,
-               channel: BrowserVersionChannel | None = None,
-               version_str: str = "") -> None:
+  def __init__(
+    self,
+    parts: VersionPartsData,
+    channel: BrowserVersionChannel | None = None,
+    version_str: str = "",
+  ) -> None:
     super().__init__(parts, version_str)
     self._channel: Final[BrowserVersionChannel] = (
-        channel or self.default_channel())
+      channel or self.default_channel()
+    )
 
   @property
   @override
@@ -173,7 +178,8 @@ class BrowserVersion(Version, metaclass=abc.ABCMeta):
   def channel(self) -> BrowserVersionChannel:
     if not self.has_channel:
       raise BrowserVersionNoChannelError(
-          f"BrowserVersion {self} has no channel")
+        f"BrowserVersion {self} has no channel"
+      )
     return self._channel
 
   def matches_channel(self, channel: BrowserVersionChannel) -> bool:
@@ -231,15 +237,19 @@ class BrowserVersion(Version, metaclass=abc.ABCMeta):
     return f"{self._version_str} {self.channel_name}"
 
   def __repr__(self) -> str:
-    return (f"{self.__class__.__name__}"
-            f"({self.parts_str}, {self.channel_name}, {self._version_str!r})")
+    return (
+      f"{self.__class__.__name__}"
+      f"({self.parts_str}, {self.channel_name}, {self._version_str!r})"
+    )
 
   @override
   def __le__(self, other: Version) -> bool:
     if not self.is_compatible_type(other):
-      raise TypeError("Cannot compare versions from unrelated browsers: "
-                      f"{type(self).__name__} vs. "
-                      f"{type(other).__name__}.")
+      raise TypeError(
+        "Cannot compare versions from unrelated browsers: "
+        f"{type(self).__name__} vs. "
+        f"{type(other).__name__}."
+      )
     assert isinstance(other, BrowserVersion)
     if self.is_channel_version and other.is_channel_version:
       return self._channel <= other._channel
@@ -251,8 +261,9 @@ class BrowserVersion(Version, metaclass=abc.ABCMeta):
 
   def contains(self, other: BrowserVersion) -> bool:
     if not self.is_compatible_type(other):
-      raise TypeError("Cannot compare versions from different browsers: "
-                      f"{self} vs. {other}.")
+      raise TypeError(
+        f"Cannot compare versions from different browsers: {self} vs. {other}."
+      )
     if self == other:
       return True
     if other.has_channel and not self.matches_channel(other.channel):
@@ -270,10 +281,12 @@ class UnknownBrowserVersion(BrowserVersion):
   """Sentinel helper object for initializing version variables before
   knowing which exact browser/version is used."""
 
-  def __init__(self,
-               parts: VersionPartsData = (),
-               channel: BrowserVersionChannel = BrowserVersionChannel.ANY,
-               version_str: str = "unknown") -> None:
+  def __init__(
+    self,
+    parts: VersionPartsData = (),
+    channel: BrowserVersionChannel = BrowserVersionChannel.ANY,
+    version_str: str = "unknown",
+  ) -> None:
     del channel
     super().__init__(parts, BrowserVersionChannel.ANY, version_str)
 
@@ -301,7 +314,6 @@ BrowserVersionT = TypeVar("BrowserVersionT", bound=BrowserVersion)
 
 
 class BrowserVersionRange(Generic[BrowserVersionT], metaclass=abc.ABCMeta):
-
   @classmethod
   @abc.abstractmethod
   def version_cls(cls) -> type[BrowserVersionT]:
@@ -309,14 +321,14 @@ class BrowserVersionRange(Generic[BrowserVersionT], metaclass=abc.ABCMeta):
 
   @classmethod
   def any(
-      cls,
-      min_parts: VersionPartsData,
-      max_parts: VersionPartsData,
+    cls,
+    min_parts: VersionPartsData,
+    max_parts: VersionPartsData,
   ) -> Self:
     version_cls = cls.version_cls()
     return cls(
-        version_cls.any(min_parts),
-        version_cls.any(max_parts),
+      version_cls.any(min_parts),
+      version_cls.any(max_parts),
     )
 
   def __init__(self, min: BrowserVersionT, max: BrowserVersionT) -> None:
@@ -344,27 +356,34 @@ class BrowserVersionRange(Generic[BrowserVersionT], metaclass=abc.ABCMeta):
       return False
     return self.key == other.key
 
-  def _validate_bound(self, bound: BrowserVersionT,
-                      name: str) -> BrowserVersionT:
+  def _validate_bound(
+    self, bound: BrowserVersionT, name: str
+  ) -> BrowserVersionT:
     version_cls = self.version_cls()
     if not isinstance(bound, version_cls):
-      raise TypeError(f"Expected {version_cls.__name__} for {name} bound, "
-                      f"but got {type(bound).__name__}: {bound}")
+      raise TypeError(
+        f"Expected {version_cls.__name__} for {name} bound, "
+        f"but got {type(bound).__name__}: {bound}"
+      )
     if bound.has_channel:
       raise ValueError(
-          f"Cannot use channel-specific version as {name} bound: {bound}")
+        f"Cannot use channel-specific version as {name} bound: {bound}"
+      )
     if not bound.parts:
       raise ValueError(f"Cannot use empty version as {name} bound: {bound}")
     return bound
 
   def _validate_min_max(self) -> None:
     if not self.is_compatible_type(self._max):
-      raise TypeError("Cannot compare versions from different browsers: "
-                      f"{self._min} vs. {self._max}.")
+      raise TypeError(
+        "Cannot compare versions from different browsers: "
+        f"{self._min} vs. {self._max}."
+      )
     if self._min.parts <= self._max.parts or self._min <= self._max:
       return
     raise ValueError(
-        f"Invalid version range: min ({self._min}) > max ({self._max})")
+      f"Invalid version range: min ({self._min}) > max ({self._max})"
+    )
 
   def is_compatible_type(self, other: object) -> bool:
     return self._min.is_compatible_type(other)
@@ -376,8 +395,9 @@ class BrowserVersionRange(Generic[BrowserVersionT], metaclass=abc.ABCMeta):
     if other.is_unknown:
       return False
     if not self.is_compatible_type(other):
-      raise TypeError("Cannot compare versions from different browsers: "
-                      f"{self} vs. {other}.")
+      raise TypeError(
+        f"Cannot compare versions from different browsers: {self} vs. {other}."
+      )
     if other.is_channel_version:
       return False
     return self._min.parts <= other.parts and other <= self._max

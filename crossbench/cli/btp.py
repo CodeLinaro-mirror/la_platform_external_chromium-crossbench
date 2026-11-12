@@ -17,33 +17,33 @@ from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.cli.parser import CBArgumentParser
 from crossbench.parse import ObjectParser, PathParser
 from crossbench.probes.trace_processor.constants import QUERIES_DIR
-from crossbench.probes.trace_processor.helper import \
-    CBBatchTraceProcessorConfig
-from crossbench.probes.trace_processor.trace_processor import \
-    TraceProcessorProbe
+from crossbench.probes.trace_processor.helper import CBBatchTraceProcessorConfig
+from crossbench.probes.trace_processor.trace_processor import (
+  TraceProcessorProbe,
+)
 
 DEFAULT_CONFIG_PATH: Final[pth.LocalPath] = (
-    pth.ROOT_DIR / "config" / "benchmark" / "loadline" / "probe_config.hjson")
+  pth.ROOT_DIR / "config" / "benchmark" / "loadline" / "probe_config.hjson"
+)
 
 
 class MergedTraceUriResolver(TraceUriResolver):
-
   def __init__(self, result_path: pth.LocalPath) -> None:
 
     def metadata(path: pth.LocalPath) -> dict[str, str]:
       parts: tuple[str, ...] = path.parts
       return {
-          "cb_browser": parts[-7],
-          "cb_story": parts[-5],
-          "cb_run": parts[-4],
-          "cb_temperature": parts[-3],
+        "cb_browser": parts[-7],
+        "cb_story": parts[-5],
+        "cb_run": parts[-4],
+        "cb_temperature": parts[-3],
       }
 
     listdir = list(result_path.glob("*/stories/**/merged_trace.zip"))
 
     self._resolved: Final[list[TraceUriResolver.Result]] = [
-        TraceUriResolver.Result(trace=str(path), metadata=metadata(path))
-        for path in listdir
+      TraceUriResolver.Result(trace=str(path), metadata=metadata(path))
+      for path in listdir
     ]
 
   def resolve(self) -> list[TraceUriResolver.Result]:
@@ -51,35 +51,43 @@ class MergedTraceUriResolver(TraceUriResolver):
 
 
 class BTPUtil:
-
   def __init__(self) -> None:
     self.parser: Final[CBArgumentParser] = CBArgumentParser(
-        description=("Runs trace processor queries in a batch mode on existing "
-                     "benchmark results, without re-running the benchmark "
-                     "itself."),
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+      description=(
+        "Runs trace processor queries in a batch mode on existing "
+        "benchmark results, without re-running the benchmark "
+        "itself."
+      ),
+      formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
     self.parser.add_argument(
-        "--result-dir",
-        type=PathParser.existing_path,
-        default=pth.LATEST_RESULT_DIR,
-        help="Path to the benchmark result directory.")
+      "--result-dir",
+      type=PathParser.existing_path,
+      default=pth.LATEST_RESULT_DIR,
+      help="Path to the benchmark result directory.",
+    )
     self.parser.add_argument(
-        "--probe-config",
-        type=PathParser.existing_file_path,
-        default=DEFAULT_CONFIG_PATH,
-        help="Path to the trace_processor probe config.")
+      "--probe-config",
+      type=PathParser.existing_file_path,
+      default=DEFAULT_CONFIG_PATH,
+      help="Path to the trace_processor probe config.",
+    )
     self.parser.add_argument(
-        "--output-dir",
-        type=PathParser.path,
-        default=pth.ROOT_DIR,
-        help="Path to the directory where output files will be placed.")
+      "--output-dir",
+      type=PathParser.path,
+      default=pth.ROOT_DIR,
+      help="Path to the directory where output files will be placed.",
+    )
     self.parser.add_argument(
-        "--extra-query",
-        type=ObjectParser.non_empty_str,
-        default=[],
-        action="append",
-        help=("Name of the query to compute (the query must be present in the "
-              "trace_processor/queries/ dir). Repeat for multiple queries."))
+      "--extra-query",
+      type=ObjectParser.non_empty_str,
+      default=[],
+      action="append",
+      help=(
+        "Name of the query to compute (the query must be present in the "
+        "trace_processor/queries/ dir). Repeat for multiple queries."
+      ),
+    )
 
   def run(self, argv: Sequence[str]) -> None:
     args = self.parser.parse_args(argv)
@@ -92,23 +100,28 @@ class BTPUtil:
     assert tp, "Could not find TraceProcessorProbe"
 
     btp_conf = CBBatchTraceProcessorConfig(
-        bin_path=tp.trace_processor_bin,
-        load_failure_handling=btp_api.FailureHandling.INCREMENT_STAT,
-        execute_failure_handling=btp_api.FailureHandling.INCREMENT_STAT)
+      bin_path=tp.trace_processor_bin,
+      load_failure_handling=btp_api.FailureHandling.INCREMENT_STAT,
+      execute_failure_handling=btp_api.FailureHandling.INCREMENT_STAT,
+    )
 
     with btp_api.BatchTraceProcessor(
-        traces=MergedTraceUriResolver(args.result_dir), config=btp_conf) as btp:
+      traces=MergedTraceUriResolver(args.result_dir), config=btp_conf
+    ) as btp:
       queries = list(tp.queries) + args.extra_query
       for query in queries:
         query_path = QUERIES_DIR / f"{query}.sql"
         csv_file = args.output_dir / f"{pth.safe_filename(query)}.csv"
         btp.query_and_flatten(query_path.read_text()).to_csv(
-            path_or_buf=csv_file, index=False)
+          path_or_buf=csv_file, index=False
+        )
         print(f"Query result written into {csv_file}")
 
     stats = btp.stats()
     if stats.load_failures + stats.execute_failures > 0:
       logging.error(
-          "Failures registered during BTP run: "
-          "%s load failures, %s execution failures.", stats.load_failures,
-          stats.execute_failures)
+        "Failures registered during BTP run: "
+        "%s load failures, %s execution failures.",
+        stats.load_failures,
+        stats.execute_failures,
+      )

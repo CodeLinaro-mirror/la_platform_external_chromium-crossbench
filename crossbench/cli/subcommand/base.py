@@ -17,7 +17,6 @@ if TYPE_CHECKING:
 
 
 class CrossbenchSubcommand(abc.ABC):
-
   NAME: ClassVar[str] = ""
 
   def __init__(self, cli: CrossBenchCLI) -> None:
@@ -44,8 +43,9 @@ class CrossbenchSubcommand(abc.ABC):
     return self._parser
 
   @abc.abstractmethod
-  def register_subcommand(self,
-                          subparsers: Subparsers) -> argparse.ArgumentParser:
+  def register_subcommand(
+    self, subparsers: Subparsers
+  ) -> argparse.ArgumentParser:
     pass
 
   @abc.abstractmethod

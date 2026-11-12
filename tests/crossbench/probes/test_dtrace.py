@@ -10,7 +10,6 @@ from tests.crossbench.base import CrossbenchFakeFsTestCase
 
 
 class DTraceProbeTestCase(CrossbenchFakeFsTestCase):
-
   def test_parse_example_config(self):
     config_file = test_helper.config_dir() / "doc/probe/dtrace.config.hjson"
     self.fs.add_real_file(config_file)

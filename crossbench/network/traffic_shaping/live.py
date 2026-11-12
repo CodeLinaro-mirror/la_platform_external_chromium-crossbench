@@ -10,7 +10,6 @@ from crossbench.network.traffic_shaping.base import TrafficShaper
 
 
 class NoTrafficShaper(TrafficShaper):
-
   @property
   @override
   def is_live(self) -> bool:

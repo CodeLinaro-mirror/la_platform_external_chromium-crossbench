@@ -7,15 +7,26 @@ from __future__ import annotations
 import abc
 import datetime as dt
 import logging
-from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Mapping, \
-    Sequence, override
+from typing import (
+  TYPE_CHECKING,
+  ClassVar,
+  Final,
+  Iterable,
+  Mapping,
+  Sequence,
+  override,
+)
 
 from immutabledict import immutabledict
 
 from crossbench.action_runner.action.enums import ReadyState
 from crossbench.benchmarks.base import PressBenchmarkStoryFilter
-from crossbench.benchmarks.jetstream.jetstream import JetStreamBenchmark, \
-    JetStreamProbe, JetStreamProbeContext, JetStreamStory
+from crossbench.benchmarks.jetstream.jetstream import (
+  JetStreamBenchmark,
+  JetStreamProbe,
+  JetStreamProbeContext,
+  JetStreamStory,
+)
 from crossbench.helper import url_helper
 from crossbench.parse import NumberParser
 
@@ -39,78 +50,78 @@ class JetStream2ProbeContext(JetStreamProbeContext):
 
 class JetStream2Story(JetStreamStory, metaclass=abc.ABCMeta):
   SUBSTORIES: ClassVar[tuple[str, ...]] = (
-      "WSL",
-      "UniPoker",
-      "uglify-js-wtb",
-      "typescript",
-      "tsf-wasm",
-      "tagcloud-SP",
-      "string-unpack-code-SP",
-      "stanford-crypto-sha256",
-      "stanford-crypto-pbkdf2",
-      "stanford-crypto-aes",
-      "splay",
-      "segmentation",
-      "richards-wasm",
-      "richards",
-      "regexp",
-      "regex-dna-SP",
-      "raytrace",
-      "quicksort-wasm",
-      "prepack-wtb",
-      "pdfjs",
-      "OfflineAssembler",
-      "octane-zlib",
-      "octane-code-load",
-      "navier-stokes",
-      "n-body-SP",
-      "multi-inspector-code-load",
-      "ML",
-      "mandreel",
-      "lebab-wtb",
-      "json-stringify-inspector",
-      "json-parse-inspector",
-      "jshint-wtb",
-      "HashSet-wasm",
-      "hash-map",
-      "gcc-loops-wasm",
-      "gbemu",
-      "gaussian-blur",
-      "float-mm.c",
-      "FlightPlanner",
-      "first-inspector-code-load",
-      "espree-wtb",
-      "earley-boyer",
-      "delta-blue",
-      "date-format-xparb-SP",
-      "date-format-tofte-SP",
-      "crypto-sha1-SP",
-      "crypto-md5-SP",
-      "crypto-aes-SP",
-      "crypto",
-      "coffeescript-wtb",
-      "chai-wtb",
-      "cdjs",
-      "Box2D",
-      "bomb-workers",
-      "Basic",
-      "base64-SP",
-      "babylon-wtb",
-      "Babylon",
-      "async-fs",
-      "Air",
-      "ai-astar",
-      "acorn-wtb",
-      "3d-raytrace-SP",
-      "3d-cube-SP",
+    "WSL",
+    "UniPoker",
+    "uglify-js-wtb",
+    "typescript",
+    "tsf-wasm",
+    "tagcloud-SP",
+    "string-unpack-code-SP",
+    "stanford-crypto-sha256",
+    "stanford-crypto-pbkdf2",
+    "stanford-crypto-aes",
+    "splay",
+    "segmentation",
+    "richards-wasm",
+    "richards",
+    "regexp",
+    "regex-dna-SP",
+    "raytrace",
+    "quicksort-wasm",
+    "prepack-wtb",
+    "pdfjs",
+    "OfflineAssembler",
+    "octane-zlib",
+    "octane-code-load",
+    "navier-stokes",
+    "n-body-SP",
+    "multi-inspector-code-load",
+    "ML",
+    "mandreel",
+    "lebab-wtb",
+    "json-stringify-inspector",
+    "json-parse-inspector",
+    "jshint-wtb",
+    "HashSet-wasm",
+    "hash-map",
+    "gcc-loops-wasm",
+    "gbemu",
+    "gaussian-blur",
+    "float-mm.c",
+    "FlightPlanner",
+    "first-inspector-code-load",
+    "espree-wtb",
+    "earley-boyer",
+    "delta-blue",
+    "date-format-xparb-SP",
+    "date-format-tofte-SP",
+    "crypto-sha1-SP",
+    "crypto-md5-SP",
+    "crypto-aes-SP",
+    "crypto",
+    "coffeescript-wtb",
+    "chai-wtb",
+    "cdjs",
+    "Box2D",
+    "bomb-workers",
+    "Basic",
+    "base64-SP",
+    "babylon-wtb",
+    "Babylon",
+    "async-fs",
+    "Air",
+    "ai-astar",
+    "acorn-wtb",
+    "3d-raytrace-SP",
+    "3d-cube-SP",
   )
 
   def __init__(
-      self,
-      substories: Sequence[str] = (),
-      url: str | None = None,
-      url_params: Mapping[str, str] | None = None,
-      tags: Iterable[str] = (),
+    self,
+    substories: Sequence[str] = (),
+    url: str | None = None,
+    url_params: Mapping[str, str] | None = None,
+    tags: Iterable[str] = (),
   ) -> None:
     self._url_params: Final[Mapping[str, str]] = immutabledict(url_params or {})
     super().__init__(substories=substories, url=url, tags=tags)
@@ -132,29 +143,31 @@ class JetStream2Story(JetStreamStory, metaclass=abc.ABCMeta):
   def setup(self, run: Run) -> None:
     with run.actions("Setup") as actions:
       actions.show_url(
-          url=self.get_run_url(run),
-          ready_state=ReadyState.COMPLETE,
-          timeout=dt.timedelta(seconds=10))
+        url=self.get_run_url(run),
+        ready_state=ReadyState.COMPLETE,
+        timeout=dt.timedelta(seconds=10),
+      )
       self.setup_stories(actions)
       actions.wait_js_condition(
-          'return document.querySelectorAll("#results>.benchmark").length > 0;',
-          1,
-          timeout=self.duration + dt.timedelta(seconds=30))
+        'return document.querySelectorAll("#results>.benchmark").length > 0;',
+        1,
+        timeout=self.duration + dt.timedelta(seconds=30),
+      )
 
   def setup_stories(self, actions: Actions) -> None:
     if self.substories == self.SUBSTORIES:
       return
     actions.wait_js_condition(
-        "return globalThis?.JetStream?.benchmarks?.length > 0;",
-        0.1,
-        timeout=10)
+      "return globalThis?.JetStream?.benchmarks?.length > 0;", 0.1, timeout=10
+    )
     actions.js(
-        """
+      """
         let benchmarks = arguments[0];
         JetStream.benchmarks = JetStream.benchmarks.filter(
             benchmark => benchmarks.includes(benchmark.name));
         """,
-        arguments=[self.substories])
+      arguments=[self.substories],
+    )
 
 
 ProbeClsTupleT = tuple[type[JetStream2Probe], ...]
@@ -166,29 +179,32 @@ class JetStream2BenchmarkStoryFilter(PressBenchmarkStoryFilter):
   @classmethod
   @override
   def add_cli_arguments(
-      cls, parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+    cls, parser: argparse.ArgumentParser
+  ) -> argparse.ArgumentParser:
     parser = super().add_cli_arguments(parser)
     parser.add_argument(
-        "--iteration-count",
-        "--iterations",
-        default=None,
-        type=NumberParser.positive_int,
-        help="Number of iterations each JetStream subtest is run "
-        "within the same session. \n"
-        "Note: --repetitions restarts the whole benchmark, --iterations runs "
-        "the same test tests n-times within the same session without the setup "
-        "overhead of starting up a whole new browser. \n"
-        "This option is not supported on the official benchmark "
-        "before version 3.0.")
+      "--iteration-count",
+      "--iterations",
+      default=None,
+      type=NumberParser.positive_int,
+      help="Number of iterations each JetStream subtest is run "
+      "within the same session. \n"
+      "Note: --repetitions restarts the whole benchmark, --iterations runs "
+      "the same test tests n-times within the same session without the setup "
+      "overhead of starting up a whole new browser. \n"
+      "This option is not supported on the official benchmark "
+      "before version 3.0.",
+    )
     parser.add_argument(
-        "--worst-case-count",
-        "--worst",
-        default=None,
-        type=NumberParser.positive_int,
-        help="Number of iterations each JetStream subtest uses to calculate "
-        "the worst score. \n"
-        "This option is not supported on the official benchmark "
-        "before version 3.0.")
+      "--worst-case-count",
+      "--worst",
+      default=None,
+      type=NumberParser.positive_int,
+      help="Number of iterations each JetStream subtest uses to calculate "
+      "the worst score. \n"
+      "This option is not supported on the official benchmark "
+      "before version 3.0.",
+    )
     return parser
 
   @classmethod
@@ -208,27 +224,26 @@ class JetStream2BenchmarkStoryFilter(PressBenchmarkStoryFilter):
     return url_params
 
   def __init__(
-      self,
-      story_cls: type[JetStream2Story],
-      patterns: Sequence[str],
-      args: argparse.Namespace,
-      separate: bool = False,
-      url: str | None = None,
-      url_params: Mapping[str, str] | None = None,
-      tags: Sequence[str] = (),
+    self,
+    story_cls: type[JetStream2Story],
+    patterns: Sequence[str],
+    args: argparse.Namespace,
+    separate: bool = False,
+    url: str | None = None,
+    url_params: Mapping[str, str] | None = None,
+    tags: Sequence[str] = (),
   ) -> None:
     self._url_params: Final[Mapping[str, str]] = immutabledict(url_params or {})
     assert issubclass(story_cls, JetStream2Story)
     super().__init__(story_cls, patterns, args, separate, url, tags)
 
   @override
-  def stories_from_names(self,
-                         names: Sequence[str]) -> tuple[JetStream2Story, ...]:
+  def stories_from_names(
+    self, names: Sequence[str]
+  ) -> tuple[JetStream2Story, ...]:
     return self.story_cls.from_names(
-        names,
-        separate=self.separate,
-        url=self.url,
-        url_params=self._url_params)
+      names, separate=self.separate, url=self.url, url_params=self._url_params
+    )
 
 
 class JetStream2Benchmark(JetStreamBenchmark):

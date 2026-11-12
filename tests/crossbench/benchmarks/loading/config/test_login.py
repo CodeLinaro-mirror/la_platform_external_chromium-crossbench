@@ -9,58 +9,74 @@ from crossbench.benchmarks.loading.config.pages import PagesConfig
 from crossbench.benchmarks.loading.loading_benchmark import LoadingPageFilter
 from crossbench.benchmarks.loading.page.base import Page
 from crossbench.browsers.settings import Settings
-from crossbench.cli.config.secrets import GoogleUsernamePassword, \
-    UsernamePassword
+from crossbench.cli.config.secrets import (
+  GoogleUsernamePassword,
+  UsernamePassword,
+)
 from crossbench.flags.base import Flags
 from crossbench.runner.groups.session import BrowserSessionRunGroup
 from tests import test_helper
-from tests.crossbench.action_runner.action_runner_test_case import \
-    ActionRunnerTestCase
+from tests.crossbench.action_runner.action_runner_test_case import (
+  ActionRunnerTestCase,
+)
 from tests.crossbench.mock_browser import MockChromeStable
-from tests.crossbench.mock_helper import ChromeOsSshMockPlatform, \
-    LinuxMockPlatform
+from tests.crossbench.mock_helper import (
+  ChromeOsSshMockPlatform,
+  LinuxMockPlatform,
+)
 from tests.crossbench.runner.helper import MockRun, MockRunner
 
 
 class ChromeOSLoginTestCase(ActionRunnerTestCase):
   _CONFIG_DATA = {
-      "secrets": {
-          "google": {
-              "username": "test",
-              "password": "s3cr3t",
-          },
+    "secrets": {
+      "google": {
+        "username": "test",
+        "password": "s3cr3t",
       },
-      "pages": {
-          "Google Story": {
-              "login": "google",
-              "actions": [{
-                  "action": "get",
-                  "url": "https://www.google.com",
-              }],
-          },
+    },
+    "pages": {
+      "Google Story": {
+        "login": "google",
+        "actions": [
+          {
+            "action": "get",
+            "url": "https://www.google.com",
+          }
+        ],
       },
+    },
   }
 
   def setUp(self) -> None:
     super().setUp()
     self.host_platform = LinuxMockPlatform()
     self.platform = ChromeOsSshMockPlatform(
-        host_platform=self.host_platform,
-        host="1.1.1.1",
-        port="1234",
-        ssh_port="22",
-        ssh_user="root")
+      host_platform=self.host_platform,
+      host="1.1.1.1",
+      port="1234",
+      ssh_port="22",
+      ssh_user="root",
+    )
 
     self.platform.expect_sh("[", "-e", "/usr/bin/google-chrome", "]", result="")
     self.platform.expect_sh("[", "-f", "/usr/bin/google-chrome", "]", result="")
 
     self.browser = MockChromeStable(
-        "mock browser", settings=Settings(platform=self.platform))
+      "mock browser", settings=Settings(platform=self.platform)
+    )
     self.runner = MockRunner()
     self.root_dir = pathlib.Path()
-    self.session = BrowserSessionRunGroup(self.runner.env,
-                                          self.runner.probes, self.browser,
-                                          Flags(), 1, self.root_dir, True, True)
+    self.session = BrowserSessionRunGroup(
+      self.runner.env,
+      self.runner.probes,
+      self.browser,
+      Flags(),
+      1,
+      self.root_dir,
+      True,
+      True,
+    )
     self.mock_run = MockRun(self.runner, self.session, "run 1")
     self.action_runner = self.mock_run.action_runner
 
@@ -143,7 +159,8 @@ class ChromeOSLoginTestCase(ActionRunnerTestCase):
 
     # Return passkey URL
     passkey_url = (
-        "https://accounts.google.com/v3/signin/speedbump/passkeyenrollment")
+      "https://accounts.google.com/v3/signin/speedbump/passkeyenrollment"
+    )
     self.browser.expect_js(result=passkey_url)
     # Wait for skip element
     self.browser.expect_js(result={"count": 1})

@@ -9,13 +9,17 @@ import unittest
 from typing import override
 
 from crossbench import plt
-from crossbench.plt.signals import LinuxSignals, MacOSSignals, \
-    PosixBaseSignal, PosixSignals, WinSignals
+from crossbench.plt.signals import (
+  LinuxSignals,
+  MacOSSignals,
+  PosixBaseSignal,
+  PosixSignals,
+  WinSignals,
+)
 from tests import test_helper
 
 
 class SignalsTestCase(unittest.TestCase):
-
   @override
   def setUp(self):
     self.platform = plt.PLATFORM
@@ -41,8 +45,13 @@ class SignalsTestCase(unittest.TestCase):
 
   def test_base_signals(self):
     base_names = {"SIGABRT", "SIGFPE", "SIGILL", "SIGINT", "SIGSEGV", "SIGTERM"}
-    for posix_subclass in (PosixBaseSignal, PosixSignals, LinuxSignals,
-                           MacOSSignals, WinSignals):
+    for posix_subclass in (
+      PosixBaseSignal,
+      PosixSignals,
+      LinuxSignals,
+      MacOSSignals,
+      WinSignals,
+    ):
       subclass_names = set(self.signal_names(posix_subclass))
       # All BaseSignals must be present.
       self.assertFalse(base_names.difference(subclass_names))
@@ -55,8 +64,9 @@ class SignalsTestCase(unittest.TestCase):
         # Both value and name must match for all PosixBaseSignal and its
         # subclasses.
         self.assertIn(signal_name, posix_names)
-        self.assertEqual(PosixBaseSignal[signal_name],
-                         posix_subclass[signal_name])
+        self.assertEqual(
+          PosixBaseSignal[signal_name], posix_subclass[signal_name]
+        )
 
   def test_posix_signals(self):
     posix_names = set(self.signal_names(PosixSignals))

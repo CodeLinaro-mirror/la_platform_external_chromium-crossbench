@@ -10,7 +10,6 @@ from tests import test_helper
 
 
 class TestFlags(unittest.TestCase):
-
   CLASS = Flags
 
   def test_construct(self):
@@ -84,8 +83,16 @@ class TestFlags(unittest.TestCase):
 
   def test_set_invalid_flag_name(self):
     flags = self.CLASS()
-    for invalid in ("- -foo", "--f oo", "", "-", "--", "--foo\n", "--\nfoo",
-                    "--foo,"):
+    for invalid in (
+      "- -foo",
+      "--f oo",
+      "",
+      "-",
+      "--",
+      "--foo\n",
+      "--\nfoo",
+      "--foo,",
+    ):
       with self.subTest(invalid_flag=invalid):
         with self.assertRaises(ValueError):
           flags.set(invalid)
@@ -134,11 +141,13 @@ class TestFlags(unittest.TestCase):
     self.assertEqual(str(flags), "--foo=bar")
 
   def test_str_multiple(self):
-    flags = self.CLASS({
+    flags = self.CLASS(
+      {
         "--flag1": "value1",
         "--flag2": None,
         "--flag3": "value3",
-    })
+      }
+    )
     self.assertEqual(str(flags), "--flag1=value1 --flag2 --flag3=value3")
 
   def test_merge_dict(self):
@@ -240,59 +249,78 @@ class TestFlags(unittest.TestCase):
     self.assertFalse(self.CLASS().filtered([]))
     self.assertFalse(self.CLASS.parse("--foo --bar").filtered([]))
     self.assertEqual(
-        self.CLASS.parse("--foo --bar").filtered(["--foo"]),
-        self.CLASS.parse("--foo"))
+      self.CLASS.parse("--foo --bar").filtered(["--foo"]),
+      self.CLASS.parse("--foo"),
+    )
     self.assertEqual(
-        self.CLASS.parse("--foo --bar").filtered(["--bar"]),
-        self.CLASS.parse("--bar"))
+      self.CLASS.parse("--foo --bar").filtered(["--bar"]),
+      self.CLASS.parse("--bar"),
+    )
     self.assertEqual(
-        self.CLASS.parse("--foo --bar=1").filtered(["--bar"]),
-        self.CLASS.parse("--bar=1"))
+      self.CLASS.parse("--foo --bar=1").filtered(["--bar"]),
+      self.CLASS.parse("--bar=1"),
+    )
     self.assertEqual(
-        self.CLASS.parse("--foo --bar").filtered(["--foo", "--bar"]),
-        self.CLASS.parse("--foo --bar"))
+      self.CLASS.parse("--foo --bar").filtered(["--foo", "--bar"]),
+      self.CLASS.parse("--foo --bar"),
+    )
     self.assertEqual(
-        self.CLASS.parse("--foo --bar").filtered(["--bar", "--foo"]),
-        self.CLASS.parse("--foo --bar"))
+      self.CLASS.parse("--foo --bar").filtered(["--bar", "--foo"]),
+      self.CLASS.parse("--foo --bar"),
+    )
     self.assertEqual(
-        self.CLASS.parse("--foo=0 --bar").filtered(["--bar", "--foo"]),
-        self.CLASS.parse("--foo=0 --bar"))
+      self.CLASS.parse("--foo=0 --bar").filtered(["--bar", "--foo"]),
+      self.CLASS.parse("--foo=0 --bar"),
+    )
 
   def test_parse_with_value(self):
     self.assertEqual(
-        self.CLASS.parse("--foo=bar"), self.CLASS({"--foo": "bar"}))
+      self.CLASS.parse("--foo=bar"), self.CLASS({"--foo": "bar"})
+    )
     self.assertEqual(
-        self.CLASS.parse("--foo='bar'"), self.CLASS({"--foo": "bar"}))
+      self.CLASS.parse("--foo='bar'"), self.CLASS({"--foo": "bar"})
+    )
     self.assertEqual(
-        self.CLASS.parse('--foo="bar"'), self.CLASS({"--foo": "bar"}))
+      self.CLASS.parse('--foo="bar"'), self.CLASS({"--foo": "bar"})
+    )
     self.assertEqual(
-        self.CLASS.parse("--foo=123"), self.CLASS({"--foo": "123"}))
+      self.CLASS.parse("--foo=123"), self.CLASS({"--foo": "123"})
+    )
     self.assertEqual(
-        self.CLASS.parse("--foo='123'"), self.CLASS({"--foo": "123"}))
+      self.CLASS.parse("--foo='123'"), self.CLASS({"--foo": "123"})
+    )
     self.assertEqual(
-        self.CLASS.parse('--foo="123"'), self.CLASS({"--foo": "123"}))
+      self.CLASS.parse('--foo="123"'), self.CLASS({"--foo": "123"})
+    )
 
   def test_parse_with_flag_value(self):
     self.assertEqual(
-        self.CLASS.parse("--foo=-bar"), self.CLASS({"--foo": "-bar"}))
+      self.CLASS.parse("--foo=-bar"), self.CLASS({"--foo": "-bar"})
+    )
     self.assertEqual(
-        self.CLASS.parse("--foo='-bar'"), self.CLASS({"--foo": "-bar"}))
+      self.CLASS.parse("--foo='-bar'"), self.CLASS({"--foo": "-bar"})
+    )
     self.assertEqual(
-        self.CLASS.parse('--foo="-bar"'), self.CLASS({"--foo": "-bar"}))
+      self.CLASS.parse('--foo="-bar"'), self.CLASS({"--foo": "-bar"})
+    )
     self.assertEqual(
-        self.CLASS.parse("--foo=--other"), self.CLASS({"--foo": "--other"}))
+      self.CLASS.parse("--foo=--other"), self.CLASS({"--foo": "--other"})
+    )
     self.assertEqual(
-        self.CLASS.parse("--foo='--other'"), self.CLASS({"--foo": "--other"}))
+      self.CLASS.parse("--foo='--other'"), self.CLASS({"--foo": "--other"})
+    )
     self.assertEqual(
-        self.CLASS.parse('--foo="--other"'), self.CLASS({"--foo": "--other"}))
+      self.CLASS.parse('--foo="--other"'), self.CLASS({"--foo": "--other"})
+    )
     self.assertEqual(
-        self.CLASS.parse("--foo=--other=1"), self.CLASS({"--foo": "--other=1"}))
+      self.CLASS.parse("--foo=--other=1"), self.CLASS({"--foo": "--other=1"})
+    )
     self.assertEqual(
-        self.CLASS.parse("--foo='--other=1'"),
-        self.CLASS({"--foo": "--other=1"}))
+      self.CLASS.parse("--foo='--other=1'"), self.CLASS({"--foo": "--other=1"})
+    )
     self.assertEqual(
-        self.CLASS.parse('--foo="--other=1"'),
-        self.CLASS({"--foo": "--other=1"}))
+      self.CLASS.parse('--foo="--other=1"'), self.CLASS({"--foo": "--other=1"})
+    )
 
 
 if __name__ == "__main__":

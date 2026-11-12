@@ -16,7 +16,7 @@ class BenchmarkProbeMixin:
 
   def __init__(self, *args, **kwargs) -> None:
     self._benchmark: Final[Benchmark] = kwargs.pop("benchmark")
-    #assert isinstance(self._benchmark, Benchmark)
+    # assert isinstance(self._benchmark, Benchmark)
     super().__init__(*args, **kwargs)
 
   @property

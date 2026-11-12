@@ -11,7 +11,6 @@ from tests import test_helper
 
 
 class PlatformHelperTestCase(unittest.TestCase):
-
   def test_safe_filename(self):
     self.assertEqual(pth.safe_filename("abc-ABC"), "abc-ABC")
     self.assertEqual(pth.safe_filename("abc_ABC.bak2.jpg"), "abc_ABC.bak2.jpg")

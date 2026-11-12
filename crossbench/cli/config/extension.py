@@ -46,12 +46,14 @@ class ExtensionConfig(ConfigObject):
       raise argparse.ArgumentTypeError("Extension paths must not contain ','")
     if path.is_file():
       assert path.suffix == ".crx", (
-          f"Extension files must be crx: {str(path)!r}")
+        f"Extension files must be crx: {str(path)!r}"
+      )
       return cls(crx=path, id=None, unpacked=None)
     # Extension is unpacked in a directory.
     manifest_path = path / "manifest.json"
     assert manifest_path.exists(), (
-        f"Extension dirs must contain a manifest.json: {str(path)!r}")
+      f"Extension dirs must contain a manifest.json: {str(path)!r}"
+    )
     return cls(crx=None, id=None, unpacked=path)
 
   @classmethod
@@ -68,12 +70,14 @@ class ExtensionConfig(ConfigObject):
     super().validate()
 
     set_count = sum(
-        prop is not None for prop in [self.crx, self.id, self.unpacked])
+      prop is not None for prop in [self.crx, self.id, self.unpacked]
+    )
     if set_count != 1:
       raise ValueError("Only 1 of crx, id, unpacked should be set")
 
-  def get_unpacked(self, version_str: str, tmp_dir: pth.LocalPath,
-                   host_platform: Platform) -> pth.LocalPath:
+  def get_unpacked(
+    self, version_str: str, tmp_dir: pth.LocalPath, host_platform: Platform
+  ) -> pth.LocalPath:
     if self.unpacked:
       return self.unpacked
     if self.crx:
@@ -84,17 +88,21 @@ class ExtensionConfig(ConfigObject):
         zip_ref.extractall(unpacked)
       return unpacked
     if self.id:
-      crx_cache = host_platform.local_cache_dir(
-          f"extension_{self.id}") / f"{version_str}.crx"
+      crx_cache = (
+        host_platform.local_cache_dir(f"extension_{self.id}")
+        / f"{version_str}.crx"
+      )
       if not crx_cache.exists():
         logging.info("Downloading extension %s", self.id)
         crx_url = url_helper.update_url_query(
-            "https://clients2.google.com/service/update2/crx", {
-                "response": "redirect",
-                "prodversion": version_str,
-                "acceptformat": "crx2,crx3",
-                "x": f"id={self.id}&uc",
-            })
+          "https://clients2.google.com/service/update2/crx",
+          {
+            "response": "redirect",
+            "prodversion": version_str,
+            "acceptformat": "crx2,crx3",
+            "x": f"id={self.id}&uc",
+          },
+        )
         response = url_helper.get(crx_url)
         response.raise_for_status()
         crx_cache.write_bytes(response.content)

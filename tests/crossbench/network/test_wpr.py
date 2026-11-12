@@ -16,34 +16,35 @@ from tests.crossbench.base import BaseCrossbenchTestCase
 
 
 class WprReplayNetworkTestCase(BaseCrossbenchTestCase):
-
   def setUp(self):
     super().setUp()
     self.archive_path = pathlib.Path("/wpr/archive.wprgo")
     self.fs.create_file(
-        self.archive_path, contents=b"dummy wpr archive content")
+      self.archive_path, contents=b"dummy wpr archive content"
+    )
     self.wpr_go_bin = pathlib.Path("/wpr/wpr.go")
     self.fs.create_file(self.wpr_go_bin, contents=b"dummy wpr binary")
     self.traffic_shaper = NoTrafficShaper(self.platform)
 
     self._patch_wpr_finder = mock.patch(
-        "crossbench.network.replay.wpr.WprGoFinder.wpr",
-        return_value=self.wpr_go_bin)
+      "crossbench.network.replay.wpr.WprGoFinder.wpr",
+      return_value=self.wpr_go_bin,
+    )
     self._patch_wpr_finder.start()
     self.addCleanup(self._patch_wpr_finder.stop)
 
   def _create_network(self, **kwargs: Any) -> LocalWprReplayNetwork:
     default_kwargs: dict[str, Any] = {
-        "archive": self.archive_path,
-        "traffic_shaper": self.traffic_shaper,
-        "browser_platform": self.platform,
-        "persist_server": False,
-        "inject_deterministic_script": False,
-        "no_archive_certificates": False,
-        "response_transformations_file": None,
-        "cross_platform_mode": False,
-        "host": None,
-        "expected_md5_hash": b"",
+      "archive": self.archive_path,
+      "traffic_shaper": self.traffic_shaper,
+      "browser_platform": self.platform,
+      "persist_server": False,
+      "inject_deterministic_script": False,
+      "no_archive_certificates": False,
+      "response_transformations_file": None,
+      "cross_platform_mode": False,
+      "host": None,
+      "expected_md5_hash": b"",
     }
     default_kwargs.update(kwargs)
     return LocalWprReplayNetwork(**default_kwargs)
@@ -60,8 +61,9 @@ class WprReplayNetworkTestCase(BaseCrossbenchTestCase):
     browser.attributes().is_chromium_based = False
     with self.assertRaises(ValueError) as cm:
       network.validate(browser)
-    self.assertIn("only supports wpr replay in cross-platform mode",
-                  str(cm.exception))
+    self.assertIn(
+      "only supports wpr replay in cross-platform mode", str(cm.exception)
+    )
 
   @mock.patch("crossbench.network.replay.wpr.WprGoFinder.wpr")
   def test_validate_cross_platform_mode(self, mock_wpr_finder):
@@ -119,11 +121,13 @@ class WprReplayNetworkTestCase(BaseCrossbenchTestCase):
   def test_network_config_passes_expected_md5_hash(self):
     valid_hash_str = "a" * 32
     valid_hash_bytes = bytes.fromhex(valid_hash_str)
-    config = NetworkConfig.parse({
+    config = NetworkConfig.parse(
+      {
         "type": "wpr",
         "path": str(self.archive_path),
         "expected_md5_hash": valid_hash_str,
-    })
+      }
+    )
     self.assertEqual(config.expected_md5_hash, valid_hash_bytes)
     network = config.create_network(self.platform)
     self.assertIsInstance(network, LocalWprReplayNetwork)
@@ -132,28 +136,35 @@ class WprReplayNetworkTestCase(BaseCrossbenchTestCase):
   def test_network_config_rejects_expected_md5_hash_for_non_wpr(self):
     with self.assertRaises(argparse.ArgumentTypeError):
       NetworkConfig(
-          type=NetworkType.LIVE, expected_md5_hash=b"\xaa" * 16).validate()
+        type=NetworkType.LIVE, expected_md5_hash=b"\xaa" * 16
+      ).validate()
 
   @mock.patch("crossbench.plt.base.gcloud_storage.Client")
   def test_get_gcs_blob_generation(self, mock_client_cls):
     mock_bucket = mock_client_cls.return_value.bucket.return_value
-    blob_url = ("gs://chrome-partner-loadline/power/cnn_20260513.wprgo"
-                "#1778683962813986")
+    blob_url = (
+      "gs://chrome-partner-loadline/power/cnn_20260513.wprgo#1778683962813986"
+    )
     self.platform.get_gcs_blob(blob_url)
     mock_bucket.blob.assert_called_once_with(
-        "power/cnn_20260513.wprgo", generation=1778683962813986)
+      "power/cnn_20260513.wprgo", generation=1778683962813986
+    )
 
     mock_bucket.blob.reset_mock()
     self.platform.get_gcs_blob(
-        "gs://chrome-partner-loadline/power/cnn_20260513.wprgo")
+      "gs://chrome-partner-loadline/power/cnn_20260513.wprgo"
+    )
     mock_bucket.blob.assert_called_once_with(
-        "power/cnn_20260513.wprgo", generation=None)
+      "power/cnn_20260513.wprgo", generation=None
+    )
 
     for invalid_fragment in ("0", "-1", "invalid"):
       with self.subTest(fragment=invalid_fragment):
         with self.assertRaises(argparse.ArgumentTypeError):
-          self.platform.get_gcs_blob("gs://chrome-partner-loadline/power/"
-                                     f"cnn_20260513.wprgo#{invalid_fragment}")
+          self.platform.get_gcs_blob(
+            "gs://chrome-partner-loadline/power/"
+            f"cnn_20260513.wprgo#{invalid_fragment}"
+          )
 
 
 if __name__ == "__main__":

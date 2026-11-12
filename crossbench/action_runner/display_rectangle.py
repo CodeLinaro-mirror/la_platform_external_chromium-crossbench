@@ -24,8 +24,10 @@ class DisplayRectangle:
   # Stretches or squishes the rectangle by |factor|
   def __mul__(self, factor: float) -> DisplayRectangle:
     return DisplayRectangle(
-        Point(round(self.origin.x * factor), round(self.origin.y * factor)),
-        round(self.width * factor), round(self.height * factor))
+      Point(round(self.origin.x * factor), round(self.origin.y * factor)),
+      round(self.width * factor),
+      round(self.height * factor),
+    )
 
   __rmul__ = __mul__
 
@@ -42,8 +44,11 @@ class DisplayRectangle:
     scrollable_top += trim_amount
     scrollable_bottom -= trim_amount
 
-    return (scrollable_top, scrollable_bottom,
-            scrollable_bottom - scrollable_top)
+    return (
+      scrollable_top,
+      scrollable_bottom,
+      scrollable_bottom - scrollable_top,
+    )
 
   @property
   def left(self) -> int:

@@ -10,13 +10,15 @@ from unittest import mock
 
 from crossbench import path as pth
 from crossbench.probes.internal.summary import ResultsSummaryProbe
-from crossbench.probes.results import EmptyProbeResult, LocalProbeResult, \
-    ProbeResultDict
+from crossbench.probes.results import (
+  EmptyProbeResult,
+  LocalProbeResult,
+  ProbeResultDict,
+)
 from tests import test_helper
 
 
 class ResultsSummaryProbeTestCase(unittest.TestCase):
-
   def test_merge_missing(self):
     group = mock.Mock()
     group.first_run.results = ProbeResultDict(pth.AnyPath("test/out/results"))
@@ -41,11 +43,11 @@ class ResultsSummaryProbeTestCase(unittest.TestCase):
       result_file = pth.LocalPath(tmp_dir) / "cb.results.json"
       browser_data = {"log": {}}
       run_data = {
-          "browser": browser_data,
-          "cwd": "run/0",
-          "probes": {},
-          "success": True,
-          "errors": [],
+        "browser": browser_data,
+        "cwd": "run/0",
+        "probes": {},
+        "success": True,
+        "errors": [],
       }
       with result_file.open("w", encoding="utf-8") as f:
         json.dump(run_data, f)

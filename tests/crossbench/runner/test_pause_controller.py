@@ -13,7 +13,6 @@ from tests import test_helper
 
 
 class PauseControllerTestCase(unittest.TestCase):
-
   def setUp(self) -> None:
     super().setUp()
     self.controller = PauseController(pause_on_error=True)
@@ -24,28 +23,34 @@ class PauseControllerTestCase(unittest.TestCase):
     self.assertTrue(self.controller.is_pause_requested)
 
   def test_context_manager_registers_and_unregisters_ctrl_p(self) -> None:
-    with mock.patch.object(
-        input_helper.shared(), "register_key") as mock_register, \
-         mock.patch.object(
-             input_helper.shared(), "unregister_key") as mock_unregister:
+    with (
+      mock.patch.object(input_helper.shared(), "register_key") as mock_register,
+      mock.patch.object(
+        input_helper.shared(), "unregister_key"
+      ) as mock_unregister,
+    ):
       with self.controller:
-        mock_register.assert_called_once_with("\x10",
-                                              self.controller.request_pause)
+        mock_register.assert_called_once_with(
+          "\x10", self.controller.request_pause
+        )
         mock_unregister.assert_not_called()
       mock_unregister.assert_called_once_with("\x10")
 
   def test_check_pause_skips_when_not_requested_and_successful(self) -> None:
     with mock.patch.object(input_helper, "prompt") as mock_prompt:
       self.assertEqual(
-          self.controller.check_pause(is_success=True), ResumeMode.CONTINUE)
+        self.controller.check_pause(is_success=True), ResumeMode.CONTINUE
+      )
       mock_prompt.assert_not_called()
 
   def test_check_pause_skips_on_error_when_pause_on_error_disabled(
-      self) -> None:
+    self,
+  ) -> None:
     controller = PauseController(pause_on_error=False)
     with mock.patch.object(input_helper, "prompt") as mock_prompt:
       self.assertEqual(
-          controller.check_pause(is_success=False), ResumeMode.CONTINUE)
+        controller.check_pause(is_success=False), ResumeMode.CONTINUE
+      )
       mock_prompt.assert_not_called()
 
   def test_check_pause_stop_choice_on_error(self) -> None:
@@ -62,9 +67,12 @@ class PauseControllerTestCase(unittest.TestCase):
 
   def test_check_pause_empty_then_valid_choice(self) -> None:
     self.controller.request_pause()
-    with mock.patch.object(
-        input_helper, "prompt", side_effect=["", "c"]) as mock_prompt, \
-         self.assertLogs(level="WARNING") as cm:
+    with (
+      mock.patch.object(
+        input_helper, "prompt", side_effect=["", "c"]
+      ) as mock_prompt,
+      self.assertLogs(level="WARNING") as cm,
+    ):
       mode = self.controller.check_pause(is_success=True)
     self.assertEqual(mode, ResumeMode.CONTINUE)
     self.assertEqual(mock_prompt.call_count, 2)
@@ -73,9 +81,12 @@ class PauseControllerTestCase(unittest.TestCase):
 
   def test_check_pause_invalid_then_valid_choice(self) -> None:
     self.controller.request_pause()
-    with mock.patch.object(
-        input_helper, "prompt", side_effect=["invalid", "s"]) as mock_prompt, \
-         self.assertLogs(level="WARNING") as cm:
+    with (
+      mock.patch.object(
+        input_helper, "prompt", side_effect=["invalid", "s"]
+      ) as mock_prompt,
+      self.assertLogs(level="WARNING") as cm,
+    ):
       mode = self.controller.check_pause(is_success=True)
     self.assertEqual(mode, ResumeMode.STOP)
     self.assertEqual(mock_prompt.call_count, 2)
@@ -85,7 +96,8 @@ class PauseControllerTestCase(unittest.TestCase):
   def test_check_pause_eof_stops(self) -> None:
     self.controller.request_pause()
     with mock.patch.object(
-        input_helper, "prompt", side_effect=EOFError) as mock_prompt:
+      input_helper, "prompt", side_effect=EOFError
+    ) as mock_prompt:
       mode = self.controller.check_pause(is_success=True)
     self.assertEqual(mode, ResumeMode.STOP)
     mock_prompt.assert_called_once()

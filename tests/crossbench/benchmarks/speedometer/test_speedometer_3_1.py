@@ -8,17 +8,20 @@ import argparse
 from typing import override
 
 from crossbench import path as pth
-from crossbench.benchmarks.speedometer.speedometer_3_1 import \
-    Speedometer31Benchmark, Speedometer31Probe, Speedometer31ProbeContext, \
-    Speedometer31Story
+from crossbench.benchmarks.speedometer.speedometer_3_1 import (
+  Speedometer31Benchmark,
+  Speedometer31Probe,
+  Speedometer31ProbeContext,
+  Speedometer31Story,
+)
 from crossbench.cli.config.network import NetworkConfig, NetworkType
 from tests import test_helper
-from tests.crossbench.benchmarks.speedometer.helper import \
-    Speedometer3BaseTestCase
+from tests.crossbench.benchmarks.speedometer.helper import (
+  Speedometer3BaseTestCase,
+)
 
 
 class Speedometer31TestCase(Speedometer3BaseTestCase):
-
   @property
   @override
   def benchmark_cls(self):
@@ -58,7 +61,8 @@ class Speedometer31TestCase(Speedometer3BaseTestCase):
 
   def test_local_dir(self):
     self.assertEqual(
-        str(self.benchmark_cls.LOCAL_DIR), "third_party/speedometer/v3.1")
+      str(self.benchmark_cls.LOCAL_DIR), "third_party/speedometer/v3.1"
+    )
 
   def test_default_network_config(self):
     local_dir = self._create_local_checkout()
@@ -78,12 +82,15 @@ class Speedometer31TestCase(Speedometer3BaseTestCase):
 
   def test_default_network_config_explicit_url(self):
     self._create_local_checkout()
-    for url in (self.story_cls.URL, self.story_cls.URL_OFFICIAL,
-                "http://custom.example.com/"):
+    for url in (
+      self.story_cls.URL,
+      self.story_cls.URL_OFFICIAL,
+      "http://custom.example.com/",
+    ):
       args = self._namespace(custom_benchmark_url=url)
       self.assertIs(
-          self.benchmark_cls.default_network_config(args),
-          NetworkConfig.default())
+        self.benchmark_cls.default_network_config(args), NetworkConfig.default()
+      )
 
 
 #  Don't expose abstract BaseTestCase to test runner

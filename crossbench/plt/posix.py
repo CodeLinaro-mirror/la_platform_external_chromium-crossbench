@@ -27,8 +27,13 @@ if TYPE_CHECKING:
 
   from crossbench.plt.details import CpuDetails, OsDetails, PythonDetails
   from crossbench.plt.signals import AnyPosixSignals, Signals
-  from crossbench.plt.types import CmdArg, ListCmdArgs, ProcessInfo, \
-      ProcessIo, ProcessLike
+  from crossbench.plt.types import (
+    CmdArg,
+    ListCmdArgs,
+    ProcessInfo,
+    ProcessIo,
+    ProcessLike,
+  )
 
 TRACE_MARKER_PATH: Final = pth.AnyPosixPath("/sys/kernel/tracing/trace_marker")
 
@@ -38,7 +43,6 @@ class PosixVersion(PlatformVersion):
 
 
 class PosixPlatform(Platform, metaclass=abc.ABCMeta):
-
   @override
   def _create_default_tmp_dir(self) -> pth.AnyPath:
     if self.is_local:
@@ -53,8 +57,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
         assert self.is_absolute(tmp_path)
         return tmp_path
     tmp_path = self.path("/tmp")  # noqa: S108
-    assert self.is_dir(tmp_path), (
-        f"Fallback tmp dir does not exist: {tmp_path}")
+    assert self.is_dir(tmp_path), f"Fallback tmp dir does not exist: {tmp_path}"
     return tmp_path
 
   @property
@@ -104,8 +107,9 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
 
   def _parse_cpuinfo(self, logical: bool) -> int:
     assert not self.is_macos, "unsupported operation on macos"
-    entries = self.sh_stdout("grep", "-E", "processor|core id|physical id",
-                             "/proc/cpuinfo")
+    entries = self.sh_stdout(
+      "grep", "-E", "processor|core id|physical id", "/proc/cpuinfo"
+    )
     logical_cores: set[int] = set()
     core_ids: list[int] = []
     physical_ids: list[int] = []
@@ -143,12 +147,12 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     if self.is_local:
       return super().cpu_details()
     return {
-        "info": self.cpu,
-        "physical_cores": self.cpu_cores(logical=False),
-        "logical_cores": self.cpu_cores(logical=True),
-        "min_frequency": "n/a",
-        "max_frequency": "n/a",
-        "current_frequency": "n/a",
+      "info": self.cpu,
+      "physical_cores": self.cpu_cores(logical=False),
+      "logical_cores": self.cpu_cores(logical=True),
+      "min_frequency": "n/a",
+      "max_frequency": "n/a",
+      "current_frequency": "n/a",
     }
 
   @functools.lru_cache(maxsize=1)
@@ -157,10 +161,10 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     if self.is_local:
       return super().os_details()
     return {
-        "system": self.sh_stdout("uname").strip(),
-        "release": self.sh_stdout("uname", "-r").strip(),
-        "version": self.sh_stdout("uname", "-v").strip(),
-        "platform": self.sh_stdout("uname", "-a").strip(),
+      "system": self.sh_stdout("uname").strip(),
+      "release": self.sh_stdout("uname", "-r").strip(),
+      "version": self.sh_stdout("uname", "-v").strip(),
+      "platform": self.sh_stdout("uname", "-a").strip(),
     }
 
   _PY_VERSION: str = "import sys; print(64 if sys.maxsize > 2**32 else 32)"
@@ -172,20 +176,21 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
       return super().python_details()
     if python3 := self.which("python3"):
       return {
-          "version": self.sh_stdout(python3, "--version").strip(),
-          "bits": int(self.sh_stdout(python3, "-c", self._PY_VERSION).strip()),
+        "version": self.sh_stdout(python3, "--version").strip(),
+        "bits": int(self.sh_stdout(python3, "-c", self._PY_VERSION).strip()),
       }
     return {"version": "unknown", "bits": 64}
 
   UPTIME_RE: Final[re.Pattern] = re.compile(
-      r"up\s+"
-      r"(?:(?P<days>\d+)\s+days?,\s*)?"
-      r"(?:"
-      r"(?:(?P<hm_hours>\d+):(?P<hm_mins>\d+))|"
-      r"(?:(?P<hours_only>\d+)\s+hrs?)|"
-      r"(?:(?P<mins_only>\d+)\s+mins?)|"
-      r"(?:(?P<secs_only>\d+)\s+secs?)"
-      r")?")
+    r"up\s+"
+    r"(?:(?P<days>\d+)\s+days?,\s*)?"
+    r"(?:"
+    r"(?:(?P<hm_hours>\d+):(?P<hm_mins>\d+))|"
+    r"(?:(?P<hours_only>\d+)\s+hrs?)|"
+    r"(?:(?P<mins_only>\d+)\s+mins?)|"
+    r"(?:(?P<secs_only>\d+)\s+secs?)"
+    r")?"
+  )
 
   @override
   def uptime(self) -> dt.timedelta:
@@ -210,7 +215,8 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
 
     try:
       delta = dt.timedelta(
-          days=days, hours=hours, minutes=minutes, seconds=seconds)
+        days=days, hours=hours, minutes=minutes, seconds=seconds
+      )
       return delta
     except ValueError:
       return dt.timedelta()
@@ -279,10 +285,9 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     return self.sh_stdout_bytes("cat", self.path(file))
 
   @override
-  def rm(self,
-         path: pth.AnyPathLike,
-         dir: bool = False,
-         missing_ok: bool = False) -> None:
+  def rm(
+    self, path: pth.AnyPathLike, dir: bool = False, missing_ok: bool = False
+  ) -> None:
     if self.is_local:
       super().rm(path, dir, missing_ok)
       return
@@ -294,8 +299,9 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
       self.sh("rm", self.path(path))
 
   @override
-  def rename(self, src_path: pth.AnyPathLike,
-             dst_path: pth.AnyPathLike) -> pth.AnyPath:
+  def rename(
+    self, src_path: pth.AnyPathLike, dst_path: pth.AnyPathLike
+  ) -> pth.AnyPath:
     if self.is_local:
       return super().rename(src_path, dst_path)
     dst_path = self.path(dst_path)
@@ -316,10 +322,9 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
       self.sh("touch", self.path(path))
 
   @override
-  def mkdir(self,
-            path: pth.AnyPathLike,
-            parents: bool = True,
-            exist_ok: bool = True) -> None:
+  def mkdir(
+    self, path: pth.AnyPathLike, parents: bool = True, exist_ok: bool = True
+  ) -> None:
     if self.is_local:
       super().mkdir(path, parents, exist_ok)
     elif parents or exist_ok:
@@ -328,28 +333,34 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
       self.sh("mkdir", "-p", self.path(path))
 
   @override
-  def mkdtemp(self,
-              suffix: str | None = None,
-              prefix: str | None = None,
-              dir: pth.AnyPathLike | None = None) -> pth.AnyPath:
+  def mkdtemp(
+    self,
+    suffix: str | None = None,
+    prefix: str | None = None,
+    dir: pth.AnyPathLike | None = None,
+  ) -> pth.AnyPath:
     if self.is_local:
       return super().mkdtemp(suffix, prefix, dir)
     return self._mktemp_sh(is_dir=True, suffix=suffix, prefix=prefix, dir=dir)
 
   @override
-  def mktemp(self,
-             suffix: str | None = None,
-             prefix: str | None = None,
-             dir: pth.AnyPathLike | None = None) -> pth.AnyPath:
+  def mktemp(
+    self,
+    suffix: str | None = None,
+    prefix: str | None = None,
+    dir: pth.AnyPathLike | None = None,
+  ) -> pth.AnyPath:
     if self.is_local:
       return super().mktemp(suffix, prefix, dir)
     return self._mktemp_sh(is_dir=False, suffix=suffix, prefix=prefix, dir=dir)
 
-  def _mktemp_sh(self,
-                 is_dir: bool,
-                 suffix: str | None = None,
-                 prefix: str | None = None,
-                 dir: pth.AnyPathLike | None = None) -> pth.AnyPath:
+  def _mktemp_sh(
+    self,
+    is_dir: bool,
+    suffix: str | None = None,
+    prefix: str | None = None,
+    dir: pth.AnyPathLike | None = None,
+  ) -> pth.AnyPath:
     if not dir:
       dir = self.default_tmp_dir
     template = self.path(dir) / f"{prefix or ''}XXXXXXXXXXX{suffix or ''}"
@@ -361,8 +372,9 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     return self.path(result.strip())
 
   @override
-  def copy_dir(self, from_path: pth.AnyPathLike,
-               to_path: pth.AnyPathLike) -> pth.AnyPath:
+  def copy_dir(
+    self, from_path: pth.AnyPathLike, to_path: pth.AnyPathLike
+  ) -> pth.AnyPath:
     if self.is_local:
       return super().copy_dir(from_path, to_path)
     from_path = self.path(from_path)
@@ -375,8 +387,9 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     return to_path
 
   @override
-  def copy_file(self, from_path: pth.AnyPathLike,
-                to_path: pth.AnyPathLike) -> pth.AnyPath:
+  def copy_file(
+    self, from_path: pth.AnyPathLike, to_path: pth.AnyPathLike
+  ) -> pth.AnyPath:
     if self.is_local:
       return super().copy_file(from_path, to_path)
     from_path = self.path(from_path)
@@ -389,10 +402,9 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     return to_path
 
   @override
-  def write_text(self,
-                 file: pth.AnyPathLike,
-                 data: str,
-                 encoding: str = "utf-8") -> None:
+  def write_text(
+    self, file: pth.AnyPathLike, data: str, encoding: str = "utf-8"
+  ) -> None:
     if self.is_local:
       super().write_text(file, data, encoding)
       return
@@ -434,8 +446,9 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     return self.sh("[", "-d", self.path(path), "]", check=False).returncode == 0
 
   @override
-  def iterdir(self,
-              path: pth.AnyPathLike) -> Generator[pth.AnyPath, None, None]:
+  def iterdir(
+    self, path: pth.AnyPathLike
+  ) -> Generator[pth.AnyPath, None, None]:
     if self.is_local:
       yield from super().iterdir(path)
       return
@@ -444,8 +457,9 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     if not self.is_dir(remote_path):
       raise NotADirectoryError(f"Not a directory: {remote_path}")
 
-    for name in self.sh_stdout("ls", "-1",
-                               remote_path).rstrip("\n").splitlines():
+    for name in (
+      self.sh_stdout("ls", "-1", remote_path).rstrip("\n").splitlines()
+    ):
       yield remote_path / name
 
   @override
@@ -464,7 +478,8 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
       return
     if pid := self.process_pid(process):
       kill_process = self.sh(
-          "kill", f"-{int(signal)}", str(pid), check=False, capture_output=True)
+        "kill", f"-{int(signal)}", str(pid), check=False, capture_output=True
+      )
       # wait for the process to finish.
       if kill_process.returncode > 0:
         error_str = kill_process.stdout.decode("utf-8")
@@ -492,9 +507,9 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     self.sh("killall", "-9", process_name, check=False)
 
   @override
-  def process_info(self,
-                   process: ProcessLike,
-                   attrs: list[str] | None = None) -> ProcessInfo | None:
+  def process_info(
+    self, process: ProcessLike, attrs: list[str] | None = None
+  ) -> ProcessInfo | None:
     if self.is_local:
       return super().process_info(process, attrs)
     try:
@@ -556,20 +571,19 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
       # fails on tracefs pseudo-files, and a separate is_file check would add
       # an extra remote shell round-trip on every performance mark.
       proc = self.sh(
-          "tee",
-          TRACE_MARKER_PATH,
-          input=marker.encode("utf-8"),
-          capture_output=True,
-          quiet=True,
-          check=False)
+        "tee",
+        TRACE_MARKER_PATH,
+        input=marker.encode("utf-8"),
+        capture_output=True,
+        quiet=True,
+        check=False,
+      )
       if proc.returncode == 0:
         return
     super().trace_mark(name, prefix=prefix)
 
 
-
 class RemotePosixEnviron(Environ):
-
   def __init__(self, platform: PosixPlatform) -> None:
     self._platform: Final[PosixPlatform] = platform
     self._environ: Final[dict[str, str]] = {}
@@ -600,20 +614,21 @@ class RemotePosixEnviron(Environ):
 
 
 class RemotePosixPlatform(RemotePlatformMixin, PosixPlatform):
-
   @override
-  def _popen(self,
-             *args: CmdArg,
-             bufsize: int = -1,
-             shell: bool = False,
-             stdout: ProcessIo = None,
-             stderr: ProcessIo = None,
-             stdin: ProcessIo = None,
-             env: Mapping[str, str] | None = None,
-             cwd: pth.AnyPath | None = None,
-             encoding: str | None = None,
-             quiet: bool = False,
-             auto_terminate: bool = True) -> subprocess.Popen:
+  def _popen(
+    self,
+    *args: CmdArg,
+    bufsize: int = -1,
+    shell: bool = False,
+    stdout: ProcessIo = None,
+    stderr: ProcessIo = None,
+    stdin: ProcessIo = None,
+    env: Mapping[str, str] | None = None,
+    cwd: pth.AnyPath | None = None,
+    encoding: str | None = None,
+    quiet: bool = False,
+    auto_terminate: bool = True,
+  ) -> subprocess.Popen:
     del shell, encoding, auto_terminate
     assert not (self.is_android and env), "ADB does not support env vars"
 
@@ -627,15 +642,17 @@ class RemotePosixPlatform(RemotePlatformMixin, PosixPlatform):
         logging.debug("REMOTE SHELL: %s", shell_cmd)
       # Run with shell=True since we use '>' and use shlex.join.
       host_platform_cmd = self.build_shell_cmd(  # noqa: S604
-          shell_cmd, shell=True, env=env, cwd=cwd)
+        shell_cmd, shell=True, env=env, cwd=cwd
+      )
 
       remote_popen = RemotePopen(
-          self,
-          host_platform_cmd,
-          bufsize=bufsize,
-          stdout=stdout,
-          stderr=stderr,
-          stdin=stdin)
+        self,
+        host_platform_cmd,
+        bufsize=bufsize,
+        stdout=stdout,
+        stderr=stderr,
+        stdin=stdin,
+      )
       # tmp_pid_file might not have been immediately flushed:
       for _ in WaitRange(0.01, timeout=2).wait_with_backoff():
         if pid_str := self.cat(temp_pid_file):

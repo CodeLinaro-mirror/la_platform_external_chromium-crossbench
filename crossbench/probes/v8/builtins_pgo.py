@@ -21,6 +21,7 @@ class V8BuiltinsPGOProbe(ChromiumProbe):
   Chromium-only Probe to extract V8 builtins PGO data.
   The resulting data is used to optimize Torque and CSA builtins.
   """
+
   NAME: ClassVar = "v8.builtins.pgo"
 
   @override
@@ -37,7 +38,8 @@ class V8BuiltinsPGOProbe(ChromiumProbe):
     merged_result_path = group.get_local_probe_result_path(self)
     result_files = (run.results[self].file for run in group.runs)
     result_file = self.host_platform.concat_files(
-        inputs=result_files, output=merged_result_path)
+      inputs=result_files, output=merged_result_path
+    )
     return LocalProbeResult(file=(result_file,))
 
   @override
@@ -45,7 +47,8 @@ class V8BuiltinsPGOProbe(ChromiumProbe):
     merged_result_path = group.get_local_probe_result_path(self)
     result_files = (g.results[self].file for g in group.repetitions_groups)
     result_file = self.host_platform.concat_files(
-        inputs=result_files, output=merged_result_path)
+      inputs=result_files, output=merged_result_path
+    )
     return LocalProbeResult(file=(result_file,))
 
 
@@ -67,9 +70,10 @@ class V8BuiltinsPGOProbeContext(ProbeContext[V8BuiltinsPGOProbe]):
 
   def teardown(self) -> ProbeResult:
     assert self._pgo_counters, (
-        "Chrome didn't produce any V8 builtins PGO data. "
-        "Please make sure to set the v8_enable_builtins_profiling=true "
-        "gn args.")
+      "Chrome didn't produce any V8 builtins PGO data. "
+      "Please make sure to set the v8_enable_builtins_profiling=true "
+      "gn args."
+    )
     pgo_file = self.local_result_path
     with pgo_file.open("a") as f:
       f.write(self._pgo_counters)

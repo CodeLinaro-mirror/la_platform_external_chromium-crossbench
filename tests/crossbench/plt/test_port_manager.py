@@ -8,11 +8,16 @@ import unittest
 from typing import TYPE_CHECKING, ClassVar, cast
 from unittest import mock
 
-from crossbench.plt.port_manager import PortForwardException, PortManager, \
-    SubprocessPortManager
+from crossbench.plt.port_manager import (
+  PortForwardException,
+  PortManager,
+  SubprocessPortManager,
+)
 from tests import test_helper
-from tests.crossbench.mock_helper import LinuxMockPlatform, \
-    MockRemotePortManager
+from tests.crossbench.mock_helper import (
+  LinuxMockPlatform,
+  MockRemotePortManager,
+)
 
 if TYPE_CHECKING:
   import subprocess
@@ -21,19 +26,18 @@ if TYPE_CHECKING:
 
 
 class FakePortLinuxMockPlatform(LinuxMockPlatform):
-
   def _create_port_manager(self) -> PortManager:
     return MockRemotePortManager(self)
 
 
 class PortManagerTestCase(unittest.TestCase):
-
   def setUp(self):
     super().setUp()
     self.platform = FakePortLinuxMockPlatform()
     self.port_scope = self.platform.ports
-    self.port_manager: MockRemotePortManager = cast(MockRemotePortManager,
-                                                    self.platform.port_manager)
+    self.port_manager: MockRemotePortManager = cast(
+      MockRemotePortManager, self.platform.port_manager
+    )
     self.assertIsInstance(self.port_manager, MockRemotePortManager)
 
   def tearDown(self):
@@ -182,8 +186,9 @@ class ForwardOnlySubprocessPortManager(SubprocessPortManager):
     super().__init__(platform, throw)
     self.forward_procs: dict[int, mock.MagicMock] = {}
 
-  def _popen_forward(self, local_port: int,
-                     remote_port: int) -> subprocess.Popen:
+  def _popen_forward(
+    self, local_port: int, remote_port: int
+  ) -> subprocess.Popen:
     proc = mock.MagicMock(name=f"forward {local_port}:{remote_port}")
     self.forward_procs[local_port] = proc
     return proc
@@ -196,8 +201,9 @@ class FakeSubprocessPortManager(ForwardOnlySubprocessPortManager):
     super().__init__(platform, throw)
     self.reverse_procs: dict[int, mock.MagicMock] = {}
 
-  def _popen_reverse_forward(self, remote_port: int,
-                             local_port: int) -> subprocess.Popen:
+  def _popen_reverse_forward(
+    self, remote_port: int, local_port: int
+  ) -> subprocess.Popen:
     proc = mock.MagicMock(name=f"reverse {remote_port}:{local_port}")
     self.reverse_procs[remote_port] = proc
     return proc
@@ -205,7 +211,8 @@ class FakeSubprocessPortManager(ForwardOnlySubprocessPortManager):
 
 class SubprocessPortPlatform(LinuxMockPlatform):
   PORT_MANAGER_CLS: ClassVar[type[SubprocessPortManager]] = (
-      FakeSubprocessPortManager)
+    FakeSubprocessPortManager
+  )
 
   def _create_port_manager(self) -> PortManager:
     return self.PORT_MANAGER_CLS(self)
@@ -216,17 +223,20 @@ class ForwardOnlySubprocessPortPlatform(SubprocessPortPlatform):
 
 
 class SubprocessPortManagerTestCase(unittest.TestCase):
-
   def setUp(self):
     super().setUp()
     self.platform = SubprocessPortPlatform()
-    self.port_manager = cast(FakeSubprocessPortManager,
-                             self.platform.port_manager)
+    self.port_manager = cast(
+      FakeSubprocessPortManager, self.platform.port_manager
+    )
     self.mock_wait_for_port = self.enterContext(
-        mock.patch.object(type(self.platform), "wait_for_port"))
+      mock.patch.object(type(self.platform), "wait_for_port")
+    )
     self.mock_get_free_port = self.enterContext(
-        mock.patch.object(
-            type(self.platform), "get_free_port", return_value=60001))
+      mock.patch.object(
+        type(self.platform), "get_free_port", return_value=60001
+      )
+    )
 
   def tearDown(self):
     self.assertTrue(self.platform.ports.is_empty)
@@ -236,7 +246,8 @@ class SubprocessPortManagerTestCase(unittest.TestCase):
     with self.platform.ports.nested() as ports:
       self.assertEqual(ports.forward(12345, 8080), 12345)
       self.mock_wait_for_port.assert_called_once_with(
-          12345, SubprocessPortManager.PORT_FORWARDING_TIMEOUT)
+        12345, SubprocessPortManager.PORT_FORWARDING_TIMEOUT
+      )
       self.mock_get_free_port.assert_not_called()
       proc = self.port_manager.forward_procs[12345]
       proc.terminate.assert_not_called()
@@ -249,7 +260,8 @@ class SubprocessPortManagerTestCase(unittest.TestCase):
       self.assertEqual(ports.forward(0, 8080), 60001)
       self.mock_get_free_port.assert_called_once_with()
       self.mock_wait_for_port.assert_called_once_with(
-          60001, SubprocessPortManager.PORT_FORWARDING_TIMEOUT)
+        60001, SubprocessPortManager.PORT_FORWARDING_TIMEOUT
+      )
       self.assertIn(60001, self.port_manager.forward_procs)
 
   def test_forward_twice(self):
@@ -302,7 +314,8 @@ class SubprocessPortManagerTestCase(unittest.TestCase):
     with self.platform.ports.nested() as ports:
       self.assertEqual(ports.reverse_forward(54321, 8081), 54321)
       self.mock_wait_for_port.assert_called_once_with(
-          54321, SubprocessPortManager.PORT_FORWARDING_TIMEOUT)
+        54321, SubprocessPortManager.PORT_FORWARDING_TIMEOUT
+      )
       proc = self.port_manager.reverse_procs[54321]
       proc.terminate.assert_not_called()
       self.assertTrue(ports.is_reverse_forwarded_port_used(54321))

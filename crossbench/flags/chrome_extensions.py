@@ -22,7 +22,6 @@ class ExtensionsMode(enum.StrEnum):
 
 
 class ChromeExtensions(Freezable):
-
   DISABLE_FLAG: Final[str] = "--disable-extensions"
   LOAD_FLAG: Final[str] = "--load-extension"
   DISABLE_EXCEPT_FLAG: Final[str] = "--disable-extensions-except"
@@ -37,10 +36,12 @@ class ChromeExtensions(Freezable):
 
   def disable(self) -> None:
     self.assert_not_frozen()
-    if (self._mode not in (ExtensionsMode.DEFAULT,
-                           ExtensionsMode.DISABLED)) or self.extensions:
+    if (
+      self._mode not in (ExtensionsMode.DEFAULT, ExtensionsMode.DISABLED)
+    ) or self.extensions:
       raise ValueError(
-          f"Cannot disable previously enabled extensions: {self.extensions}")
+        f"Cannot disable previously enabled extensions: {self.extensions}"
+      )
     self._mode = ExtensionsMode.DISABLED
 
   @property
@@ -57,8 +58,10 @@ class ChromeExtensions(Freezable):
 
   @property
   def enabled(self) -> bool:
-    return self._mode in (ExtensionsMode.ENABLED,
-                          ExtensionsMode.ENABLED_SELECTIVE)
+    return self._mode in (
+      ExtensionsMode.ENABLED,
+      ExtensionsMode.ENABLED_SELECTIVE,
+    )
 
   @property
   def mode(self) -> str:
@@ -75,16 +78,19 @@ class ChromeExtensions(Freezable):
         raise ValueError(f"Extensions are disabled, cannot add {extension}")
       if self._mode == ExtensionsMode.ENABLED_SELECTIVE:
         raise ValueError(
-            f"Cannot enable additional extension {extension!r}, "
-            f"currently they are restricted to {self.extensions_str}")
+          f"Cannot enable additional extension {extension!r}, "
+          f"currently they are restricted to {self.extensions_str}"
+        )
     assert self._mode in (ExtensionsMode.DEFAULT, ExtensionsMode.ENABLED)
     self._mode = ExtensionsMode.ENABLED
     self._extensions.add(extension)
 
-  def enable(self,
-             extensions: str | None,
-             selective: bool = False,
-             should_override: bool = False) -> None:
+  def enable(
+    self,
+    extensions: str | None,
+    selective: bool = False,
+    should_override: bool = False,
+  ) -> None:
     self.assert_not_frozen()
     if not extensions:
       raise ValueError("Cannot enable empty extensions")
@@ -98,8 +104,10 @@ class ChromeExtensions(Freezable):
     if not isinstance(other, ChromeExtensions):
       raise TypeError
     if self.mode != other.mode:
-      raise ValueError("Cannot merge extensions with different modes: "
-                       f"{self.mode} and {other.mode}")
+      raise ValueError(
+        "Cannot merge extensions with different modes: "
+        f"{self.mode} and {other.mode}"
+      )
     for extension in other.extensions:
       self.add(extension, should_override=True)
 
@@ -112,10 +120,12 @@ class ChromeExtensions(Freezable):
       return
     raise KeyError(f"Unsupported extension flag: {key}")
 
-  def set(self,
-          flag_name: str,
-          flag_value: str | None = None,
-          should_override: bool = False) -> None:
+  def set(
+    self,
+    flag_name: str,
+    flag_value: str | None = None,
+    should_override: bool = False,
+  ) -> None:
     self.assert_not_frozen()
     self._verify_flag(flag_name, flag_value)
     match flag_name:
@@ -135,8 +145,9 @@ class ChromeExtensions(Freezable):
       enable_flag, _ = self.item()
       if enable_flag:
         raise ValueError(
-            f"Existing {enable_flag} conflicts with {flag_name}. "
-            "Cannot explicitly enable and disable at the same time.")
+          f"Existing {enable_flag} conflicts with {flag_name}. "
+          "Cannot explicitly enable and disable at the same time."
+        )
       return None
 
     if flag_name not in self.ENABLE_FLAGS:
@@ -145,15 +156,19 @@ class ChromeExtensions(Freezable):
       raise ValueError(f"{flag_name} expects a value, but got {value!r}")
     if self.disabled:
       raise ValueError(
-          f"Existing --disable-extensions conflicts with {flag_name}. "
-          "Cannot explicitly disable and enable at the same time.")
+        f"Existing --disable-extensions conflicts with {flag_name}. "
+        "Cannot explicitly disable and enable at the same time."
+      )
     enable_flag, enabled_extensions = self.item()
-    if enable_flag and (enable_flag != flag_name or
-                        enabled_extensions != value):
-      raise ValueError("Got previously enabled extensions "
-                       f"{enable_flag}={enabled_extensions}, "
-                       "which conflicts with nwe "
-                       f"{flag_name}={value}.")
+    if enable_flag and (
+      enable_flag != flag_name or enabled_extensions != value
+    ):
+      raise ValueError(
+        "Got previously enabled extensions "
+        f"{enable_flag}={enabled_extensions}, "
+        "which conflicts with nwe "
+        f"{flag_name}={value}."
+      )
     return value
 
   def items(self) -> Iterable[tuple[str, str | None]]:

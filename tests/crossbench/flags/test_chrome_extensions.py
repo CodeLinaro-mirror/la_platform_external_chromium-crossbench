@@ -10,7 +10,6 @@ from tests import test_helper
 
 
 class ChromeExtensionsTestCase(unittest.TestCase):
-
   def test_empty(self):
     extensions = ChromeExtensions()
     self.assertEqual(str(extensions), "")
@@ -99,8 +98,9 @@ class ChromeExtensionsTestCase(unittest.TestCase):
     extensions.enable("ext_b")
     self.assertSequenceEqual(extensions.extensions, ("ext_a", "ext_b"))
     extensions.enable("ext_c,ext_d")
-    self.assertSequenceEqual(extensions.extensions,
-                             ("ext_a", "ext_b", "ext_c", "ext_d"))
+    self.assertSequenceEqual(
+      extensions.extensions, ("ext_a", "ext_b", "ext_c", "ext_d")
+    )
 
   def test_disable(self):
     extensions = ChromeExtensions(["ext_a"])

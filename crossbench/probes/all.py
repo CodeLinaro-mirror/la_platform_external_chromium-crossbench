@@ -49,8 +49,9 @@ from crossbench.probes.screenshot import ScreenshotProbe
 from crossbench.probes.shell import LocalShellProbe, ShellProbe
 from crossbench.probes.system_stats import SystemStatsProbe
 from crossbench.probes.thermal_monitor import ThermalMonitorProbe
-from crossbench.probes.trace_processor.trace_processor import \
-    TraceProcessorProbe
+from crossbench.probes.trace_processor.trace_processor import (
+  TraceProcessorProbe,
+)
 from crossbench.probes.v8.builtins_pgo import V8BuiltinsPGOProbe
 from crossbench.probes.v8.log import V8LogProbe
 from crossbench.probes.v8.rcs import V8RCSProbe
@@ -59,11 +60,13 @@ from crossbench.probes.video import VideoProbe
 from crossbench.probes.video_acceleration import VideoAccelerationProbe
 from crossbench.probes.vram import VramProbe
 from crossbench.probes.web_page_replay.recorder import WebPageReplayProbe
-from crossbench.probes.xcode_instruments.xcode_instruments import \
-    XcodeInstrumentsProbe
+from crossbench.probes.xcode_instruments.xcode_instruments import (
+  XcodeInstrumentsProbe,
+)
 
 if TYPE_CHECKING:
   from crossbench.probes.internal.base import InternalProbe
+
   InternalProbeTuple = tuple[type[InternalProbe], ...]
 
 ABSTRACT_PROBES: tuple[type[Probe], ...] = (Probe, JsonResultProbe)
@@ -77,25 +80,27 @@ ABSTRACT_PROBES: tuple[type[Probe], ...] = (Probe, JsonResultProbe)
 
 # Internal probes that are always installed and are non configurable.
 NON_CONFIGURABLE_INTERNAL_PROBES: InternalProbeTuple = (
-    ResultsSummaryProbe,
-    DurationsProbe,
-    ErrorsProbe,
-    LogProbe,
-    SystemDetailsProbe,
-    CrashdumpProbe,
-    RepoStatusProbe,
+  ResultsSummaryProbe,
+  DurationsProbe,
+  ErrorsProbe,
+  LogProbe,
+  SystemDetailsProbe,
+  CrashdumpProbe,
+  RepoStatusProbe,
 )
 # Internal probes that are configurable by command line flags but always
 # installed.
 CONFIGURABLE_INTERNAL_PROBES: InternalProbeTuple = (ThermalMonitorProbe,)
 DEFAULT_INTERNAL_PROBES: InternalProbeTuple = (
-    NON_CONFIGURABLE_INTERNAL_PROBES + CONFIGURABLE_INTERNAL_PROBES)
+  NON_CONFIGURABLE_INTERNAL_PROBES + CONFIGURABLE_INTERNAL_PROBES
+)
 
 # Internal probes that are configurable and only optionally installed.
 OPTIONAL_INTERNAL_PROBES: InternalProbeTuple = (BrowserDriverLogProbe,)
 
 INTERNAL_PROBES: InternalProbeTuple = (
-    DEFAULT_INTERNAL_PROBES + OPTIONAL_INTERNAL_PROBES)
+  DEFAULT_INTERNAL_PROBES + OPTIONAL_INTERNAL_PROBES
+)
 
 # ResultsSummaryProbe should always be processed last, and thus must be the
 # first probe to be added to any browser.
@@ -104,64 +109,68 @@ assert DEFAULT_INTERNAL_PROBES[1] == DurationsProbe
 
 # Probes that can be used on arbitrary stories and may be user configurable.
 GENERAL_PURPOSE_PROBES: tuple[type[Probe], ...] = (
-    BitsProbe,
-    BrowserProfilingProbe,
-    CDPEndpointProbe,
-    ChromeHistogramsProbe,
-    ChromeMetricsInternalsProbe,
-    ChromiumPgoProbe,
-    DebuggerProbe,
-    DownloadsProbe,
-    DTraceProbe,
-    DumpHeapProbe,
-    DumpHtmlProbe,
-    WebviewEmbedderProbe,
-    EtmProbe,
-    FrequencyProbe,
-    GoogleWorkspaceProbe,
-    JSProbe,
-    JunctionTemperatureProbe,
-    LocalShellProbe,
-    LogcatAndroidProbe,
-    MeminfoProbe,
-    NetLogProbe,
-    PerfettoProbe,
-    PerfettoInfoProbe,
-    PerformanceEntriesProbe,
-    PollingShellProbe,
-    PowerMetricsProbe,
-    PowerSamplerProbe,
-    ProfilingProbe,
-    ScreenshotProbe,
-    ShellProbe,
-    SystemStatsProbe,
-    TraceProcessorProbe,
-    TracingProbe,
-    V8BuiltinsPGOProbe,
-    V8LogProbe,
-    V8RCSProbe,
-    V8TurbolizerProbe,
-    VideoProbe,
-    VideoAccelerationProbe,
-    VramProbe,
-    WebPageReplayProbe,
-    XcodeInstrumentsProbe,
+  BitsProbe,
+  BrowserProfilingProbe,
+  CDPEndpointProbe,
+  ChromeHistogramsProbe,
+  ChromeMetricsInternalsProbe,
+  ChromiumPgoProbe,
+  DebuggerProbe,
+  DownloadsProbe,
+  DTraceProbe,
+  DumpHeapProbe,
+  DumpHtmlProbe,
+  WebviewEmbedderProbe,
+  EtmProbe,
+  FrequencyProbe,
+  GoogleWorkspaceProbe,
+  JSProbe,
+  JunctionTemperatureProbe,
+  LocalShellProbe,
+  LogcatAndroidProbe,
+  MeminfoProbe,
+  NetLogProbe,
+  PerfettoProbe,
+  PerfettoInfoProbe,
+  PerformanceEntriesProbe,
+  PollingShellProbe,
+  PowerMetricsProbe,
+  PowerSamplerProbe,
+  ProfilingProbe,
+  ScreenshotProbe,
+  ShellProbe,
+  SystemStatsProbe,
+  TraceProcessorProbe,
+  TracingProbe,
+  V8BuiltinsPGOProbe,
+  V8LogProbe,
+  V8RCSProbe,
+  V8TurbolizerProbe,
+  VideoProbe,
+  VideoAccelerationProbe,
+  VramProbe,
+  WebPageReplayProbe,
+  XcodeInstrumentsProbe,
 )
 
 for probe_cls in GENERAL_PURPOSE_PROBES:
   assert probe_cls.IS_GENERAL_PURPOSE, (
-      f"Probe {probe_cls} should be marked for GENERAL_PURPOSE")
+    f"Probe {probe_cls} should be marked for GENERAL_PURPOSE"
+  )
   assert probe_cls.NAME, "Missing {probe_cls}.NAME property"
   assert not probe_cls.NAME.startswith(INTERNAL_NAME_PREFIX), (
-      f"General purpose {probe_cls}.NAME cannot start with 'cb.'")
+    f"General purpose {probe_cls}.NAME cannot start with 'cb.'"
+  )
 
 for probe_cls in DEFAULT_INTERNAL_PROBES:
   assert not probe_cls.IS_GENERAL_PURPOSE, (
-      f"Internal Probe {probe_cls} should not marked for GENERAL_PURPOSE")
+    f"Internal Probe {probe_cls} should not marked for GENERAL_PURPOSE"
+  )
   assert probe_cls.NAME, "Missing {probe_cls}.NAME property"
   assert probe_cls.NAME.startswith(INTERNAL_NAME_PREFIX), (
-      f"Internal {probe_cls}.NAME must start with 'cb.'")
+    f"Internal {probe_cls}.NAME must start with 'cb.'"
+  )
 
 PROBE_LOOKUP: dict[str, type[Probe]] = {
-    cls.NAME: cls for cls in GENERAL_PURPOSE_PROBES
+  cls.NAME: cls for cls in GENERAL_PURPOSE_PROBES
 }

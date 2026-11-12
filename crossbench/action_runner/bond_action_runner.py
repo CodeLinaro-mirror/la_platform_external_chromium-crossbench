@@ -20,7 +20,6 @@ if TYPE_CHECKING:
 
 
 class BondActionRunner:
-
   def __init__(self, action_runner: ActionRunner) -> None:
     self._action_runner: Final[ActionRunner] = action_runner
     self._bond_client: BondClient | None = None
@@ -62,16 +61,19 @@ class BondActionRunner:
     conference_code = bond_client.create_meeting(timeout=action.timeout)
     if action.bots:
       bond_client.add_bots(
-          conference_code,
-          action.bots,
-          timeout=self._timeout_from_deadline(deadline))
+        conference_code,
+        action.bots,
+        timeout=self._timeout_from_deadline(deadline),
+      )
     url = f"https://meet.google.com/{conference_code}"
     self._action_runner.get(
-        GetAction.create(
-            url,
-            ready_state=ReadyState.COMPLETE,
-            target=action.target,
-            timeout=self._timeout_from_deadline(deadline)))
+      GetAction.create(
+        url,
+        ready_state=ReadyState.COMPLETE,
+        target=action.target,
+        timeout=self._timeout_from_deadline(deadline),
+      )
+    )
 
   def meet_script(self, action: i_action.MeetScriptAction) -> None:
     conference_code = self.get_current_conference_code(self.run.browser)

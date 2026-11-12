@@ -9,8 +9,13 @@ import datetime as dt
 from typing import TYPE_CHECKING, Final
 from unittest import mock
 
-from crossbench.pinpoint.job_info import MIN_POLL_INTERVAL, ComparisonMode, \
-    JobStatus, PinpointJobInfo, UrlSource
+from crossbench.pinpoint.job_info import (
+  MIN_POLL_INTERVAL,
+  ComparisonMode,
+  JobStatus,
+  PinpointJobInfo,
+  UrlSource,
+)
 from tests import test_helper
 from tests.crossbench.base import BaseCrossbenchTestCase
 
@@ -18,57 +23,67 @@ if TYPE_CHECKING:
   from crossbench.types import JsonDict
 
 _SAMPLE_JOB_DATA: Final[JsonDict] = {
-    "job_id": "1234567890",
-    "status": "Running",
-    "comparison_mode": "try",
-    "user": "tester@example.com",
-    "name": "test-run-1",
-    "created": "2024-01-01T12:00:00Z",
-    "started": "2024-01-01T12:01:00Z",
-    "completed": "2024-01-01T12:30:00Z",
-    "arguments": {
-        "benchmark": "speedometer3",
-        "configuration": "linux-perf",
-        "story": "Speedometer3",
-        "story_tags": "tag1,tag2",
-        "bug_id": "9999",
-        "initial_attempt_count": "10",
-        "base_git_hash": "aaa111",
-        "end_git_hash": "bbb222",
-        "base_patch": "https://crrev.com/c/111",
-        "experiment_patch": "https://crrev.com/c/222",
+  "job_id": "1234567890",
+  "status": "Running",
+  "comparison_mode": "try",
+  "user": "tester@example.com",
+  "name": "test-run-1",
+  "created": "2024-01-01T12:00:00Z",
+  "started": "2024-01-01T12:01:00Z",
+  "completed": "2024-01-01T12:30:00Z",
+  "arguments": {
+    "benchmark": "speedometer3",
+    "configuration": "linux-perf",
+    "story": "Speedometer3",
+    "story_tags": "tag1,tag2",
+    "bug_id": "9999",
+    "initial_attempt_count": "10",
+    "base_git_hash": "aaa111",
+    "end_git_hash": "bbb222",
+    "base_patch": "https://crrev.com/c/111",
+    "experiment_patch": "https://crrev.com/c/222",
+  },
+  "state": [
+    {
+      "attempts": [
+        {
+          "executions": [
+            {},
+            {
+              "completed": True,
+            },
+          ],
+        },
+        {
+          "executions": [
+            {},
+            {
+              "completed": True,
+            },
+          ],
+        },
+      ],
     },
-    "state": [
+    {
+      "attempts": [
         {
-            "attempts": [
-                {
-                    "executions": [{}, {
-                        "completed": True,
-                    }],
-                },
-                {
-                    "executions": [{}, {
-                        "completed": True,
-                    }],
-                },
-            ],
-        },
-        {
-            "attempts": [{
-                "executions": [{}, {
-                    "completed": True,
-                }],
-            }],
-        },
-    ],
-    "difference_count": 0,
-    "results_url": "https://storage.cloud.google.com/results.html",
-    "cancel_reason": "User cancelled",
+          "executions": [
+            {},
+            {
+              "completed": True,
+            },
+          ],
+        }
+      ],
+    },
+  ],
+  "difference_count": 0,
+  "results_url": "https://storage.cloud.google.com/results.html",
+  "cancel_reason": "User cancelled",
 }
 
 
 class PinpointJobInfoTest(BaseCrossbenchTestCase):
-
   @mock.patch("crossbench.pinpoint.job_info.fetch_job_config")
   def test_from_id(self, mock_fetch):
     mock_fetch.return_value = _SAMPLE_JOB_DATA
@@ -88,13 +103,15 @@ class PinpointJobInfoTest(BaseCrossbenchTestCase):
     self.assertEqual(job_info.raw_data, _SAMPLE_JOB_DATA)
 
   def test_wait_already_completed(self):
-    job = PinpointJobInfo.from_json({
+    job = PinpointJobInfo.from_json(
+      {
         "job_id": "12345",
         "status": "Completed",
         "arguments": {
-            "benchmark": "speedometer3",
+          "benchmark": "speedometer3",
         },
-    })
+      }
+    )
     result = job.wait()
     self.assertEqual(result.job_id, "12345")
     self.assertIs(result.status, JobStatus.COMPLETED)
@@ -103,19 +120,21 @@ class PinpointJobInfoTest(BaseCrossbenchTestCase):
   @mock.patch("crossbench.pinpoint.job_info.fetch_job_config")
   def test_wait_running_then_completed(self, mock_fetch, mock_sleep):
     mock_fetch.return_value = {
-        "job_id": "12345",
-        "status": "Completed",
-        "arguments": {
-            "benchmark": "speedometer3",
-        },
+      "job_id": "12345",
+      "status": "Completed",
+      "arguments": {
+        "benchmark": "speedometer3",
+      },
     }
-    job = PinpointJobInfo.from_json({
+    job = PinpointJobInfo.from_json(
+      {
         "job_id": "12345",
         "status": "Running",
         "arguments": {
-            "benchmark": "speedometer3",
+          "benchmark": "speedometer3",
         },
-    })
+      }
+    )
     result = job.wait(poll_interval=dt.timedelta(seconds=1))
     mock_fetch.assert_called_once_with("12345", full=True)
     mock_sleep.assert_called_once_with(1.0)
@@ -126,18 +145,21 @@ class PinpointJobInfoTest(BaseCrossbenchTestCase):
   @mock.patch("crossbench.pinpoint.job_info.fetch_job_config")
   def test_wait_progress_callback(self, mock_fetch, mock_sleep):
     mock_fetch.return_value = {
-        "job_id": "12345",
-        "status": "Completed",
-        "arguments": {},
+      "job_id": "12345",
+      "status": "Completed",
+      "arguments": {},
     }
-    job = PinpointJobInfo.from_json({
+    job = PinpointJobInfo.from_json(
+      {
         "job_id": "12345",
         "status": "Running",
         "arguments": {},
-    })
+      }
+    )
     progress_calls = []
     result = job.wait(
-        progress=lambda info, elapsed: progress_calls.append((info, elapsed)))
+      progress=lambda info, elapsed: progress_calls.append((info, elapsed))
+    )
     mock_sleep.assert_called_once_with(30.0)
     self.assertEqual(len(progress_calls), 1)
     self.assertEqual(progress_calls[0][0].job_id, "12345")
@@ -148,15 +170,17 @@ class PinpointJobInfoTest(BaseCrossbenchTestCase):
   @mock.patch("crossbench.pinpoint.job_info.fetch_job_config")
   def test_wait_default_poll_interval(self, mock_fetch, mock_sleep):
     mock_fetch.return_value = {
-        "job_id": "12345",
-        "status": "Completed",
-        "arguments": {},
+      "job_id": "12345",
+      "status": "Completed",
+      "arguments": {},
     }
-    job = PinpointJobInfo.from_json({
+    job = PinpointJobInfo.from_json(
+      {
         "job_id": "12345",
         "status": "Running",
         "arguments": {},
-    })
+      }
+    )
     result = job.wait()
     mock_fetch.assert_called_once_with("12345", full=True)
     mock_sleep.assert_called_once_with(30.0)
@@ -168,39 +192,45 @@ class PinpointJobInfoTest(BaseCrossbenchTestCase):
   @mock.patch("crossbench.pinpoint.job_info.fetch_job_config")
   def test_wait_poll_interval_minimum(self, mock_fetch, mock_sleep):
     mock_fetch.return_value = {
-        "job_id": "12345",
-        "status": "Completed",
-        "arguments": {},
+      "job_id": "12345",
+      "status": "Completed",
+      "arguments": {},
     }
-    job = PinpointJobInfo.from_json({
+    job = PinpointJobInfo.from_json(
+      {
         "job_id": "12345",
         "status": "Running",
         "arguments": {},
-    })
+      }
+    )
     job.wait(poll_interval=dt.timedelta(seconds=0.1))
     mock_sleep.assert_called_once_with(MIN_POLL_INTERVAL.total_seconds())
 
   def test_wait_timeout(self):
-    job = PinpointJobInfo.from_json({
+    job = PinpointJobInfo.from_json(
+      {
         "job_id": "12345",
         "status": "Running",
         "arguments": {
-            "benchmark": "speedometer3",
+          "benchmark": "speedometer3",
         },
-    })
+      }
+    )
     with self.assertRaises(TimeoutError):
       job.wait(
-          timeout=dt.timedelta(seconds=0),
-          poll_interval=dt.timedelta(seconds=1))
+        timeout=dt.timedelta(seconds=0), poll_interval=dt.timedelta(seconds=1)
+      )
 
   def test_wait_failed(self):
-    job = PinpointJobInfo.from_json({
+    job = PinpointJobInfo.from_json(
+      {
         "job_id": "12345",
         "status": "Failed",
         "arguments": {
-            "benchmark": "speedometer3",
+          "benchmark": "speedometer3",
         },
-    })
+      }
+    )
     result = job.wait()
     self.assertIs(result.status, JobStatus.FAILED)
     self.assertTrue(result.is_failed)
@@ -210,13 +240,15 @@ class PinpointJobInfoTest(BaseCrossbenchTestCase):
   @mock.patch("crossbench.pinpoint.job_info.fetch_job_config")
   def test_wait_running_then_failed(self, mock_fetch, mock_sleep):
     mock_fetch.return_value = {
-        "job_id": "12345",
-        "status": "Failed",
+      "job_id": "12345",
+      "status": "Failed",
     }
-    job = PinpointJobInfo.from_json({
+    job = PinpointJobInfo.from_json(
+      {
         "job_id": "12345",
         "status": "Running",
-    })
+      }
+    )
     result = job.wait(poll_interval=dt.timedelta(seconds=1))
     mock_sleep.assert_called_once_with(1.0)
     self.assertIs(result.status, JobStatus.FAILED)
@@ -224,14 +256,16 @@ class PinpointJobInfoTest(BaseCrossbenchTestCase):
     self.assertFalse(result.is_success)
 
   def test_wait_cancelled(self):
-    job = PinpointJobInfo.from_json({
+    job = PinpointJobInfo.from_json(
+      {
         "job_id": "12345",
         "status": "Cancelled",
         "cancel_reason": "User requested",
         "arguments": {
-            "benchmark": "speedometer3",
+          "benchmark": "speedometer3",
         },
-    })
+      }
+    )
     result = job.wait()
     self.assertIs(result.status, JobStatus.CANCELLED)
     self.assertTrue(result.is_cancelled)
@@ -244,11 +278,13 @@ class PinpointJobInfoTest(BaseCrossbenchTestCase):
     self.assertIn("job_id", str(cm.exception))
 
   def test_to_status_entries_no_link(self):
-    job = PinpointJobInfo.from_json({
+    job = PinpointJobInfo.from_json(
+      {
         "job_id": "12345",
         "status": "Completed",
         "results_url": "https://storage.cloud.google.com/results.html",
-    })
+      }
+    )
     entries_link = dict(job.to_status_entries(link=True))
     entries_no_link = dict(job.to_status_entries(link=False))
     self.assertNotIn("\x1b]8;;", entries_no_link["URL"])
@@ -286,8 +322,9 @@ class PinpointJobInfoTest(BaseCrossbenchTestCase):
     self.assertEqual(job_info.formatted_results_url, "")
     self.assertEqual(job_info.status_display, "Unknown")
     self.assertFalse(job_info.is_success)
-    self.assertEqual(job_info.url,
-                     "https://pinpoint-dot-chromeperf.appspot.com/job/")
+    self.assertEqual(
+      job_info.url, "https://pinpoint-dot-chromeperf.appspot.com/job/"
+    )
     self.assertEqual(job_info.short_url, "http://go/l_/r/")
 
   def test_from_json_full(self):
@@ -302,12 +339,15 @@ class PinpointJobInfoTest(BaseCrossbenchTestCase):
     self.assertEqual(job_info.story, "Speedometer3")
     self.assertEqual(job_info.story_tags, "tag1,tag2")
     self.assertEqual(job_info.bug, "9999")
-    self.assertEqual(job_info.created,
-                     dt.datetime(2024, 1, 1, 12, 0, 0, tzinfo=dt.UTC))
-    self.assertEqual(job_info.started,
-                     dt.datetime(2024, 1, 1, 12, 1, 0, tzinfo=dt.UTC))
-    self.assertEqual(job_info.completed,
-                     dt.datetime(2024, 1, 1, 12, 30, 0, tzinfo=dt.UTC))
+    self.assertEqual(
+      job_info.created, dt.datetime(2024, 1, 1, 12, 0, 0, tzinfo=dt.UTC)
+    )
+    self.assertEqual(
+      job_info.started, dt.datetime(2024, 1, 1, 12, 1, 0, tzinfo=dt.UTC)
+    )
+    self.assertEqual(
+      job_info.completed, dt.datetime(2024, 1, 1, 12, 30, 0, tzinfo=dt.UTC)
+    )
     self.assertEqual(job_info.base_commit, "aaa111")
     self.assertEqual(job_info.exp_commit, "bbb222")
     self.assertEqual(job_info.base_patch, "https://crrev.com/c/111")
@@ -316,98 +356,117 @@ class PinpointJobInfoTest(BaseCrossbenchTestCase):
     self.assertEqual(job_info.progress, "3/20 (15%)")
     self.assertEqual(job_info.differences, 0)
     self.assertEqual(job_info.differences_str, "0")
-    self.assertEqual(job_info.results_url,
-                     "https://storage.cloud.google.com/results.html")
-    self.assertIn("https://storage.cloud.google.com/results.html",
-                  job_info.formatted_results_url)
+    self.assertEqual(
+      job_info.results_url, "https://storage.cloud.google.com/results.html"
+    )
+    self.assertIn(
+      "https://storage.cloud.google.com/results.html",
+      job_info.formatted_results_url,
+    )
     self.assertEqual(job_info.cancel_reason, "User cancelled")
 
   def test_urls(self):
     self.assertEqual(
-        UrlSource.all(),
-        (
-            UrlSource.LESZEK_PERF,
-            UrlSource.PINPOINT_CLASSIC,
-            UrlSource.LESZEK_PERF_DEV,
-        ),
+      UrlSource.all(),
+      (
+        UrlSource.LESZEK_PERF,
+        UrlSource.PINPOINT_CLASSIC,
+        UrlSource.LESZEK_PERF_DEV,
+      ),
     )
     job_info = PinpointJobInfo(job_id="test-id", status=JobStatus.COMPLETED)
     self.assertEqual(
-        job_info.url,
-        "https://pinpoint-dot-chromeperf.appspot.com/job/test-id",
+      job_info.url,
+      "https://pinpoint-dot-chromeperf.appspot.com/job/test-id",
     )
     self.assertEqual(job_info.short_url, "http://go/l_/r/test-id")
     self.assertEqual(
-        UrlSource.PINPOINT_CLASSIC.format_short_job_url("test-id"),
-        "http://go/j_/test-id",
+      UrlSource.PINPOINT_CLASSIC.format_short_job_url("test-id"),
+      "http://go/j_/test-id",
     )
     self.assertEqual(
-        UrlSource.LESZEK_PERF.format_short_job_url("test-id"),
-        "http://go/l_/r/test-id",
+      UrlSource.LESZEK_PERF.format_short_job_url("test-id"),
+      "http://go/l_/r/test-id",
     )
     self.assertEqual(
-        UrlSource.LESZEK_PERF_DEV.format_short_job_url("test-id"),
-        "https://leszek-perf-dev.corp.goog/r/test-id",
+      UrlSource.LESZEK_PERF_DEV.format_short_job_url("test-id"),
+      "https://leszek-perf-dev.corp.goog/r/test-id",
     )
     self.assertIn("http://go/l_/r/test-id", job_info.short_url_link)
     self.assertEqual(job_info.formatted_results_url, "")
 
     job_with_results = PinpointJobInfo(
-        job_id="test-id",
-        status=JobStatus.COMPLETED,
-        results_url="https://example.com/results.html",
+      job_id="test-id",
+      status=JobStatus.COMPLETED,
+      results_url="https://example.com/results.html",
     )
-    self.assertIn("https://example.com/results.html",
-                  job_with_results.formatted_results_url)
+    self.assertIn(
+      "https://example.com/results.html", job_with_results.formatted_results_url
+    )
 
   def test_differences_str(self):
     job_info = PinpointJobInfo(
-        job_id="1", status=JobStatus.COMPLETED, differences=None)
+      job_id="1", status=JobStatus.COMPLETED, differences=None
+    )
     self.assertEqual(job_info.differences_str, "")
 
     job_info = PinpointJobInfo(
-        job_id="1", status=JobStatus.COMPLETED, differences=0)
+      job_id="1", status=JobStatus.COMPLETED, differences=0
+    )
     self.assertEqual(job_info.differences_str, "0")
 
     job_info = PinpointJobInfo(
-        job_id="1", status=JobStatus.COMPLETED, differences=42)
+      job_id="1", status=JobStatus.COMPLETED, differences=42
+    )
     self.assertEqual(job_info.differences_str, "42")
 
   def test_status_display(self):
-    job_info = PinpointJobInfo.from_json({
+    job_info = PinpointJobInfo.from_json(
+      {
         "job_id": "1",
         "status": "Running",
-    })
+      }
+    )
     self.assertEqual(job_info.status_display, "🏃 running")
 
-    job_info = PinpointJobInfo.from_json({
+    job_info = PinpointJobInfo.from_json(
+      {
         "job_id": "1",
         "status": "completed",
-    })
+      }
+    )
     self.assertEqual(job_info.status_display, "✅ completed")
 
-    job_info = PinpointJobInfo.from_json({
+    job_info = PinpointJobInfo.from_json(
+      {
         "job_id": "1",
         "status": "queued",
-    })
+      }
+    )
     self.assertEqual(job_info.status_display, "⌛ queued")
 
-    job_info = PinpointJobInfo.from_json({
+    job_info = PinpointJobInfo.from_json(
+      {
         "job_id": "1",
         "status": "cancelled",
-    })
+      }
+    )
     self.assertEqual(job_info.status_display, "🛑 cancelled")
 
-    job_info = PinpointJobInfo.from_json({
+    job_info = PinpointJobInfo.from_json(
+      {
         "job_id": "1",
         "status": "failed",
-    })
+      }
+    )
     self.assertEqual(job_info.status_display, "❌ failed")
 
-    job_info = PinpointJobInfo.from_json({
+    job_info = PinpointJobInfo.from_json(
+      {
         "job_id": "1",
         "status": "unknown_custom_state",
-    })
+      }
+    )
     self.assertEqual(job_info.status_display, "unknown_custom_state")
 
     job_info = PinpointJobInfo(job_id="1", status=JobStatus.RUNNING)
@@ -424,31 +483,34 @@ class PinpointJobInfoTest(BaseCrossbenchTestCase):
 
   def test_job_type(self):
     job_info = PinpointJobInfo(
-        job_id="1",
-        status=JobStatus.COMPLETED,
-        comparison_mode=ComparisonMode.PERFORMANCE)
+      job_id="1",
+      status=JobStatus.COMPLETED,
+      comparison_mode=ComparisonMode.PERFORMANCE,
+    )
     self.assertEqual(job_info.job_type, "bisect")
 
     job_info = PinpointJobInfo(
-        job_id="1",
-        status=JobStatus.COMPLETED,
-        comparison_mode=ComparisonMode.TRY)
+      job_id="1", status=JobStatus.COMPLETED, comparison_mode=ComparisonMode.TRY
+    )
     self.assertEqual(job_info.job_type, "try")
 
     job_info = PinpointJobInfo(job_id="1", status=JobStatus.COMPLETED)
     self.assertEqual(job_info.job_type, "")
 
     job_info = PinpointJobInfo(
-        job_id="1", status=JobStatus.COMPLETED, comparison_mode=None)
+      job_id="1", status=JobStatus.COMPLETED, comparison_mode=None
+    )
     self.assertEqual(job_info.job_type, "")
 
   def test_time_formatting(self):
-    job_info = PinpointJobInfo.from_json({
+    job_info = PinpointJobInfo.from_json(
+      {
         "job_id": "1",
         "created": "2024-01-01T12:00:00Z",
         "started": "2024-01-01T12:05:00+00:00",
         "completed": "invalid-time",
-    })
+      }
+    )
     self.assertEqual(job_info.formatted_created, "2024-01-01 12:00:00")
     self.assertEqual(job_info.formatted_started, "2024-01-01 12:05:00")
     self.assertEqual(job_info.formatted_completed, "invalid-time")
@@ -458,22 +520,22 @@ class PinpointJobInfoTest(BaseCrossbenchTestCase):
     entries = job_info.to_status_entries()
     labels = [k for k, _ in entries]
     expected_labels = [
-        "Job ID",
-        "Status",
-        "URL",
-        "Type",
-        "Benchmark",
-        "Bot",
-        "Story",
-        "Bug",
-        "User",
-        "Created",
-        "Started",
-        "Completed",
-        "Progress",
-        "Differences",
-        "Results URL",
-        "Cancel Reason",
+      "Job ID",
+      "Status",
+      "URL",
+      "Type",
+      "Benchmark",
+      "Bot",
+      "Story",
+      "Bug",
+      "User",
+      "Created",
+      "Started",
+      "Completed",
+      "Progress",
+      "Differences",
+      "Results URL",
+      "Cancel Reason",
     ]
     self.assertEqual(labels, expected_labels)
     entry_dict = dict(entries)
@@ -491,15 +553,18 @@ class PinpointJobInfoTest(BaseCrossbenchTestCase):
     self.assertEqual(entry_dict["Completed"], "2024-01-01 12:30:00")
     self.assertEqual(entry_dict["Progress"], "3/20 (15%)")
     self.assertEqual(entry_dict["Differences"], "0")
-    self.assertIn("https://storage.cloud.google.com/results.html",
-                  entry_dict["Results URL"])
+    self.assertIn(
+      "https://storage.cloud.google.com/results.html", entry_dict["Results URL"]
+    )
     self.assertEqual(entry_dict["Cancel Reason"], "User cancelled")
 
   def test_to_status_entries_sparse(self):
-    job_info = PinpointJobInfo.from_json({
+    job_info = PinpointJobInfo.from_json(
+      {
         "job_id": "simple-123",
         "status": "Queued",
-    })
+      }
+    )
     entries = job_info.to_status_entries()
     labels = [k for k, _ in entries]
     self.assertEqual(labels, ["Job ID", "Status", "URL"])
@@ -509,19 +574,23 @@ class PinpointJobInfoTest(BaseCrossbenchTestCase):
     self.assertIn("http://go/l_/r/simple-123", entry_dict["URL"])
 
   def test_status_helpers(self):
-    running_job = PinpointJobInfo.from_json({
+    running_job = PinpointJobInfo.from_json(
+      {
         "job_id": "1",
         "status": "Running",
-    })
+      }
+    )
     self.assertFalse(running_job.is_terminal)
     self.assertFalse(running_job.is_failed)
     self.assertFalse(running_job.is_cancelled)
     self.assertFalse(running_job.is_completed)
 
-    completed_job = PinpointJobInfo.from_json({
+    completed_job = PinpointJobInfo.from_json(
+      {
         "job_id": "2",
         "status": "Completed",
-    })
+      }
+    )
     self.assertTrue(completed_job.is_terminal)
     self.assertFalse(completed_job.is_failed)
     self.assertFalse(completed_job.is_cancelled)
@@ -533,10 +602,12 @@ class PinpointJobInfoTest(BaseCrossbenchTestCase):
     self.assertFalse(failed_job.is_cancelled)
     self.assertFalse(failed_job.is_completed)
 
-    cancelled_job = PinpointJobInfo.from_json({
+    cancelled_job = PinpointJobInfo.from_json(
+      {
         "job_id": "4",
         "status": "Cancelled",
-    })
+      }
+    )
     self.assertTrue(cancelled_job.is_terminal)
     self.assertFalse(cancelled_job.is_failed)
     self.assertTrue(cancelled_job.is_cancelled)
@@ -556,12 +627,15 @@ class PinpointJobInfoTest(BaseCrossbenchTestCase):
     self.assertEqual(job_dict["bug"], "9999")
     self.assertEqual(job_dict["user"], "tester@example.com")
     self.assertEqual(job_dict["name"], "test-run-1")
-    self.assertEqual(job_dict["created"],
-                     dt.datetime(2024, 1, 1, 12, 0, 0, tzinfo=dt.UTC))
-    self.assertEqual(job_dict["started"],
-                     dt.datetime(2024, 1, 1, 12, 1, 0, tzinfo=dt.UTC))
-    self.assertEqual(job_dict["completed"],
-                     dt.datetime(2024, 1, 1, 12, 30, 0, tzinfo=dt.UTC))
+    self.assertEqual(
+      job_dict["created"], dt.datetime(2024, 1, 1, 12, 0, 0, tzinfo=dt.UTC)
+    )
+    self.assertEqual(
+      job_dict["started"], dt.datetime(2024, 1, 1, 12, 1, 0, tzinfo=dt.UTC)
+    )
+    self.assertEqual(
+      job_dict["completed"], dt.datetime(2024, 1, 1, 12, 30, 0, tzinfo=dt.UTC)
+    )
     self.assertEqual(job_dict["base_commit"], "aaa111")
     self.assertEqual(job_dict["exp_commit"], "bbb222")
     self.assertEqual(job_dict["base_patch"], "https://crrev.com/c/111")
@@ -569,20 +643,21 @@ class PinpointJobInfoTest(BaseCrossbenchTestCase):
     self.assertEqual(job_dict["attempts"], 10)
     self.assertEqual(job_dict["differences"], 0)
     self.assertEqual(job_dict["progress"], "3/20 (15%)")
-    self.assertEqual(job_dict["results_url"],
-                     "https://storage.cloud.google.com/results.html")
+    self.assertEqual(
+      job_dict["results_url"], "https://storage.cloud.google.com/results.html"
+    )
     self.assertEqual(job_dict["cancel_reason"], "User cancelled")
 
   def test_from_json_property_fallbacks(self):
     data: JsonDict = {
-        "job_id": "1",
-        "story": "top_story",
-        "benchmark": "top_benchmark",
-        "arguments": {
-            "story": "arg_story",
-            "user": "None",
-            "name": "  spaced_name  ",
-        },
+      "job_id": "1",
+      "story": "top_story",
+      "benchmark": "top_benchmark",
+      "arguments": {
+        "story": "arg_story",
+        "user": "None",
+        "name": "  spaced_name  ",
+      },
     }
     job_info = PinpointJobInfo.from_json(data)
     self.assertEqual(job_info.story, "arg_story")
@@ -592,72 +667,81 @@ class PinpointJobInfoTest(BaseCrossbenchTestCase):
     self.assertIsNone(job_info.bot)
 
   def test_from_json_invalid_arguments(self):
-    job_info = PinpointJobInfo.from_json({
+    job_info = PinpointJobInfo.from_json(
+      {
         "job_id": "1",
         "arguments": "invalid",
-    })
+      }
+    )
     self.assertEqual(job_info.job_id, "1")
     self.assertIsNone(job_info.story)
 
   def test_from_json_progress_bisect(self):
     bisect_data: JsonDict = {
-        "job_id":
-            "1",
-        "status":
-            "Running",
-        "comparison_mode":
-            "performance",
-        "state": [
+      "job_id": "1",
+      "status": "Running",
+      "comparison_mode": "performance",
+      "state": [
+        {
+          "attempts": [
             {
-                "attempts": [{
-                    "executions": [{}, {
-                        "completed": True,
-                    }],
-                }],
-            },
-            {
-                "attempts": [],
-            },
-        ],
+              "executions": [
+                {},
+                {
+                  "completed": True,
+                },
+              ],
+            }
+          ],
+        },
+        {
+          "attempts": [],
+        },
+      ],
     }
     job_info = PinpointJobInfo.from_json(bisect_data)
     self.assertEqual(job_info.progress, "2 commits, 1 attempt")
 
   def test_from_json_progress_bisect_with_start_git_hash(self):
     data: JsonDict = {
-        "job_id": "1",
-        "status": "Running",
-        "arguments": {
-            "start_git_hash": "abc",
-        },
-        "state": [{
-            "attempts": [],
-        }],
+      "job_id": "1",
+      "status": "Running",
+      "arguments": {
+        "start_git_hash": "abc",
+      },
+      "state": [
+        {
+          "attempts": [],
+        }
+      ],
     }
     job_info = PinpointJobInfo.from_json(data)
     self.assertEqual(job_info.progress, "1 commit")
 
   def test_from_json_progress_try(self):
     data: JsonDict = {
-        "job_id":
-            "1",
-        "status":
-            "Running",
-        "arguments": {
-            "initial_attempt_count": "10",
+      "job_id": "1",
+      "status": "Running",
+      "arguments": {
+        "initial_attempt_count": "10",
+      },
+      "state": [
+        {
+          "attempts": [
+            {
+              "executions": [
+                {},
+                {
+                  "completed": True,
+                },
+              ],
+            }
+          ],
         },
-        "state": [
-            {
-                "attempts": [{
-                    "executions": [{}, {
-                        "completed": True,
-                    }],
-                }],
-            },
-            {
-                "attempts": [],
-            },
-        ],
+        {
+          "attempts": [],
+        },
+      ],
     }
     job_info = PinpointJobInfo.from_json(data)
     self.assertEqual(job_info.progress, "1/20 (5%)")
@@ -710,9 +794,11 @@ class PinpointJobInfoTest(BaseCrossbenchTestCase):
 
   def test_comparison_mode(self):
     self.assertEqual(
-        ComparisonMode.parse("performance"), ComparisonMode.PERFORMANCE)
+      ComparisonMode.parse("performance"), ComparisonMode.PERFORMANCE
+    )
     self.assertEqual(
-        ComparisonMode.parse("PERFORMANCE"), ComparisonMode.PERFORMANCE)
+      ComparisonMode.parse("PERFORMANCE"), ComparisonMode.PERFORMANCE
+    )
     self.assertEqual(ComparisonMode.parse(" try "), ComparisonMode.TRY)
     self.assertIsNone(ComparisonMode.parse("unknown"))
     self.assertIsNone(ComparisonMode.parse(""))

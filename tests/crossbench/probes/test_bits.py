@@ -13,8 +13,12 @@ from typing import Any, override
 from unittest import mock
 
 from crossbench import path as pth
-from crossbench.probes.bits import BitsMergePolicy, BitsProbe, \
-    BitsProbeContext, _ClockSync
+from crossbench.probes.bits import (
+  BitsMergePolicy,
+  BitsProbe,
+  BitsProbeContext,
+  _ClockSync,
+)
 from crossbench.probes.cb_perfetto.perfetto import PerfettoProbe
 from crossbench.probes.probe import ProbeIncompatibleBrowser
 from crossbench.probes.probe_error import ProbeValidationError
@@ -24,7 +28,6 @@ from tests.crossbench.probes.helper import BaseProbeTestCase
 
 
 class BitsProbeTestCase(BaseProbeTestCase):
-
   @override
   def setUp(self) -> None:
     super().setUp()
@@ -32,19 +35,23 @@ class BitsProbeTestCase(BaseProbeTestCase):
     self.fs.create_file(self.bits_path)
 
   def test_bits_probe_parsing_valid(self) -> None:
-    probe = BitsProbe.parse_dict({
+    probe = BitsProbe.parse_dict(
+      {
         "bits_path": str(self.bits_path),
         "bits_out": "run_id",
         "duration": "1s",
-    })
+      }
+    )
     self.assertEqual(probe.bits_path, self.bits_path)
     self.assertEqual(probe.bits_out, "run_id")
     self.assertEqual(probe.duration, dt.timedelta(seconds=1))
 
   def test_bits_probe_parsing_default_out(self) -> None:
-    probe = BitsProbe.parse_dict({
+    probe = BitsProbe.parse_dict(
+      {
         "bits_path": str(self.bits_path),
-    })
+      }
+    )
     self.assertEqual(probe.bits_out, "")
     run = self.mock_run()
     now = dt.datetime(2026, 7, 2, 17, 0, 55)
@@ -82,106 +89,129 @@ class BitsProbeTestCase(BaseProbeTestCase):
 
   def test_bits_probe_parsing_zero_duration(self) -> None:
     with self.assertRaises(argparse.ArgumentTypeError):
-      BitsProbe.parse_dict({
+      BitsProbe.parse_dict(
+        {
           "bits_path": str(self.bits_path),
           "bits_out": "run_id",
           "duration": "0s",
-      })
+        }
+      )
 
   def test_bits_probe_parsing_subsecond_duration(self) -> None:
     with self.assertRaises(ValueError):
-      BitsProbe.parse_dict({
+      BitsProbe.parse_dict(
+        {
           "bits_path": str(self.bits_path),
           "bits_out": "run_id",
           "duration": "500ms",
-      })
+        }
+      )
 
   def test_bits_probe_parsing_negative_duration(self) -> None:
     with self.assertRaises(argparse.ArgumentTypeError):
-      BitsProbe.parse_dict({
+      BitsProbe.parse_dict(
+        {
           "bits_path": str(self.bits_path),
           "bits_out": "run_id",
           "duration": "-5s",
-      })
+        }
+      )
 
   def test_bits_probe_parsing_default_duration(self) -> None:
-    probe = BitsProbe.parse_dict({
+    probe = BitsProbe.parse_dict(
+      {
         "bits_path": str(self.bits_path),
         "bits_out": "test_run_id",
-    })
+      }
+    )
     self.assertEqual(probe.bits_path, self.bits_path)
     self.assertEqual(probe.bits_out, "test_run_id")
     self.assertEqual(probe.duration, BitsProbe.DEFAULT_DURATION)
 
   def test_bits_probe_parsing_custom_duration(self) -> None:
-    probe = BitsProbe.parse_dict({
+    probe = BitsProbe.parse_dict(
+      {
         "bits_path": str(self.bits_path),
         "bits_out": "test_run_id",
         "duration": "2m",
-    })
+      }
+    )
     self.assertEqual(probe.bits_path, self.bits_path)
     self.assertEqual(probe.bits_out, "test_run_id")
     self.assertEqual(probe.duration, dt.timedelta(minutes=2))
     self.assertEqual(probe.bits_device, "")
 
   def test_bits_probe_parsing_device(self) -> None:
-    probe = BitsProbe.parse_dict({
+    probe = BitsProbe.parse_dict(
+      {
         "bits_path": str(self.bits_path),
         "bits_out": "test_run_id",
         "device": "custom_id",
-    })
+      }
+    )
     self.assertEqual(probe.bits_device, "custom_id")
 
   def test_bits_probe_parsing_device_empty(self) -> None:
-    probe_empty = BitsProbe.parse_dict({
+    probe_empty = BitsProbe.parse_dict(
+      {
         "bits_path": str(self.bits_path),
         "bits_out": "test_run_id",
         "device": "",
-    })
+      }
+    )
     self.assertEqual(probe_empty.bits_device, "")
 
   def test_bits_probe_parsing_no_port_specified(self) -> None:
-    probe = BitsProbe.parse_dict({
+    probe = BitsProbe.parse_dict(
+      {
         "bits_path": str(self.bits_path),
         "bits_out": "test_run_id",
-    })
+      }
+    )
     self.assertEqual(probe.port, BitsProbe.DEFAULT_PORT)
 
   def test_bits_probe_parsing_custom_port(self) -> None:
-    probe = BitsProbe.parse_dict({
+    probe = BitsProbe.parse_dict(
+      {
         "bits_path": str(self.bits_path),
         "bits_out": "test_run_id",
         "port": 1234,
-    })
+      }
+    )
     self.assertEqual(probe.port, 1234)
 
   def test_bits_probe_parsing_zero_port(self) -> None:
     with self.assertRaises(argparse.ArgumentTypeError):
-      BitsProbe.parse_dict({
+      BitsProbe.parse_dict(
+        {
           "bits_path": str(self.bits_path),
           "bits_out": "run_id",
           "port": 0,
-      })
+        }
+      )
 
   def test_bits_probe_parsing_negative_port(self) -> None:
     with self.assertRaises(argparse.ArgumentTypeError):
-      BitsProbe.parse_dict({
+      BitsProbe.parse_dict(
+        {
           "bits_path": str(self.bits_path),
           "bits_out": "run_id",
           "port": -8080,
-      })
+        }
+      )
 
   def _assert_merges(self, probe: BitsProbe, merges: bool) -> None:
     """The merge policy is only observable through merge_browsers()."""
     group = mock.MagicMock()
     with (
-        mock.patch(
-            "crossbench.probes.bits.merge.merge_results", return_value=[]) as
-        mock_merge,
-        mock.patch.object(
-            BitsProbe,
-            "symlinked_single_run_result",
-            return_value=EmptyProbeResult()) as mock_default,
+      mock.patch(
+        "crossbench.probes.bits.merge.merge_results", return_value=[]
+      ) as mock_merge,
+      mock.patch.object(
+        BitsProbe,
+        "symlinked_single_run_result",
+        return_value=EmptyProbeResult(),
+      ) as mock_default,
     ):
       probe.merge_browsers(group)
     self.assertEqual(mock_merge.called, merges)
@@ -194,23 +224,27 @@ class BitsProbeTestCase(BaseProbeTestCase):
   def test_bits_probe_parsing_merge_policy(self) -> None:
     for key in ("merge_policy", "merge-policy"):
       for value, merges in (
-          ("separate", False),
-          ("merge", True),
-          ("MERGE", True),
+        ("separate", False),
+        ("merge", True),
+        ("MERGE", True),
       ):
         with self.subTest(key=key, value=value):
-          probe = BitsProbe.parse_dict({
+          probe = BitsProbe.parse_dict(
+            {
               "bits_path": str(self.bits_path),
               key: value,
-          })
+            }
+          )
           self._assert_merges(probe, merges)
 
   def test_bits_probe_parsing_invalid_merge_policy(self) -> None:
     with self.assertRaises(argparse.ArgumentTypeError):
-      BitsProbe.parse_dict({
+      BitsProbe.parse_dict(
+        {
           "bits_path": str(self.bits_path),
           "merge_policy": "zip",
-      })
+        }
+      )
 
   def test_validate_browser_incompatible(self) -> None:
     probe = BitsProbe(self.bits_path, "test_run_id")
@@ -227,18 +261,18 @@ class BitsProbeTestCase(BaseProbeTestCase):
     env = mock.MagicMock()
     probe.validate_browser(env, browser)
 
-  def _check_probe_lifecycle(self,
-                             bits_device: str,
-                             port: int | None = None) -> None:
+  def _check_probe_lifecycle(
+    self, bits_device: str, port: int | None = None
+  ) -> None:
     kwargs: dict[str, Any] = {}
     if port is not None:
       kwargs["port"] = port
     probe = BitsProbe(
-        self.bits_path,
-        "test_run_id",
-        bits_device=bits_device,
-        duration=dt.timedelta(seconds=120),
-        **kwargs,
+      self.bits_path,
+      "test_run_id",
+      bits_device=bits_device,
+      duration=dt.timedelta(seconds=120),
+      **kwargs,
     )
     run = self.mock_run()
     run.browser_session.browser.platform.serial_id = "serial"
@@ -265,17 +299,17 @@ class BitsProbeTestCase(BaseProbeTestCase):
       expected_device_args = ["--device", bits_device]
 
     self.assertSequenceEqual(
-        create_call.args,
-        (
-            self.bits_path,
-            "--create",
-            "test_run_id",
-            "--duration",
-            "120s",
-            *expected_device_args,
-            "--service_port",
-            str(expected_port),
-        ),
+      create_call.args,
+      (
+        self.bits_path,
+        "--create",
+        "test_run_id",
+        "--duration",
+        "120s",
+        *expected_device_args,
+        "--service_port",
+        str(expected_port),
+      ),
     )
     self.assertIn("stdout", create_call.kwargs)
     self.assertIn("stderr", create_call.kwargs)
@@ -287,30 +321,30 @@ class BitsProbeTestCase(BaseProbeTestCase):
     self.assertEqual(len(host_platform.sh.call_args_list), 4)
     _, stop_call, _, export_call = host_platform.sh.call_args_list
     self.assertSequenceEqual(
-        stop_call.args,
-        (
-            self.bits_path,
-            "--stop",
-            "test_run_id",
-            *expected_stop_args,
-        ),
+      stop_call.args,
+      (
+        self.bits_path,
+        "--stop",
+        "test_run_id",
+        *expected_stop_args,
+      ),
     )
     self.assertIn("stdout", stop_call.kwargs)
     self.assertIn("stderr", stop_call.kwargs)
 
     expected_perfetto_path = context.local_result_path / "test_run_id.pftrace"
     self.assertSequenceEqual(
-        export_call.args,
-        (
-            self.bits_path,
-            "--collection",
-            "test_run_id",
-            "--channels",
-            BitsProbe.PERFETTO_CHANNELS,
-            "--write_perfetto",
-            expected_perfetto_path,
-            *expected_stop_args,
-        ),
+      export_call.args,
+      (
+        self.bits_path,
+        "--collection",
+        "test_run_id",
+        "--channels",
+        BitsProbe.PERFETTO_CHANNELS,
+        "--write_perfetto",
+        expected_perfetto_path,
+        *expected_stop_args,
+      ),
     )
     self.assertIn("stdout", export_call.kwargs)
     self.assertIn("stderr", export_call.kwargs)
@@ -341,7 +375,8 @@ class BitsProbeTestCase(BaseProbeTestCase):
     run = self.mock_run()
     host_platform = run.browser_session.browser.host_platform
     host_platform.sh = mock.MagicMock(
-        side_effect=subprocess.CalledProcessError(1, "bits"))
+      side_effect=subprocess.CalledProcessError(1, "bits")
+    )
 
     context = probe.create_context(run)
     with self.assertRaises(subprocess.CalledProcessError):
@@ -351,9 +386,9 @@ class BitsProbeTestCase(BaseProbeTestCase):
 
   def test_collect_channel_averages(self) -> None:
     probe = BitsProbe(
-        self.bits_path,
-        "test_run_id",
-        port=1234,
+      self.bits_path,
+      "test_run_id",
+      port=1234,
     )
     run = self.mock_run()
     host_platform = run.browser_session.browser.host_platform
@@ -365,25 +400,26 @@ class BitsProbeTestCase(BaseProbeTestCase):
 
     self.assertEqual(len(host_platform.sh.call_args_list), 4)
     _create_call, _stop_call, avg_call, _export_call = (
-        host_platform.sh.call_args_list)
+      host_platform.sh.call_args_list
+    )
     self.assertEqual(
-        avg_call.args,
-        (
-            self.bits_path,
-            "--print_channel_averages",
-            "test_run_id",
-            "--service_port",
-            "1234",
-        ),
+      avg_call.args,
+      (
+        self.bits_path,
+        "--print_channel_averages",
+        "test_run_id",
+        "--service_port",
+        "1234",
+      ),
     )
     self.assertIn("stdout", avg_call.kwargs)
     avg_path = (
-        context.local_result_path / BitsProbe.BITS_CHANNEL_AVERAGES_CSV_NAME)
+      context.local_result_path / BitsProbe.BITS_CHANNEL_AVERAGES_CSV_NAME
+    )
     self.assertTrue(avg_path.exists())
 
 
 class ClockSyncTestCase(unittest.TestCase):
-
   def setUp(self) -> None:
     super().setUp()
     patcher = mock.patch("crossbench.probes.bits.time")
@@ -402,12 +438,14 @@ class ClockSyncTestCase(unittest.TestCase):
     self.time_ns.side_effect = [900, 1_100] * _ClockSync.SAMPLE_COUNT
     self.device.clock_boottime_ns.return_value = 5_000
     self.assertDictEqual(
-        _ClockSync(self.device).to_json(), {
-            "host_realtime_ns": 1_000,
-            "device_boottime_ns": 5_000,
-            "offset_ns": 4_000,
-            "round_trip_ns": 200,
-        })
+      _ClockSync(self.device).to_json(),
+      {
+        "host_realtime_ns": 1_000,
+        "device_boottime_ns": 5_000,
+        "offset_ns": 4_000,
+        "round_trip_ns": 200,
+      },
+    )
 
   def test_best_of_three(self) -> None:
     # Round trips of 200, 100 and 400 host ticks: the second sample wins,
@@ -416,15 +454,18 @@ class ClockSyncTestCase(unittest.TestCase):
     self.device.clock_boottime_ns.side_effect = [10, 20, 30]
     sync = _ClockSync(self.device)
     self.assertEqual(
-        (sync.round_trip_ns, sync.host_realtime_ns, sync.device_boottime_ns),
-        (100, 1050, 20))
-    self.assertEqual(self.device.clock_boottime_ns.call_count,
-                     _ClockSync.SAMPLE_COUNT)
+      (sync.round_trip_ns, sync.host_realtime_ns, sync.device_boottime_ns),
+      (100, 1050, 20),
+    )
+    self.assertEqual(
+      self.device.clock_boottime_ns.call_count, _ClockSync.SAMPLE_COUNT
+    )
 
 
 class _BitsProbeContextTestCase(BaseProbeTestCase):
   """Shared setup: a context whose BITS commands are mocked out, writing the
   BITS trace on --write_perfetto if trace_bytes is given."""
+
   # Overrides `unittest.TestCase.run()` method with a mock Run attribute.
   # pyrefly: ignore[bad-override]
   run: mock.MagicMock
@@ -446,8 +487,8 @@ class _BitsProbeContextTestCase(BaseProbeTestCase):
     time_patcher.start().time_ns.return_value = self.HOST_REALTIME_NS
 
   def _create_context(
-      self,
-      trace_bytes: bytes | None = None,
+    self,
+    trace_bytes: bytes | None = None,
   ) -> tuple[BitsProbeContext, pth.LocalPath]:
     probe = BitsProbe(self.bits_path, "test_run_id", port=1234)
     context = probe.create_context(self.run)
@@ -468,7 +509,6 @@ class _BitsProbeContextTestCase(BaseProbeTestCase):
 
 
 class BitsProbePerfettoTestCase(_BitsProbeContextTestCase):
-
   def test_save_perfetto(self) -> None:
     context, perfetto_path = self._create_context(b"perfetto-bytes")
     context.start_story_setup()
@@ -476,15 +516,17 @@ class BitsProbePerfettoTestCase(_BitsProbeContextTestCase):
     context.stop_story_run()
     self.assertEqual(perfetto_path.read_bytes(), b"perfetto-bytes")
     self.assertEqual(
-        self._read_bits_json(context), {
-            "bits_out_id": "test_run_id",
-            "clock_sync": {
-                "host_realtime_ns": self.HOST_REALTIME_NS,
-                "device_boottime_ns": self.DEVICE_BOOTTIME_NS,
-                "offset_ns": self.DEVICE_BOOTTIME_NS - self.HOST_REALTIME_NS,
-                "round_trip_ns": 0,
-            },
-        })
+      self._read_bits_json(context),
+      {
+        "bits_out_id": "test_run_id",
+        "clock_sync": {
+          "host_realtime_ns": self.HOST_REALTIME_NS,
+          "device_boottime_ns": self.DEVICE_BOOTTIME_NS,
+          "offset_ns": self.DEVICE_BOOTTIME_NS - self.HOST_REALTIME_NS,
+          "round_trip_ns": 0,
+        },
+      },
+    )
 
     result = context.teardown()
     self.assertEqual(result.get_all("pftrace"), [perfetto_path])
@@ -494,8 +536,9 @@ class BitsProbePerfettoTestCase(_BitsProbeContextTestCase):
     context.start_story_run()
     with mock.patch("logging.critical") as mock_critical:
       context.stop_story_run()
-      mock_critical.assert_called_once_with("Missing BITS Perfetto trace: %s",
-                                            perfetto_path)
+      mock_critical.assert_called_once_with(
+        "Missing BITS Perfetto trace: %s", perfetto_path
+      )
 
   def test_clock_sync_failure_keeps_bits_out_id(self) -> None:
     context, _ = self._create_context(b"perfetto-bytes")
@@ -505,26 +548,32 @@ class BitsProbePerfettoTestCase(_BitsProbeContextTestCase):
     context.start_story_run()
     context.stop_story_run()
     self.assertEqual(
-        self._read_bits_json(context), {"bits_out_id": "test_run_id"})
+      self._read_bits_json(context), {"bits_out_id": "test_run_id"}
+    )
 
   def test_clock_sync_is_read_during_story_setup(self) -> None:
     context, _ = self._create_context(b"perfetto-bytes")
     with mock.patch("logging.info") as mock_info:
       context.start_story_setup()
       mock_info.assert_any_call(
-          "BITS clock sync: device - host = %d ns (+/- %d ns)",
-          self.DEVICE_BOOTTIME_NS - self.HOST_REALTIME_NS, 0)
-    self.assertEqual(self.device.clock_boottime_ns.call_count,
-                     _ClockSync.SAMPLE_COUNT)
+        "BITS clock sync: device - host = %d ns (+/- %d ns)",
+        self.DEVICE_BOOTTIME_NS - self.HOST_REALTIME_NS,
+        0,
+      )
+    self.assertEqual(
+      self.device.clock_boottime_ns.call_count, _ClockSync.SAMPLE_COUNT
+    )
     context.start_story_run()
     context.stop_story_run()
-    self.assertEqual(self.device.clock_boottime_ns.call_count,
-                     _ClockSync.SAMPLE_COUNT)
+    self.assertEqual(
+      self.device.clock_boottime_ns.call_count, _ClockSync.SAMPLE_COUNT
+    )
 
   def test_log_results(self) -> None:
     probe = BitsProbe(self.bits_path, "test_run_id")
-    trace_path = pth.LocalPath(
-        self.platform.default_tmp_dir) / "test_run_id.pftrace"
+    trace_path = (
+      pth.LocalPath(self.platform.default_tmp_dir) / "test_run_id.pftrace"
+    )
     self.fs.create_file(trace_path, contents=b"perfetto-bytes")
     run = mock.MagicMock()
     run.results = {probe: LocalProbeResult(file=(trace_path,))}
@@ -539,8 +588,9 @@ class BitsProbePerfettoTestCase(_BitsProbeContextTestCase):
 
   def test_log_results_merged(self) -> None:
     probe = BitsProbe(self.bits_path, "test_run_id")
-    trace_path = pth.LocalPath(
-        self.platform.default_tmp_dir) / "test_run_id.pftrace"
+    trace_path = (
+      pth.LocalPath(self.platform.default_tmp_dir) / "test_run_id.pftrace"
+    )
     self.fs.create_file(trace_path, contents=b"perfetto-bytes")
     archive_path = pth.LocalPath(self.platform.default_tmp_dir) / "merged.zip"
     self.fs.create_file(archive_path, contents=b"zip")
@@ -581,7 +631,8 @@ class BitsProbeMergeTestCase(BaseProbeTestCase):
     self.group = mock.MagicMock()
     self.group.path = self.results_dir
     self.group.get_local_probe_result_path.return_value = (
-        self.results_dir / "bits")
+      self.results_dir / "bits"
+    )
     self.archives = [self.results_dir / "bits" / "chrome_story_0.zip"]
     for archive in self.archives:
       self.fs.create_file(archive, contents=b"zip")
@@ -589,32 +640,35 @@ class BitsProbeMergeTestCase(BaseProbeTestCase):
   def test_merge_browsers(self) -> None:
     probe = BitsProbe(self.bits_path, merge_policy=BitsMergePolicy.MERGE)
     with mock.patch(
-        "crossbench.probes.bits.merge.merge_results",
-        return_value=self.archives) as mock_merge:
+      "crossbench.probes.bits.merge.merge_results", return_value=self.archives
+    ) as mock_merge:
       result = probe.merge_browsers(self.group)
-    mock_merge.assert_called_once_with(self.results_dir,
-                                       self.results_dir / "bits")
+    mock_merge.assert_called_once_with(
+      self.results_dir, self.results_dir / "bits"
+    )
     self.group.get_local_probe_result_path.assert_called_once_with(probe)
     self.assertEqual(result.get_all("zip"), self.archives)
 
   def test_merge_browsers_propagates_errors(self) -> None:
     probe = BitsProbe(self.bits_path, merge_policy=BitsMergePolicy.MERGE)
     with (
-        mock.patch(
-            "crossbench.probes.bits.merge.merge_results",
-            side_effect=ValueError("No runs found")),
-        self.assertRaisesRegex(ValueError, "No runs found"),
+      mock.patch(
+        "crossbench.probes.bits.merge.merge_results",
+        side_effect=ValueError("No runs found"),
+      ),
+      self.assertRaisesRegex(ValueError, "No runs found"),
     ):
       probe.merge_browsers(self.group)
 
   def test_merge_browsers_separate(self) -> None:
     probe = BitsProbe(self.bits_path)
     with (
-        mock.patch("crossbench.probes.bits.merge.merge_results") as mock_merge,
-        mock.patch.object(
-            BitsProbe,
-            "symlinked_single_run_result",
-            return_value=EmptyProbeResult()) as mock_default,
+      mock.patch("crossbench.probes.bits.merge.merge_results") as mock_merge,
+      mock.patch.object(
+        BitsProbe,
+        "symlinked_single_run_result",
+        return_value=EmptyProbeResult(),
+      ) as mock_default,
     ):
       result = probe.merge_browsers(self.group)
     mock_merge.assert_not_called()
@@ -623,7 +677,6 @@ class BitsProbeMergeTestCase(BaseProbeTestCase):
 
 
 class BitsProbeServiceTestCase(BaseProbeTestCase):
-
   @override
   def setUp(self) -> None:
     super().setUp()
@@ -641,7 +694,8 @@ class BitsProbeServiceTestCase(BaseProbeTestCase):
     self.mock_sh = sh_patcher.start()
 
     popen_patcher = mock.patch.object(
-        self.platform, "popen", return_value=self.mock_proc)
+      self.platform, "popen", return_value=self.mock_proc
+    )
     self.addCleanup(popen_patcher.stop)
     self.mock_popen = popen_patcher.start()
 
@@ -665,18 +719,18 @@ class BitsProbeServiceTestCase(BaseProbeTestCase):
     with mock.patch("logging.info") as mock_info:
       probe.setup(self.runner)
       mock_info.assert_called_with(
-          "%s (port: %s, device: %s).",
-          "BITS service is already running",
-          15909,
-          "device_1",
+        "%s (port: %s, device: %s).",
+        "BITS service is already running",
+        15909,
+        "device_1",
       )
     self.mock_sh.assert_called_once_with(
-        self.bits_path,
-        "--list_devices",
-        "--service_port",
-        "15909",
-        check=False,
-        capture_output=True,
+      self.bits_path,
+      "--list_devices",
+      "--service_port",
+      "15909",
+      check=False,
+      capture_output=True,
     )
     self.mock_popen.assert_not_called()
     probe.teardown()
@@ -688,18 +742,18 @@ class BitsProbeServiceTestCase(BaseProbeTestCase):
     with mock.patch("logging.info") as mock_info:
       probe.setup(self.runner)
       mock_info.assert_called_with(
-          "%s (port: %s, device: %s).",
-          "BITS service is already running",
-          15909,
-          "device_1",
+        "%s (port: %s, device: %s).",
+        "BITS service is already running",
+        15909,
+        "device_1",
       )
     self.mock_sh.assert_called_once_with(
-        self.bits_path,
-        "--list_devices",
-        "--service_port",
-        "15909",
-        check=False,
-        capture_output=True,
+      self.bits_path,
+      "--list_devices",
+      "--service_port",
+      "15909",
+      check=False,
+      capture_output=True,
     )
     self.mock_popen.assert_not_called()
     probe.teardown()
@@ -716,8 +770,9 @@ class BitsProbeServiceTestCase(BaseProbeTestCase):
 
   def test_setup_merge_policy_requires_perfetto(self) -> None:
     probe = BitsProbe(self.bits_path, merge_policy=BitsMergePolicy.MERGE)
-    with self.assertRaisesRegex(ProbeValidationError,
-                                r"requires the perfetto probe\.$"):
+    with self.assertRaisesRegex(
+      ProbeValidationError, r"requires the perfetto probe\.$"
+    ):
       probe.setup(self.runner)
     self.mock_sh.assert_not_called()
 
@@ -725,8 +780,9 @@ class BitsProbeServiceTestCase(BaseProbeTestCase):
     probe = BitsProbe(self.bits_path, merge_policy=BitsMergePolicy.MERGE)
     self.runner.is_probe_disabled.return_value = True
     with self.assertRaisesRegex(
-        ProbeValidationError,
-        r"requires the perfetto probe, which is disabled via --no-probe\.$"):
+      ProbeValidationError,
+      r"requires the perfetto probe, which is disabled via --no-probe\.$",
+    ):
       probe.setup(self.runner)
     self.runner.is_probe_disabled.assert_called_once_with(PerfettoProbe.NAME)
     self.mock_sh.assert_not_called()
@@ -751,26 +807,26 @@ class BitsProbeServiceTestCase(BaseProbeTestCase):
     self.fs.create_file(self.service_script)
     self.mock_sh.side_effect = [self._sh_error(), self._sh_result("device_1\n")]
     self.mock_proc.stdout.readline.side_effect = [
-        b"Preparing custom Bits temporary folder...\n",
-        b"Launching Bits service...\n",
-        b"######## INITIALIZING COLLECTORS ########\n",
-        b"[TS] (GB094B002A7) Received SW timestamp #1: host_ns=123\n",
+      b"Preparing custom Bits temporary folder...\n",
+      b"Launching Bits service...\n",
+      b"######## INITIALIZING COLLECTORS ########\n",
+      b"[TS] (GB094B002A7) Received SW timestamp #1: host_ns=123\n",
     ]
     probe = BitsProbe(self.bits_path, port=15909)
     with mock.patch("logging.info") as mock_info:
       probe.setup(self.runner)
       mock_info.assert_called_with(
-          "%s (port: %s, device: %s).",
-          "BITS service started",
-          15909,
-          "device_1",
+        "%s (port: %s, device: %s).",
+        "BITS service started",
+        15909,
+        "device_1",
       )
     self.mock_popen.assert_called_once_with(
-        str(self.service_script),
-        "--port",
-        "15909",
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
+      str(self.service_script),
+      "--port",
+      "15909",
+      stdout=subprocess.PIPE,
+      stderr=subprocess.STDOUT,
     )
     probe.teardown()
     self.mock_terminate.assert_called_once_with(self.mock_proc)
@@ -779,16 +835,16 @@ class BitsProbeServiceTestCase(BaseProbeTestCase):
     self.fs.create_file(self.service_script)
     self.mock_sh.side_effect = [self._sh_error(), self._sh_result("device_1\n")]
     self.mock_proc.stdout.readline.side_effect = [
-        "Received SW timestamp\n",
+      "Received SW timestamp\n",
     ]
     probe = BitsProbe(self.bits_path, port=12345)
     probe.setup(self.runner)
     self.mock_popen.assert_called_once_with(
-        str(self.service_script),
-        "--port",
-        "12345",
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
+      str(self.service_script),
+      "--port",
+      "12345",
+      stdout=subprocess.PIPE,
+      stderr=subprocess.STDOUT,
     )
     probe.teardown()
     self.mock_terminate.assert_called_once_with(self.mock_proc)
@@ -827,8 +883,8 @@ class BitsProbeServiceTestCase(BaseProbeTestCase):
   def test_setup_service_auto_start_device_missing_cleans_up(self) -> None:
     self.fs.create_file(self.service_script)
     self.mock_sh.side_effect = [
-        self._sh_error(),
-        self._sh_result("device_B\ndevice_C\n"),
+      self._sh_error(),
+      self._sh_result("device_B\ndevice_C\n"),
     ]
     self.mock_proc.stdout.readline.side_effect = ["Received SW timestamp\n"]
     probe = BitsProbe(self.bits_path, bits_device="device_A")
@@ -845,8 +901,8 @@ class BitsProbeServiceTestCase(BaseProbeTestCase):
   def test_setup_service_auto_start_target_device_matched(self) -> None:
     self.fs.create_file(self.service_script)
     self.mock_sh.side_effect = [
-        self._sh_error(),
-        self._sh_result("device_A\ndevice_B\n"),
+      self._sh_error(),
+      self._sh_result("device_A\ndevice_B\n"),
     ]
     self.mock_proc.stdout.readline.side_effect = ["Received SW timestamp\n"]
     probe = BitsProbe(self.bits_path, bits_device="device_A")
@@ -858,15 +914,16 @@ class BitsProbeServiceTestCase(BaseProbeTestCase):
     self.fs.create_file(self.service_script)
     self.mock_sh.return_value = self._sh_error()
     self.mock_proc.stdout.readline.side_effect = [
-        "Launching Bits service...\n",
-        "ERROR: Port in use\n",
-        "",  # EOF
+      "Launching Bits service...\n",
+      "ERROR: Port in use\n",
+      "",  # EOF
     ]
     probe = BitsProbe(self.bits_path)
     with self.assertRaises(ProbeValidationError) as cm:
       probe.setup(self.runner)
     self.assertEqual(
-        str(cm.exception), "Probe(bits): BITS service stopped unexpectedly.")
+      str(cm.exception), "Probe(bits): BITS service stopped unexpectedly."
+    )
     self.mock_terminate.assert_called_once_with(self.mock_proc)
 
   def test_setup_service_timeout(self) -> None:
@@ -934,27 +991,31 @@ class BitsProbeResultsFileTestCase(BaseProbeTestCase):
 
   def test_explicit_out_id(self) -> None:
     self.assertEqual(
-        self._test_output("explicit_id"), {
-            "bits_out_id": "explicit_id",
-            "clock_sync": {
-                "host_realtime_ns": 1_000,
-                "device_boottime_ns": 5_000,
-                "offset_ns": 4_000,
-                "round_trip_ns": 0,
-            },
-        })
+      self._test_output("explicit_id"),
+      {
+        "bits_out_id": "explicit_id",
+        "clock_sync": {
+          "host_realtime_ns": 1_000,
+          "device_boottime_ns": 5_000,
+          "offset_ns": 4_000,
+          "round_trip_ns": 0,
+        },
+      },
+    )
 
   def test_auto_generated_out_id(self) -> None:
     self.assertEqual(
-        self._test_output(""), {
-            "bits_out_id": self.MOCK_NOW_STR,
-            "clock_sync": {
-                "host_realtime_ns": 1_000,
-                "device_boottime_ns": 5_000,
-                "offset_ns": 4_000,
-                "round_trip_ns": 0,
-            },
-        })
+      self._test_output(""),
+      {
+        "bits_out_id": self.MOCK_NOW_STR,
+        "clock_sync": {
+          "host_realtime_ns": 1_000,
+          "device_boottime_ns": 5_000,
+          "offset_ns": 4_000,
+          "round_trip_ns": 0,
+        },
+      },
+    )
 
   def test_without_start(self) -> None:
     context = self._create_context("test_run_id")

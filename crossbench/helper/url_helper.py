@@ -24,8 +24,13 @@ Response = requests.Response
 
 
 def retry_timeout_request(
-    url: str, timeout: AnyTime, retry: int, verbose: bool, method: str,
-    send_request: Callable[[float], requests.Response]) -> requests.Response:
+  url: str,
+  timeout: AnyTime,
+  retry: int,
+  verbose: bool,
+  method: str,
+  send_request: Callable[[float], requests.Response],
+) -> requests.Response:
   deadline = dt.datetime.now() + dt.timedelta(seconds=to_seconds(timeout))
   request_timeout_seconds = to_seconds(timeout)
   i = 0
@@ -41,8 +46,9 @@ def retry_timeout_request(
       if i < retry and request_timeout_seconds > 0:
         i += 1
         if verbose:
-          logging.warning("%s request failed url=%s, retrying: %s", method, url,
-                          e)
+          logging.warning(
+            "%s request failed url=%s, retrying: %s", method, url, e
+          )
         continue
       if verbose:
         logging.error("%s request failed url=%s", method, url)
@@ -50,30 +56,45 @@ def retry_timeout_request(
       raise e
 
 
-def get(url: str,
-        timeout: AnyTime = DEFAULT_REQUEST_TIMEOUT,
-        retry: int = 0,
-        verbose: bool = True) -> requests.Response:
+def get(
+  url: str,
+  timeout: AnyTime = DEFAULT_REQUEST_TIMEOUT,
+  retry: int = 0,
+  verbose: bool = True,
+) -> requests.Response:
   return retry_timeout_request(
-      url, timeout, retry, verbose, "GET",
-      lambda request_timeout_seconds: requests.get(
-          url, timeout=request_timeout_seconds))
+    url,
+    timeout,
+    retry,
+    verbose,
+    "GET",
+    lambda request_timeout_seconds: requests.get(
+      url, timeout=request_timeout_seconds
+    ),
+  )
 
 
-def post(url: str,
-         body_json: Json = None,
-         headers: Mapping[str, str] | None = None,
-         timeout: AnyTime = DEFAULT_REQUEST_TIMEOUT,
-         retry: int = 0,
-         verbose: bool = True) -> requests.Response:
+def post(
+  url: str,
+  body_json: Json = None,
+  headers: Mapping[str, str] | None = None,
+  timeout: AnyTime = DEFAULT_REQUEST_TIMEOUT,
+  retry: int = 0,
+  verbose: bool = True,
+) -> requests.Response:
   return retry_timeout_request(
-      url, timeout, retry, verbose, "POST",
-      lambda request_timeout_seconds: requests.post(
-          url,
-          headers=headers,
-          json=body_json,
-          timeout=request_timeout_seconds,
-      ))
+    url,
+    timeout,
+    retry,
+    verbose,
+    "POST",
+    lambda request_timeout_seconds: requests.post(
+      url,
+      headers=headers,
+      json=body_json,
+      timeout=request_timeout_seconds,
+    ),
+  )
 
 
 def to_seconds(delta: AnyTime) -> float:

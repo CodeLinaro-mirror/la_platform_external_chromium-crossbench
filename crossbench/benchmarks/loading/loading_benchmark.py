@@ -6,19 +6,34 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
-from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Mapping, Self, \
-    Sequence, override
+from typing import (
+  TYPE_CHECKING,
+  ClassVar,
+  Final,
+  Iterable,
+  Mapping,
+  Self,
+  Sequence,
+  override,
+)
 
 from crossbench.benchmarks.base import StoryFilter, SubStoryBenchmark
-from crossbench.benchmarks.loading.config.pages import \
-    DevToolsRecorderPagesConfig, ListPagesConfig, PageConfig, PagesConfig
+from crossbench.benchmarks.loading.config.pages import (
+  DevToolsRecorderPagesConfig,
+  ListPagesConfig,
+  PageConfig,
+  PagesConfig,
+)
 from crossbench.benchmarks.loading.page.base import DEFAULT_DURATION, Page
 from crossbench.benchmarks.loading.page.combined import CombinedPage
 from crossbench.benchmarks.loading.page.interactive import InteractivePage
-from crossbench.benchmarks.loading.page.live import PAGE_LIST, \
-    PAGE_LIST_SMALL, PAGES, LivePage
-from crossbench.benchmarks.loading.playback_controller import \
-    PlaybackController
+from crossbench.benchmarks.loading.page.live import (
+  PAGE_LIST,
+  PAGE_LIST_SMALL,
+  PAGES,
+  LivePage,
+)
+from crossbench.benchmarks.loading.playback_controller import PlaybackController
 from crossbench.benchmarks.loading.tab_controller import TabController
 from crossbench.parse import DurationParser, ObjectParser
 
@@ -46,117 +61,132 @@ class LoadingPageFilter(StoryFilter[Page]):
   @classmethod
   @override
   def add_cli_arguments(
-      cls, parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+    cls, parser: argparse.ArgumentParser
+  ) -> argparse.ArgumentParser:
     parser = super().add_cli_arguments(parser)
     cls.add_page_config_parser(parser)
     tab_group = parser.add_mutually_exclusive_group()
     tab_group.add_argument(
-        "--single-tab",
-        dest="tabs",
-        const=TabController.single(),
-        default=TabController.default(),
-        action="store_const",
-        help="Open given urls in a single tab.")
+      "--single-tab",
+      dest="tabs",
+      const=TabController.single(),
+      default=TabController.default(),
+      action="store_const",
+      help="Open given urls in a single tab.",
+    )
     tab_group.add_argument(
-        "--multiple-tab",
-        dest="tabs",
-        nargs="?",
-        type=TabController.parse,
-        const=TabController.multiple(),
-        help="Open given urls in separate tabs "
-        "(optional value for number of tabs for each url).")
+      "--multiple-tab",
+      dest="tabs",
+      nargs="?",
+      type=TabController.parse,
+      const=TabController.multiple(),
+      help="Open given urls in separate tabs "
+      "(optional value for number of tabs for each url).",
+    )
     tab_group.add_argument(
-        "--infinite-tab",
-        dest="tabs",
-        const=TabController.forever(),
-        action="store_const",
-        help="Open given urls in separate tabs infinitely.")
+      "--infinite-tab",
+      dest="tabs",
+      const=TabController.forever(),
+      action="store_const",
+      help="Open given urls in separate tabs infinitely.",
+    )
 
     playback_group = parser.add_mutually_exclusive_group()
     playback_group.add_argument(
-        "--playback",
-        "--cycle",
-        type=PlaybackController.parse,
-        default=PlaybackController.default(),
-        help="Set limit on looping through/repeating the selected stories. "
-        "Default is once. "
-        "Valid values are: 'once', 'forever', number, time. "
-        "Cycle 10 times: '--playback=10x'. "
-        "Repeat for 1.5 hours: '--playback=1.5h'. "
-        "Run 5 times, once every 10 seconds: '--playback=\"5x every 10s\"'.")
+      "--playback",
+      "--cycle",
+      type=PlaybackController.parse,
+      default=PlaybackController.default(),
+      help="Set limit on looping through/repeating the selected stories. "
+      "Default is once. "
+      "Valid values are: 'once', 'forever', number, time. "
+      "Cycle 10 times: '--playback=10x'. "
+      "Repeat for 1.5 hours: '--playback=1.5h'. "
+      "Run 5 times, once every 10 seconds: '--playback=\"5x every 10s\"'.",
+    )
     playback_group.add_argument(
-        "--forever",
-        dest="playback",
-        const=PlaybackController.forever(),
-        action="store_const",
-        help="Equivalent to --playback=infinity")
+      "--forever",
+      dest="playback",
+      const=PlaybackController.forever(),
+      action="store_const",
+      help="Equivalent to --playback=infinity",
+    )
 
     parser.add_argument(
-        "--about-blank-duration",
-        "--about-blank",
-        type=DurationParser.positive_or_zero_duration,
-        default=dt.timedelta(),
-        help="If non-zero, navigate to about:blank after every page.")
+      "--about-blank-duration",
+      "--about-blank",
+      type=DurationParser.positive_or_zero_duration,
+      default=dt.timedelta(),
+      help="If non-zero, navigate to about:blank after every page.",
+    )
 
     block_modifier_group = parser.add_argument_group("Action Block Options")
     block_modifier_group.add_argument(
-        "--skip-login",
-        dest="run_login",
-        default=True,
-        action="store_const",
-        const=False,
-        help="Skip the login block, useful for replaying "
-        "archive that filtered already all login requests "
-        "to hide potential secrets. "
-        "The login block is run by default.")
+      "--skip-login",
+      dest="run_login",
+      default=True,
+      action="store_const",
+      const=False,
+      help="Skip the login block, useful for replaying "
+      "archive that filtered already all login requests "
+      "to hide potential secrets. "
+      "The login block is run by default.",
+    )
     block_modifier_group.add_argument(
-        "--skip-setup",
-        dest="run_setup",
-        default=True,
-        action="store_const",
-        const=False,
-        help="Skip the setup block, useful for replaying "
-        "archive that filtered already all login requests "
-        "to hide potential secrets. "
-        "The setup block is run by default.")
+      "--skip-setup",
+      dest="run_setup",
+      default=True,
+      action="store_const",
+      const=False,
+      help="Skip the setup block, useful for replaying "
+      "archive that filtered already all login requests "
+      "to hide potential secrets. "
+      "The setup block is run by default.",
+    )
 
     return parser
 
   @classmethod
   def add_page_config_arguments(cls, group: argparse._ArgumentGroup) -> None:
     group.add_argument(
-        "--page-config",
-        "--pages-config",
-        dest="pages_config",
-        type=PagesConfig.parse,
-        help="Stories we want to perform in the benchmark run following a "
-        "specified scenario. For a reference on how to build scenarios and "
-        "possible actions check config/doc/pages.config.hjson")
+      "--page-config",
+      "--pages-config",
+      dest="pages_config",
+      type=PagesConfig.parse,
+      help="Stories we want to perform in the benchmark run following a "
+      "specified scenario. For a reference on how to build scenarios and "
+      "possible actions check config/doc/pages.config.hjson",
+    )
 
   @classmethod
   def add_page_config_parser(cls, parser: argparse.ArgumentParser) -> None:
     page_config_group = parser.add_mutually_exclusive_group()
     # TODO: move --stories into mutually exclusive group as well
     page_config_group.add_argument(
-        "--urls",
-        "--url",
-        dest="urls",
-        help="List of urls and durations to load: url,seconds,...")
+      "--urls",
+      "--url",
+      dest="urls",
+      help="List of urls and durations to load: url,seconds,...",
+    )
     cls.add_page_config_arguments(page_config_group)
     page_config_group.add_argument(
-        "--url-file",
-        "--urls-file",
-        dest="pages_config",
-        type=ListPagesConfig.parse,
-        help=("List of urls and durations in a line-by-line file. "
-              "Each line has the same format as --url for a single Page."))
+      "--url-file",
+      "--urls-file",
+      dest="pages_config",
+      type=ListPagesConfig.parse,
+      help=(
+        "List of urls and durations in a line-by-line file. "
+        "Each line has the same format as --url for a single Page."
+      ),
+    )
     page_config_group.add_argument(
-        "--devtools-recorder",
-        dest="pages_config",
-        type=DevToolsRecorderPagesConfig.parse,
-        help="Run a single story from a serialized DevTools recorder session. "
-        "See https://developer.chrome.com/docs/devtools/recorder/ "
-        "for more details.")
+      "--devtools-recorder",
+      dest="pages_config",
+      type=DevToolsRecorderPagesConfig.parse,
+      help="Run a single story from a serialized DevTools recorder session. "
+      "See https://developer.chrome.com/docs/devtools/recorder/ "
+      "for more details.",
+    )
 
   @classmethod
   @override
@@ -175,8 +205,9 @@ class LoadingPageFilter(StoryFilter[Page]):
     return PAGE_LIST_SMALL
 
   @classmethod
-  def from_config(cls, story_cls: type[Page], args: argparse.Namespace,
-                  config: PagesConfig) -> Self:
+  def from_config(
+    cls, story_cls: type[Page], args: argparse.Namespace, config: PagesConfig
+  ) -> Self:
     kwargs = cls.kwargs_from_cli(args)
     kwargs["pages_config"] = config
     # kwargs_from_cli returns dict[str, object] for subclass extensibility.
@@ -184,13 +215,13 @@ class LoadingPageFilter(StoryFilter[Page]):
     return cls(story_cls, **kwargs)
 
   def __init__(
-      self,
-      story_cls: type[Page],
-      patterns: Sequence[str],
-      args: argparse.Namespace,
-      separate: bool = False,
-      tags: Iterable[str] = (),
-      pages_config: PagesConfig | None = None,
+    self,
+    story_cls: type[Page],
+    patterns: Sequence[str],
+    args: argparse.Namespace,
+    separate: bool = False,
+    tags: Iterable[str] = (),
+    pages_config: PagesConfig | None = None,
   ) -> None:
     self._pages_config: Final[PagesConfig | None] = pages_config
     super().__init__(story_cls, patterns, args, separate, tags)
@@ -229,8 +260,9 @@ class LoadingPageFilter(StoryFilter[Page]):
     return self.stories_from_config(config)
 
   def stories_from_config(self, config: PagesConfig) -> tuple[Page, ...]:
-    labels: set[str
-                | None] = {page_config.label for page_config in config.pages}
+    labels: set[str | None] = {
+      page_config.label for page_config in config.pages
+    }
     use_labels = len(labels) == len(config.pages)
 
     stories: list[Page] = []
@@ -258,39 +290,42 @@ class LoadingPageFilter(StoryFilter[Page]):
       page = PAGES[config.label]
       duration = duration or page.duration
       return LivePage(
-          page.name,
-          page.url,
-          duration,
-          playback,
-          tabs,
-          args.about_blank_duration,
-          tags=config.tags)
+        page.name,
+        page.url,
+        duration,
+        playback,
+        tabs,
+        args.about_blank_duration,
+        tags=config.tags,
+      )
 
     label: str = config.any_label if use_labels else config.first_url
     duration = duration or DEFAULT_DURATION
 
     if not config.has_any_blocks:
       return LivePage(
-          label,
-          config.first_url,
-          duration,
-          playback,
-          tabs,
-          args.about_blank_duration,
-          tags=config.tags)
-    return InteractivePage(
-        name=label,
-        blocks=config.blocks or (),
-        login=config.login,
-        setup=config.setup,
-        teardown=config.teardown,
-        secrets=config.secrets,
-        playback=playback,
-        tabs=tabs,
-        about_blank_duration=args.about_blank_duration,
+        label,
+        config.first_url,
+        duration,
+        playback,
+        tabs,
+        args.about_blank_duration,
         tags=config.tags,
-        run_login=args.run_login,
-        run_setup=args.run_setup)
+      )
+    return InteractivePage(
+      name=label,
+      blocks=config.blocks or (),
+      login=config.login,
+      setup=config.setup,
+      teardown=config.teardown,
+      secrets=config.secrets,
+      playback=playback,
+      tabs=tabs,
+      about_blank_duration=args.about_blank_duration,
+      tags=config.tags,
+      run_login=args.run_login,
+      run_setup=args.run_setup,
+    )
 
 
 class LoadingBenchmark(SubStoryBenchmark):
@@ -308,6 +343,7 @@ class LoadingBenchmark(SubStoryBenchmark):
     --urls=http://cnn.com,10s
     --urls=http://twitter.com,5s,http://cnn.com,10s
   """
+
   NAME: ClassVar = "loading"
   DEFAULT_STORY_CLS: ClassVar[type[Page]] = Page
   STORY_FILTER_CLS: ClassVar[type[LoadingPageFilter]] = LoadingPageFilter
@@ -323,21 +359,25 @@ class LoadingBenchmark(SubStoryBenchmark):
   @override
   def stories_from_cli_args(cls, args: argparse.Namespace) -> Sequence[Story]:
     has_default_stories: bool = (
-        args.stories and args.stories == LoadingPageFilter.DEFAULT_STORY_NAME)
+      args.stories and args.stories == LoadingPageFilter.DEFAULT_STORY_NAME
+    )
     if config := cls.get_pages_config(args):
       # TODO: make stories and page_config mutually exclusive.
       if not has_default_stories:
         raise argparse.ArgumentTypeError(
-            f"Cannot specify --stories={args.stories!r} "
-            "with any other page config option.")
-      return cls.STORY_FILTER_CLS.from_config(cls.DEFAULT_STORY_CLS, args,
-                                              config).stories
+          f"Cannot specify --stories={args.stories!r} "
+          "with any other page config option."
+        )
+      return cls.STORY_FILTER_CLS.from_config(
+        cls.DEFAULT_STORY_CLS, args, config
+      ).stories
 
     if args.urls:
       # TODO: make urls and stories mutually exclusive.
       if not has_default_stories:
         raise argparse.ArgumentTypeError(
-            "Cannot specify --urls and --stories at the same time.")
+          "Cannot specify --urls and --stories at the same time."
+        )
       args.stories = args.urls
 
     # Fall back to story filter class.
@@ -345,8 +385,8 @@ class LoadingBenchmark(SubStoryBenchmark):
 
   @classmethod
   def get_pages_config(
-      cls,
-      args: argparse.Namespace | None = None,
+    cls,
+    args: argparse.Namespace | None = None,
   ) -> PagesConfig | None:
     if not args:
       raise ValueError("Missing args")
@@ -357,9 +397,10 @@ class LoadingBenchmark(SubStoryBenchmark):
       if pages_config_dict := config_data.get("pages"):
         if args.pages_config:
           raise argparse.ArgumentTypeError(
-              "Conflicting arguments: "
-              "either specify a --config file without a 'pages' property "
-              "or remove the --page-config argument.")
+            "Conflicting arguments: "
+            "either specify a --config file without a 'pages' property "
+            "or remove the --page-config argument."
+          )
         # TODO: PagesConfig.parse_dict should be able to parse the inner dict.
         return PagesConfig.parse_dict({"pages": pages_config_dict})
     return args.pages_config
@@ -385,11 +426,14 @@ class LoadingBenchmark(SubStoryBenchmark):
   def all_story_names(cls) -> tuple[str, ...]:
     # TODO: Use StoryFilter for listing stories everywhere.
     return tuple(
-        sorted(story.name for story in cls.STORY_FILTER_CLS.all_stories()))
+      sorted(story.name for story in cls.STORY_FILTER_CLS.all_stories())
+    )
 
-  def __init__(self,
-               stories: Sequence[Page],
-               action_runner_config: ActionRunnerConfig | None = None) -> None:
+  def __init__(
+    self,
+    stories: Sequence[Page],
+    action_runner_config: ActionRunnerConfig | None = None,
+  ) -> None:
     for story in stories:
       assert isinstance(story, Page)
     super().__init__(stories, action_runner_config)

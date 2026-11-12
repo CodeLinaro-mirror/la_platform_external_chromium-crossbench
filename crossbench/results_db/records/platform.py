@@ -27,18 +27,19 @@ class PlatformRecord(BaseRecord):
     python_details = platform.python_details()
 
     return cls(
-        label=platform.unique_name,
-        name=platform.name,
-        os_name=os_details["system"],
-        os_version=os_details["release"],
-        os_version_name=os_details["version"],
-        cpu_architecture=str(platform.machine),
-        cpu_physical_cores=cpu_details["physical_cores"],
-        cpu_logical_cores=cpu_details["logical_cores"],
-        cpu_max_frequency=cpu_details.get("max_frequency", "N/A"),
-        cpu_min_frequency=cpu_details.get("min_frequency", "N/A"),
-        hw_model=platform.model,
-        python_version=python_details["version"])
+      label=platform.unique_name,
+      name=platform.name,
+      os_name=os_details["system"],
+      os_version=os_details["release"],
+      os_version_name=os_details["version"],
+      cpu_architecture=str(platform.machine),
+      cpu_physical_cores=cpu_details["physical_cores"],
+      cpu_logical_cores=cpu_details["logical_cores"],
+      cpu_max_frequency=cpu_details.get("max_frequency", "N/A"),
+      cpu_min_frequency=cpu_details.get("min_frequency", "N/A"),
+      hw_model=platform.model,
+      python_version=python_details["version"],
+    )
 
   label: Mapped[str] = orm.mapped_column(orm_types.String(), primary_key=True)
   name: Mapped[str] = orm.mapped_column(orm_types.String())

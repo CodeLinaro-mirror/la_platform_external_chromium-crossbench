@@ -13,20 +13,23 @@ from tests import test_helper
 
 
 class TestUserMetrics(unittest.TestCase):
-
   def setUp(self):
     self.mock_settings = mock.Mock(spec=Settings)
     self.mock_settings.collect_metrics = None
     self.mock_settings.user_id = None
     self.enterContext(
-        mock.patch(
-            "crossbench.pinpoint.user_metrics.Settings",
-            return_value=self.mock_settings))
+      mock.patch(
+        "crossbench.pinpoint.user_metrics.Settings",
+        return_value=self.mock_settings,
+      )
+    )
 
     self.mock_prompt = self.enterContext(
-        mock.patch("crossbench.cli.ui.ui.prompt"))
+      mock.patch("crossbench.cli.ui.ui.prompt")
+    )
     self.mock_bq_client_cls = self.enterContext(
-        mock.patch("google.cloud.bigquery.Client"))
+      mock.patch("google.cloud.bigquery.Client")
+    )
 
   def test_init_metrics_prompt_yes(self):
     self.mock_prompt.return_value = "y"
@@ -60,10 +63,15 @@ class TestUserMetrics(unittest.TestCase):
     mock_client.insert_rows_json.assert_called_once()
     call_args = mock_client.insert_rows_json.call_args[0]
     self.assertEqual(call_args[0], "pinpoint_cli_metrics.usage")
-    self.assertSequenceEqual(call_args[1], [{
-        "user": "test-user-id",
-        "command": "test_command",
-    }])
+    self.assertSequenceEqual(
+      call_args[1],
+      [
+        {
+          "user": "test-user-id",
+          "command": "test_command",
+        }
+      ],
+    )
 
   def test_collect_metrics_disabled(self):
     self.mock_settings.collect_metrics = False

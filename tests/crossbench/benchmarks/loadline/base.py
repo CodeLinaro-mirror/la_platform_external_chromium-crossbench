@@ -13,11 +13,12 @@ from io import StringIO
 from typing import TYPE_CHECKING, Sequence, override
 from unittest import mock
 
-from crossbench.benchmarks.loading.playback_controller import \
-    PlaybackController
+from crossbench.benchmarks.loading.playback_controller import PlaybackController
 from crossbench.benchmarks.loading.tab_controller import TabController
-from crossbench.benchmarks.loadline.loadline import LoadLineBenchmark, \
-    LoadLinePageFilter
+from crossbench.benchmarks.loadline.loadline import (
+  LoadLineBenchmark,
+  LoadLinePageFilter,
+)
 from tests.crossbench.base import SysExitTestException
 from tests.crossbench.benchmarks.helper import SubStoryTestCase
 
@@ -26,7 +27,6 @@ if TYPE_CHECKING:
 
 
 class BaseLoadLineTestCase(SubStoryTestCase, metaclass=abc.ABCMeta):
-
   @property
   @abc.abstractmethod
   @override
@@ -46,9 +46,9 @@ class BaseLoadLineTestCase(SubStoryTestCase, metaclass=abc.ABCMeta):
   # Narrows SubStoryTestCase.story_filter with LoadLine-specific parameters.
   # pyrefly: ignore[bad-override-param-name]
   def story_filter(
-      self,
-      patterns: Sequence[str],
-      separate: bool = True,
+    self,
+    patterns: Sequence[str],
+    separate: bool = True,
   ) -> LoadLinePageFilter:
     args = self.get_story_filter_args()
     story_filter = super().story_filter(patterns, args=args, separate=separate)
@@ -87,16 +87,20 @@ class BaseLoadLineTestCase(SubStoryTestCase, metaclass=abc.ABCMeta):
   def test_custom_page_config(self) -> None:
     config_file = pathlib.Path("custom_pages.json")
     config_data = {
-        "pages": {
-            "custom_p1": [{
-                "action": "get",
-                "url": "https://example.com/1",
-            }],
-            "custom_p2": [{
-                "action": "get",
-                "url": "https://example.com/2",
-            }],
-        },
+      "pages": {
+        "custom_p1": [
+          {
+            "action": "get",
+            "url": "https://example.com/1",
+          }
+        ],
+        "custom_p2": [
+          {
+            "action": "get",
+            "url": "https://example.com/2",
+          }
+        ],
+      },
     }
     self.fs.create_file(config_file, contents=json.dumps(config_data))
     args = self.parse_args(f"--page-config={config_file}")
@@ -118,8 +122,8 @@ class BaseLoadLineTestCase(SubStoryTestCase, metaclass=abc.ABCMeta):
 
 
 class BaseLoadLineBenchmarkTestCase(
-    BaseLoadLineTestCase, metaclass=abc.ABCMeta):
-
+  BaseLoadLineTestCase, metaclass=abc.ABCMeta
+):
   @property
   @abc.abstractmethod
   def expected_tabs(self):
@@ -128,11 +132,11 @@ class BaseLoadLineBenchmarkTestCase(
   @override
   def get_story_filter_args(self) -> argparse.Namespace:
     return argparse.Namespace(
-        about_blank_duration=dt.timedelta(),
-        playback=PlaybackController.default(),
-        tabs=self.expected_tabs,
-        run_login=True,
-        run_setup=True,
+      about_blank_duration=dt.timedelta(),
+      playback=PlaybackController.default(),
+      tabs=self.expected_tabs,
+      run_login=True,
+      run_setup=True,
     )
 
   @property
@@ -146,7 +150,7 @@ class BaseLoadLineBenchmarkTestCase(
   def test_get_pages_config_variants(self):
     if self.tablet_benchmark_cls and self.phone_benchmark_cls:
       configs = [
-          self.tablet_benchmark_cls.get_pages_config(),
-          self.phone_benchmark_cls.get_pages_config(),
+        self.tablet_benchmark_cls.get_pages_config(),
+        self.phone_benchmark_cls.get_pages_config(),
       ]
       self.assertNotEqual(configs[0], configs[1])

@@ -26,6 +26,7 @@ class DumpHeapProbe(Probe):
   """
   Probe that collects heap dumps.
   """
+
   NAME: ClassVar = "dump_heap"
   RESULT_LOCATION: ClassVar = ResultLocation.BROWSER
 
@@ -41,7 +42,6 @@ class DumpHeapProbe(Probe):
 
 
 class DumpHeapProbeContext(ProbeContext[DumpHeapProbe]):
-
   def __init__(self, probe: DumpHeapProbe, run: Run) -> None:
     super().__init__(probe, run)
     self._results: Final[list[pth.AnyPath]] = []
@@ -53,18 +53,21 @@ class DumpHeapProbeContext(ProbeContext[DumpHeapProbe]):
     pass
 
   @override
-  def invoke(self, info_stack: exception.TInfoStack, timeout: dt.timedelta,
-             **kwargs) -> None:
+  def invoke(
+    self, info_stack: exception.TInfoStack, timeout: dt.timedelta, **kwargs
+  ) -> None:
     self._dump(info_stack, timeout, **kwargs)
 
-  def _dump(self,
-            info_stack: exception.TInfoStack,
-            timeout: dt.timedelta,
-            type: str,
-            trace_buffer_size_kb: int = 256 * 1024,
-            identifier: str | None = None,
-            suffix: str | None = None,
-            **kwargs) -> None:
+  def _dump(
+    self,
+    info_stack: exception.TInfoStack,
+    timeout: dt.timedelta,
+    type: str,
+    trace_buffer_size_kb: int = 256 * 1024,
+    identifier: str | None = None,
+    suffix: str | None = None,
+    **kwargs,
+  ) -> None:
     self.expect_no_extra_kwargs(kwargs)
 
     if not suffix:
@@ -76,15 +79,17 @@ class DumpHeapProbeContext(ProbeContext[DumpHeapProbe]):
       case HeapType.JAVA:
         if not identifier:
           path = self.browser.dump_java_heap(
-              label=label,
-              trace_buffer_size_kb=trace_buffer_size_kb,
-              timeout=timeout)
+            label=label,
+            trace_buffer_size_kb=trace_buffer_size_kb,
+            timeout=timeout,
+          )
         else:
           path = self.browser_platform.dump_java_heap(
-              identifier=identifier,
-              label=label,
-              trace_buffer_size_kb=trace_buffer_size_kb,
-              timeout=timeout)
+            identifier=identifier,
+            label=label,
+            trace_buffer_size_kb=trace_buffer_size_kb,
+            timeout=timeout,
+          )
         self._results.append(path)
 
   @override

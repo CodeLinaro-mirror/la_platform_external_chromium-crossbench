@@ -6,8 +6,16 @@ from __future__ import annotations
 
 import datetime as dt
 import json
-from typing import TYPE_CHECKING, ClassVar, Final, NotRequired, Self, \
-    TypedDict, cast, override
+from typing import (
+  TYPE_CHECKING,
+  ClassVar,
+  Final,
+  NotRequired,
+  Self,
+  TypedDict,
+  cast,
+  override,
+)
 
 from crossbench import path as pth
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
@@ -29,8 +37,9 @@ class MeminfoJson(TypedDict):
 
 class MeminfoProbe(Probe):
   """
-    General-purpose Probe that records the specified meminfo.
+  General-purpose Probe that records the specified meminfo.
   """
+
   NAME: ClassVar = "meminfo"
 
   @classmethod
@@ -45,7 +54,6 @@ class MeminfoProbe(Probe):
 
 
 class MeminfoProbeContext(ProbeContext[MeminfoProbe]):
-
   def __init__(self, probe: MeminfoProbe, run: Run) -> None:
     super().__init__(probe, run)
     self._results: Final[list[pth.AnyPath]] = []
@@ -62,8 +70,9 @@ class MeminfoProbeContext(ProbeContext[MeminfoProbe]):
   def stop(self) -> None:
     pass
 
-  def _dump_file(self, title: str | None,
-                 info_stack: exception.TInfoStack) -> pth.LocalPath:
+  def _dump_file(
+    self, title: str | None, info_stack: exception.TInfoStack
+  ) -> pth.LocalPath:
     name = "_".join(info_stack)
     if title:
       name = f"{title}.{name}"
@@ -77,18 +86,21 @@ class MeminfoProbeContext(ProbeContext[MeminfoProbe]):
     return timeout
 
   @override
-  def invoke(self, info_stack: exception.TInfoStack, timeout: dt.timedelta,
-             **kwargs) -> None:
+  def invoke(
+    self, info_stack: exception.TInfoStack, timeout: dt.timedelta, **kwargs
+  ) -> None:
     self._dump_meminfo(info_stack, timeout, **kwargs)
 
-  def _dump_meminfo(self,
-                    info_stack: exception.TInfoStack,
-                    timeout: dt.timedelta,
-                    browser: bool = True,
-                    system: bool = False,
-                    packages: tuple[str, ...] | None = None,
-                    title: str | None = None,
-                    **kwargs) -> None:
+  def _dump_meminfo(
+    self,
+    info_stack: exception.TInfoStack,
+    timeout: dt.timedelta,
+    browser: bool = True,
+    system: bool = False,
+    packages: tuple[str, ...] | None = None,
+    title: str | None = None,
+    **kwargs,
+  ) -> None:
     self.expect_no_extra_kwargs(kwargs)
 
     deadline = dt.datetime.now() + timeout
@@ -98,15 +110,17 @@ class MeminfoProbeContext(ProbeContext[MeminfoProbe]):
       packages = ()
     for package in packages:
       process_meminfos += self.browser_platform.process_meminfo(
-          package, self._timeout_from_deadline(deadline))
+        package, self._timeout_from_deadline(deadline)
+      )
 
     if browser:
       process_meminfos += self.browser.meminfo(
-          self._timeout_from_deadline(deadline))
+        self._timeout_from_deadline(deadline)
+      )
 
     meminfo_json: MeminfoJson = {
-        "info_stack": list(info_stack),
-        "processes": [p.to_json() for p in process_meminfos],
+      "info_stack": list(info_stack),
+      "processes": [p.to_json() for p in process_meminfos],
     }
 
     if title is not None:
@@ -114,7 +128,8 @@ class MeminfoProbeContext(ProbeContext[MeminfoProbe]):
 
     if system:
       meminfo_json["system"] = self.browser_platform.system_meminfo(
-          self._timeout_from_deadline(deadline))
+        self._timeout_from_deadline(deadline)
+      )
 
     # TODO: remove once mypy is replaced by pyrefly
     # https://peps.python.org/pep-0728

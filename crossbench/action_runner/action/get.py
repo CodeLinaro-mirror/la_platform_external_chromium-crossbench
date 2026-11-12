@@ -48,13 +48,16 @@ class GetAction(BaseDurationAction):
     parser = super().config_parser()
     parser.add_argument("url", type=ObjectParser.fuzzy_url_str, required=True)
     parser.add_argument(
-        "duration",
-        type=DurationParser.positive_or_zero_duration,
-        default=dt.timedelta())
+      "duration",
+      type=DurationParser.positive_or_zero_duration,
+      default=dt.timedelta(),
+    )
     parser.add_argument(
-        "ready_state", type=ReadyState.parse, default=ReadyState.ANY)
+      "ready_state", type=ReadyState.parse, default=ReadyState.ANY
+    )
     parser.add_argument(
-        "target", type=WindowTarget.parse, default=WindowTarget.SELF)
+      "target", type=WindowTarget.parse, default=WindowTarget.SELF
+    )
     return parser
 
   @override
@@ -67,8 +70,9 @@ class GetAction(BaseDurationAction):
   def validate_duration(self) -> None:
     if self.ready_state != ReadyState.ANY and self.duration != dt.timedelta():
       raise ValueError(
-          f"Expected empty duration with ReadyState {self.ready_state} "
-          f"but got: {self.duration}")
+        f"Expected empty duration with ReadyState {self.ready_state} "
+        f"but got: {self.duration}"
+      )
 
   @override
   def run_with(self, action_runner: ActionRunner) -> None:

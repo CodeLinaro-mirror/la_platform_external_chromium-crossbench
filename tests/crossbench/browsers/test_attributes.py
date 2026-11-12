@@ -24,18 +24,21 @@ if TYPE_CHECKING:
 
 
 class BrowserAttributesTestCase(unittest.TestCase):
-
   def test_is_chromium_based(self) -> None:
     for value in BrowserAttributes:
-      self.assertEqual(value.is_chromium_based, value
-                       is BrowserAttributes.CHROMIUM_BASED)
+      self.assertEqual(
+        value.is_chromium_based, value is BrowserAttributes.CHROMIUM_BASED
+      )
     custom_chrome = (
-        BrowserAttributes.CHROMIUM | BrowserAttributes.CHROMIUM_BASED)
+      BrowserAttributes.CHROMIUM | BrowserAttributes.CHROMIUM_BASED
+    )
     self.assertTrue(custom_chrome)
     self.assertFalse(custom_chrome & BrowserAttributes.SAFARI)
     self.assertTrue(custom_chrome & BrowserAttributes.CHROMIUM_BASED)
-    self.assertIs(custom_chrome & BrowserAttributes.CHROMIUM_BASED,
-                  BrowserAttributes.CHROMIUM_BASED)
+    self.assertIs(
+      custom_chrome & BrowserAttributes.CHROMIUM_BASED,
+      BrowserAttributes.CHROMIUM_BASED,
+    )
     self.assertTrue(custom_chrome.is_chromium_based)
 
   def test_is_chromium(self) -> None:
@@ -96,11 +99,14 @@ class BrowserAttributesTestCase(unittest.TestCase):
 
   def test_is_webview_embedder(self) -> None:
     for value in BrowserAttributes:
-      self.assertEqual(value.is_webview_embedder, value
-                       is BrowserAttributes.WEBVIEW_EMBEDDER)
+      self.assertEqual(
+        value.is_webview_embedder, value is BrowserAttributes.WEBVIEW_EMBEDDER
+      )
     custom = (
-        BrowserAttributes.WEBVIEW | BrowserAttributes.WEBVIEW_EMBEDDER
-        | BrowserAttributes.WEBDRIVER)
+      BrowserAttributes.WEBVIEW
+      | BrowserAttributes.WEBVIEW_EMBEDDER
+      | BrowserAttributes.WEBDRIVER
+    )
     self.assertTrue(custom.is_webview_embedder)
     self.assertTrue(BrowserAttributes.WEBVIEW_EMBEDDER.is_webview_embedder)
     self.assertFalse(BrowserAttributes.WEBVIEW.is_webview_embedder)
@@ -117,8 +123,9 @@ class BrowserAttributesTestCase(unittest.TestCase):
 
   def test_is_applescript(self) -> None:
     for value in BrowserAttributes:
-      self.assertEqual(value.is_applescript, value
-                       is BrowserAttributes.APPLESCRIPT)
+      self.assertEqual(
+        value.is_applescript, value is BrowserAttributes.APPLESCRIPT
+      )
 
   def test_is_mobile_and_desktop(self) -> None:
     for value in BrowserAttributes:
@@ -132,107 +139,175 @@ class BrowserAttributesTestCase(unittest.TestCase):
 
   def test_concrete_browser_attributes(self) -> None:
     expected_by_cls: dict[type[Browser], BrowserAttributes] = {
-        all_browsers.CdpAndroidBrowser:
-            (BrowserAttributes.CHROME | BrowserAttributes.CHROMIUM_BASED
-             | BrowserAttributes.MOBILE | BrowserAttributes.REMOTE),
-        all_browsers.Chrome:
-            (BrowserAttributes.CHROME | BrowserAttributes.CHROMIUM_BASED
-             | BrowserAttributes.DESKTOP),
-        all_browsers.ChromeAppleScript:
-            (BrowserAttributes.CHROME | BrowserAttributes.CHROMIUM_BASED
-             | BrowserAttributes.APPLESCRIPT | BrowserAttributes.DESKTOP),
-        all_browsers.ChromeWebDriver:
-            (BrowserAttributes.CHROME | BrowserAttributes.CHROMIUM_BASED
-             | BrowserAttributes.WEBDRIVER | BrowserAttributes.DESKTOP),
-        all_browsers.ChromeWebDriverAndroid:
-            (BrowserAttributes.CHROME | BrowserAttributes.CHROMIUM_BASED
-             | BrowserAttributes.WEBDRIVER | BrowserAttributes.MOBILE
-             | BrowserAttributes.REMOTE),
-        all_browsers.LocalChromeWebDriverAndroid:
-            (BrowserAttributes.CHROME | BrowserAttributes.CHROMIUM_BASED
-             | BrowserAttributes.WEBDRIVER | BrowserAttributes.MOBILE
-             | BrowserAttributes.REMOTE),
-        all_browsers.ChromeWebDriverSsh:
-            (BrowserAttributes.CHROME | BrowserAttributes.CHROMIUM_BASED
-             | BrowserAttributes.WEBDRIVER | BrowserAttributes.DESKTOP
-             | BrowserAttributes.REMOTE),
-        all_browsers.ChromeWebDriverChromeOsSsh:
-            (BrowserAttributes.CHROME | BrowserAttributes.CHROMIUM_BASED
-             | BrowserAttributes.WEBDRIVER | BrowserAttributes.DESKTOP
-             | BrowserAttributes.REMOTE),
-        all_browsers.Chromium:
-            (BrowserAttributes.CHROMIUM | BrowserAttributes.CHROMIUM_BASED
-             | BrowserAttributes.DESKTOP),
-        all_browsers.ChromiumAppleScript:
-            (BrowserAttributes.CHROMIUM | BrowserAttributes.CHROMIUM_BASED
-             | BrowserAttributes.APPLESCRIPT | BrowserAttributes.DESKTOP),
-        all_browsers.ChromiumWebDriver:
-            (BrowserAttributes.CHROMIUM | BrowserAttributes.CHROMIUM_BASED
-             | BrowserAttributes.WEBDRIVER | BrowserAttributes.DESKTOP),
-        all_browsers.ChromiumWebDriverAndroid:
-            (BrowserAttributes.CHROMIUM | BrowserAttributes.CHROMIUM_BASED
-             | BrowserAttributes.WEBDRIVER | BrowserAttributes.MOBILE
-             | BrowserAttributes.REMOTE),
-        all_browsers.LocalChromiumWebDriverAndroid:
-            (BrowserAttributes.CHROMIUM | BrowserAttributes.CHROMIUM_BASED
-             | BrowserAttributes.WEBDRIVER | BrowserAttributes.MOBILE
-             | BrowserAttributes.REMOTE),
-        all_browsers.ChromiumWebDriverSsh:
-            (BrowserAttributes.CHROMIUM | BrowserAttributes.CHROMIUM_BASED
-             | BrowserAttributes.WEBDRIVER | BrowserAttributes.DESKTOP
-             | BrowserAttributes.REMOTE),
-        all_browsers.ChromiumWebDriverChromeOsSsh:
-            (BrowserAttributes.CHROMIUM | BrowserAttributes.CHROMIUM_BASED
-             | BrowserAttributes.WEBDRIVER | BrowserAttributes.DESKTOP
-             | BrowserAttributes.REMOTE),
-        all_browsers.D8:
-            (BrowserAttributes.D8 | BrowserAttributes.CHROMIUM_BASED),
-        all_browsers.Edge:
-            (BrowserAttributes.EDGE | BrowserAttributes.CHROMIUM_BASED
-             | BrowserAttributes.DESKTOP),
-        all_browsers.EdgeWebDriver:
-            (BrowserAttributes.EDGE | BrowserAttributes.CHROMIUM_BASED
-             | BrowserAttributes.WEBDRIVER | BrowserAttributes.DESKTOP),
-        all_browsers.Firefox:
-            (BrowserAttributes.FIREFOX | BrowserAttributes.DESKTOP),
-        all_browsers.FirefoxWebDriver:
-            (BrowserAttributes.FIREFOX | BrowserAttributes.WEBDRIVER
-             | BrowserAttributes.DESKTOP),
-        all_browsers.Safari:
-            (BrowserAttributes.SAFARI | BrowserAttributes.DESKTOP),
-        all_browsers.SafariAppleScript:
-            (BrowserAttributes.SAFARI | BrowserAttributes.APPLESCRIPT
-             | BrowserAttributes.DESKTOP),
-        all_browsers.SafariWebDriver:
-            (BrowserAttributes.SAFARI | BrowserAttributes.WEBDRIVER
-             | BrowserAttributes.DESKTOP),
-        all_browsers.SafariWebdriverIOS:
-            (BrowserAttributes.SAFARI | BrowserAttributes.WEBDRIVER
-             | BrowserAttributes.MOBILE | BrowserAttributes.REMOTE),
-        all_browsers.WebKitWebDriver:
-            (BrowserAttributes.WEBKIT | BrowserAttributes.WEBDRIVER
-             | BrowserAttributes.DESKTOP),
-        all_browsers.WebviewBrowser:
-            (BrowserAttributes.WEBVIEW | BrowserAttributes.CHROMIUM_BASED
-             | BrowserAttributes.WEBDRIVER | BrowserAttributes.MOBILE
-             | BrowserAttributes.REMOTE),
-        all_browsers.WebviewEmbedder:
-            (BrowserAttributes.WEBVIEW | BrowserAttributes.WEBVIEW_EMBEDDER
-             | BrowserAttributes.CHROMIUM_BASED | BrowserAttributes.WEBDRIVER
-             | BrowserAttributes.MOBILE | BrowserAttributes.REMOTE),
-        RemoteWebDriver:
-            (BrowserAttributes.WEBDRIVER | BrowserAttributes.REMOTE),
+      all_browsers.CdpAndroidBrowser: (
+        BrowserAttributes.CHROME
+        | BrowserAttributes.CHROMIUM_BASED
+        | BrowserAttributes.MOBILE
+        | BrowserAttributes.REMOTE
+      ),
+      all_browsers.Chrome: (
+        BrowserAttributes.CHROME
+        | BrowserAttributes.CHROMIUM_BASED
+        | BrowserAttributes.DESKTOP
+      ),
+      all_browsers.ChromeAppleScript: (
+        BrowserAttributes.CHROME
+        | BrowserAttributes.CHROMIUM_BASED
+        | BrowserAttributes.APPLESCRIPT
+        | BrowserAttributes.DESKTOP
+      ),
+      all_browsers.ChromeWebDriver: (
+        BrowserAttributes.CHROME
+        | BrowserAttributes.CHROMIUM_BASED
+        | BrowserAttributes.WEBDRIVER
+        | BrowserAttributes.DESKTOP
+      ),
+      all_browsers.ChromeWebDriverAndroid: (
+        BrowserAttributes.CHROME
+        | BrowserAttributes.CHROMIUM_BASED
+        | BrowserAttributes.WEBDRIVER
+        | BrowserAttributes.MOBILE
+        | BrowserAttributes.REMOTE
+      ),
+      all_browsers.LocalChromeWebDriverAndroid: (
+        BrowserAttributes.CHROME
+        | BrowserAttributes.CHROMIUM_BASED
+        | BrowserAttributes.WEBDRIVER
+        | BrowserAttributes.MOBILE
+        | BrowserAttributes.REMOTE
+      ),
+      all_browsers.ChromeWebDriverSsh: (
+        BrowserAttributes.CHROME
+        | BrowserAttributes.CHROMIUM_BASED
+        | BrowserAttributes.WEBDRIVER
+        | BrowserAttributes.DESKTOP
+        | BrowserAttributes.REMOTE
+      ),
+      all_browsers.ChromeWebDriverChromeOsSsh: (
+        BrowserAttributes.CHROME
+        | BrowserAttributes.CHROMIUM_BASED
+        | BrowserAttributes.WEBDRIVER
+        | BrowserAttributes.DESKTOP
+        | BrowserAttributes.REMOTE
+      ),
+      all_browsers.Chromium: (
+        BrowserAttributes.CHROMIUM
+        | BrowserAttributes.CHROMIUM_BASED
+        | BrowserAttributes.DESKTOP
+      ),
+      all_browsers.ChromiumAppleScript: (
+        BrowserAttributes.CHROMIUM
+        | BrowserAttributes.CHROMIUM_BASED
+        | BrowserAttributes.APPLESCRIPT
+        | BrowserAttributes.DESKTOP
+      ),
+      all_browsers.ChromiumWebDriver: (
+        BrowserAttributes.CHROMIUM
+        | BrowserAttributes.CHROMIUM_BASED
+        | BrowserAttributes.WEBDRIVER
+        | BrowserAttributes.DESKTOP
+      ),
+      all_browsers.ChromiumWebDriverAndroid: (
+        BrowserAttributes.CHROMIUM
+        | BrowserAttributes.CHROMIUM_BASED
+        | BrowserAttributes.WEBDRIVER
+        | BrowserAttributes.MOBILE
+        | BrowserAttributes.REMOTE
+      ),
+      all_browsers.LocalChromiumWebDriverAndroid: (
+        BrowserAttributes.CHROMIUM
+        | BrowserAttributes.CHROMIUM_BASED
+        | BrowserAttributes.WEBDRIVER
+        | BrowserAttributes.MOBILE
+        | BrowserAttributes.REMOTE
+      ),
+      all_browsers.ChromiumWebDriverSsh: (
+        BrowserAttributes.CHROMIUM
+        | BrowserAttributes.CHROMIUM_BASED
+        | BrowserAttributes.WEBDRIVER
+        | BrowserAttributes.DESKTOP
+        | BrowserAttributes.REMOTE
+      ),
+      all_browsers.ChromiumWebDriverChromeOsSsh: (
+        BrowserAttributes.CHROMIUM
+        | BrowserAttributes.CHROMIUM_BASED
+        | BrowserAttributes.WEBDRIVER
+        | BrowserAttributes.DESKTOP
+        | BrowserAttributes.REMOTE
+      ),
+      all_browsers.D8: (
+        BrowserAttributes.D8 | BrowserAttributes.CHROMIUM_BASED
+      ),
+      all_browsers.Edge: (
+        BrowserAttributes.EDGE
+        | BrowserAttributes.CHROMIUM_BASED
+        | BrowserAttributes.DESKTOP
+      ),
+      all_browsers.EdgeWebDriver: (
+        BrowserAttributes.EDGE
+        | BrowserAttributes.CHROMIUM_BASED
+        | BrowserAttributes.WEBDRIVER
+        | BrowserAttributes.DESKTOP
+      ),
+      all_browsers.Firefox: (
+        BrowserAttributes.FIREFOX | BrowserAttributes.DESKTOP
+      ),
+      all_browsers.FirefoxWebDriver: (
+        BrowserAttributes.FIREFOX
+        | BrowserAttributes.WEBDRIVER
+        | BrowserAttributes.DESKTOP
+      ),
+      all_browsers.Safari: (
+        BrowserAttributes.SAFARI | BrowserAttributes.DESKTOP
+      ),
+      all_browsers.SafariAppleScript: (
+        BrowserAttributes.SAFARI
+        | BrowserAttributes.APPLESCRIPT
+        | BrowserAttributes.DESKTOP
+      ),
+      all_browsers.SafariWebDriver: (
+        BrowserAttributes.SAFARI
+        | BrowserAttributes.WEBDRIVER
+        | BrowserAttributes.DESKTOP
+      ),
+      all_browsers.SafariWebdriverIOS: (
+        BrowserAttributes.SAFARI
+        | BrowserAttributes.WEBDRIVER
+        | BrowserAttributes.MOBILE
+        | BrowserAttributes.REMOTE
+      ),
+      all_browsers.WebKitWebDriver: (
+        BrowserAttributes.WEBKIT
+        | BrowserAttributes.WEBDRIVER
+        | BrowserAttributes.DESKTOP
+      ),
+      all_browsers.WebviewBrowser: (
+        BrowserAttributes.WEBVIEW
+        | BrowserAttributes.CHROMIUM_BASED
+        | BrowserAttributes.WEBDRIVER
+        | BrowserAttributes.MOBILE
+        | BrowserAttributes.REMOTE
+      ),
+      all_browsers.WebviewEmbedder: (
+        BrowserAttributes.WEBVIEW
+        | BrowserAttributes.WEBVIEW_EMBEDDER
+        | BrowserAttributes.CHROMIUM_BASED
+        | BrowserAttributes.WEBDRIVER
+        | BrowserAttributes.MOBILE
+        | BrowserAttributes.REMOTE
+      ),
+      RemoteWebDriver: (BrowserAttributes.WEBDRIVER | BrowserAttributes.REMOTE),
     }
 
     primary_brands = (
-        BrowserAttributes.SAFARI,
-        BrowserAttributes.WEBKIT,
-        BrowserAttributes.FIREFOX,
-        BrowserAttributes.CHROMIUM,
-        BrowserAttributes.CHROME,
-        BrowserAttributes.EDGE,
-        BrowserAttributes.WEBVIEW,
-        BrowserAttributes.D8,
+      BrowserAttributes.SAFARI,
+      BrowserAttributes.WEBKIT,
+      BrowserAttributes.FIREFOX,
+      BrowserAttributes.CHROMIUM,
+      BrowserAttributes.CHROME,
+      BrowserAttributes.EDGE,
+      BrowserAttributes.WEBVIEW,
+      BrowserAttributes.D8,
     )
 
     for browser_cls, expected in expected_by_cls.items():
@@ -243,15 +318,19 @@ class BrowserAttributesTestCase(unittest.TestCase):
         if attrs.is_mobile:
           self.assertTrue(attrs.is_remote)
         self.assertEqual(
-            issubclass(browser_cls, WebDriverBrowser), attrs.is_webdriver)
+          issubclass(browser_cls, WebDriverBrowser), attrs.is_webdriver
+        )
         self.assertEqual(
-            issubclass(browser_cls, AppleScriptBrowser), attrs.is_applescript)
+          issubclass(browser_cls, AppleScriptBrowser), attrs.is_applescript
+        )
         self.assertEqual(
-            issubclass(browser_cls, (ChromiumBased, all_browsers.D8)),
-            attrs.is_chromium_based)
+          issubclass(browser_cls, (ChromiumBased, all_browsers.D8)),
+          attrs.is_chromium_based,
+        )
         self.assertEqual(issubclass(browser_cls, Webview), attrs.is_webview)
         self.assertEqual(
-            issubclass(browser_cls, WebviewEmbedder), attrs.is_webview_embedder)
+          issubclass(browser_cls, WebviewEmbedder), attrs.is_webview_embedder
+        )
         if browser_cls is not RemoteWebDriver:
           if not issubclass(browser_cls, ShellBrowser):
             self.assertTrue(attrs.is_mobile or attrs.is_desktop)
@@ -260,9 +339,9 @@ class BrowserAttributesTestCase(unittest.TestCase):
 
   def test_mock_browsers_attributes(self) -> None:
     mock_classes: tuple[type[mock_browser.MockBrowser], ...] = (
-        *mock_browser.ALL,
-        mock_browser.MockChromium,
-        mock_browser.MockChromeAndroidStable,
+      *mock_browser.ALL,
+      mock_browser.MockChromium,
+      mock_browser.MockChromeAndroidStable,
     )
     for browser_cls in mock_classes:
       with self.subTest(browser_cls=browser_cls.__name__):

@@ -34,8 +34,9 @@ class Viewport:
     else:
       raise ArgumentTypeError(f"Expected str, but got '{type(value)}': {value}")
     if not viewport.has_size:
-      raise ArgumentTypeError("Expected viewport with explicit size, "
-                              f"but got {viewport}")
+      raise ArgumentTypeError(
+        f"Expected viewport with explicit size, but got {viewport}"
+      )
     return viewport
 
   @classmethod
@@ -58,19 +59,22 @@ class Viewport:
       x_str, _, y_str = position.partition("x")
       if not y_str:
         raise ArgumentTypeError(
-            f"Missing viewport y position in input: {value}")
+          f"Missing viewport y position in input: {value}"
+        )
       x = NumberParser.positive_zero_int(x_str, "viewport x")
       y = NumberParser.positive_zero_int(y_str, "viewport y")
     width: int = NumberParser.positive_int(width_str, "viewport width")
     height: int = NumberParser.positive_int(height_str, "viewport height")
     return Viewport(width, height, x, y)
 
-  def __init__(self,
-               width: int = 1500,
-               height: int = 1000,
-               x: int = 10,
-               y: int = 50,
-               mode: ViewportMode = ViewportMode.SIZE) -> None:
+  def __init__(
+    self,
+    width: int = 1500,
+    height: int = 1000,
+    x: int = 10,
+    y: int = 50,
+    mode: ViewportMode = ViewportMode.SIZE,
+  ) -> None:
     self._width: Final[int] = width
     self._height: Final[int] = height
     self._x: Final[int] = x
@@ -91,16 +95,20 @@ class Viewport:
     else:
       if self._width != 0:
         raise ArgumentTypeError(
-            "Non-zero width only allowed with ViewportMode.SIZE")
+          "Non-zero width only allowed with ViewportMode.SIZE"
+        )
       if self._height != 0:
         raise ArgumentTypeError(
-            "Non-zero height only allowed with ViewportMode.SIZE")
+          "Non-zero height only allowed with ViewportMode.SIZE"
+        )
       if self._x != 0:
         raise ArgumentTypeError(
-            "Non-zero x only allowed with ViewportMode.SIZE")
+          "Non-zero x only allowed with ViewportMode.SIZE"
+        )
       if self._y != 0:
         raise ArgumentTypeError(
-            "Non-zero y only allowed with ViewportMode.SIZE")
+          "Non-zero y only allowed with ViewportMode.SIZE"
+        )
 
   @property
   def is_default(self) -> bool:
@@ -159,11 +167,11 @@ class Viewport:
   @property
   def key(self) -> tuple[tuple, ...]:
     return (
-        ("mode", str(self.mode)),
-        ("x", self._x),
-        ("y", self._y),
-        ("width", self._width),
-        ("height", self._height),
+      ("mode", str(self.mode)),
+      ("x", self._x),
+      ("y", self._y),
+      ("width", self._width),
+      ("height", self._height),
     )
 
   def __str__(self) -> str:

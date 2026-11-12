@@ -16,42 +16,43 @@ from tests.crossbench.base import BaseCrossbenchTestCase
 
 
 class EdgeWebDriverForTesting(EdgeWebDriver):
-
   @override
   def _extract_version(self) -> EdgeVersion:
     return EdgeVersion.parse(mock_browser.MockEdgeStable.VERSION)
 
 
 class EdgeWebdriverTestCase(BaseCrossbenchTestCase):
-
   def test_conflicting_finch_flags(self) -> None:
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
       EdgeWebDriverForTesting(
-          label="browser-label",
-          path=mock_browser.MockEdgeStable.mock_app_path(),
-          settings=Settings(
-              js_flags=[],
-              flags=[
-                  "--disable-field-trial-config",
-                  "--enable-field-trial-config",
-              ],
-              platform=self.platform))
+        label="browser-label",
+        path=mock_browser.MockEdgeStable.mock_app_path(),
+        settings=Settings(
+          js_flags=[],
+          flags=[
+            "--disable-field-trial-config",
+            "--enable-field-trial-config",
+          ],
+          platform=self.platform,
+        ),
+      )
     msg = str(cm.exception)
     self.assertIn("--enable-field-trial-config", msg)
     self.assertIn("--disable-field-trial-config", msg)
 
   def test_auto_disabling_field_trials(self):
     browser = EdgeWebDriverForTesting(
-        label="browser-label",
-        path=mock_browser.MockEdgeStable.mock_app_path(),
-        settings=Settings(platform=self.platform))
+      label="browser-label",
+      path=mock_browser.MockEdgeStable.mock_app_path(),
+      settings=Settings(platform=self.platform),
+    )
     self.assertIn("--disable-field-trial-config", browser.flags)
 
     browser_field_trial = EdgeWebDriverForTesting(
-        label="browser-label",
-        path=mock_browser.MockEdgeStable.mock_app_path(),
-        settings=Settings(
-            flags=["--force-fieldtrials"], platform=self.platform))
+      label="browser-label",
+      path=mock_browser.MockEdgeStable.mock_app_path(),
+      settings=Settings(flags=["--force-fieldtrials"], platform=self.platform),
+    )
     self.assertIn("--force-fieldtrials", browser_field_trial.flags)
     self.assertNotIn("--disable-field-trial-config", browser_field_trial.flags)
 
@@ -60,9 +61,10 @@ class EdgeWebdriverTestCase(BaseCrossbenchTestCase):
       if field_trial_flag == "--enable-benchmarking":
         continue
       browser = EdgeWebDriverForTesting(
-          label="browser-label",
-          path=mock_browser.MockEdgeStable.mock_app_path(),
-          settings=Settings(flags=[field_trial_flag], platform=self.platform))
+        label="browser-label",
+        path=mock_browser.MockEdgeStable.mock_app_path(),
+        settings=Settings(flags=[field_trial_flag], platform=self.platform),
+      )
       flags: ChromeFlags = browser.flags
       self.assertIn(field_trial_flag, flags)
       self.assertFalse(flags.field_trial_disable_flags)

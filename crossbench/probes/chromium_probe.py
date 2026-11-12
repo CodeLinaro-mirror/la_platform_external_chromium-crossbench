@@ -15,7 +15,6 @@ if TYPE_CHECKING:
 
 
 class ChromiumProbe(Probe):
-
   @override
   def validate_browser(self, env: RunnerEnv, browser: Browser) -> None:
     super().validate_browser(env, browser)

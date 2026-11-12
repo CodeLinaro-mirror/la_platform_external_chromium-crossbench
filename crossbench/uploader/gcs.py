@@ -28,13 +28,13 @@ class GoogleCloudStorageUploader(BaseUploader):
     dest_url = f"{self._url.rstrip('/')}/{file_path.name}"
 
     res = plt.PLATFORM.sh(
-        gcloud_bin,
-        "storage",
-        "cp",
-        file_path,
-        dest_url,
-        capture_output=True,
-        check=False,
+      gcloud_bin,
+      "storage",
+      "cp",
+      file_path,
+      dest_url,
+      capture_output=True,
+      check=False,
     )
     if res.returncode != 0:
       raise RuntimeError(f"gs upload failure: ({res.returncode}): {res.stderr}")

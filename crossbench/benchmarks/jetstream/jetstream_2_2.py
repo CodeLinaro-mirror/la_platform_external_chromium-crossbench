@@ -6,8 +6,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, ClassVar, override
 
-from crossbench.benchmarks.jetstream.jetstream_2 import JetStream2Benchmark, \
-    JetStream2Probe, JetStream2ProbeContext, JetStream2Story, ProbeClsTupleT
+from crossbench.benchmarks.jetstream.jetstream_2 import (
+  JetStream2Benchmark,
+  JetStream2Probe,
+  JetStream2ProbeContext,
+  JetStream2Story,
+  ProbeClsTupleT,
+)
 
 if TYPE_CHECKING:
   from crossbench.benchmarks.base import VersionParts
@@ -31,8 +36,9 @@ class JetStream22Story(JetStream2Story):
   NAME: ClassVar[str] = "jetstream_2.2"
   URL: ClassVar[str] = "https://chromium-workloads.web.app/jetstream/v2.2/"
   URL_OFFICIAL: ClassVar[str] = "https://browserbench.org/JetStream2.2/"
-  URL_CHROME_FORK: ClassVar[
-      str] = "https://chromium-workloads.web.app/jetstream/v2.2-custom/"
+  URL_CHROME_FORK: ClassVar[str] = (
+    "https://chromium-workloads.web.app/jetstream/v2.2-custom/"
+  )
 
 
 class JetStream22Benchmark(JetStream2Benchmark):
@@ -52,6 +58,16 @@ class JetStream22Benchmark(JetStream2Benchmark):
   @classmethod
   @override
   def aliases(cls) -> tuple[str, ...]:
-    return ("js", "js-latest", "jetstream", "jetstream-latest", "js2",
-            "js2-latest", "jetstream_2", "jetstream_2-latest", "jetstream2",
-            "jetstream2-latest", *super().aliases())
+    return (
+      "js",
+      "js-latest",
+      "jetstream",
+      "jetstream-latest",
+      "js2",
+      "js2-latest",
+      "jetstream_2",
+      "jetstream_2-latest",
+      "jetstream2",
+      "jetstream2-latest",
+      *super().aliases(),
+    )

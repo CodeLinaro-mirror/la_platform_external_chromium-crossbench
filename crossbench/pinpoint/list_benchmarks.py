@@ -16,5 +16,6 @@ def fetch_benchmarks() -> list[str]:
     benchmarks = response.json()
     if not benchmarks:
       raise ValueError(
-          "Could not fetch benchmarks from Pinpoint: empty list received.")
+        "Could not fetch benchmarks from Pinpoint: empty list received."
+      )
     return benchmarks

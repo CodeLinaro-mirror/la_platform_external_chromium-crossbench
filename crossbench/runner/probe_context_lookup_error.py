@@ -11,7 +11,6 @@ if TYPE_CHECKING:
 
 
 class ProbeContextLookupError(LookupError):
-
   def __init__(self, probe_cls: type[Probe]) -> None:
     self._probe_cls: Final[type[Probe]] = probe_cls
     super().__init__(f"No active probe context for {probe_cls.NAME!r} probe")

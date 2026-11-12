@@ -4,7 +4,8 @@
 
 from __future__ import annotations
 
-from crossbench.benchmarks.powerline.powerline_benchmark import \
-    PowerlineBenchmark
+from crossbench.benchmarks.powerline.powerline_benchmark import (
+  PowerlineBenchmark,
+)
 
 __all__ = ["PowerlineBenchmark"]

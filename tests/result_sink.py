@@ -38,8 +38,9 @@ class LuciContext:
     luci_ctx_file = pth.LocalPath(path)
     with luci_ctx_file.open(encoding="utf-8") as f:
       data = json.load(f)
-    assert isinstance(data,
-                      dict), f"LUCI_CONTEXT must be a dict, got {type(data)}"
+    assert isinstance(data, dict), (
+      f"LUCI_CONTEXT must be a dict, got {type(data)}"
+    )
     return data
 
   @classmethod
@@ -57,8 +58,9 @@ class LuciContext:
     return None
 
   def __init__(self, data: Mapping[str, Any]) -> None:
-    assert isinstance(data,
-                      dict), f"LUCI_CONTEXT must be a dict, got {type(data)}"
+    assert isinstance(data, dict), (
+      f"LUCI_CONTEXT must be a dict, got {type(data)}"
+    )
     self._data: Final[Mapping[str, Any]] = data
 
   @property
@@ -90,6 +92,7 @@ class _ResultSinkContext(NamedTuple):
 
 class ResultStatus(enum.StrEnum):
   """LUCI ResultDB test result status values."""
+
   PASS = "PASS"
   FAIL = "FAIL"
   SKIP = "SKIP"
@@ -99,6 +102,7 @@ class ResultStatus(enum.StrEnum):
 
 class PytestReportWhen(enum.StrEnum):
   """Execution phase ('when') matching pytest.TestReport.when Literals."""
+
   SETUP = "setup"
   CALL = "call"
   TEARDOWN = "teardown"
@@ -106,6 +110,7 @@ class PytestReportWhen(enum.StrEnum):
 
 class PytestReportOutcome(enum.StrEnum):
   """Outcome matching pytest.TestReport.outcome Literals."""
+
   PASSED = "passed"
   FAILED = "failed"
   SKIPPED = "skipped"
@@ -113,17 +118,20 @@ class PytestReportOutcome(enum.StrEnum):
 
 class ArtifactId(enum.StrEnum):
   """Artifact IDs uploaded alongside test results to LUCI ResultSink."""
+
   TRACEBACK = "traceback"
   STDERR = "stderr"
   STDOUT = "stdout"
   LOG = "log"
 
 
-OUTCOME_TO_STATUS: Final[immutabledict[str, ResultStatus]] = immutabledict({
+OUTCOME_TO_STATUS: Final[immutabledict[str, ResultStatus]] = immutabledict(
+  {
     PytestReportOutcome.PASSED: ResultStatus.PASS,
     PytestReportOutcome.FAILED: ResultStatus.FAIL,
     PytestReportOutcome.SKIPPED: ResultStatus.SKIP,
-})
+  }
+)
 
 TRUNCATED_SUFFIX: Final[str] = "\n...\n[Truncated]"
 MAX_FAILURE_REASON_BYTES: Final[int] = 1024
@@ -131,15 +139,18 @@ RESULTS_BATCH_SIZE: Final[int] = 200
 HTTP_TIMEOUT_SECONDS: Final[int] = 10
 
 NAV_HTML_TEMPLATE: Final[str] = (
-    '<p><a href="?q=">View all test results in build</a> | '
-    '<a href="?q={encoded_file}">View all tests in {escaped_file}</a></p>')
+  '<p><a href="?q=">View all test results in build</a> | '
+  '<a href="?q={encoded_file}">View all tests in {escaped_file}</a></p>'
+)
 SECTION_HTML_TEMPLATE: Final[str] = (
-    "<h3>{escaped_title}</h3>"
-    '<pre><text-artifact artifact-id="{artifact_id}"></text-artifact></pre>')
+  "<h3>{escaped_title}</h3>"
+  '<pre><text-artifact artifact-id="{artifact_id}"></text-artifact></pre>'
+)
 
 
 class _PytestTupleLongrepr(NamedTuple):
   """Representation of pytest's 3-tuple longrepr (e.g. from skips/subtests)."""
+
   path: str
   lineno: int
   message: str
@@ -162,13 +173,14 @@ class ResultSinkTracebackPlugin:
   Registered only when ResultDB/ResultSink is enabled in LUCI_CONTEXT.
   See: https://docs.pytest.org/en/stable/how-to/writing_plugins.html
   """
+
   SECTION_NAME: Final[str] = "Python traceback"
 
   @pytest.hookimpl(hookwrapper=True)
   def pytest_runtest_makereport(
-      self,
-      item: pytest.Item,
-      call: pytest.CallInfo[Any],
+    self,
+    item: pytest.Item,
+    call: pytest.CallInfo[Any],
   ) -> Generator[None, Any, None]:
     del item
     outcome = yield
@@ -176,11 +188,12 @@ class ResultSinkTracebackPlugin:
     if call.excinfo is None or report.outcome != PytestReportOutcome.FAILED:
       return
     raw_tb = "".join(
-        traceback.format_exception(
-            call.excinfo.type,
-            call.excinfo.value,
-            call.excinfo.tb,
-        ))
+      traceback.format_exception(
+        call.excinfo.type,
+        call.excinfo.value,
+        call.excinfo.tb,
+      )
+    )
     if raw_tb:
       report.sections.append((self.SECTION_NAME, raw_tb))
 
@@ -199,10 +212,10 @@ class ResultSinkPlugin:
   """Pytest plugin for uploading test results to local LUCI ResultSink."""
 
   def __init__(
-      self,
-      sink_url: str | None = None,
-      auth_header: Mapping[str, str] | None = None,
-      auth_token: str | None = None,
+    self,
+    sink_url: str | None = None,
+    auth_header: Mapping[str, str] | None = None,
+    auth_token: str | None = None,
   ) -> None:
     if auth_token and not auth_header:
       auth_header = {"Authorization": f"ResultSink {auth_token}"}
@@ -213,12 +226,13 @@ class ResultSinkPlugin:
     self._test_reports: Final[dict[str, pytest.TestReport]] = {}
     self._reported_count: int = 0
     self._session: Final[requests.Session | None] = self._create_session(
-        sink_url, auth_header)
+      sink_url, auth_header
+    )
 
   @classmethod
   def is_result_sink_enabled(
-      cls,
-      luci_context: LuciContext | None = None,
+    cls,
+    luci_context: LuciContext | None = None,
   ) -> bool:
     if luci_context is None:
       luci_context = LuciContext.from_env()
@@ -230,8 +244,8 @@ class ResultSinkPlugin:
 
   @classmethod
   def from_env(
-      cls,
-      luci_context: LuciContext | None = None,
+    cls,
+    luci_context: LuciContext | None = None,
   ) -> ResultSinkPlugin | None:
     if cls._is_xdist_worker():
       return None
@@ -241,25 +255,29 @@ class ResultSinkPlugin:
       return None
     sink_context = luci_context.result_sink
     return cls(
-        sink_url=(f"http://{sink_context.address}/prpc/luci.resultsink.v1.Sink/"
-                  "ReportTestResults"),
-        auth_token=sink_context.auth_token,
+      sink_url=(
+        f"http://{sink_context.address}/prpc/luci.resultsink.v1.Sink/"
+        "ReportTestResults"
+      ),
+      auth_token=sink_context.auth_token,
     )
 
   @classmethod
   def _create_session(
-      cls,
-      endpoint_url: str | None,
-      auth_header: Mapping[str, str] | None,
+    cls,
+    endpoint_url: str | None,
+    auth_header: Mapping[str, str] | None,
   ) -> requests.Session | None:
     if not (endpoint_url and auth_header):
       return None
     session = requests.Session()
-    session.headers.update({
+    session.headers.update(
+      {
         "Content-Type": "application/json",
         "Accept": "application/json",
         **auth_header,
-    })
+      }
+    )
     return session
 
   @classmethod
@@ -270,15 +288,16 @@ class ResultSinkPlugin:
     if len(encoded) <= MAX_FAILURE_REASON_BYTES:
       return text
     max_bytes = MAX_FAILURE_REASON_BYTES - len(TRUNCATED_SUFFIX)
-    return (encoded[:max_bytes].decode("utf-8", errors="ignore") +
-            TRUNCATED_SUFFIX)
+    return (
+      encoded[:max_bytes].decode("utf-8", errors="ignore") + TRUNCATED_SUFFIX
+    )
 
   @classmethod
   def encode_text_artifact(cls, content: str) -> dict[str, str]:
     encoded = base64.b64encode(content.encode("utf-8")).decode("ascii")
     return {
-        "contents": encoded,
-        "contentType": "text/plain; charset=utf-8",
+      "contents": encoded,
+      "contentType": "text/plain; charset=utf-8",
     }
 
   @classmethod
@@ -325,20 +344,23 @@ class ResultSinkPlugin:
     return resolved_file
 
   def _collect_artifact_sections(
-      self,
-      report: pytest.TestReport,
+    self,
+    report: pytest.TestReport,
   ) -> list[_ArtifactSection]:
     candidates = (
-        (ArtifactId.TRACEBACK, "Stack Trace",
-         ResultSinkTracebackPlugin.extract_full_traceback(report)),
-        (ArtifactId.STDERR, "Captured stderr", report.capstderr),
-        (ArtifactId.STDOUT, "Captured stdout", report.capstdout),
-        (ArtifactId.LOG, "Captured log", report.caplog),
+      (
+        ArtifactId.TRACEBACK,
+        "Stack Trace",
+        ResultSinkTracebackPlugin.extract_full_traceback(report),
+      ),
+      (ArtifactId.STDERR, "Captured stderr", report.capstderr),
+      (ArtifactId.STDOUT, "Captured stdout", report.capstdout),
+      (ArtifactId.LOG, "Captured log", report.caplog),
     )
     return [
-        _ArtifactSection(artifact_id, title, content)
-        for artifact_id, title, content in candidates
-        if content
+      _ArtifactSection(artifact_id, title, content)
+      for artifact_id, title, content in candidates
+      if content
     ]
 
   @property
@@ -348,31 +370,33 @@ class ResultSinkPlugin:
   def _build_nav_html(self, rel_path: str) -> str:
     encoded_file = urllib.parse.quote(rel_path, safe="")
     return NAV_HTML_TEMPLATE.format(
-        encoded_file=encoded_file,
-        escaped_file=html.escape(rel_path),
+      encoded_file=encoded_file,
+      escaped_file=html.escape(rel_path),
     )
 
   def _build_artifact_sections(
-      self,
-      sections: Sequence[_ArtifactSection],
-      nav_html: str,
+    self,
+    sections: Sequence[_ArtifactSection],
+    nav_html: str,
   ) -> _ArtifactsAndSummary:
     artifacts: dict[str, dict[str, str]] = {}
     html_parts: list[str] = [nav_html]
     for section in sections:
       artifacts[section.artifact_id] = self.encode_text_artifact(
-          section.content)
+        section.content
+      )
       html_parts.append(
-          SECTION_HTML_TEMPLATE.format(
-              escaped_title=html.escape(section.title),
-              artifact_id=section.artifact_id,
-          ))
+        SECTION_HTML_TEMPLATE.format(
+          escaped_title=html.escape(section.title),
+          artifact_id=section.artifact_id,
+        )
+      )
     return _ArtifactsAndSummary(artifacts, "".join(html_parts))
 
   def _build_artifacts_and_summary(
-      self,
-      report: pytest.TestReport,
-      rel_path: str,
+    self,
+    report: pytest.TestReport,
+    rel_path: str,
   ) -> _ArtifactsAndSummary:
     nav_html = self._build_nav_html(rel_path)
     if report.outcome == PytestReportOutcome.PASSED:
@@ -386,13 +410,15 @@ class ResultSinkPlugin:
 
   def build_test_result(self, report: pytest.TestReport) -> dict[str, Any]:
     status = OUTCOME_TO_STATUS.get(report.outcome, ResultStatus.FAIL)
-    expected = report.outcome in (PytestReportOutcome.PASSED,
-                                  PytestReportOutcome.SKIPPED)
+    expected = report.outcome in (
+      PytestReportOutcome.PASSED,
+      PytestReportOutcome.SKIPPED,
+    )
     fspath, lineno, _ = report.location
     rel_path = self.resolve_repo_rel_path(fspath)
     location: dict[str, Any] = {
-        "repo": REPO_URL,
-        "fileName": f"//{rel_path}",
+      "repo": REPO_URL,
+      "fileName": f"//{rel_path}",
     }
     if lineno is not None and lineno >= 0:
       location["line"] = lineno + 1
@@ -400,21 +426,21 @@ class ResultSinkPlugin:
     result_id = uuid.uuid4().hex[:16]
     test_id = self.format_test_id(report.nodeid)
     test_result: dict[str, Any] = {
-        "testId": test_id,
-        "resultId": result_id,
-        "status": status.value,
-        "expected": expected,
-        "duration": f"{max(0.0, float(report.duration)):.6f}s",
-        "testMetadata": {
-            "name": test_id,
-            "location": location,
-        },
+      "testId": test_id,
+      "resultId": result_id,
+      "status": status.value,
+      "expected": expected,
+      "duration": f"{max(0.0, float(report.duration)):.6f}s",
+      "testMetadata": {
+        "name": test_id,
+        "location": location,
+      },
     }
 
     if report.outcome == PytestReportOutcome.FAILED:
       primary_error = self.extract_primary_error(report)
       test_result["failureReason"] = {
-          "primaryErrorMessage": self.truncate_summary(primary_error),
+        "primaryErrorMessage": self.truncate_summary(primary_error),
       }
     artifacts_and_summary = self._build_artifacts_and_summary(report, rel_path)
     if artifacts := artifacts_and_summary.artifacts:
@@ -441,14 +467,15 @@ class ResultSinkPlugin:
     payload = {"testResults": batch}
     try:
       response = self._session.post(
-          self._endpoint_url,
-          json=payload,
-          timeout=HTTP_TIMEOUT_SECONDS,
+        self._endpoint_url,
+        json=payload,
+        timeout=HTTP_TIMEOUT_SECONDS,
       )
       if response.status_code >= 400:
         self._log_error(
-            f"HTTP {response.status_code} from {self._endpoint_url}: "
-            f"{response.text[:200]}")
+          f"HTTP {response.status_code} from {self._endpoint_url}: "
+          f"{response.text[:200]}"
+        )
       else:
         self._reported_count += len(batch)
     except requests.RequestException as exc:
@@ -458,8 +485,9 @@ class ResultSinkPlugin:
     existing_report = self._test_reports.pop(report.nodeid, None)
     final_report: pytest.TestReport | None
     if report.outcome == PytestReportOutcome.FAILED and (
-        existing_report is None or
-        existing_report.outcome == PytestReportOutcome.PASSED):
+      existing_report is None
+      or existing_report.outcome == PytestReportOutcome.PASSED
+    ):
       final_report = report
     else:
       final_report = existing_report
@@ -488,9 +516,9 @@ class ResultSinkPlugin:
       self._handle_teardown_report(report)
 
   def pytest_sessionfinish(
-      self,
-      session: pytest.Session,
-      exitstatus: int,
+    self,
+    session: pytest.Session,
+    exitstatus: int,
   ) -> None:
     del session, exitstatus
     if not self.enabled:
@@ -502,6 +530,7 @@ class ResultSinkPlugin:
     if self._session:
       self._session.close()
     sys.stdout.write(
-        f"\n[ResultSinkPlugin] Uploaded {self._reported_count} test "
-        "results to ResultSink.\n")
+      f"\n[ResultSinkPlugin] Uploaded {self._reported_count} test "
+      "results to ResultSink.\n"
+    )
     sys.stdout.flush()

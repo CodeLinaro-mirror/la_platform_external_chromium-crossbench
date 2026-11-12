@@ -6,16 +6,19 @@ from __future__ import annotations
 
 from typing import override
 
-from crossbench.benchmarks.motionmark.motionmark_1_3 import \
-    MotionMark13Benchmark, MotionMark13Probe, MotionMark13ProbeContext, \
-    MotionMark13Story
+from crossbench.benchmarks.motionmark.motionmark_1_3 import (
+  MotionMark13Benchmark,
+  MotionMark13Probe,
+  MotionMark13ProbeContext,
+  MotionMark13Story,
+)
 from tests import test_helper
-from tests.crossbench.benchmarks.motionmark.helper import \
-    MotionMark1BaseTestCase
+from tests.crossbench.benchmarks.motionmark.helper import (
+  MotionMark1BaseTestCase,
+)
 
 
 class MotionMark13TestCase(MotionMark1BaseTestCase):
-
   @property
   @override
   def benchmark_cls(self):

@@ -54,9 +54,17 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
   browser is (re-)started.
   """
 
-  def __init__(self, env: RunnerEnv, probes: Iterable[Probe], browser: Browser,
-               extra_flags: Flags, index: int, root_dir: pth.LocalPath,
-               create_symlinks: bool, throw: bool) -> None:
+  def __init__(
+    self,
+    env: RunnerEnv,
+    probes: Iterable[Probe],
+    browser: Browser,
+    extra_flags: Flags,
+    index: int,
+    root_dir: pth.LocalPath,
+    create_symlinks: bool,
+    throw: bool,
+  ) -> None:
     super().__init__(throw)
     self._state: Final[StateMachine[State]] = StateMachine(State.BUILDING)
     self._env: Final[RunnerEnv] = env
@@ -76,7 +84,8 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     # Temporary objects, reset after all runs are ready (see set_ready).
     self._probe_results = ProbeResultDict(root_dir)
     self._probe_session_context_manager = ProbeSessionContextManager(
-        self, self._probe_results)
+      self, self._probe_results
+    )
 
   def append(self, run: Run) -> None:
     self._state.expect(State.BUILDING)
@@ -93,7 +102,8 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     self._set_path(self._get_session_dir())
     self._probe_results = ProbeResultDict(self.path)
     self._probe_session_context_manager = ProbeSessionContextManager(
-        self, self._probe_results)
+      self, self._probe_results
+    )
 
   def _validate(self) -> None:
     if not self._runs:
@@ -108,18 +118,23 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     first_probes = tuple(first_run.probes)
     for index, run in enumerate(self.runs):
       if first_run.browser is not run.browser:
-        raise ValueError("A browser session can only contain "
-                         "Runs with the same Browser.\n"
-                         f"runs[0].browser == {first_run.browser} vs. "
-                         f"runs[{index}].browser == {run.browser}")
+        raise ValueError(
+          "A browser session can only contain "
+          "Runs with the same Browser.\n"
+          f"runs[0].browser == {first_run.browser} vs. "
+          f"runs[{index}].browser == {run.browser}"
+        )
       if first_probes != tuple(run.probes):
-        raise ValueError("Got conflicting Probes within a browser session.\n"
-                         "All runs must have the same probes within a session.")
+        raise ValueError(
+          "Got conflicting Probes within a browser session.\n"
+          "All runs must have the same probes within a session."
+        )
 
   @property
   def raw_session_dir(self) -> pth.LocalPath:
-    return (self.root_dir / self.browser.unique_name / "sessions" /
-            str(self.index))
+    return (
+      self.root_dir / self.browser.unique_name / "sessions" / str(self.index)
+    )
 
   @property
   def is_single_run(self) -> bool:
@@ -221,8 +236,11 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
   @property
   @override
   def info_stack(self) -> TInfoStack:
-    return ("Merging results from multiple browser sessions",
-            f"browser={self.browser.unique_name}", f"session={self.index}")
+    return (
+      "Merging results from multiple browser sessions",
+      f"browser={self.browser.unique_name}",
+      f"session={self.index}",
+    )
 
   @property
   @override
@@ -281,7 +299,8 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
           yield
         except Exception as e:
           logging.debug(
-              "BrowserSessionRunGroup: got unexpected inner exception: %s", e)
+            "BrowserSessionRunGroup: got unexpected inner exception: %s", e
+          )
           raise e
     finally:
       self._teardown(is_dry_run)
@@ -300,8 +319,9 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
         label = "RUN"
         if run.is_warmup:
           label = "WARMUP RUN"
-        logging.info("Preparing SESSION %s, %s %s", self.index, label,
-                     run.index)
+        logging.info(
+          "Preparing SESSION %s, %s %s", self.index, label, run.index
+        )
         run.setup(is_dry_run)
 
   def _setup_browser(self) -> None:
@@ -353,7 +373,8 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     assert self._probe_session_context_manager.is_running
     browser_log_file = self.path / "browser.log"
     assert not browser_log_file.exists(), (
-        f"Default browser log file {browser_log_file} already exists.")
+      f"Default browser log file {browser_log_file} already exists."
+    )
     self._browser.set_log_file(browser_log_file)
     if self._browser.settings.start_browser:
       self.start_browser()
@@ -396,7 +417,8 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
 
   def _teardown(self, is_dry_run: bool) -> None:
     self._state.transition(
-        State.SETUP, State.STARTING, State.RUNNING, to=State.STOPPING)
+      State.SETUP, State.STARTING, State.RUNNING, to=State.STOPPING
+    )
     with self.measure("browser-session-teardown"):
       try:
         self._stop_browser(is_dry_run)
@@ -434,11 +456,12 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     return self._runs[-1] is run
 
 
-class ProbeSessionContextManager(ProbeContextManager[BrowserSessionRunGroup,
-                                                     ProbeSessionContext]):
-
-  def __init__(self, session: BrowserSessionRunGroup,
-               probe_results: ProbeResultDict) -> None:
+class ProbeSessionContextManager(
+  ProbeContextManager[BrowserSessionRunGroup, ProbeSessionContext]
+):
+  def __init__(
+    self, session: BrowserSessionRunGroup, probe_results: ProbeResultDict
+  ) -> None:
     super().__init__(session, probe_results)
 
   @override

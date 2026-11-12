@@ -16,7 +16,8 @@ def _logcat_config() -> str:
 
 def test_logcat(browser_config, test_env) -> None:
   cli = CrossBenchCLI()
-  cli.run([
+  cli.run(
+    [
       "loading",
       "--url=blank",
       f"--browser={browser_config}",
@@ -24,10 +25,12 @@ def test_logcat(browser_config, test_env) -> None:
       "--throw",
       f"--out-dir={test_env.results_dir}",
       *list(test_env.cq_flags),
-  ])
+    ]
+  )
 
   logcat_files = list(
-      {p.resolve() for p in test_env.results_dir.rglob("logcat.txt")})
+    {p.resolve() for p in test_env.results_dir.rglob("logcat.txt")}
+  )
   assert len(logcat_files) == 1
   with logcat_files[0].open() as logcat_file:
     lines = logcat_file.readlines()

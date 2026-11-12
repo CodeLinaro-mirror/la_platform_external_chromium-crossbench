@@ -36,11 +36,11 @@ if TYPE_CHECKING:
 # TODO(eladalon): Drop once a fix, e.g. github.com/google/perfetto/pull/7874,
 # has shipped in the Perfetto UI and in the default trace_processor binary.
 _BOOTTIME_SNAPSHOT_PACKET: Final[bytes] = (
-    b"\x0a\x08"  # Trace.packet (field 1, 8 bytes)
-    b"\x32\x06"  # TracePacket.clock_snapshot (field 6, 6 bytes)
-    b"\x0a\x04"  # ClockSnapshot.clocks (field 1, 4 bytes)
-    b"\x08\x06"  # ClockSnapshot.Clock.clock_id = BUILTIN_CLOCK_BOOTTIME
-    b"\x10\x00"  # ClockSnapshot.Clock.timestamp = 0
+  b"\x0a\x08"  # Trace.packet (field 1, 8 bytes)
+  b"\x32\x06"  # TracePacket.clock_snapshot (field 6, 6 bytes)
+  b"\x0a\x04"  # ClockSnapshot.clocks (field 1, 4 bytes)
+  b"\x08\x06"  # ClockSnapshot.Clock.clock_id = BUILTIN_CLOCK_BOOTTIME
+  b"\x10\x00"  # ClockSnapshot.Clock.timestamp = 0
 )
 
 
@@ -56,18 +56,22 @@ class _RunResults:
     self._path: Final[pth.LocalPath] = run_dir / ResultsSummaryProbe.FILE_NAME
     self._results: Final[JsonDict] = _read_json(self._path)
     self._recorded_cwd: Final[pth.LocalPath] = pth.LocalPath(
-        ObjectParser.non_empty_str(
-            self._results.get("cwd"), f"cwd in {self._path}"))
+      ObjectParser.non_empty_str(
+        self._results.get("cwd"), f"cwd in {self._path}"
+      )
+    )
 
   @functools.cached_property
   def archive_name(self) -> str:
     """<browser>_<story>_<repetition>.zip"""
     parts = (
-        self._lookup(keys) for keys in (
-            ("browser", "label"),
-            ("story", "name"),
-            ("run", "repetition"),
-        ))
+      self._lookup(keys)
+      for keys in (
+        ("browser", "label"),
+        ("story", "name"),
+        ("run", "repetition"),
+      )
+    )
     return pth.safe_filename("_".join(map(str, parts))) + ".zip"
 
   @functools.cached_property
@@ -85,23 +89,25 @@ class _RunResults:
     bits_json = _read_json(bits_json_path)
     if "clock_sync" not in bits_json:
       raise ValueError(f"No clock_sync in {bits_json_path}")
-    clock_sync = ObjectParser.dict(bits_json["clock_sync"],
-                                   f"clock_sync in {bits_json_path}")
+    clock_sync = ObjectParser.dict(
+      bits_json["clock_sync"], f"clock_sync in {bits_json_path}"
+    )
     return NumberParser.any_int(
-        clock_sync.get("offset_ns"),
-        f"offset_ns in {bits_json_path}",
-        parse_str=False)
+      clock_sync.get("offset_ns"),
+      f"offset_ns in {bits_json_path}",
+      parse_str=False,
+    )
 
   @functools.cached_property
   def attributes(self) -> dict[str, str]:
     """Manifest attributes describing the run."""
     attributes = {
-        "crossbench.browser": ("browser", "label"),
-        "crossbench.browser_version": ("browser", "version"),
-        "crossbench.story": ("story", "name"),
-        "crossbench.run": ("run", "name"),
-        "crossbench.repetition": ("run", "repetition"),
-        "crossbench.temperature": ("run", "temperature"),
+      "crossbench.browser": ("browser", "label"),
+      "crossbench.browser_version": ("browser", "version"),
+      "crossbench.story": ("story", "name"),
+      "crossbench.run": ("run", "name"),
+      "crossbench.repetition": ("run", "repetition"),
+      "crossbench.temperature": ("run", "temperature"),
     }
     return {name: str(self._lookup(keys)) for name, keys in attributes.items()}
 
@@ -129,8 +135,9 @@ class _RunResults:
     return value
 
 
-def merge_results(results_dir: pth.LocalPath,
-                  output_dir: pth.LocalPath) -> list[pth.LocalPath]:
+def merge_results(
+  results_dir: pth.LocalPath, output_dir: pth.LocalPath
+) -> list[pth.LocalPath]:
   """Merges every run below results_dir; unmergeable runs are logged and
   skipped, and a ValueError raised at the end if there were any, or none."""
   archives: list[pth.LocalPath] = []
@@ -149,8 +156,9 @@ def merge_results(results_dir: pth.LocalPath,
   return archives
 
 
-def _merge_run(run_dir: pth.LocalPath,
-               output_dir: pth.LocalPath) -> pth.LocalPath:
+def _merge_run(
+  run_dir: pth.LocalPath, output_dir: pth.LocalPath
+) -> pth.LocalPath:
   """Zips the run's device trace and BITS trace with a perfetto_manifest into
   output_dir and returns the archive's path."""
   run = _RunResults(run_dir)
@@ -168,16 +176,17 @@ def _merge_run(run_dir: pth.LocalPath,
   return archive_path
 
 
-def _write_archive(archive_path: pth.LocalPath, run: _RunResults,
-                   manifest: JsonDict) -> None:
+def _write_archive(
+  archive_path: pth.LocalPath, run: _RunResults, manifest: JsonDict
+) -> None:
   with zipfile.ZipFile(
-      archive_path, "w", zipfile.ZIP_DEFLATED, compresslevel=1) as archive:
+    archive_path, "w", zipfile.ZIP_DEFLATED, compresslevel=1
+  ) as archive:
     archive.writestr("perfetto_manifest.json", json.dumps(manifest, indent=2))
     # Gzipped already.
     archive.write(
-        run.device_trace,
-        run.device_trace.name,
-        compress_type=zipfile.ZIP_STORED)
+      run.device_trace, run.device_trace.name, compress_type=zipfile.ZIP_STORED
+    )
     with archive.open(f"bits/{run.bits_trace.name}", "w") as member:
       member.write(_BOOTTIME_SNAPSHOT_PACKET)
       with run.bits_trace.open("rb") as source:
@@ -187,33 +196,33 @@ def _write_archive(archive_path: pth.LocalPath, run: _RunResults,
 def _manifest(run: _RunResults) -> JsonDict:
   device_member = run.device_trace.name
   return {
-      "perfetto_manifest": {
-          "version": 1,
-          "trace_time": {
-              "clock": "BOOTTIME",
-              "file": device_member,
-          },
-          "files": [
-              {
-                  "path": device_member,
-              },
-              {
-                  "path": f"bits/{run.bits_trace.name}",
-                  "machine": {
-                      "name": "bits",
-                  },
-                  "clocks": {
-                      "clock": "BOOTTIME",
-                      "sync_to": {
-                          "file": device_member,
-                          "clock": "BOOTTIME",
-                      },
-                      "offset_ns": run.clock_offset_ns,
-                  },
-              },
-          ],
-          "attributes": run.attributes,
+    "perfetto_manifest": {
+      "version": 1,
+      "trace_time": {
+        "clock": "BOOTTIME",
+        "file": device_member,
       },
+      "files": [
+        {
+          "path": device_member,
+        },
+        {
+          "path": f"bits/{run.bits_trace.name}",
+          "machine": {
+            "name": "bits",
+          },
+          "clocks": {
+            "clock": "BOOTTIME",
+            "sync_to": {
+              "file": device_member,
+              "clock": "BOOTTIME",
+            },
+            "offset_ns": run.clock_offset_ns,
+          },
+        },
+      ],
+      "attributes": run.attributes,
+    },
   }
 
 

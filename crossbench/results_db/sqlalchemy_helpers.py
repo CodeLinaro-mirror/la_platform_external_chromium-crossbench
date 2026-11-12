@@ -9,11 +9,11 @@ from typing import TYPE_CHECKING
 from sqlalchemy.orm import Session, relationship
 
 __all__ = (
-    "Session",
-    "relationship",
-    "DeclarativeBase",
-    "Mapped",
-    "mapped_column",
+  "Session",
+  "relationship",
+  "DeclarativeBase",
+  "Mapped",
+  "mapped_column",
 )
 
 if TYPE_CHECKING:
@@ -26,6 +26,7 @@ else:
     # Fallback for SQLAlchemy 1.4 compatibility (e.g. in Google3).
     from sqlalchemy import Column
     from sqlalchemy.ext.declarative import declarative_base
+
     DeclarativeBase = declarative_base()
     Mapped = object
 

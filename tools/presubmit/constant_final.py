@@ -8,32 +8,35 @@ import ast
 import re
 from typing import TYPE_CHECKING, Final
 
-from tools.presubmit.common import AstCheckVisitor, AstViolation, \
-    PresubmitCheck
+from tools.presubmit.common import AstCheckVisitor, AstViolation, PresubmitCheck
 
 if TYPE_CHECKING:
   from collections.abc import Sequence
 
 _UPPER_SNAKE_CASE_RE: Final[re.Pattern[str]] = re.compile(
-    r"^_?[A-Z][A-Z0-9_]*$")
-_EXCLUDED_CONSTANTS: Final[frozenset[str]] = frozenset({
+  r"^_?[A-Z][A-Z0-9_]*$"
+)
+_EXCLUDED_CONSTANTS: Final[frozenset[str]] = frozenset(
+  {
     "__all__",
     "__author__",
     "__doc__",
     "__version__",
-})
-_TYPE_CONSTRUCT_NAMES: Final[frozenset[str]] = frozenset({
+  }
+)
+_TYPE_CONSTRUCT_NAMES: Final[frozenset[str]] = frozenset(
+  {
     "NewType",
     "ParamSpec",
     "TypeAliasType",
     "TypeVar",
     "TypeVarTuple",
-})
+  }
+)
 BYPASS_KEY: Final[str] = "ALLOW_MUTABLE_CONSTANT"
 
 
 class ConstantFinalVisitor(AstCheckVisitor):
-
   def _is_final_annotation(self, annotation: ast.AST | None) -> bool:
     if isinstance(annotation, ast.Name):
       return annotation.id == "Final"
@@ -54,8 +57,9 @@ class ConstantFinalVisitor(AstCheckVisitor):
     return False
 
   def _is_constant_name(self, name: str) -> bool:
-    return (name not in _EXCLUDED_CONSTANTS and
-            bool(_UPPER_SNAKE_CASE_RE.match(name)))
+    return name not in _EXCLUDED_CONSTANTS and bool(
+      _UPPER_SNAKE_CASE_RE.match(name)
+    )
 
   def _check_assign(self, stmt: ast.Assign) -> None:
     if self._is_type_construct(stmt.value):
@@ -82,18 +86,19 @@ class ConstantFinalVisitor(AstCheckVisitor):
 
   @classmethod
   def report(
-      cls,
-      presubmit: PresubmitCheck,
-      violations: Sequence[AstViolation],
+    cls,
+    presubmit: PresubmitCheck,
+    violations: Sequence[AstViolation],
   ) -> list[object]:
     if not violations:
       return []
 
     if bypass_reason := presubmit.bypass_reason(BYPASS_KEY):
       return [
-          presubmit.output_api.PresubmitNotifyResult(
-              f"Bypassing module constants Final check "
-              f"via commit message tag: {BYPASS_KEY}={bypass_reason}"),
+        presubmit.output_api.PresubmitNotifyResult(
+          f"Bypassing module constants Final check "
+          f"via commit message tag: {BYPASS_KEY}={bypass_reason}"
+        ),
       ]
 
     long_text: str = f"""\
@@ -105,9 +110,9 @@ footer/tags:
   {BYPASS_KEY}=<REASON>
 """
     return [
-        presubmit.output_api.PresubmitError(
-            "Found module constants not annotated with Final in modified "
-            "files:",
-            items=[v.format_error() for v in violations],
-            long_text=long_text),
+      presubmit.output_api.PresubmitError(
+        "Found module constants not annotated with Final in modified files:",
+        items=[v.format_error() for v in violations],
+        long_text=long_text,
+      ),
     ]

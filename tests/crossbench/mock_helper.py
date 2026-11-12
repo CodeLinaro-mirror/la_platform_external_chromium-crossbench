@@ -14,24 +14,37 @@ import os
 import pathlib
 import shlex
 import subprocess
-from typing import TYPE_CHECKING, Any, ClassVar, Iterable, Iterator, Mapping, \
-    MutableMapping, Sequence, TypeAlias, override
+from typing import (
+  TYPE_CHECKING,
+  Any,
+  ClassVar,
+  Iterable,
+  Iterator,
+  Mapping,
+  MutableMapping,
+  Sequence,
+  TypeAlias,
+  override,
+)
 from unittest import mock
 
 import psutil
 
 from crossbench import path as pth
 from crossbench import plt
-from crossbench.action_runner.virtual_device.virtual_device_type import \
-    VirtualDeviceType
+from crossbench.action_runner.virtual_device.virtual_device_type import (
+  VirtualDeviceType,
+)
 from crossbench.benchmarks.base import SubStoryBenchmark
 from crossbench.cli.cli import CrossBenchCLI
 from crossbench.cli.subcommand.benchmark import BenchmarkSubcommand
 from crossbench.plt.android_adb import Adb, AndroidAdbPlatform
 from crossbench.plt.base import MachineArch, Platform, SubprocessError
 from crossbench.plt.chromeos_ssh import ChromeOsSshPlatform
-from crossbench.plt.evemu_platform_mixin import EvemuPlatformMixin, \
-    VirtualDeviceState
+from crossbench.plt.evemu_platform_mixin import (
+  EvemuPlatformMixin,
+  VirtualDeviceState,
+)
 from crossbench.plt.ios import IOSPlatform
 from crossbench.plt.linux import LinuxPlatform, RemoteLinuxPlatform
 from crossbench.plt.linux_ssh import LinuxSshPlatform
@@ -45,13 +58,19 @@ from crossbench.stories.story import Story
 if TYPE_CHECKING:
   import datetime as dt
 
-  from crossbench.action_runner.virtual_device.pointing import \
-      PointingVirtualDeviceConfig
+  from crossbench.action_runner.virtual_device.pointing import (
+    PointingVirtualDeviceConfig,
+  )
   from crossbench.device_config import DeviceConfigKeyPath
   from crossbench.plt.details import CpuDetails, OsDetails
   from crossbench.plt.signals import Signals
-  from crossbench.plt.types import CmdArg, ListCmdArgs, ProcessIo, \
-      ProcessLike, TupleCmdArgs
+  from crossbench.plt.types import (
+    CmdArg,
+    ListCmdArgs,
+    ProcessIo,
+    ProcessLike,
+    TupleCmdArgs,
+  )
   from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner
 
@@ -66,7 +85,6 @@ class DownloadMockData:
 
 
 class ShResult:
-
   def __init__(self, result: str | bytes = "", returncode: int = 0) -> None:
     if isinstance(result, str):
       result = result.encode("utf-8")
@@ -88,7 +106,6 @@ class ShResult:
 
 
 class TrackingPortManagerMixin(PortManager):
-
   def __init__(self, *args, **kwargs):
     super().__init__(*args, **kwargs)
     self.forwarded_ports: dict[int, int] = {}
@@ -120,7 +137,6 @@ class TrackingPortManagerMixin(PortManager):
 
 
 class MockRemoterPortManagerMixin(PortManager):
-
   def __init__(self, *args, **kwargs):
     super().__init__(*args, **kwargs)
     self.current_port = 60000
@@ -146,8 +162,9 @@ class MockLocalPortManager(TrackingPortManagerMixin, LocalPortManager):
   pass
 
 
-class MockRemotePortManager(TrackingPortManagerMixin,
-                            MockRemoterPortManagerMixin, PortManager):
+class MockRemotePortManager(
+  TrackingPortManagerMixin, MockRemoterPortManagerMixin, PortManager
+):
   pass
 
 
@@ -155,7 +172,6 @@ ShResultType: TypeAlias = str | bytes | ShResult
 
 
 class MockPlatformMixin(Platform):
-
   def __init__(self, *args, is_battery_powered=False, fake_fs=None, **kwargs):
     self._is_battery_powered = is_battery_powered
     # Cache some helper properties that might fail under pyfakefs.
@@ -164,7 +180,8 @@ class MockPlatformMixin(Platform):
     self._sh_results: list[ShResult] = []
     self._download_results: list[DownloadMockData] = []
     self.file_contents: MutableMapping[pth.AnyPath, list[str]] = (
-        collections.defaultdict(list))
+      collections.defaultdict(list)
+    )
     self.sleeps: list[float | dt.timedelta] = []
     self.use_mock_machine = True
     self.use_mock_name = True
@@ -184,7 +201,6 @@ class MockPlatformMixin(Platform):
 
   def trace_mark(self, name: str, prefix: str = "crossbench-") -> None:
     self.trace_marks.append(prefix + name)
-
 
   @property
   def has_clipboard(self) -> bool:
@@ -243,36 +259,37 @@ class MockPlatformMixin(Platform):
 
   def os_details(self) -> OsDetails:
     return {
-        "system": "mock os system",
-        "release": "mock os release",
-        "version": "mock os version",
-        "platform": "mock os platform",
+      "system": "mock os system",
+      "release": "mock os release",
+      "version": "mock os version",
+      "platform": "mock os platform",
     }
 
-  def expect_download(self,
-                      url: str,
-                      path: pth.AnyPath,
-                      data: bytes | None = None):
+  def expect_download(
+    self, url: str, path: pth.AnyPath, data: bytes | None = None
+  ):
     self._download_results.append(DownloadMockData(url, path, data))
 
   def download_to(self, url: str, path: pth.AnyPath) -> pth.AnyPath:
     assert self._download_results, (
-        f"No more download test data, but requested: {url}")
+      f"No more download test data, but requested: {url}"
+    )
     provided_data = self._download_results.pop()
-    assert url == provided_data.url, (f"Expected download url {url}, "
-                                      f"but got: {provided_data.url}")
+    assert url == provided_data.url, (
+      f"Expected download url {url}, but got: {provided_data.url}"
+    )
     assert path == provided_data.path, (
-        f"Expected download result path {path}, but got: {provided_data.path}")
+      f"Expected download result path {path}, but got: {provided_data.path}"
+    )
     if provided_data.data:
       pathlib.Path(path).write_bytes(provided_data.data)
     else:
       self.touch(path)
     return path
 
-  def expect_sh(self,
-                *args: CmdArg | int,
-                result: ShResultType = "",
-                returncode: int = 0) -> None:
+  def expect_sh(
+    self, *args: CmdArg | int, result: ShResultType = "", returncode: int = 0
+  ) -> None:
     if args:
       if self._expected_sh_cmds is None:
         self._expected_sh_cmds = []
@@ -300,7 +317,8 @@ class MockPlatformMixin(Platform):
   def sh_results(self, results: Iterable[ShResult]) -> None:
     assert not self._sh_results, "Trying to override non-consumed results"
     assert not self._expected_sh_cmds, (
-        "expect_sh() cannot be used together with sh_results")
+      "expect_sh() cannot be used together with sh_results"
+    )
     for result in results:
       self.expect_sh(result=result)
 
@@ -365,10 +383,8 @@ class MockPlatformMixin(Platform):
   def disk_usage(self, path: pth.AnyPathLike) -> psutil._common.sdiskusage:
     del path
     return psutil._common.sdiskusage(  # noqa: SLF001
-        total=GIB * 100,
-        used=20 * GIB,
-        free=80 * GIB,
-        percent=20)
+      total=GIB * 100, used=20 * GIB, free=80 * GIB, percent=20
+    )
 
   def cpu_usage(self) -> float:
     return 0.1
@@ -377,10 +393,9 @@ class MockPlatformMixin(Platform):
   def cpu_details(self) -> CpuDetails:
     return {"physical_cores": 2, "logical_cores": 4, "info": self.cpu}
 
-  def write_text(self,
-                 file: pth.AnyPathLike,
-                 data: str,
-                 encoding: str = "utf-8") -> None:
+  def write_text(
+    self, file: pth.AnyPathLike, data: str, encoding: str = "utf-8"
+  ) -> None:
     file_path = self.path(file)
     self.file_contents[file_path].append(data)
     if self.use_fs:
@@ -395,8 +410,9 @@ class MockPlatformMixin(Platform):
     return {self.name: copy.deepcopy(self.device_config_data)}
 
   @override
-  def set_device_config_value(self, key_path: DeviceConfigKeyPath,
-                              value: str | None) -> None:
+  def set_device_config_value(
+    self, key_path: DeviceConfigKeyPath, value: str | None
+  ) -> None:
     """Records the call, and writes the value, deleting it if None."""
     self.device_config_writes.append((key_path, value))
     *sections, key = key_path
@@ -418,10 +434,9 @@ class MockPlatformMixin(Platform):
     del attrs
     return []
 
-  def process_children(self,
-                       parent_pid: int,
-                       recursive=False,
-                       attrs: list[str] | None = None):
+  def process_children(
+    self, parent_pid: int, recursive=False, attrs: list[str] | None = None
+  ):
     del parent_pid, recursive
     return []
 
@@ -429,11 +444,11 @@ class MockPlatformMixin(Platform):
     return None
 
   def search_platform_binary(
-      self,
-      name: str,
-      macos: Sequence[str] = (),
-      win: Sequence[str] = (),
-      linux: Sequence[str] = (),
+    self,
+    name: str,
+    macos: Sequence[str] = (),
+    win: Sequence[str] = (),
+    linux: Sequence[str] = (),
   ) -> pth.AnyPath:
     del macos, win, linux
     return self.path(f"/usr/bin/{name}")
@@ -451,58 +466,69 @@ class MockPlatformMixin(Platform):
     # pyrefly: ignore[missing-attribute]
     return super().search_binary(app_or_bin)
 
-  def sh_stdout_bytes(self,
-                      *args: CmdArg,
-                      shell: bool = False,
-                      quiet: bool = False,
-                      stdin: ProcessIo = None,
-                      input: bytes | str | None = None,
-                      env: Mapping[str, str] | None = None,
-                      cwd: pth.AnyPath | None = None,
-                      check: bool = True) -> bytes:
+  def sh_stdout_bytes(
+    self,
+    *args: CmdArg,
+    shell: bool = False,
+    quiet: bool = False,
+    stdin: ProcessIo = None,
+    input: bytes | str | None = None,
+    env: Mapping[str, str] | None = None,
+    cwd: pth.AnyPath | None = None,
+    check: bool = True,
+  ) -> bytes:
     return self.sh(
-        *args,
-        shell=shell,
-        quiet=quiet,
-        stdin=stdin,
-        input=input,
-        env=env,
-        cwd=cwd,
-        check=check,
-        capture_output=True).stdout
+      *args,
+      shell=shell,
+      quiet=quiet,
+      stdin=stdin,
+      input=input,
+      env=env,
+      cwd=cwd,
+      check=check,
+      capture_output=True,
+    ).stdout
 
-  def sh(self,
-         *args: CmdArg,
-         shell: bool = False,
-         capture_output: bool = False,
-         stdout: ProcessIo = None,
-         stderr: ProcessIo = None,
-         stdin: ProcessIo = None,
-         input: bytes | str | None = None,
-         env: Mapping[str, str] | None = None,
-         cwd: pth.AnyPath | None = None,
-         quiet: bool = False,
-         check: bool = True) -> subprocess.CompletedProcess:
+  def sh(
+    self,
+    *args: CmdArg,
+    shell: bool = False,
+    capture_output: bool = False,
+    stdout: ProcessIo = None,
+    stderr: ProcessIo = None,
+    stdin: ProcessIo = None,
+    input: bytes | str | None = None,
+    env: Mapping[str, str] | None = None,
+    cwd: pth.AnyPath | None = None,
+    quiet: bool = False,
+    check: bool = True,
+  ) -> subprocess.CompletedProcess:
     del capture_output, stderr, stdin, input, stdout, shell, quiet, env, cwd
     if self._expected_sh_cmds is not None:
       assert self._expected_sh_cmds, (
-          f"Missing expected sh_cmds, but got: {args}")
+        f"Missing expected sh_cmds, but got: {args}"
+      )
       # Convert all args to str first, sh accepts both str and Paths.
       expected = tuple(map(str, self._expected_sh_cmds[0]))
       str_args = tuple(map(str, args))
-      assert expected == str_args, (f"After {len(self._sh_cmds)} cmds: \n"
-                                    f"  expected: {expected}\n"
-                                    f"  got:      {str_args}")
+      assert expected == str_args, (
+        f"After {len(self._sh_cmds)} cmds: \n"
+        f"  expected: {expected}\n"
+        f"  got:      {str_args}"
+      )
       self._expected_sh_cmds.pop(0)
     self._sh_cmds.append(args)
     if not self._sh_results:
       cmd = shlex.join(map(str, args))
-      raise ValueError(f"After {len(self._sh_cmds)} cmds: "
-                       f"MockPlatform has no more sh outputs for cmd: {cmd}")
+      raise ValueError(
+        f"After {len(self._sh_cmds)} cmds: "
+        f"MockPlatform has no more sh outputs for cmd: {cmd}"
+      )
 
     sh_result: ShResult = self._sh_results.pop(0)
     process = subprocess.CompletedProcess(
-        args, sh_result.returncode, stdout=sh_result.result)
+      args, sh_result.returncode, stdout=sh_result.result
+    )
     if check and process.returncode != 0:
       raise SubprocessError(self, process)
 
@@ -510,18 +536,20 @@ class MockPlatformMixin(Platform):
 
   # MockPlatformMixin._popen returns MockPopen instead of subprocess.Popen.
   # pyrefly: ignore[bad-override]
-  def _popen(self,
-             *args: CmdArg,
-             bufsize=-1,
-             shell: bool = False,
-             stdout: ProcessIo = None,
-             stderr: ProcessIo = None,
-             stdin: ProcessIo = None,
-             env: Mapping[str, str] | None = None,
-             cwd: pth.AnyPath | None = None,
-             encoding: str | None = None,
-             quiet: bool = False,
-             auto_terminate: bool = True) -> MockPopen:
+  def _popen(
+    self,
+    *args: CmdArg,
+    bufsize=-1,
+    shell: bool = False,
+    stdout: ProcessIo = None,
+    stderr: ProcessIo = None,
+    stdin: ProcessIo = None,
+    env: Mapping[str, str] | None = None,
+    cwd: pth.AnyPath | None = None,
+    encoding: str | None = None,
+    quiet: bool = False,
+    auto_terminate: bool = True,
+  ) -> MockPopen:
     del bufsize, stdout, stderr, stdin, encoding, auto_terminate
     self.sh_stdout(*args, shell=shell, quiet=quiet, env=env, cwd=cwd)
 
@@ -532,37 +560,39 @@ class MockPlatformMixin(Platform):
     mock_popen.start()
     return mock_popen
 
-  def terminate_gracefully(self,
-                           process: ProcessLike | MockPopen,
-                           timeout: int = 1,
-                           signal: Signals | None = None) -> None:
+  def terminate_gracefully(
+    self,
+    process: ProcessLike | MockPopen,
+    timeout: int = 1,
+    signal: Signals | None = None,
+  ) -> None:
     if isinstance(process, MockPopen):
       process.terminate()
       return
     super().terminate_gracefully(process, timeout, signal)
 
-  def mkdir(self,
-            path: pth.AnyPathLike,
-            parents: bool = True,
-            exist_ok: bool = True) -> None:
+  def mkdir(
+    self, path: pth.AnyPathLike, parents: bool = True, exist_ok: bool = True
+  ) -> None:
     super().mkdir(path, parents, exist_ok)
     self.mkdir_calls += 1
 
-  def process_meminfo(self, process_name: str,
-                      timeout: dt.timedelta) -> list[ProcessMeminfo]:
+  def process_meminfo(
+    self, process_name: str, timeout: dt.timedelta
+  ) -> list[ProcessMeminfo]:
     del timeout
     return [
-        ProcessMeminfo(1, process_name, 2, 3, 4),
-        ProcessMeminfo(2, process_name, 3, 4, 5),
+      ProcessMeminfo(1, process_name, 2, 3, 4),
+      ProcessMeminfo(2, process_name, 3, 4, 5),
     ]
 
   def system_meminfo(self, timeout: dt.timedelta) -> dict[str, float]:
     del timeout
     return {
-        "total_ram_kb": 5,
-        "cached_pss_kb": 4,
-        "cached_kernel_kb": 3,
-        "free_kb": 2,
+      "total_ram_kb": 5,
+      "cached_pss_kb": 4,
+      "cached_kernel_kb": 3,
+      "free_kb": 2,
     }
 
   @override
@@ -583,7 +613,6 @@ class MockPlatformMixin(Platform):
 
 
 class MockFd:
-
   def __init__(self):
     self.expected_writes: list[bytes] = []
     self.read_returns: list[bytes] = []
@@ -599,7 +628,8 @@ class MockFd:
     expected = self.expected_writes.pop(0)
 
     assert data == expected, (
-        f"Expected write does not match. Expected: {expected} Got: {data!r}")
+      f"Expected write does not match. Expected: {expected} Got: {data!r}"
+    )
 
   def readline(self):
     if not self.read_returns:
@@ -619,7 +649,6 @@ class MockPopenState(enum.StrEnum):
 
 
 class MockPopen:
-
   def __init__(self, stdout: MockFd | None = None, stdin: MockFd | None = None):
     self._stdout: MockFd = stdout or MockFd()
     self._stdin: MockFd = stdin or MockFd()
@@ -657,9 +686,9 @@ class MockPopen:
 
 
 class PosixMockPlatformMixin(MockPlatformMixin):
-
-  def _init_mock_virtual_device(self, device_name: str,
-                                device_type: VirtualDeviceType) -> None:
+  def _init_mock_virtual_device(
+    self, device_name: str, device_type: VirtualDeviceType
+  ) -> None:
     assert isinstance(self, EvemuPlatformMixin)
     if self._is_device_running(device_name):
       return
@@ -668,17 +697,19 @@ class PosixMockPlatformMixin(MockPlatformMixin):
     mock_proc.stdin = mock.MagicMock()
     mock_proc.stdout = None
     self._virtual_devices[device_name] = VirtualDeviceState(
-        mock_proc, device_type=device_type)
+      mock_proc, device_type=device_type
+    )
 
   def _init_virtual_keyboard(self, device_name: str) -> None:
     self._init_mock_virtual_device(device_name, VirtualDeviceType.KEYBOARD)
 
-  def _init_pointing_virtual_device(self,
-                                    device_config: PointingVirtualDeviceConfig,
-                                    header_template: str) -> None:
+  def _init_pointing_virtual_device(
+    self, device_config: PointingVirtualDeviceConfig, header_template: str
+  ) -> None:
     assert header_template, "No evemu header template provided"
-    self._init_mock_virtual_device(device_config.name,
-                                   device_config.device_type)
+    self._init_mock_virtual_device(
+      device_config.name, device_config.device_type
+    )
 
 
 class WinMockPlatformMixin(MockPlatformMixin):
@@ -754,7 +785,6 @@ class MockAdb(Adb):
 
 
 class AndroidAdbMockPlatform(PosixMockPlatformMixin, AndroidAdbPlatform):
-
   @override
   def close_all_apps(self) -> None:
     pass
@@ -777,7 +807,6 @@ else:
 
 
 class MockStory(Story):
-
   @classmethod
   @override
   def all_story_names(cls) -> tuple[str, ...]:

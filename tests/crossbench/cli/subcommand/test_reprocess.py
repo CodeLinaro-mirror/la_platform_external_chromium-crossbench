@@ -19,11 +19,11 @@ if TYPE_CHECKING:
   from crossbench import path as pth
 
 _PROCESS_RESULT_DIR_PATCH: Final[str] = (
-    "crossbench.benchmarks.web_power.probe.WebPowerProbe.process_result_dir")
+  "crossbench.benchmarks.web_power.probe.WebPowerProbe.process_result_dir"
+)
 
 
 class ReprocessSubcommandTest(BaseCliTestCase):
-
   def setUp(self) -> None:
     super().setUp()
     self.cli_instance = CrossBenchCLI()
@@ -33,13 +33,13 @@ class ReprocessSubcommandTest(BaseCliTestCase):
     self.test_dir.mkdir(parents=True, exist_ok=True)
 
   def _create_sample_run(
-      self,
-      browser: str = "chrome",
-      story: str = "s",
-      run: str = "0",
-      probe: str = "p",
-      model: str | None = "Pixel 9",
-      details_file: str = "cb.system.details.json",
+    self,
+    browser: str = "chrome",
+    story: str = "s",
+    run: str = "0",
+    probe: str = "p",
+    model: str | None = "Pixel 9",
+    details_file: str = "cb.system.details.json",
   ) -> pth.LocalPath:
     run_dir = self.test_dir / browser / "stories" / story / run / probe
     run_dir.mkdir(parents=True, exist_ok=True)
@@ -86,7 +86,8 @@ class ReprocessSubcommandTest(BaseCliTestCase):
 
   def test_get_device_model_fallback(self) -> None:
     run_dir = self._create_sample_run(
-        model="Pixel 8", details_file="cb.results.json")
+      model="Pixel 8", details_file="cb.results.json"
+    )
     model = ReprocessSubcommand._get_device_model_from_run(run_dir)
     self.assertEqual(model, "Pixel 8")
 
@@ -97,9 +98,11 @@ class ReprocessSubcommandTest(BaseCliTestCase):
 
   def test_get_base_df(self) -> None:
     self._create_sample_run(
-        "chrome-stable", "story1", "0", "web_power", model="Pixel 9")
+      "chrome-stable", "story1", "0", "web_power", model="Pixel 9"
+    )
     self._create_sample_run(
-        "chrome-beta", "story2", "0", "web_power", model="Pixel 9")
+      "chrome-beta", "story2", "0", "web_power", model="Pixel 9"
+    )
     subcommand = ReprocessSubcommand(self.cli_instance)
     base_df = subcommand._get_base_df(self.test_dir)
     self.assertEqual(len(base_df), 2)

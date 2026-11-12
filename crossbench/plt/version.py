@@ -14,7 +14,6 @@ VERSION_PART_RE = re.compile(r"[^0-9]*(?P<parts>[\d+.]+)")
 
 
 class PlatformVersion(Version, metaclass=abc.ABCMeta):
-
   @classmethod
   def parse(cls, version_str: str) -> Self:
     match = VERSION_PART_RE.match(version_str)
@@ -25,8 +24,9 @@ class PlatformVersion(Version, metaclass=abc.ABCMeta):
 
   @classmethod
   @override
-  def _validate_parts(cls, parts: VersionPartsData,
-                      value: str) -> tuple[int, ...]:
+  def _validate_parts(
+    cls, parts: VersionPartsData, value: str
+  ) -> tuple[int, ...]:
     parts_tuple = super()._validate_parts(parts, value)
     if not parts_tuple:
       raise cls.parse_error("missing parts", value)

@@ -9,8 +9,12 @@ import json
 from typing import TYPE_CHECKING, override
 from unittest import mock
 
-from crossbench.benchmarks.webai.webai import WebAIBenchmark, WebAIProbe, \
-    WebAIProbeContext, WebAIStory
+from crossbench.benchmarks.webai.webai import (
+  WebAIBenchmark,
+  WebAIProbe,
+  WebAIProbeContext,
+  WebAIStory,
+)
 from crossbench.env.runner_env import EnvConfig, ValidationMode
 from crossbench.runner.runner import Runner
 from tests import test_helper
@@ -21,7 +25,6 @@ if TYPE_CHECKING:
 
 
 class WebAITestCase(helper.PressBaseBenchmarkTestCase):
-
   @property
   @override
   def benchmark_cls(self):
@@ -40,8 +43,9 @@ class WebAITestCase(helper.PressBaseBenchmarkTestCase):
   def probe_context_cls(self):
     return WebAIProbeContext
 
-  def _setup_run_js_expect(self, browser: MockBrowser,
-                           probe_results: dict) -> None:
+  def _setup_run_js_expect(
+    self, browser: MockBrowser, probe_results: dict
+  ) -> None:
     # wait_js_condition for window.benchmarkClient
     browser.expect_js(result=True)
     # js client setup (testDone = false)
@@ -61,11 +65,11 @@ class WebAITestCase(helper.PressBaseBenchmarkTestCase):
 
     # Set up expectations for mock browsers
     probe_results = {
-        "Score": 5678.9,
-        "Total Time": {
-            "average": 12.3,
-            "stddev": 1.1,
-        },
+      "Score": 5678.9,
+      "Total Time": {
+        "average": 12.3,
+        "stddev": 1.1,
+      },
     }
 
     repetitions = 2
@@ -77,15 +81,16 @@ class WebAITestCase(helper.PressBaseBenchmarkTestCase):
       browser.expected_js = copy.deepcopy(browser.expected_js)
 
     runner = Runner(
-        self.out_dir,
-        self.browsers,
-        benchmark,
-        env_config=EnvConfig(),
-        env_validation_mode=ValidationMode.SKIP,
-        platform=self.platform,
-        repetitions=repetitions,
-        throw=True,
-        in_memory_result_db=True)
+      self.out_dir,
+      self.browsers,
+      benchmark,
+      env_config=EnvConfig(),
+      env_validation_mode=ValidationMode.SKIP,
+      platform=self.platform,
+      repetitions=repetitions,
+      throw=True,
+      in_memory_result_db=True,
+    )
 
     with mock.patch.object(self.benchmark_cls, "validate_url") as cm:
       runner.run()
@@ -122,15 +127,16 @@ class WebAITestCase(helper.PressBaseBenchmarkTestCase):
       browser.expected_js = copy.deepcopy(browser.expected_js)
 
     runner = Runner(
-        self.out_dir,
-        self.browsers,
-        benchmark,
-        env_config=EnvConfig(),
-        env_validation_mode=ValidationMode.SKIP,
-        platform=self.platform,
-        repetitions=repetitions,
-        throw=True,
-        in_memory_result_db=True)
+      self.out_dir,
+      self.browsers,
+      benchmark,
+      env_config=EnvConfig(),
+      env_validation_mode=ValidationMode.SKIP,
+      platform=self.platform,
+      repetitions=repetitions,
+      throw=True,
+      in_memory_result_db=True,
+    )
 
     with mock.patch.object(self.benchmark_cls, "validate_url") as cm:
       runner.run()

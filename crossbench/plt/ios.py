@@ -23,7 +23,6 @@ from crossbench.plt.version import PlatformVersion
 from crossbench.plt.wda import WDAClient
 
 if TYPE_CHECKING:
-
   from crossbench.plt.base import CPUFreqInfo
   from crossbench.plt.details import CpuDetails, OsDetails, PythonDetails
   from crossbench.plt.display_info import DisplayInfo, DisplayResolution
@@ -31,8 +30,9 @@ if TYPE_CHECKING:
   from crossbench.plt.types import ListCmdArgs, ProcessInfo
 
 pattern: re.Pattern[str] = re.compile(
-    r"(?P<name>[^\(\)]+) \((?P<version>[0-9\.]+)\) (- Connecting )?"
-    r"\((?P<udid>[0-9A-Z-]+)\)")
+  r"(?P<name>[^\(\)]+) \((?P<version>[0-9\.]+)\) (- Connecting )?"
+  r"\((?P<udid>[0-9A-Z-]+)\)"
+)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -58,19 +58,24 @@ def ios_devices(platform: Platform) -> dict[str, IOSDeviceInfo]:
 def _devicectl_devices(platform: Platform) -> dict[str, IOSDeviceInfo]:
   results: dict[str, IOSDeviceInfo] = {}
   with platform.NamedTemporaryFile(suffix=".json") as tmp_file_path:
-    platform.sh_stdout("xcrun", "devicectl", "list", "devices",
-                       f"--json-output={tmp_file_path}")
+    platform.sh_stdout(
+      "xcrun", "devicectl", "list", "devices", f"--json-output={tmp_file_path}"
+    )
     data = json.loads(platform.read_text(tmp_file_path))
 
   for device_data in data.get("result", {}).get("devices", []):
     if device_data["connectionProperties"]["tunnelState"] == "unavailable":
       continue
-    if (device_data.get("visibilityClass") == "simulators" or
-        device_data["hardwareProperties"].get("reality") == "simulated"):
+    if (
+      device_data.get("visibilityClass") == "simulators"
+      or device_data["hardwareProperties"].get("reality") == "simulated"
+    ):
       continue
-    device = IOSDeviceInfo(device_data["hardwareProperties"]["udid"],
-                           device_data["deviceProperties"]["name"],
-                           device_data["deviceProperties"]["osVersionNumber"])
+    device = IOSDeviceInfo(
+      device_data["hardwareProperties"]["udid"],
+      device_data["deviceProperties"]["name"],
+      device_data["deviceProperties"]["osVersionNumber"],
+    )
     assert device.udid not in results, f"Duplicate UDID: {device.udid}"
     results[device.udid] = device
   return results
@@ -85,22 +90,22 @@ def _simctl_devices(platform: Platform) -> dict[str, IOSDeviceInfo]:
   for runtime, devices in sim_data.get("devices", {}).items():
     if not runtime.startswith(prefix):
       continue
-    version = runtime[len(prefix):].replace("-", ".")
+    version = runtime[len(prefix) :].replace("-", ".")
     for device_data in devices:
       # "xcrun simctl list devices booted" guarantees all devices are booted.
       assert device_data.get("state") == "Booted", "Unbooted device"
       device = IOSDeviceInfo(
-          device_id=device_data["udid"],
-          name=device_data["name"],
-          version=version,
-          is_simulator=True)
+        device_id=device_data["udid"],
+        name=device_data["name"],
+        version=version,
+        is_simulator=True,
+      )
       assert device.udid not in results, f"Duplicate UDID: {device.udid}"
       results[device.udid] = device
   return results
 
 
 class IOSSimulatorPortManager(PortManager):
-
   @override
   def forward(self, local_port: int, remote_port: int) -> int:
     # Simulators share the host's network stack, so nothing is forwarded.
@@ -129,7 +134,6 @@ class IOSSimulatorPortManager(PortManager):
 
 
 class IOSPortManager(SubprocessPortManager):
-
   @property
   def _ios_platform(self) -> IOSPlatform:
     return cast("IOSPlatform", self.platform)
@@ -141,16 +145,17 @@ class IOSPortManager(SubprocessPortManager):
     return False
 
   @override
-  def _popen_forward(self, local_port: int,
-                     remote_port: int) -> subprocess.Popen:
+  def _popen_forward(
+    self, local_port: int, remote_port: int
+  ) -> subprocess.Popen:
     return self.host_platform.popen(
-        Binaries.IPROXY.resolve(self.host_platform),
-        str(local_port),
-        str(remote_port),
-        "-u",
-        self._ios_platform.udid,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
+      Binaries.IPROXY.resolve(self.host_platform),
+      str(local_port),
+      str(remote_port),
+      "-u",
+      self._ios_platform.udid,
+      stdout=subprocess.DEVNULL,
+      stderr=subprocess.DEVNULL,
     )
 
 
@@ -160,27 +165,29 @@ class IOSPortManager(SubprocessPortManager):
 # TODO: Follow remove-posix pattern and redirect all shell commands to the
 #       host platform.
 class IOSPlatform(RemotePlatformMixin, Platform):
-
-  def __init__(self,
-               host_platform: Platform,
-               device_identifier: str | None = None) -> None:
+  def __init__(
+    self, host_platform: Platform, device_identifier: str | None = None
+  ) -> None:
     assert not host_platform.is_remote, (
-        "ios on remote platform is not supported yet")
+      "ios on remote platform is not supported yet"
+    )
     self._device: Final[IOSDeviceInfo] = self._find_ios_device(
-        host_platform, device_identifier)
+      host_platform, device_identifier
+    )
     super().__init__(host_platform)
     self._wda: WDAClient | None = None
 
-  def _find_ios_device(self,
-                       host_platform: Platform,
-                       device_identifier: str | None = None) -> IOSDeviceInfo:
+  def _find_ios_device(
+    self, host_platform: Platform, device_identifier: str | None = None
+  ) -> IOSDeviceInfo:
     devices: dict[str, IOSDeviceInfo] = ios_devices(host_platform)
     if not devices:
       raise ValueError("No devices attached.")
     if not device_identifier:
       if len(devices) != 1:
         raise ValueError(
-            f"Too many devices attached, please specify one of: {devices}")
+          f"Too many devices attached, please specify one of: {devices}"
+        )
       return next(iter(devices.values()))
     if device := devices.get(device_identifier):
       return device
@@ -190,12 +197,14 @@ class IOSPlatform(RemotePlatformMixin, Platform):
         matches.append(device)
     if not matches:
       raise ValueError(
-          f"No matching device for device identifier: {device_identifier}, "
-          f"choices are {devices}")
+        f"No matching device for device identifier: {device_identifier}, "
+        f"choices are {devices}"
+      )
     if len(matches) > 1:
       raise ValueError(
-          f"Found {len(matches)} devices matching: '{device_identifier}'.\n"
-          f"Choices: {matches}")
+        f"Found {len(matches)} devices matching: '{device_identifier}'.\n"
+        f"Choices: {matches}"
+      )
     return matches[0]
 
   @override
@@ -266,33 +275,33 @@ class IOSPlatform(RemotePlatformMixin, Platform):
   def cpu_details(self) -> CpuDetails:
     # TODO: Implement properly (i.e. remove all n/a values)
     return {
-        "info": self.cpu,
-        "physical_cores": self.cpu_cores(logical=False),
-        "logical_cores": self.cpu_cores(logical=True),
-        "usage": "n/a",
-        "total_usage": "n/a",
-        "system_load": "n/a",
-        "min_frequency": "n/a",
-        "max_frequency": "n/a",
-        "current_frequency": "n/a",
+      "info": self.cpu,
+      "physical_cores": self.cpu_cores(logical=False),
+      "logical_cores": self.cpu_cores(logical=True),
+      "usage": "n/a",
+      "total_usage": "n/a",
+      "system_load": "n/a",
+      "min_frequency": "n/a",
+      "max_frequency": "n/a",
+      "current_frequency": "n/a",
     }
 
   @functools.lru_cache(maxsize=1)
   @override
   def os_details(self) -> OsDetails:
     return {
-        "system": "ios",
-        "platform": f"ios {self.version_str}",
-        "version": self.version_str,
-        "release": self.version_str,
+      "system": "ios",
+      "platform": f"ios {self.version_str}",
+      "version": self.version_str,
+      "release": self.version_str,
     }
 
   @functools.lru_cache(maxsize=1)
   @override
   def python_details(self) -> PythonDetails:
     return {
-        "version": "n/a",
-        "bits": "n/a",
+      "version": "n/a",
+      "bits": "n/a",
     }
 
   @functools.lru_cache(maxsize=2)
@@ -328,47 +337,49 @@ class IOSPlatform(RemotePlatformMixin, Platform):
 
   @override
   def launch_app(
-      self,
-      component: str,
-      env_vars: Mapping[str, str] | None = None,
-      terminate_existing: bool = True,
-      payload_url: str | None = None,
+    self,
+    component: str,
+    env_vars: Mapping[str, str] | None = None,
+    terminate_existing: bool = True,
+    payload_url: str | None = None,
   ) -> None:
     if self.is_simulator:
       self._launch_simulator_app(
-          component,
-          env_vars=env_vars,
-          terminate_existing=terminate_existing,
-          payload_url=payload_url,
+        component,
+        env_vars=env_vars,
+        terminate_existing=terminate_existing,
+        payload_url=payload_url,
       )
       return
     cmd: ListCmdArgs = [
-        "xcrun",
-        "devicectl",
-        "device",
-        "process",
-        "launch",
-        "--device",
-        self.udid,
+      "xcrun",
+      "devicectl",
+      "device",
+      "process",
+      "launch",
+      "--device",
+      self.udid,
     ]
     if terminate_existing:
       cmd.append("--terminate-existing")
     if env_vars:
-      cmd.extend((
+      cmd.extend(
+        (
           "--environment-variables",
           json.dumps(dict(env_vars)),
-      ))
+        )
+      )
     if payload_url:
       cmd.extend(("--payload-url", payload_url))
     cmd.append(component)
     self.host_platform.sh(*cmd)
 
   def _launch_simulator_app(
-      self,
-      bundle_id: str,
-      env_vars: Mapping[str, str] | None = None,
-      terminate_existing: bool = True,
-      payload_url: str | None = None,
+    self,
+    bundle_id: str,
+    env_vars: Mapping[str, str] | None = None,
+    terminate_existing: bool = True,
+    payload_url: str | None = None,
   ) -> None:
     cmd: ListCmdArgs = ["xcrun", "simctl", "launch"]
     if terminate_existing:
@@ -381,8 +392,9 @@ class IOSPlatform(RemotePlatformMixin, Platform):
         env[f"SIMCTL_CHILD_{key}"] = value
     self.host_platform.sh(*cmd, env=env)
     if payload_url:
-      self.host_platform.sh("xcrun", "simctl", "openurl", self.udid,
-                            payload_url)
+      self.host_platform.sh(
+        "xcrun", "simctl", "openurl", self.udid, payload_url
+      )
 
   @override
   def display_resolution(self) -> DisplayResolution:
@@ -409,25 +421,30 @@ class IOSPlatform(RemotePlatformMixin, Platform):
     if self._is_safari_app(resolved_app_or_bin):
       return resolved_app_or_bin
     raise ValueError(
-        f"Safari is the only supported app on ios, requested {app_or_bin}")
+      f"Safari is the only supported app on ios, requested {app_or_bin}"
+    )
 
   @override
   def is_file(self, path: pth.AnyPathLike) -> bool:
     if self._is_safari_app(path):
       return True
     raise ValueError(
-        f"Safari is the only supported app on ios, requested {path}")
+      f"Safari is the only supported app on ios, requested {path}"
+    )
 
   @override
   def app_version(self, app_or_bin: pth.AnyPathLike) -> str:
     if self._is_safari_app(app_or_bin):
       return self.version_str
     raise ValueError(
-        "Safari is the only supported app on ios, requested {app_or_bin}")
+      "Safari is the only supported app on ios, requested {app_or_bin}"
+    )
 
   @override
-  def process_children(self,
-                       parent_pid: int,
-                       recursive: bool = False,
-                       attrs: list[str] | None = None) -> list[ProcessInfo]:
+  def process_children(
+    self,
+    parent_pid: int,
+    recursive: bool = False,
+    attrs: list[str] | None = None,
+  ) -> list[ProcessInfo]:
     return []

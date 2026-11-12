@@ -10,12 +10,13 @@ from crossbench import path as pth
 from crossbench.browsers import all as all_browsers
 from crossbench.cli.config.browser import BrowserConfig
 from tests import test_helper
-from tests.crossbench.cli.config.base import ADB_DEVICES_SINGLE_OUTPUT, \
-    BaseConfigTestCase
+from tests.crossbench.cli.config.base import (
+  ADB_DEVICES_SINGLE_OUTPUT,
+  BaseConfigTestCase,
+)
 
 
 class BrowserAliasesTestCase(BaseConfigTestCase):
-
   def test_chrome_aliases(self):
     aliases = ("chrome", "chrome-stable", "chr-stable", "chr")
     expected = all_browsers.Chrome.stable_path(self.platform)
@@ -67,8 +68,14 @@ class BrowserAliasesTestCase(BaseConfigTestCase):
         self.assertEqual(config.browser, expected)
 
   def test_safari_tp_aliases(self):
-    aliases = ("safari-technology-preview", "safari-tech-preview", "safari-tp",
-               "sf-tp", "stp", "tp")
+    aliases = (
+      "safari-technology-preview",
+      "safari-tech-preview",
+      "safari-tp",
+      "sf-tp",
+      "stp",
+      "tp",
+    )
     expected = all_browsers.Safari.technology_preview_path(self.platform)
     for alias in aliases:
       with self.subTest(alias=alias):

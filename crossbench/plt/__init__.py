@@ -35,12 +35,12 @@ def _get_default() -> Platform:
 PLATFORM: Final[Platform] = _get_default()
 
 __all__ = [
-    "LinuxPlatform",
-    "LinuxSshPlatform",
-    "MachineArch",
-    "MacOSPlatform",
-    "Platform",
-    "PyodidePlatform",
-    "SubprocessError",
-    "WinPlatform",
+  "LinuxPlatform",
+  "LinuxSshPlatform",
+  "MachineArch",
+  "MacOSPlatform",
+  "Platform",
+  "PyodidePlatform",
+  "SubprocessError",
+  "WinPlatform",
 ]

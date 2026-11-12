@@ -35,12 +35,13 @@ class LaunchAppAction(Action):
   def config_parser(cls: type[Self]) -> ConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
-        "component",
-        aliases=("app", "activity"),
-        type=ObjectParser.non_empty_str,
-        required=True,
-        help="Application component or activity to launch "
-        "(e.g. 'com.android.settings/.Settings').")
+      "component",
+      aliases=("app", "activity"),
+      type=ObjectParser.non_empty_str,
+      required=True,
+      help="Application component or activity to launch "
+      "(e.g. 'com.android.settings/.Settings').",
+    )
     return parser
 
   @override

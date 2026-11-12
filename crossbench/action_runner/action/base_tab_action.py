@@ -32,17 +32,22 @@ class BaseTabAction(Action, metaclass=abc.ABCMeta):
   def config_parser(cls: type[Self]) -> ConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
-        "tab_index",
-        type=NumberParser.any_int,
-        help=(
-            "The index of the tab. Tabs are indexed in creation "
-            "order. Negative values are allowed, e.g. -1 is the most recently "
-            "opened tab."))
+      "tab_index",
+      type=NumberParser.any_int,
+      help=(
+        "The index of the tab. Tabs are indexed in creation "
+        "order. Negative values are allowed, e.g. -1 is the most recently "
+        "opened tab."
+      ),
+    )
     parser.add_argument(
-        "relative_tab_index",
-        type=NumberParser.any_int,
-        help=("The index of the tab, relative to the current tab. -1 means the"
-              "tab created just before this one."))
+      "relative_tab_index",
+      type=NumberParser.any_int,
+      help=(
+        "The index of the tab, relative to the current tab. -1 means the"
+        "tab created just before this one."
+      ),
+    )
     parser.add_argument("title", type=ObjectParser.regexp)
     parser.add_argument("url", type=ObjectParser.regexp)
     return parser

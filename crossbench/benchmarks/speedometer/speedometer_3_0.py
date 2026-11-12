@@ -6,9 +6,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, ClassVar, override
 
-from crossbench.benchmarks.speedometer.speedometer_3 import \
-    Speedometer3Benchmark, Speedometer3Probe, Speedometer3ProbeContext, \
-    Speedometer3Story
+from crossbench.benchmarks.speedometer.speedometer_3 import (
+  Speedometer3Benchmark,
+  Speedometer3Probe,
+  Speedometer3ProbeContext,
+  Speedometer3Story,
+)
 
 if TYPE_CHECKING:
   from crossbench.benchmarks.base import VersionParts
@@ -20,6 +23,7 @@ class Speedometer30Probe(Speedometer3Probe):
   Speedometer3-specific probe (compatible with v3.0).
   Extracts all speedometer times and scores.
   """
+
   NAME: ClassVar[str] = "speedometer_3.0"
 
   @override
@@ -36,14 +40,16 @@ class Speedometer30Story(Speedometer3Story):
   NAME: ClassVar[str] = "speedometer_3.0"
   URL: ClassVar[str] = "https://chromium-workloads.web.app/speedometer/v3.0/"
   URL_OFFICIAL: ClassVar[str] = "https://browserbench.org/Speedometer3.0/"
-  URL_CHROME_FORK: ClassVar[
-      str] = "https://chromium-workloads.web.app/speedometer/v3.0-custom/"
+  URL_CHROME_FORK: ClassVar[str] = (
+    "https://chromium-workloads.web.app/speedometer/v3.0-custom/"
+  )
 
 
 class Speedometer30Benchmark(Speedometer3Benchmark):
   """
   Benchmark runner for Speedometer 3.0
   """
+
   NAME: ClassVar[str] = "speedometer_3.0"
   DEFAULT_STORY_CLS: ClassVar[type[Speedometer30Story]] = Speedometer30Story
   PROBES: ClassVar[ProbeClsTupleT] = (Speedometer30Probe,)

@@ -13,13 +13,14 @@ import unittest
 from unittest import mock
 
 from crossbench.helper import input_helper
-from crossbench.helper.input_helper import PosixStdinCoordinator, \
-    StdinCoordinator
+from crossbench.helper.input_helper import (
+  PosixStdinCoordinator,
+  StdinCoordinator,
+)
 from tests import test_helper
 
 
 class InputHelperTestCase(unittest.TestCase):
-
   def _make_tty_coordinator(self) -> tuple[PosixStdinCoordinator, int]:
     stdin_r, stdin_w = os.pipe()
     self.addCleanup(self._close_fd, stdin_r)
@@ -39,17 +40,20 @@ class InputHelperTestCase(unittest.TestCase):
       os.close(fd)
 
   def test_module_helpers_delegate_to_shared(self) -> None:
-    self.assertIsInstance(input_helper._SHARED,
-                          StdinCoordinator)  # noqa: SLF001
+    self.assertIsInstance(input_helper._SHARED, StdinCoordinator)  # noqa: SLF001
     timeout = dt.timedelta(seconds=3)
-    with mock.patch.object(
+    with (
+      mock.patch.object(
         input_helper._SHARED,  # noqa: SLF001
         "prompt",
-        return_value="ok") as mock_prompt, \
-         mock.patch.object(
-             input_helper._SHARED,  # noqa: SLF001
-             "input_with_timeout",
-             return_value="timed") as mock_timed:
+        return_value="ok",
+      ) as mock_prompt,
+      mock.patch.object(
+        input_helper._SHARED,  # noqa: SLF001
+        "input_with_timeout",
+        return_value="timed",
+      ) as mock_timed,
+    ):
       self.assertEqual(input_helper.prompt("msg:"), "ok")
       mock_prompt.assert_called_once_with("msg:")
       self.assertEqual(input_helper.input_with_timeout(timeout), "timed")
@@ -60,9 +64,11 @@ class InputHelperTestCase(unittest.TestCase):
       mock_suspend.assert_called_once_with()
 
   def test_register_and_stop_without_cbreak(self) -> None:
-    with mock.patch("sys.stdin") as mock_stdin, \
-         mock.patch("tty.setcbreak") as mock_setcbreak, \
-         mock.patch("termios.tcsetattr") as mock_tcsetattr:
+    with (
+      mock.patch("sys.stdin") as mock_stdin,
+      mock.patch("tty.setcbreak") as mock_setcbreak,
+      mock.patch("termios.tcsetattr") as mock_tcsetattr,
+    ):
       mock_stdin.fileno.return_value = 0
       coordinator = PosixStdinCoordinator()
       with mock.patch("termios.tcgetattr", side_effect=OSError("bad tty")):
@@ -162,17 +168,25 @@ class InputHelperTestCase(unittest.TestCase):
     self.enterContext(mock.patch("sys.stdin"))
     coordinator = PosixStdinCoordinator()
     self.addCleanup(coordinator._stop)
-    with mock.patch("select.select", return_value=([object()], [], [])), \
-         mock.patch("builtins.input", return_value="hello"):
+    with (
+      mock.patch("select.select", return_value=([object()], [], [])),
+      mock.patch("builtins.input", return_value="hello"),
+    ):
       self.assertEqual(coordinator.input_with_timeout(timeout), "hello")
-    with mock.patch("select.select", return_value=([object()], [], [])), \
-         mock.patch("builtins.input", return_value=""):
+    with (
+      mock.patch("select.select", return_value=([object()], [], [])),
+      mock.patch("builtins.input", return_value=""),
+    ):
       self.assertEqual(coordinator.input_with_timeout(timeout), "")
-    with mock.patch("select.select", return_value=([object()], [], [])), \
-         mock.patch("builtins.input", side_effect=EOFError):
+    with (
+      mock.patch("select.select", return_value=([object()], [], [])),
+      mock.patch("builtins.input", side_effect=EOFError),
+    ):
       self.assertIsNone(coordinator.input_with_timeout(timeout))
-    with mock.patch("select.select", return_value=([], [], [])), \
-         mock.patch("builtins.input") as mock_input:
+    with (
+      mock.patch("select.select", return_value=([], [], [])),
+      mock.patch("builtins.input") as mock_input,
+    ):
       self.assertIsNone(coordinator.input_with_timeout(timeout))
       mock_input.assert_not_called()
 
@@ -190,9 +204,11 @@ class InputHelperTestCase(unittest.TestCase):
     blocked = threading.Event()
     self.addCleanup(blocked.set)
     with mock.patch(
-        "builtins.input", side_effect=lambda: blocked.wait() and "late"):
+      "builtins.input", side_effect=lambda: blocked.wait() and "late"
+    ):
       self.assertIsNone(
-          coordinator.input_with_timeout(dt.timedelta(milliseconds=1)))
+        coordinator.input_with_timeout(dt.timedelta(milliseconds=1))
+      )
 
 
 if __name__ == "__main__":

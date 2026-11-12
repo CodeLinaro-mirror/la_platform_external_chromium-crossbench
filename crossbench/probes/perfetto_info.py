@@ -15,8 +15,9 @@ from crossbench.browsers.chromium_based.webdriver import ChromiumBasedWebDriver
 from crossbench.config import ConfigObject, ConfigParser
 from crossbench.probes.probe import Probe, ProbeContext
 from crossbench.probes.result_location import ResultLocation
-from third_party.protoc.gen.protos.perfetto.common.tracing_service_state_pb2 import \
-    TracingServiceState
+from third_party.protoc.gen.protos.perfetto.common.tracing_service_state_pb2 import (
+  TracingServiceState,
+)
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
@@ -55,14 +56,15 @@ class CategoryDescription(ConfigObject):
   @override
   def parse_str(cls, value: str) -> Self:
     raise argparse.ArgumentTypeError(
-        f"Cannot parse CategoryDescription from string: '{value}'")
+      f"Cannot parse CategoryDescription from string: '{value}'"
+    )
 
   def as_dict(self) -> CategoryDescriptionDict:
     return {
-        "data_source": self.data_source,
-        "name": self.name,
-        "description": self.description,
-        "tags": list(self.tags),
+      "data_source": self.data_source,
+      "name": self.name,
+      "description": self.description,
+      "tags": list(self.tags),
     }
 
   def __eq__(self, other: object) -> bool:
@@ -92,15 +94,17 @@ class PerfettoInfoProbe(Probe):
   @override
   def validate_browser(self, env: RunnerEnv, browser: Browser) -> None:
     super().validate_browser(env, browser)
-    if (not browser.attributes().is_chromium_based and
-        not browser.platform.is_android):
+    if (
+      not browser.attributes().is_chromium_based
+      and not browser.platform.is_android
+    ):
       raise argparse.ArgumentTypeError(
-          f"Browser {browser.unique_name} is neither chromium-based nor "
-          "running on Android. Cannot query Perfetto trace categories.")
+        f"Browser {browser.unique_name} is neither chromium-based nor "
+        "running on Android. Cannot query Perfetto trace categories."
+      )
 
 
 class PerfettoInfoProbeContext(ProbeContext[PerfettoInfoProbe]):
-
   def __init__(self, probe: PerfettoInfoProbe, run: Run) -> None:
     super().__init__(probe, run)
     self._categories: list[CategoryDescription] = []
@@ -126,11 +130,13 @@ class PerfettoInfoProbeContext(ProbeContext[PerfettoInfoProbe]):
     assert isinstance(browser, ChromiumBasedWebDriver)
     descriptor = browser.perfetto_categories()
     return [
-        CategoryDescription(
-            data_source="track_event",
-            name=cat.name,
-            description=cat.description,
-            tags=tuple(cat.tags)) for cat in descriptor.available_categories
+      CategoryDescription(
+        data_source="track_event",
+        name=cat.name,
+        description=cat.description,
+        tags=tuple(cat.tags),
+      )
+      for cat in descriptor.available_categories
     ]
 
   def _get_adb_categories(self) -> list[CategoryDescription]:
@@ -148,24 +154,30 @@ class PerfettoInfoProbeContext(ProbeContext[PerfettoInfoProbe]):
         seen_descriptor = True
         for cat in ds_desc.track_event_descriptor.available_categories:
           categories.append(
-              CategoryDescription(
-                  data_source=ds_name,
-                  name=cat.name,
-                  description=cat.description,
-                  tags=tuple(cat.tags)))
+            CategoryDescription(
+              data_source=ds_name,
+              name=cat.name,
+              description=cat.description,
+              tags=tuple(cat.tags),
+            )
+          )
       if ds_desc.HasField("ftrace_descriptor"):
         seen_descriptor = True
         for cat in ds_desc.ftrace_descriptor.atrace_categories:
           categories.append(
-              CategoryDescription(
-                  data_source=ds_name,
-                  name=cat.name,
-                  description=cat.description,
-                  tags=()))
-      if (not seen_descriptor and ds_name and ds_name != "track_event"):
-        categories.append(
             CategoryDescription(
-                data_source=ds_name, name="", description="", tags=()))
+              data_source=ds_name,
+              name=cat.name,
+              description=cat.description,
+              tags=(),
+            )
+          )
+      if not seen_descriptor and ds_name and ds_name != "track_event":
+        categories.append(
+          CategoryDescription(
+            data_source=ds_name, name="", description="", tags=()
+          )
+        )
 
     return categories
 

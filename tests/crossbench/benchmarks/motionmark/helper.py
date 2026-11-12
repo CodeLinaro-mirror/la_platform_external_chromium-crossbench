@@ -16,14 +16,17 @@ from crossbench.runner.runner import Runner
 from tests.crossbench.benchmarks import helper
 
 if TYPE_CHECKING:
-  from crossbench.benchmarks.motionmark.motionmark_1 import \
-      MotionMark1Benchmark, MotionMark1Probe, MotionMark1ProbeContext, \
-      MotionMark1Story
+  from crossbench.benchmarks.motionmark.motionmark_1 import (
+    MotionMark1Benchmark,
+    MotionMark1Probe,
+    MotionMark1ProbeContext,
+    MotionMark1Story,
+  )
 
 
 class MotionMark1BaseTestCase(
-    helper.PressBaseBenchmarkTestCase, metaclass=abc.ABCMeta):
-
+  helper.PressBaseBenchmarkTestCase, metaclass=abc.ABCMeta
+):
   @property
   @abc.abstractmethod
   @override
@@ -46,56 +49,56 @@ class MotionMark1BaseTestCase(
   def probe_context_cls(self) -> type[MotionMark1ProbeContext]:
     pass
 
-  EXAMPLE_PROBE_DATA = [{
+  EXAMPLE_PROBE_DATA = [
+    {
       "testsResults": {
-          "MotionMark": {
-              "Multiply": {
-                  "complexity": {
-                      "complexity":
-                          1169.7666313745012,
-                      "stdev":
-                          2.6693101402239985,
-                      "bootstrap": {
-                          "confidenceLow": 1154.0859381321234,
-                          "confidenceHigh": 1210.464520355893,
-                          "median": 1180.8987652049277,
-                          "mean": 1163.0061487765158,
-                          "confidencePercentage": 0.8,
-                      },
-                      "segment1": [[1, 16.666666666666668],
-                                   [1, 16.666666666666668]],
-                      "segment2": [[1, 6.728874992470971],
-                                   [3105, 13.858528114770454]],
-                  },
-                  "controller": {
-                      "score": 1168.106104032434,
-                      "average": 1168.106104032434,
-                      "stdev": 37.027504395081785,
-                      "percent": 3.1698750881669624,
-                  },
-                  "score": 1180.8987652049277,
-                  "scoreLowerBound": 1154.0859381321234,
-                  "scoreUpperBound": 1210.464520355893,
+        "MotionMark": {
+          "Multiply": {
+            "complexity": {
+              "complexity": 1169.7666313745012,
+              "stdev": 2.6693101402239985,
+              "bootstrap": {
+                "confidenceLow": 1154.0859381321234,
+                "confidenceHigh": 1210.464520355893,
+                "median": 1180.8987652049277,
+                "mean": 1163.0061487765158,
+                "confidencePercentage": 0.8,
               },
+              "segment1": [[1, 16.666666666666668], [1, 16.666666666666668]],
+              "segment2": [[1, 6.728874992470971], [3105, 13.858528114770454]],
+            },
+            "controller": {
+              "score": 1168.106104032434,
+              "average": 1168.106104032434,
+              "stdev": 37.027504395081785,
+              "percent": 3.1698750881669624,
+            },
+            "score": 1180.8987652049277,
+            "scoreLowerBound": 1154.0859381321234,
+            "scoreUpperBound": 1210.464520355893,
           },
+        },
       },
       "score": 1180.8987652049277,
       "scoreLowerBound": 1154.0859381321234,
       "scoreUpperBound": 1210.464520355893,
-  }]
+    }
+  ]
 
   @override
   def setUp(self):
     super().setUp()
     self.set_display_refresh_rate_patcher = mock.patch.object(
-        self.platform,
-        "set_display_refresh_rate",
-        return_value=DisplayRefreshRateResult(True, "mocked"))
+      self.platform,
+      "set_display_refresh_rate",
+      return_value=DisplayRefreshRateResult(True, "mocked"),
+    )
     self.addCleanup(self.set_display_refresh_rate_patcher.stop)
     self.set_display_refresh_rate_patcher.start()
 
     self.reset_display_refresh_rate_patcher = mock.patch.object(
-        self.platform, "reset_display_refresh_rate")
+      self.platform, "reset_display_refresh_rate"
+    )
     self.addCleanup(self.reset_display_refresh_rate_patcher.stop)
     self.reset_display_refresh_rate_patcher.start()
 
@@ -160,15 +163,16 @@ class MotionMark1BaseTestCase(
     benchmark = self.benchmark_cls(stories, custom_url=custom_url)
     self.assertTrue(len(benchmark.describe()) > 0)
     runner = Runner(
-        self.out_dir,
-        self.browsers,
-        benchmark,
-        env_config=EnvConfig(),
-        env_validation_mode=ValidationMode.SKIP,
-        platform=self.platform,
-        repetitions=repetitions,
-        throw=throw,
-        in_memory_result_db=True)
+      self.out_dir,
+      self.browsers,
+      benchmark,
+      env_config=EnvConfig(),
+      env_validation_mode=ValidationMode.SKIP,
+      platform=self.platform,
+      repetitions=repetitions,
+      throw=throw,
+      in_memory_result_db=True,
+    )
     with mock.patch.object(RunnerEnv, "validate_url", return_value=True) as cm:
       runner.run()
     cm.assert_called_once()
@@ -177,17 +181,20 @@ class MotionMark1BaseTestCase(
       urls = self.filter_splashscreen_urls(browser.url_list)
       self.assertEqual(len(urls), repetitions)
       self.assertTrue(browser.was_js_invoked(self.probe_context_cls.JS))
-    with (self.out_dir /
-          f"{self.probe_cls.NAME}.csv").open(encoding="utf-8") as f:
+    with (self.out_dir / f"{self.probe_cls.NAME}.csv").open(
+      encoding="utf-8"
+    ) as f:
       csv_data = list(csv.DictReader(f, delimiter="\t"))
     self.assertSequenceEqual(
-        list(csv_data[0].keys()), ["label", "", "dev", "stable"])
+      list(csv_data[0].keys()), ["label", "", "dev", "stable"]
+    )
     self.assertDictEqual(
-        csv_data[1],
-        {
-            "label": "version",
-            "dev": "102.22.33.44",
-            "stable": "100.22.33.44",
-            # One padding element (after "label"):
-            "": "",
-        })
+      csv_data[1],
+      {
+        "label": "version",
+        "dev": "102.22.33.44",
+        "stable": "100.22.33.44",
+        # One padding element (after "label"):
+        "": "",
+      },
+    )

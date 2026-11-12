@@ -8,12 +8,23 @@ import abc
 import argparse
 import datetime as dt
 import enum
-from typing import TYPE_CHECKING, ClassVar, Final, Mapping, Self, Sequence, \
-    override
+from typing import (
+  TYPE_CHECKING,
+  ClassVar,
+  Final,
+  Mapping,
+  Self,
+  Sequence,
+  override,
+)
 
-from crossbench.benchmarks.speedometer.speedometer import \
-    SpeedometerBenchmark, SpeedometerBenchmarkStoryFilter, SpeedometerProbe, \
-    SpeedometerProbeContext, SpeedometerStory
+from crossbench.benchmarks.speedometer.speedometer import (
+  SpeedometerBenchmark,
+  SpeedometerBenchmarkStoryFilter,
+  SpeedometerProbe,
+  SpeedometerProbeContext,
+  SpeedometerStory,
+)
 from crossbench.browsers import viewport as vp
 from crossbench.helper import url_helper
 from crossbench.parse import DurationParser, NumberParser, ObjectParser
@@ -102,45 +113,80 @@ def parse_shuffle_seed(value: ShuffleSeedT) -> ShuffleSeedT:
 #        return data}, {}))
 # Then convert JSON arrays to Python tuples.
 SPEEDOMETER_3_STORY_DATA: Final[Mapping[str, tuple[str, ...]]] = {
-    "TodoMVC-JavaScript-ES5": ("all", "default", "todomvc"),
-    "TodoMVC-JavaScript-ES5-Complex-DOM": ("all", "todomvc", "complex"),
-    "TodoMVC-JavaScript-ES6-Webpack": ("all", "todomvc"),
-    "TodoMVC-JavaScript-ES6-Webpack-Complex-DOM":
-        ("all", "default", "todomvc", "complex", "complex-default"),
-    "TodoMVC-WebComponents": ("all", "default", "todomvc", "webcomponents"),
-    "TodoMVC-WebComponents-Complex-DOM":
-        ("all", "todomvc", "webcomponents", "complex"),
-    "TodoMVC-React": ("all", "todomvc"),
-    "TodoMVC-React-Complex-DOM":
-        ("all", "default", "todomvc", "complex", "complex-default"),
-    "TodoMVC-React-Redux": ("all", "default", "todomvc"),
-    "TodoMVC-React-Redux-Complex-DOM": ("all", "todomvc", "complex"),
-    "TodoMVC-Backbone": ("all", "default", "todomvc"),
-    "TodoMVC-Backbone-Complex-DOM": ("all", "todomvc", "complex"),
-    "TodoMVC-Angular": ("all", "todomvc"),
-    "TodoMVC-Angular-Complex-DOM":
-        ("all", "default", "todomvc", "complex", "complex-default"),
-    "TodoMVC-Vue": ("all", "default", "todomvc"),
-    "TodoMVC-Vue-Complex-DOM": ("all", "todomvc", "complex", "complex-default"),
-    "TodoMVC-jQuery": ("all", "default", "todomvc"),
-    "TodoMVC-jQuery-Complex-DOM": ("all", "todomvc", "complex"),
-    "TodoMVC-Preact": ("all", "todomvc"),
-    "TodoMVC-Preact-Complex-DOM":
-        ("all", "default", "todomvc", "complex", "complex-default"),
-    "TodoMVC-Svelte": ("all", "todomvc"),
-    "TodoMVC-Svelte-Complex-DOM":
-        ("all", "default", "todomvc", "complex", "complex-default"),
-    "TodoMVC-Lit": ("all", "todomvc", "webcomponents"),
-    "TodoMVC-Lit-Complex-DOM": ("all", "default", "todomvc", "webcomponents",
-                                "complex", "complex-default"),
-    "NewsSite-Next": ("all", "default", "newssite", "language"),
-    "NewsSite-Nuxt": ("all", "default", "newssite"),
-    "Editor-CodeMirror": ("all", "default", "editor"),
-    "Editor-TipTap": ("all", "default", "editor"),
-    "Charts-observable-plot": ("all", "default", "chart"),
-    "Charts-chartjs": ("all", "default", "chart"),
-    "React-Stockcharts-SVG": ("all", "default", "chart", "svg"),
-    "Perf-Dashboard": ("all", "default", "chart", "webcomponents"),
+  "TodoMVC-JavaScript-ES5": ("all", "default", "todomvc"),
+  "TodoMVC-JavaScript-ES5-Complex-DOM": ("all", "todomvc", "complex"),
+  "TodoMVC-JavaScript-ES6-Webpack": ("all", "todomvc"),
+  "TodoMVC-JavaScript-ES6-Webpack-Complex-DOM": (
+    "all",
+    "default",
+    "todomvc",
+    "complex",
+    "complex-default",
+  ),
+  "TodoMVC-WebComponents": ("all", "default", "todomvc", "webcomponents"),
+  "TodoMVC-WebComponents-Complex-DOM": (
+    "all",
+    "todomvc",
+    "webcomponents",
+    "complex",
+  ),
+  "TodoMVC-React": ("all", "todomvc"),
+  "TodoMVC-React-Complex-DOM": (
+    "all",
+    "default",
+    "todomvc",
+    "complex",
+    "complex-default",
+  ),
+  "TodoMVC-React-Redux": ("all", "default", "todomvc"),
+  "TodoMVC-React-Redux-Complex-DOM": ("all", "todomvc", "complex"),
+  "TodoMVC-Backbone": ("all", "default", "todomvc"),
+  "TodoMVC-Backbone-Complex-DOM": ("all", "todomvc", "complex"),
+  "TodoMVC-Angular": ("all", "todomvc"),
+  "TodoMVC-Angular-Complex-DOM": (
+    "all",
+    "default",
+    "todomvc",
+    "complex",
+    "complex-default",
+  ),
+  "TodoMVC-Vue": ("all", "default", "todomvc"),
+  "TodoMVC-Vue-Complex-DOM": ("all", "todomvc", "complex", "complex-default"),
+  "TodoMVC-jQuery": ("all", "default", "todomvc"),
+  "TodoMVC-jQuery-Complex-DOM": ("all", "todomvc", "complex"),
+  "TodoMVC-Preact": ("all", "todomvc"),
+  "TodoMVC-Preact-Complex-DOM": (
+    "all",
+    "default",
+    "todomvc",
+    "complex",
+    "complex-default",
+  ),
+  "TodoMVC-Svelte": ("all", "todomvc"),
+  "TodoMVC-Svelte-Complex-DOM": (
+    "all",
+    "default",
+    "todomvc",
+    "complex",
+    "complex-default",
+  ),
+  "TodoMVC-Lit": ("all", "todomvc", "webcomponents"),
+  "TodoMVC-Lit-Complex-DOM": (
+    "all",
+    "default",
+    "todomvc",
+    "webcomponents",
+    "complex",
+    "complex-default",
+  ),
+  "NewsSite-Next": ("all", "default", "newssite", "language"),
+  "NewsSite-Nuxt": ("all", "default", "newssite"),
+  "Editor-CodeMirror": ("all", "default", "editor"),
+  "Editor-TipTap": ("all", "default", "editor"),
+  "Charts-observable-plot": ("all", "default", "chart"),
+  "Charts-chartjs": ("all", "default", "chart"),
+  "React-Stockcharts-SVG": ("all", "default", "chart", "svg"),
+  "Perf-Dashboard": ("all", "default", "chart", "webcomponents"),
 }
 
 
@@ -158,23 +204,30 @@ class Speedometer3Story(SpeedometerStory, metaclass=abc.ABCMeta):
   @override
   def default_story_names(cls) -> tuple[str, ...]:
     return tuple(
-        name for name, tags in cls.STORY_DATA.items() if "default" in tags)
+      name for name, tags in cls.STORY_DATA.items() if "default" in tags
+    )
 
   @classmethod
   @override
-  def from_names(cls,
-                 substories: Sequence[str],
-                 separate: bool = False,
-                 url: str | None = None,
-                 **kwargs) -> tuple[Self, ...]:
+  def from_names(
+    cls,
+    substories: Sequence[str],
+    separate: bool = False,
+    url: str | None = None,
+    **kwargs,
+  ) -> tuple[Self, ...]:
     if not substories:
       raise ValueError("No substories provided")
     if separate:
       return tuple(
-          cls(url=url,
-              substories=[substory],
-              tags=cls.STORY_DATA.get(substory, ()),
-              **kwargs) for substory in substories)
+        cls(
+          url=url,
+          substories=[substory],
+          tags=cls.STORY_DATA.get(substory, ()),
+          **kwargs,
+        )
+        for substory in substories
+      )
     tags: set[str] = set()
     for substory in substories:
       tags.update(cls.STORY_DATA.get(substory, ()))
@@ -183,7 +236,8 @@ class Speedometer3Story(SpeedometerStory, metaclass=abc.ABCMeta):
   @override
   def _wait_for_ready(self, actions: Actions) -> None:
     actions.wait_js_condition(
-        "return !!window.benchmarkClient", 0.5, timeout=10)
+      "return !!window.benchmarkClient", 0.5, timeout=10
+    )
 
   def _setup_substories(self, actions: Actions) -> None:
     # Handled via URL params
@@ -221,48 +275,59 @@ class Speedometer3BenchmarkStoryFilter(SpeedometerBenchmarkStoryFilter):
   @classmethod
   @override
   def add_cli_arguments(
-      cls, parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+    cls, parser: argparse.ArgumentParser
+  ) -> argparse.ArgumentParser:
     parser = super().add_cli_arguments(parser)
     parser.add_argument(
-        "--sync-wait",
-        default=dt.timedelta(0),
-        type=DurationParser.positive_or_zero_duration,
-        help="Add a custom wait timeout before each sync step.")
+      "--sync-wait",
+      default=dt.timedelta(0),
+      type=DurationParser.positive_or_zero_duration,
+      help="Add a custom wait timeout before each sync step.",
+    )
     parser.add_argument(
-        "--sync-warmup",
-        default=dt.timedelta(0),
-        type=DurationParser.positive_or_zero_duration,
-        help="Run a warmup loop for the given duration before each sync step.")
+      "--sync-warmup",
+      default=dt.timedelta(0),
+      type=DurationParser.positive_or_zero_duration,
+      help="Run a warmup loop for the given duration before each sync step.",
+    )
 
     measurement_method_group = parser.add_argument_group(
-        "Measurement Method Option")
+      "Measurement Method Option"
+    )
     measurement_method_group = parser.add_mutually_exclusive_group()
     measurement_method_group.add_argument(
-        "--raf",
-        dest="measurement_method",
-        default=MeasurementMethod.RAF,
-        const=MeasurementMethod.RAF,
-        action="store_const",
-        help=("Use the default requestAnimationFrame-based approach "
-              "for async time measurement."))
+      "--raf",
+      dest="measurement_method",
+      default=MeasurementMethod.RAF,
+      const=MeasurementMethod.RAF,
+      action="store_const",
+      help=(
+        "Use the default requestAnimationFrame-based approach "
+        "for async time measurement."
+      ),
+    )
     measurement_method_group.add_argument(
-        "--timer",
-        dest="measurement_method",
-        const=MeasurementMethod.TIMER,
-        action="store_const",
-        help=("Use the 'classical' setTimeout-based approach "
-              "for async time measurement. "
-              "This might omit measuring some async work."))
+      "--timer",
+      dest="measurement_method",
+      const=MeasurementMethod.TIMER,
+      action="store_const",
+      help=(
+        "Use the 'classical' setTimeout-based approach "
+        "for async time measurement. "
+        "This might omit measuring some async work."
+      ),
+    )
 
     parser.add_argument(
-        "--story-viewport",
-        type=vp.Viewport.parse_sized,
-        help="Specify the speedometer workload viewport size.")
+      "--story-viewport",
+      type=vp.Viewport.parse_sized,
+      help="Specify the speedometer workload viewport size.",
+    )
     parser.add_argument(
-        "--shuffle-seed",
-        type=parse_shuffle_seed,
-        help=("Set a shuffle seed to run the stories in a"
-              "non-default order."))
+      "--shuffle-seed",
+      type=parse_shuffle_seed,
+      help=("Set a shuffle seed to run the stories in anon-default order."),
+    )
 
     return parser
 
@@ -287,6 +352,7 @@ class Speedometer3Benchmark(SpeedometerBenchmark, metaclass=abc.ABCMeta):
   """
   Abstract benchmark runner for Speedometer 3.
   """
+
   STORY_FILTER_CLS: ClassVar = Speedometer3BenchmarkStoryFilter
 
   @classmethod
@@ -294,11 +360,12 @@ class Speedometer3Benchmark(SpeedometerBenchmark, metaclass=abc.ABCMeta):
   def add_cli_arguments(cls, parser: CBArgumentParser) -> CBArgumentParser:
     super().add_cli_arguments(parser)
     parser.add_argument(
-        "--detailed-metrics",
-        "--details",
-        default=False,
-        action="store_true",
-        help="Report more detailed internal metrics.")
+      "--detailed-metrics",
+      "--details",
+      default=False,
+      action="store_true",
+      help="Report more detailed internal metrics.",
+    )
     return parser
 
   @classmethod
@@ -308,11 +375,13 @@ class Speedometer3Benchmark(SpeedometerBenchmark, metaclass=abc.ABCMeta):
     kwargs["detailed_metrics"] = args.detailed_metrics
     return kwargs
 
-  def __init__(self,
-               stories: Sequence[Story],
-               action_runner_config: ActionRunnerConfig | None = None,
-               custom_url: str | None = None,
-               detailed_metrics: bool = False) -> None:
+  def __init__(
+    self,
+    stories: Sequence[Story],
+    action_runner_config: ActionRunnerConfig | None = None,
+    custom_url: str | None = None,
+    detailed_metrics: bool = False,
+  ) -> None:
     self._detailed_metrics: Final[bool] = detailed_metrics
     super().__init__(stories, action_runner_config, custom_url)
 

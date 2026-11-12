@@ -16,7 +16,6 @@ from tests.crossbench.runner.groups.base import BaseRunGroupTestCase
 
 
 class ActionsTestCase(BaseRunGroupTestCase):
-
   @contextlib.contextmanager
   def mock_js(self, actions: Actions) -> Iterator[mock.MagicMock]:
     with mock.patch.object(actions, "js") as mock_js:
@@ -33,7 +32,8 @@ class ActionsTestCase(BaseRunGroupTestCase):
       with self.mock_js(actions) as mock_js:
         actions.show_url("http://google.com", target=WindowTarget.BLANK)
         mock_js.assert_called_once_with(
-            "window.open('http://google.com','_blank');")
+          "window.open('http://google.com','_blank');"
+        )
 
   def test_show_url_target_window_target_browser(self):
     run = self.mock_run()
@@ -41,7 +41,8 @@ class ActionsTestCase(BaseRunGroupTestCase):
       with self.mock_show_url(actions) as mock_show_url:
         actions.show_url("http://google.com", target=WindowTarget.NEW_TAB)
         mock_show_url.assert_called_once_with(
-            "http://google.com", target=WindowTarget.NEW_TAB)
+          "http://google.com", target=WindowTarget.NEW_TAB
+        )
 
   def test_show_url_target_default(self):
     run = self.mock_run()
@@ -49,7 +50,8 @@ class ActionsTestCase(BaseRunGroupTestCase):
       with self.mock_show_url(actions) as mock_show_url:
         actions.show_url("http://google.com")
         mock_show_url.assert_called_once_with(
-            "http://google.com", target=WindowTarget.SELF)
+          "http://google.com", target=WindowTarget.SELF
+        )
 
   def test_wait_for_url_matches(self):
     run = self.mock_run()
@@ -57,12 +59,13 @@ class ActionsTestCase(BaseRunGroupTestCase):
       self.assertIsInstance(actions._browser, mock.MagicMock)
       actions._browser.current_url = "https://example.com/product/sample.html"
       actions.wait_for_url_matches(
-          re.compile(r"product/.*\.html", re.IGNORECASE),
-          min_interval=0.5,
-          timeout=10,
+        re.compile(r"product/.*\.html", re.IGNORECASE),
+        min_interval=0.5,
+        timeout=10,
       )
-      self.assertEqual(actions._browser.current_url,
-                       "https://example.com/product/sample.html")
+      self.assertEqual(
+        actions._browser.current_url, "https://example.com/product/sample.html"
+      )
 
   def test_wait_for_url_matches_timeout(self):
     run = self.mock_run()
@@ -71,9 +74,11 @@ class ActionsTestCase(BaseRunGroupTestCase):
       actions._browser.current_url = "https://example.com/custom_path/sub"
       with self.assertRaises(TimeoutError):
         actions.wait_for_url_matches(
-            re.compile(r".*\.html"), min_interval=0.5, timeout=1)
-      self.assertEqual(actions._browser.current_url,
-                       "https://example.com/custom_path/sub")
+          re.compile(r".*\.html"), min_interval=0.5, timeout=1
+        )
+      self.assertEqual(
+        actions._browser.current_url, "https://example.com/custom_path/sub"
+      )
 
 
 if __name__ == "__main__":

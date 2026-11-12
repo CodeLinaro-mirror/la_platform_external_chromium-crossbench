@@ -25,11 +25,13 @@ if TYPE_CHECKING:
 _MIN_POLL_INTERVAL: Final[dt.timedelta] = dt.timedelta(seconds=0.05)
 _DEFAULT_POLL_INTERVAL: Final[dt.timedelta] = dt.timedelta(seconds=1)
 
+
 class VramProbe(JsonResultProbe):
   """
   Probe to monitor GPU VRAM / Unified RAM usage during a run.
   Supports Nvidia, AMD, Intel, Apple Silicon macOS, Windows, Linux, and Android.
   """
+
   NAME: ClassVar[str] = "vram"
 
   @classmethod
@@ -37,11 +39,13 @@ class VramProbe(JsonResultProbe):
   def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     parser.add_default_argument(
-        "interval",
-        type=DurationParser.duration_range(
-            min=_MIN_POLL_INTERVAL, name="interval"),
-        default=_DEFAULT_POLL_INTERVAL,
-        help="Polling interval for VRAM / GPU memory usage.")
+      "interval",
+      type=DurationParser.duration_range(
+        min=_MIN_POLL_INTERVAL, name="interval"
+      ),
+      default=_DEFAULT_POLL_INTERVAL,
+      help="Polling interval for VRAM / GPU memory usage.",
+    )
     return parser
 
   def __init__(self, interval: dt.timedelta = _DEFAULT_POLL_INTERVAL) -> None:
@@ -61,8 +65,9 @@ class VramProbe(JsonResultProbe):
   @override
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
     merged = MetricsMerger.merge_json_list(
-        repetitions_group.results[self].json
-        for repetitions_group in group.repetitions_groups)
+      repetitions_group.results[self].json
+      for repetitions_group in group.repetitions_groups
+    )
     return self.write_group_result(group, merged)
 
   @override

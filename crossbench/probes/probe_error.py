@@ -16,22 +16,20 @@ class ProbeMissingDataError(ValueError):
 
 
 class ProbeValidationError(ValueError):
-
   def __init__(self, probe: Probe, message: str) -> None:
     self.probe: Final[Probe] = probe
     super().__init__(f"Probe({probe.NAME}): {message}")
 
 
 class ProbeIncompatibleBrowser(ProbeValidationError):
-
-  def __init__(self,
-               probe: Probe,
-               browser: Browser,
-               message: str = "Incompatible browser") -> None:
+  def __init__(
+    self, probe: Probe, browser: Browser, message: str = "Incompatible browser"
+  ) -> None:
     # Note: The 6 spaces of explicit indentation on the second line matches the
     # expected implied indentation from the runner's exception formatter.
     # This is a bit hacky, but refactoring the exception formatter for this
     # would be overkill.
     super().__init__(
-        probe, f"{message}\n"
-        f"      Got: browser={browser}, platform={browser.platform}")
+      probe,
+      f"{message}\n      Got: browser={browser}, platform={browser.platform}",
+    )

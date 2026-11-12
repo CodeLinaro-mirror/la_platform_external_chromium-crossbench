@@ -19,14 +19,15 @@ from tests.crossbench.pinpoint.http_requests_mixin import MockHttpRequestsMixin
 
 
 class ListJobsTest(MockHttpRequestsMixin):
-
   def setUp(self):
     super().setUp()
     self.stdout_mock = io.StringIO()
     self.sys_stdout_patch = self.enterContext(
-        mock.patch("sys.stdout", self.stdout_mock))
+      mock.patch("sys.stdout", self.stdout_mock)
+    )
     self.mock_annotate = self.enterContext(
-        mock.patch("crossbench.pinpoint.list_jobs.annotate"))
+      mock.patch("crossbench.pinpoint.list_jobs.annotate")
+    )
     self.mock_annotate.return_value.__enter__.return_value = None
 
   def test_list_jobs_no_jobs(self):
@@ -40,17 +41,18 @@ class ListJobsTest(MockHttpRequestsMixin):
   def test_list_jobs_me_fetching_email(self):
     # Mock user info response
     self.mock_get.side_effect = [
-        mock.Mock(json=lambda: {"email": "user@example.com"}),
-        mock.Mock(json=lambda: {"jobs": []}),
-        mock.Mock(json=lambda: {"jobs": []}),
-        mock.Mock(json=lambda: {"jobs": []}),
+      mock.Mock(json=lambda: {"email": "user@example.com"}),
+      mock.Mock(json=lambda: {"jobs": []}),
+      mock.Mock(json=lambda: {"jobs": []}),
+      mock.Mock(json=lambda: {"jobs": []}),
     ]
 
     list_jobs(
-        user=UserEnum.ME,
-        number=10,
-        truncate=None,
-        output_format=OutputFormat.JSON)
+      user=UserEnum.ME,
+      number=10,
+      truncate=None,
+      output_format=OutputFormat.JSON,
+    )
 
     # Verify calls: 1 for email, 3 for jobs (email, @google, @chromium)
     self.assertEqual(self.mock_get.call_count, 4)
@@ -58,15 +60,15 @@ class ListJobsTest(MockHttpRequestsMixin):
 
   def test_list_jobs_json_format(self):
     job_data = {
-        "job_id": "123",
-        "configuration": "config",
-        "user": "user@example.com",
-        "created": "2024-01-01T00:00:00Z",
-        "status": "completed",
-        "arguments": {
-            "benchmark": "speedometer",
-        },
-        "comparison_mode": "performance",
+      "job_id": "123",
+      "configuration": "config",
+      "user": "user@example.com",
+      "created": "2024-01-01T00:00:00Z",
+      "status": "completed",
+      "arguments": {
+        "benchmark": "speedometer",
+      },
+      "comparison_mode": "performance",
     }
     self.mock_get.return_value.json.return_value = {"jobs": [job_data]}
 
@@ -79,15 +81,15 @@ class ListJobsTest(MockHttpRequestsMixin):
 
   def test_list_jobs_csv_format(self):
     job_data = {
-        "job_id": "123",
-        "configuration": "config",
-        "user": "user@example.com",
-        "created": "2024-01-01T00:00:00Z",
-        "status": "completed",
-        "arguments": {
-            "benchmark": "speedometer",
-        },
-        "comparison_mode": "performance",
+      "job_id": "123",
+      "configuration": "config",
+      "user": "user@example.com",
+      "created": "2024-01-01T00:00:00Z",
+      "status": "completed",
+      "arguments": {
+        "benchmark": "speedometer",
+      },
+      "comparison_mode": "performance",
     }
     self.mock_get.return_value.json.return_value = {"jobs": [job_data]}
 
@@ -96,20 +98,22 @@ class ListJobsTest(MockHttpRequestsMixin):
     output = self.stdout_mock.getvalue()
     self.assertIn("Benchmark,Config,Type,Start Time,Job URL,Status", output)
     self.assertIn(
-        "speedometer,config,performance,2024-01-01 00:00:00,"
-        "http://go/l_/r/123,completed", output)
+      "speedometer,config,performance,2024-01-01 00:00:00,"
+      "http://go/l_/r/123,completed",
+      output,
+    )
 
   def test_list_jobs_table_format(self):
     job_data = {
-        "job_id": "123",
-        "configuration": "config",
-        "user": "user@example.com",
-        "created": "2024-01-01T00:00:00Z",
-        "status": "completed",
-        "arguments": {
-            "benchmark": "speedometer",
-        },
-        "comparison_mode": "performance",
+      "job_id": "123",
+      "configuration": "config",
+      "user": "user@example.com",
+      "created": "2024-01-01T00:00:00Z",
+      "status": "completed",
+      "arguments": {
+        "benchmark": "speedometer",
+      },
+      "comparison_mode": "performance",
     }
     self.mock_get.return_value.json.return_value = {"jobs": [job_data]}
 
@@ -125,24 +129,25 @@ class ListJobsTest(MockHttpRequestsMixin):
 
   def test_list_jobs_url_source_pinpoint_classic(self):
     job_data = {
-        "job_id": "123",
-        "configuration": "config",
-        "user": "user@example.com",
-        "created": "2024-01-01T00:00:00Z",
-        "status": "completed",
-        "arguments": {
-            "benchmark": "speedometer",
-        },
-        "comparison_mode": "performance",
+      "job_id": "123",
+      "configuration": "config",
+      "user": "user@example.com",
+      "created": "2024-01-01T00:00:00Z",
+      "status": "completed",
+      "arguments": {
+        "benchmark": "speedometer",
+      },
+      "comparison_mode": "performance",
     }
     self.mock_get.return_value.json.return_value = {"jobs": [job_data]}
 
     list_jobs(
-        "user@example.com",
-        1,
-        None,
-        OutputFormat.TABLE,
-        url_source=UrlSource.PINPOINT_CLASSIC)
+      "user@example.com",
+      1,
+      None,
+      OutputFormat.TABLE,
+      url_source=UrlSource.PINPOINT_CLASSIC,
+    )
 
     output = self.stdout_mock.getvalue()
     self.assertIn("http://go/j_/123", output)
@@ -150,24 +155,25 @@ class ListJobsTest(MockHttpRequestsMixin):
 
   def test_list_jobs_url_source_leszek_perf(self):
     job_data = {
-        "job_id": "123",
-        "configuration": "config",
-        "user": "user@example.com",
-        "created": "2024-01-01T00:00:00Z",
-        "status": "completed",
-        "arguments": {
-            "benchmark": "speedometer",
-        },
-        "comparison_mode": "performance",
+      "job_id": "123",
+      "configuration": "config",
+      "user": "user@example.com",
+      "created": "2024-01-01T00:00:00Z",
+      "status": "completed",
+      "arguments": {
+        "benchmark": "speedometer",
+      },
+      "comparison_mode": "performance",
     }
     self.mock_get.return_value.json.return_value = {"jobs": [job_data]}
 
     list_jobs(
-        "user@example.com",
-        1,
-        None,
-        OutputFormat.TABLE,
-        url_source=UrlSource.LESZEK_PERF)
+      "user@example.com",
+      1,
+      None,
+      OutputFormat.TABLE,
+      url_source=UrlSource.LESZEK_PERF,
+    )
 
     output = self.stdout_mock.getvalue()
     self.assertIn("http://go/l_/r/123", output)
@@ -175,24 +181,25 @@ class ListJobsTest(MockHttpRequestsMixin):
 
   def test_list_jobs_url_source_leszek_perf_dev(self):
     job_data = {
-        "job_id": "123",
-        "configuration": "config",
-        "user": "user@example.com",
-        "created": "2024-01-01T00:00:00Z",
-        "status": "completed",
-        "arguments": {
-            "benchmark": "speedometer",
-        },
-        "comparison_mode": "performance",
+      "job_id": "123",
+      "configuration": "config",
+      "user": "user@example.com",
+      "created": "2024-01-01T00:00:00Z",
+      "status": "completed",
+      "arguments": {
+        "benchmark": "speedometer",
+      },
+      "comparison_mode": "performance",
     }
     self.mock_get.return_value.json.return_value = {"jobs": [job_data]}
 
     list_jobs(
-        "user@example.com",
-        1,
-        None,
-        OutputFormat.TABLE,
-        url_source=UrlSource.LESZEK_PERF_DEV)
+      "user@example.com",
+      1,
+      None,
+      OutputFormat.TABLE,
+      url_source=UrlSource.LESZEK_PERF_DEV,
+    )
 
     output = self.stdout_mock.getvalue()
     self.assertIn("https://leszek-perf-dev.corp.goog/r/123", output)
@@ -201,26 +208,30 @@ class ListJobsTest(MockHttpRequestsMixin):
   def test_list_jobs_pagination(self):
     # First page
     page1 = {
-        "jobs": [{
-            "job_id": "1",
-            "created": "2024-01-01T00:00:00Z",
-        }],
-        "next_cursor": "cursor1",
-        "next": True,
+      "jobs": [
+        {
+          "job_id": "1",
+          "created": "2024-01-01T00:00:00Z",
+        }
+      ],
+      "next_cursor": "cursor1",
+      "next": True,
     }
     # Second page
     page2 = {
-        "jobs": [{
-            "job_id": "2",
-            "created": "2024-01-02T00:00:00Z",
-        }],
-        "next_cursor": None,
-        "next": False,
+      "jobs": [
+        {
+          "job_id": "2",
+          "created": "2024-01-02T00:00:00Z",
+        }
+      ],
+      "next_cursor": None,
+      "next": False,
     }
 
     self.mock_get.side_effect = [
-        mock.Mock(json=lambda: page1),
-        mock.Mock(json=lambda: page2),
+      mock.Mock(json=lambda: page1),
+      mock.Mock(json=lambda: page2),
     ]
 
     list_jobs("user@example.com", 10, None, OutputFormat.JSON)
@@ -234,32 +245,33 @@ class ListJobsTest(MockHttpRequestsMixin):
 
   def test_list_jobs_all_users(self):
     job_data = {
-        "job_id": "123",
-        "user": "other@example.com",
-        "created": "2024-01-01T00:00:00Z",
+      "job_id": "123",
+      "user": "other@example.com",
+      "created": "2024-01-01T00:00:00Z",
     }
     self.mock_get.return_value.json.return_value = {"jobs": [job_data]}
 
     list_jobs(UserEnum.ALL, 1, None, OutputFormat.CSV)
 
     output = self.stdout_mock.getvalue()
-    self.assertIn("User",
-                  output)  # "User" column should be present for ALL users
+    self.assertIn(
+      "User", output
+    )  # "User" column should be present for ALL users
     self.assertIn("other@example.com", output)
     self.assertIn("http://go/l_/r/123", output)
     self.assertIn("2024-01-01 00:00:00", output)
 
   def test_list_jobs_truncate(self):
     job_data = {
-        "job_id": "1",
-        "configuration": "very_long_configuration_string_that_needs_truncating",
-        "user": "u",
-        "created": "2024-01-01",
-        "status": "queued",
-        "arguments": {
-            "benchmark": "b",
-        },
-        "comparison_mode": "try",
+      "job_id": "1",
+      "configuration": "very_long_configuration_string_that_needs_truncating",
+      "user": "u",
+      "created": "2024-01-01",
+      "status": "queued",
+      "arguments": {
+        "benchmark": "b",
+      },
+      "comparison_mode": "try",
     }
     self.mock_get.return_value.json.return_value = {"jobs": [job_data]}
 
@@ -267,8 +279,9 @@ class ListJobsTest(MockHttpRequestsMixin):
 
     output = self.stdout_mock.getvalue()
     self.assertIn("very_lo...", output)
-    self.assertNotIn("very_long_configuration_string_that_needs_truncating",
-                     output)
+    self.assertNotIn(
+      "very_long_configuration_string_that_needs_truncating", output
+    )
     self.assertIn("try", output)
     self.assertIn("⌛", output)  # Queued status emoji
 
@@ -282,34 +295,36 @@ class ListJobsTest(MockHttpRequestsMixin):
 
   def test_list_jobs_server_error(self):
     self.mock_get.return_value.raise_for_status.side_effect = (
-        http_requests.requests.exceptions.HTTPError("404 Client Error"))
+      http_requests.requests.exceptions.HTTPError("404 Client Error")
+    )
 
     with self.assertRaises(http_requests.requests.exceptions.HTTPError):
       list_jobs(UserEnum.ALL, 10, None, OutputFormat.TABLE)
 
   def test_list_jobs_extra_columns(self):
     job_data = {
-        "job_id": "123",
-        "configuration": "config",
-        "user": "user@example.com",
-        "created": "2024-01-01T00:00:00Z",
-        "status": "completed",
-        "arguments": {
-            "benchmark": "speedometer",
-            "story": "story_name",
-            "initial_attempt_count": "10",
-        },
-        "bug_id": "123456",
-        "comparison_mode": "performance",
+      "job_id": "123",
+      "configuration": "config",
+      "user": "user@example.com",
+      "created": "2024-01-01T00:00:00Z",
+      "status": "completed",
+      "arguments": {
+        "benchmark": "speedometer",
+        "story": "story_name",
+        "initial_attempt_count": "10",
+      },
+      "bug_id": "123456",
+      "comparison_mode": "performance",
     }
     self.mock_get.return_value.json.return_value = {"jobs": [job_data]}
 
     list_jobs(
-        "user@example.com",
-        1,
-        None,
-        OutputFormat.TABLE,
-        extra_columns=["bug", "story", "attempts"])
+      "user@example.com",
+      1,
+      None,
+      OutputFormat.TABLE,
+      extra_columns=["bug", "story", "attempts"],
+    )
 
     output = self.stdout_mock.getvalue()
     self.assertIn("Bug", output)

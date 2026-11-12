@@ -18,7 +18,6 @@ if TYPE_CHECKING:
 
 
 class SecretsMergeError(ValueError):
-
   def __init__(self, name: str, primary: Secret, fallback: Secret) -> None:
     super().__init__(f"Conflicting {name} secrets: {primary} vs {fallback}")
     self.name: Final[str] = name
@@ -28,8 +27,8 @@ class SecretsMergeError(ValueError):
 
 @dataclasses.dataclass(frozen=True)
 class Secrets(ConfigObject):
-  """A set of predefined secrets for common logins.
-  """
+  """A set of predefined secrets for common logins."""
+
   google: UsernamePassword | None = None
   bond: ServiceAccount | None = None
   google_workspace: GoogleWorkspaceSecrets | None = None
@@ -43,10 +42,11 @@ class Secrets(ConfigObject):
     parser.add_argument("bond", type=ServiceAccount)
     parser.add_argument("google_workspace", type=GoogleWorkspaceSecrets)
     parser.add_argument(
-        "ai",
-        aliases=("gemini", "llm"),
-        type=AiSecrets,
-        help="API key configuration for AI/LLM services.")
+      "ai",
+      aliases=("gemini", "llm"),
+      type=AiSecrets,
+      help="API key configuration for AI/LLM services.",
+    )
     return parser
 
   @classmethod
@@ -56,22 +56,31 @@ class Secrets(ConfigObject):
 
   def merge(self, fallback: Secrets, strict: bool = False) -> Self:
     return type(self)(
-        self._merge_secret("Google", self.google, fallback.google, strict),
-        self._merge_secret("Bond", self.bond, fallback.bond, strict),
-        self._merge_secret("Google Workspace", self.google_workspace,
-                           fallback.google_workspace, strict),
-        self._merge_secret("AI", self.ai, fallback.ai, strict),
+      self._merge_secret("Google", self.google, fallback.google, strict),
+      self._merge_secret("Bond", self.bond, fallback.bond, strict),
+      self._merge_secret(
+        "Google Workspace",
+        self.google_workspace,
+        fallback.google_workspace,
+        strict,
+      ),
+      self._merge_secret("AI", self.ai, fallback.ai, strict),
     )
 
-  def _merge_secret(self, name: str, primary: SecretT | None,
-                    fallback: SecretT | None, strict: bool) -> SecretT | None:
+  def _merge_secret(
+    self,
+    name: str,
+    primary: SecretT | None,
+    fallback: SecretT | None,
+    strict: bool,
+  ) -> SecretT | None:
     if strict and primary and fallback and primary != fallback:
       raise SecretsMergeError(name, primary, fallback)
     return primary or fallback
 
 
 class Secret(ConfigObject):
-  """A single username / password combination. """
+  """A single username / password combination."""
 
   @property
   def is_interactive(self) -> bool:
@@ -81,6 +90,7 @@ class Secret(ConfigObject):
 @dataclasses.dataclass(frozen=True)
 class AiSecrets(Secret):
   """API key secret for AI/LLM providers (e.g. Gemini)."""
+
   api_key: str
 
   @override
@@ -93,11 +103,12 @@ class AiSecrets(Secret):
   def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(cls)
     parser.add_default_argument(
-        "api_key",
-        aliases=("key", "token"),
-        type=ObjectParser.non_empty_str,
-        required=True,
-        help="API key for authenticating with the AI model service.")
+      "api_key",
+      aliases=("key", "token"),
+      type=ObjectParser.non_empty_str,
+      required=True,
+      help="API key for authenticating with the AI model service.",
+    )
     return parser
 
   @classmethod
@@ -116,16 +127,19 @@ class GoogleWorkspaceSecrets(Secret):
   def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(cls)
     parser.add_argument(
-        "service_account_key", type=ServiceAccount, required=True)
+      "service_account_key", type=ServiceAccount, required=True
+    )
     parser.add_argument(
-        "shared_drive_id", type=ObjectParser.non_empty_str, required=True)
+      "shared_drive_id", type=ObjectParser.non_empty_str, required=True
+    )
     return parser
 
   @classmethod
   @override
   def parse_str(cls, value: str) -> Self:
     raise NotImplementedError(
-        "GoogleWorkspaceSecrets from string not supported")
+      "GoogleWorkspaceSecrets from string not supported"
+    )
 
 
 @dataclasses.dataclass(frozen=True)
@@ -138,15 +152,17 @@ class UsernamePassword(Secret):
   def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(cls)
     parser.add_argument(
-        "username",
-        aliases=("user", "usr", "account", "account-name"),
-        type=ObjectParser.non_empty_str,
-        required=True)
+      "username",
+      aliases=("user", "usr", "account", "account-name"),
+      type=ObjectParser.non_empty_str,
+      required=True,
+    )
     parser.add_argument(
-        "password",
-        aliases=("pass", "pw", "account-password"),
-        type=ObjectParser.any_str,
-        required=True)
+      "password",
+      aliases=("pass", "pw", "account-password"),
+      type=ObjectParser.any_str,
+      required=True,
+    )
     return parser
 
   @classmethod
@@ -161,7 +177,8 @@ class UsernamePassword(Secret):
 @dataclasses.dataclass(frozen=True)
 class InteractiveUsernamePassword(UsernamePassword):
   """Interactive secret that defers the input to the user so we can
-  live test the login process. """
+  live test the login process."""
+
   username: str = dataclasses.field(default="", init=False)
   password: str = dataclasses.field(default="", init=False)
 
@@ -178,38 +195,42 @@ class CycledUsernamePassword(UsernamePassword):
   def config_parser(cls) -> ConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
-        "use_range",
-        aliases=("use-account-range", "enable-range"),
-        type=ObjectParser.bool,
-        default=False)
+      "use_range",
+      aliases=("use-account-range", "enable-range"),
+      type=ObjectParser.bool,
+      default=False,
+    )
     parser.add_argument(
-        "start",
-        aliases=("account-range-start", "range-start"),
-        type=NumberParser.positive_zero_int,
-        default=0)
+      "start",
+      aliases=("account-range-start", "range-start"),
+      type=NumberParser.positive_zero_int,
+      default=0,
+    )
     parser.add_argument(
-        "end",
-        aliases=("account-range-end", "range-end"),
-        type=NumberParser.positive_zero_int,
-        default=0)
+      "end",
+      aliases=("account-range-end", "range-end"),
+      type=NumberParser.positive_zero_int,
+      default=0,
+    )
     return parser
 
   @classmethod
   @override
   def create(
-      cls,
-      username: str,
-      password: str,
-      use_range: bool = False,
-      start: int = 0,
-      end: int = 0,
+    cls,
+    username: str,
+    password: str,
+    use_range: bool = False,
+    start: int = 0,
+    end: int = 0,
   ) -> Self:
     if use_range:
       if end <= start:
         raise ValueError(
-            f"CycledUsernamePassword 'end' boundary ({end}) must be "
-            f"strictly greater than 'start' ({start}) when 'use_range' "
-            "is enabled.")
+          f"CycledUsernamePassword 'end' boundary ({end}) must be "
+          f"strictly greater than 'start' ({start}) when 'use_range' "
+          "is enabled."
+        )
 
       account_selection = secrets.randbelow(end - start) + start
       username = username % account_selection
@@ -242,27 +263,37 @@ class ServiceAccount(Secret):
     parser = ConfigParser(cls)
     parser.add_argument("type", type=ObjectParser.non_empty_str, required=True)
     parser.add_argument(
-        "project_id", type=ObjectParser.non_empty_str, required=True)
+      "project_id", type=ObjectParser.non_empty_str, required=True
+    )
     parser.add_argument(
-        "private_key_id", type=ObjectParser.non_empty_str, required=True)
+      "private_key_id", type=ObjectParser.non_empty_str, required=True
+    )
     parser.add_argument(
-        "private_key", type=ObjectParser.non_empty_str, required=True)
+      "private_key", type=ObjectParser.non_empty_str, required=True
+    )
     parser.add_argument(
-        "client_email", type=ObjectParser.non_empty_str, required=True)
+      "client_email", type=ObjectParser.non_empty_str, required=True
+    )
     parser.add_argument(
-        "client_id", type=ObjectParser.non_empty_str, required=True)
+      "client_id", type=ObjectParser.non_empty_str, required=True
+    )
     parser.add_argument(
-        "auth_uri", type=ObjectParser.non_empty_str, required=True)
+      "auth_uri", type=ObjectParser.non_empty_str, required=True
+    )
     parser.add_argument(
-        "token_uri", type=ObjectParser.non_empty_str, required=True)
+      "token_uri", type=ObjectParser.non_empty_str, required=True
+    )
     parser.add_argument(
-        "auth_provider_x509_cert_url",
-        type=ObjectParser.non_empty_str,
-        required=True)
+      "auth_provider_x509_cert_url",
+      type=ObjectParser.non_empty_str,
+      required=True,
+    )
     parser.add_argument(
-        "client_x509_cert_url", type=ObjectParser.non_empty_str, required=True)
+      "client_x509_cert_url", type=ObjectParser.non_empty_str, required=True
+    )
     parser.add_argument(
-        "universe_domain", type=ObjectParser.non_empty_str, required=True)
+      "universe_domain", type=ObjectParser.non_empty_str, required=True
+    )
     return parser
 
   @classmethod
@@ -273,15 +304,15 @@ class ServiceAccount(Secret):
 
   def to_json(self) -> JsonDict:
     return {
-        "type": self.type,
-        "project_id": self.project_id,
-        "private_key_id": self.private_key_id,
-        "private_key": self.private_key,
-        "client_email": self.client_email,
-        "client_id": self.client_id,
-        "auth_uri": self.auth_uri,
-        "token_uri": self.token_uri,
-        "auth_provider_x509_cert_url": self.auth_provider_x509_cert_url,
-        "client_x509_cert_url": self.client_x509_cert_url,
-        "universe_domain": self.universe_domain,
+      "type": self.type,
+      "project_id": self.project_id,
+      "private_key_id": self.private_key_id,
+      "private_key": self.private_key,
+      "client_email": self.client_email,
+      "client_id": self.client_id,
+      "auth_uri": self.auth_uri,
+      "token_uri": self.token_uri,
+      "auth_provider_x509_cert_url": self.auth_provider_x509_cert_url,
+      "client_x509_cert_url": self.client_x509_cert_url,
+      "universe_domain": self.universe_domain,
     }

@@ -20,8 +20,9 @@ from crossbench.browsers.chromium_based import helper
 from crossbench.helper import url_helper
 
 if TYPE_CHECKING:
-  from crossbench.browsers.chromium_based.webdriver import \
-      ChromiumBasedWebDriver
+  from crossbench.browsers.chromium_based.webdriver import (
+    ChromiumBasedWebDriver,
+  )
   from crossbench.browsers.version import BrowserVersion
   from crossbench.plt.base import Platform
 
@@ -77,7 +78,6 @@ class CanaryDriverCandidate(NamedTuple):
 
 
 class ChromeDriverFinder:
-
   # Using CFT as abbreviation for Chrome For Testing here.
   CFT_MIN_MILESTONE = 115
   CFT_BASE_URL: str = "https://googlechromelabs.github.io/chrome-for-testing"
@@ -85,20 +85,14 @@ class ChromeDriverFinder:
   CFT_LATEST_URL: str = f"{CFT_BASE_URL}/LATEST_RELEASE_{{major}}"
 
   CFT_PLATFORM: Final[dict[tuple[str, str], str]] = {
-      ("linux", "x64"):
-          "linux64",
-      ("macos", "x64"):
-          "mac-x64",
-      ("macos", "arm64"):
-          "mac-arm64",
-      ("win", "ia32"):
-          "win32",
-      ("win", "x64"):
-          "win64",
-      # TODO(crbug/418674629): There is currently no Windows ARM64 version of
-      # Chrome for Testing, so we get ChromeDriver for win64 instead.
-      ("win", "arm64"):
-          "win64",
+    ("linux", "x64"): "linux64",
+    ("macos", "x64"): "mac-x64",
+    ("macos", "arm64"): "mac-arm64",
+    ("win", "ia32"): "win32",
+    ("win", "x64"): "win64",
+    # TODO(crbug/418674629): There is currently no Windows ARM64 version of
+    # Chrome for Testing, so we get ChromeDriver for win64 instead.
+    ("win", "arm64"): "win64",
   }
 
   def __init__(self, browser: ChromiumBasedWebDriver) -> None:
@@ -110,7 +104,8 @@ class ChromeDriverFinder:
       extension = ".exe"
     cache_dir = self.host_platform.local_cache_dir("driver")
     self.driver_path: Final[pth.LocalPath] = (
-        cache_dir / f"chromedriver-{self.browser.version.major}{extension}")
+      cache_dir / f"chromedriver-{self.browser.version.major}{extension}"
+    )
     self._validate_browser()
 
   def _validate_browser(self) -> None:
@@ -118,13 +113,14 @@ class ChromeDriverFinder:
     if browser_platform.is_local:
       return
     # Some remote platforms rely on a local chromedriver
-    if (browser_platform.is_android or browser_platform.is_remote_ssh):
+    if browser_platform.is_android or browser_platform.is_remote_ssh:
       return
     raise RuntimeError("Cannot download chromedriver for remote browser yet")
 
   def _get_build_dir(self) -> pth.AnyPath:
-    if build_dir := helper.find_build_dir(self.browser.app_path,
-                                          self.host_platform):
+    if build_dir := helper.find_build_dir(
+      self.browser.app_path, self.host_platform
+    ):
       return build_dir
     # Fallback if no args.gn found
     if self.browser.platform.is_android:
@@ -136,31 +132,36 @@ class ChromeDriverFinder:
   def find_local_build(self) -> pth.LocalPath:
     assert self.browser.app_path, "Missing browser app path"
     build_dir = self.host_platform.local_path(self._get_build_dir())
-    driver_path = (
-        build_dir /
-        helper.get_chromedriver_target(self.browser.platform.is_android))
+    driver_path = build_dir / helper.get_chromedriver_target(
+      self.browser.platform.is_android
+    )
     if self.host_platform.is_win:
       driver_path = driver_path.with_suffix(".exe")
     if self.host_platform.is_file(driver_path):
       return driver_path
     error_message: list[str] = [f"Driver '{driver_path}' does not exist."]
     error_message += [
-        helper.get_chromedriver_build_instructions(
-            build_dir, self.browser.platform.is_android),
+      helper.get_chromedriver_build_instructions(
+        build_dir, self.browser.platform.is_android
+      ),
     ]
     raise DriverNotFoundError("\n".join(error_message))
 
   def download(self) -> pth.LocalPath:
     if not self.host_platform.is_file(self.driver_path):
       with exception.annotate(
-          f"Downloading chromedriver for {self.browser.version}"):
+        f"Downloading chromedriver for {self.browser.version}"
+      ):
         self._download()
     return self.driver_path
 
   def _download(self) -> None:
     milestone = self.browser.version.major
-    logging.info("CHROMEDRIVER Downloading from %s v%s",
-                 self.browser.type_name(), milestone)
+    logging.info(
+      "CHROMEDRIVER Downloading from %s v%s",
+      self.browser.type_name(),
+      milestone,
+    )
     if self._try_download_cft(milestone):
       return
     if self._try_download_pre_115_stable(milestone):
@@ -168,8 +169,9 @@ class ChromeDriverFinder:
     if self._try_download_canary(milestone):
       return
     raise DriverNotFoundError(
-        "Please manually compile/download chromedriver for "
-        f"{self.browser.type_name()} {self.browser.version}")
+      "Please manually compile/download chromedriver for "
+      f"{self.browser.type_name()} {self.browser.version}"
+    )
 
   def _try_download_cft(self, milestone: int) -> bool:
     if milestone < self.CFT_MIN_MILESTONE:
@@ -185,13 +187,17 @@ class ChromeDriverFinder:
     url_result = self._get_canary_url()
     return self._try_download_url(milestone, url_result)
 
-  def _try_download_url(self, milestone: int,
-                        url_result: DriverUrlResult) -> bool:
+  def _try_download_url(
+    self, milestone: int, url_result: DriverUrlResult
+  ) -> bool:
     url = url_result.download_url
     if not url:
       return False
-    logging.info("CHROMEDRIVER Downloading M%s: %s", milestone,
-                 url_result.listing_url or url)
+    logging.info(
+      "CHROMEDRIVER Downloading M%s: %s",
+      milestone,
+      url_result.listing_url or url,
+    )
     maybe_driver: pth.LocalPath | None = None
     with tempfile.TemporaryDirectory() as tmp_dir:
       if ".zip" not in url:
@@ -201,7 +207,8 @@ class ChromeDriverFinder:
         maybe_driver = self._download_zip_url(url, tmp_dir)
       if not maybe_driver or not maybe_driver.is_file():
         raise DriverNotFoundError(
-            f"Extracted driver at {maybe_driver} does not exist.")
+          f"Extracted driver at {maybe_driver} does not exist."
+        )
       self.driver_path.parent.mkdir(parents=True, exist_ok=True)
       shutil.move(os.fspath(maybe_driver), os.fspath(self.driver_path))
       self.driver_path.chmod(self.driver_path.stat().st_mode | stat.S_IEXEC)
@@ -214,12 +221,13 @@ class ChromeDriverFinder:
       zip_ref.extractall(zip_file.parent)
     zip_file.unlink()
     candidates: list[pth.LocalPath] = [
-        path for path in zip_file.parent.glob("**/*")
-        if path.is_file() and "chromedriver" in path.name
+      path
+      for path in zip_file.parent.glob("**/*")
+      if path.is_file() and "chromedriver" in path.name
     ]
     # Find exact match first:
     maybe_drivers: list[pth.LocalPath] = [
-        path for path in candidates if path.stem == "chromedriver"
+      path for path in candidates if path.stem == "chromedriver"
     ]
     # Backup less strict matching:
     maybe_drivers += candidates
@@ -230,16 +238,18 @@ class ChromeDriverFinder:
   def _get_cft_url(self, milestone: int) -> DriverUrlResult:
     logging.debug("ChromeDriverFinder: Looking up chrome-for-testing version.")
     platform_name: str | None = self.CFT_PLATFORM.get(
-        self.host_platform.type_key)
+      self.host_platform.type_key
+    )
     if not platform_name:
       raise DriverNotFoundError(
-          f"Unsupported platform {self.host_platform.type_key} "
-          "for chromedriver.")
+        f"Unsupported platform {self.host_platform.type_key} for chromedriver."
+      )
     listing_url, version_data = self._get_cft_version_data(milestone)
     download_url: str | None = None
     if version_data:
-      download_url = self._get_cft_driver_download_url(version_data,
-                                                       platform_name)
+      download_url = self._get_cft_driver_download_url(
+        version_data, platform_name
+      )
     return DriverUrlResult(listing_url, download_url)
 
   def _get_cft_version_data(self, milestone: int) -> CftVersionDataResult:
@@ -248,20 +258,22 @@ class ChromeDriverFinder:
     if result.version_data:
       return result
     logging.debug(
-        "ChromeDriverFinder: Invalid precise version url %s, "
-        "using M%s", result.listing_url, milestone)
+      "ChromeDriverFinder: Invalid precise version url %s, using M%s",
+      result.listing_url,
+      milestone,
+    )
     return self._get_ctf_milestone_data(milestone)
 
   def _get_cft_precise_version_data(
-      self, version: BrowserVersion) -> CftVersionDataResult:
+    self, version: BrowserVersion
+  ) -> CftVersionDataResult:
     version_url: str = self.CFT_VERSION_URL.format(version=version.parts_str)
     try:
       response = url_helper.get(version_url)
       version_data = response.json()
       return CftVersionDataResult(version_url, version_data)
     except url_helper.RequestException as e:
-      logging.debug("ChromeDriverFinder: "
-                    "Precise version download failed %s", e)
+      logging.debug("ChromeDriverFinder: Precise version download failed %s", e)
       return CftVersionDataResult(version_url, None)
 
   def _get_ctf_milestone_data(self, milestone: int) -> CftVersionDataResult:
@@ -270,17 +282,21 @@ class ChromeDriverFinder:
       response = url_helper.get(latest_version_url)
       alternative_version = ChromeVersion.parse(response.text.strip())
       logging.debug(
-          "ChromeDriverFinder: Using alternative version %s "
-          "for M%s", alternative_version, milestone)
+        "ChromeDriverFinder: Using alternative version %s for M%s",
+        alternative_version,
+        milestone,
+      )
       return self._get_cft_precise_version_data(alternative_version)
     except url_helper.RequestException:
       return CftVersionDataResult(self.CFT_BASE_URL, None)
 
-  def _get_cft_driver_download_url(self, version_data: CftVersionData,
-                                   platform_name: str) -> str | None:
+  def _get_cft_driver_download_url(
+    self, version_data: CftVersionData, platform_name: str
+  ) -> str | None:
     if all_downloads := version_data.get("downloads"):
       driver_downloads: list[CftDownloadEntry] = all_downloads.get(
-          "chromedriver", [])
+        "chromedriver", []
+      )
       for download in driver_downloads:
         if isinstance(download, dict) and download["platform"] == platform_name:
           return download["url"]
@@ -290,10 +306,11 @@ class ChromeDriverFinder:
 
   def _get_pre_115_stable_url(self, milestone: int) -> DriverUrlResult:
     logging.debug(
-        "ChromeDriverFinder: "
-        "Looking upe old-style stable version M%s", milestone)
+      "ChromeDriverFinder: Looking upe old-style stable version M%s", milestone
+    )
     assert milestone < self.CFT_MIN_MILESTONE, (
-        f"Expected requested M{milestone} < M{self.CFT_MIN_MILESTONE}")
+      f"Expected requested M{milestone} < M{self.CFT_MIN_MILESTONE}"
+    )
     listing_url = f"{self.PRE_115_STABLE_URL}/index.html"
     driver_version: str | None = self._get_pre_115_driver_version(milestone)
     if not driver_version:
@@ -317,8 +334,10 @@ class ChromeDriverFinder:
       arch_suffix = "win32"
     else:
       raise DriverNotFoundError("Unsupported chromedriver platform")
-    url = (f"{self.PRE_115_STABLE_URL}/{driver_version}/"
-           f"chromedriver_{arch_suffix}.zip")
+    url = (
+      f"{self.PRE_115_STABLE_URL}/{driver_version}/"
+      f"chromedriver_{arch_suffix}.zip"
+    )
     return DriverUrlResult(listing_url, url)
 
   def _get_pre_115_driver_version(self, milestone: int) -> str | None:
@@ -331,8 +350,9 @@ class ChromeDriverFinder:
     except url_helper.HTTPError as e:
       if not e.response or e.response.status_code != 404:
         raise DriverNotFoundError(f"Could not query {url}") from e
-      logging.debug("ChromeDriverFinder: Could not load latest release url %s",
-                    e)
+      logging.debug(
+        "ChromeDriverFinder: Could not load latest release url %s", e
+      )
     return None
 
   def _get_pre_70_driver_version(self, milestone: int) -> str | None:
@@ -351,56 +371,66 @@ class ChromeDriverFinder:
 
   CHROMIUM_DASH_URL: str = "https://chromiumdash.appspot.com/fetch_releases"
   CHROMIUM_LISTING_URL: str = (
-      "https://www.googleapis.com/storage/v1/b/chromium-browser-snapshots/o/")
+    "https://www.googleapis.com/storage/v1/b/chromium-browser-snapshots/o/"
+  )
   CHROMIUM_DASH_PARAMS: dict[tuple[str, str], ChromiumDashParams] = {
-      ("linux", "x64"): {
-          "dash_platform": "linux",
-          "dash_channel": "dev",
-          "dash_limit": 10,
-      },
-      ("macos", "x64"): {
-          "dash_platform": "mac",
-      },
-      ("macos", "arm64"): {
-          "dash_platform": "mac",
-      },
-      ("win", "ia32"): {
-          "dash_platform": "win",
-      },
-      ("win", "x64"): {
-          "dash_platform": "win64",
-      },
+    ("linux", "x64"): {
+      "dash_platform": "linux",
+      "dash_channel": "dev",
+      "dash_limit": 10,
+    },
+    ("macos", "x64"): {
+      "dash_platform": "mac",
+    },
+    ("macos", "arm64"): {
+      "dash_platform": "mac",
+    },
+    ("win", "ia32"): {
+      "dash_platform": "win",
+    },
+    ("win", "x64"): {
+      "dash_platform": "win64",
+    },
   }
   CHROMIUM_LISTING_PREFIX: dict[tuple[str, str], str] = {
-      ("linux", "x64"): "Linux_x64",
-      ("macos", "x64"): "Mac",
-      ("macos", "arm64"): "Mac_Arm",
-      ("win", "ia32"): "Win",
-      ("win", "x64"): "Win_x64",
+    ("linux", "x64"): "Linux_x64",
+    ("macos", "x64"): "Mac",
+    ("macos", "arm64"): "Mac_Arm",
+    ("win", "ia32"): "Win",
+    ("win", "x64"): "Win_x64",
   }
 
   def _get_canary_url(self) -> DriverUrlResult:
     logging.debug(
-        "ChromeDriverFinder: Try downloading the chromedriver canary version")
+      "ChromeDriverFinder: Try downloading the chromedriver canary version"
+    )
     properties = self.CHROMIUM_DASH_PARAMS.get(self.host_platform.type_key)
     if not properties:
-      raise DriverNotFoundError(f"Unsupported platform={self.platform}, "
-                                f"type_key={self.host_platform.type_key}")
+      raise DriverNotFoundError(
+        f"Unsupported platform={self.platform}, "
+        f"type_key={self.host_platform.type_key}"
+      )
     chromium_base_position: int = self._get_canary_base_position(properties)
     # Use prefixes to limit listing results and increase chances of finding
     # a matching version
     listing_prefix = self.CHROMIUM_LISTING_PREFIX.get(
-        self.host_platform.type_key)
+      self.host_platform.type_key
+    )
     if not listing_prefix:
       raise NotImplementedError(
-          f"Unsupported chromedriver platform {self.host_platform}")
+        f"Unsupported chromedriver platform {self.host_platform}"
+      )
     base_prefix: str = str(chromium_base_position)[:4]
-    listing_url: str = url_helper.update_url_query(self.CHROMIUM_LISTING_URL, {
+    listing_url: str = url_helper.update_url_query(
+      self.CHROMIUM_LISTING_URL,
+      {
         "prefix": f"{listing_prefix}/{base_prefix}",
         "maxResults": "10000",
-    })
+      },
+    )
     candidate_url: str | None = self._find_canary_candidate_url(
-        listing_url, chromium_base_position)
+      listing_url, chromium_base_position
+    )
     return DriverUrlResult(listing_url, candidate_url)
 
   def _get_canary_base_position(self, properties: ChromiumDashParams) -> int:
@@ -410,21 +440,25 @@ class ChromeDriverFinder:
     # the latest dev version (only beta / stable have official driver binaries).
     dash_limit: int = properties.get("dash_limit", 100)
     url: str = url_helper.update_url_query(
-        self.CHROMIUM_DASH_URL, {
-            "platform": dash_platform,
-            "channel": dash_channel,
-            "milestone": str(self.browser.version.major),
-            "num": str(dash_limit),
-        })
+      self.CHROMIUM_DASH_URL,
+      {
+        "platform": dash_platform,
+        "channel": dash_channel,
+        "milestone": str(self.browser.version.major),
+        "num": str(dash_limit),
+      },
+    )
     response = url_helper.get(url)
     version_infos: list[ChromiumDashVersionInfo] = list(response.json())
     if not version_infos:
-      raise DriverNotFoundError("Could not find latest version info for "
-                                f"platform={self.host_platform}")
+      raise DriverNotFoundError(
+        f"Could not find latest version info for platform={self.host_platform}"
+      )
     return self._resolve_canary_base_position(version_infos)
 
   def _resolve_canary_base_position(
-      self, version_infos: list[ChromiumDashVersionInfo]) -> int:
+    self, version_infos: list[ChromiumDashVersionInfo]
+  ) -> int:
     for version_info in version_infos:
       if version_info["version"] == self.browser.version.parts_str:
         return int(version_info["chromium_main_branch_position"])
@@ -440,16 +474,21 @@ class ChromeDriverFinder:
       fallback_version_info = version_infos[0]
     base_position = int(fallback_version_info["chromium_main_branch_position"])
     logging.warning(
-        "Falling back to latest (not precisely matching) "
-        "canary chromedriver %s (expected %s)",
-        fallback_version_info["version"], self.browser.version)
+      "Falling back to latest (not precisely matching) "
+      "canary chromedriver %s (expected %s)",
+      fallback_version_info["version"],
+      self.browser.version,
+    )
     if not base_position:
-      raise DriverNotFoundError("Could not find matching canary chromedriver "
-                                f"for {self.browser.version}")
+      raise DriverNotFoundError(
+        "Could not find matching canary chromedriver "
+        f"for {self.browser.version}"
+      )
     return base_position
 
-  def _find_canary_candidate_url(self, listing_url: str,
-                                 chromium_base_position: int) -> str | None:
+  def _find_canary_candidate_url(
+    self, listing_url: str, chromium_base_position: int
+  ) -> str | None:
     listing = url_helper.get(listing_url).json()
     versions: list[CanaryDriverCandidate] = []
     logging.debug("Filtering %s candidate URLs.", len(listing["items"]))
@@ -466,7 +505,8 @@ class ChromeDriverFinder:
     return None
 
   def _parse_canary_candidate(
-      self, version: CanaryStorageItem) -> CanaryDriverCandidate | None:
+    self, version: CanaryStorageItem
+  ) -> CanaryDriverCandidate | None:
     if "name" not in version:
       return None
     if "mediaLink" not in version:

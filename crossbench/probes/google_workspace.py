@@ -19,8 +19,10 @@ if TYPE_CHECKING:
 
 
 class GoogleWorkspaceAction(ConfigEnum):
-  COPY_AND_REDIRECT = ("copy_and_redirect",
-                       "Copy a template file and redirect to it")
+  COPY_AND_REDIRECT = (
+    "copy_and_redirect",
+    "Copy a template file and redirect to it",
+  )
 
 
 class GoogleWorkspaceProbe(Probe):
@@ -28,6 +30,7 @@ class GoogleWorkspaceProbe(Probe):
   Probe that interacts with the Google Drive API to copy template documents
   into a Shared Drive and redirects the browser to the newly created file.
   """
+
   NAME: ClassVar = "google_workspace"
 
   @classmethod
@@ -42,7 +45,6 @@ class GoogleWorkspaceProbe(Probe):
 
 
 class GoogleWorkspaceProbeContext(ProbeContext[GoogleWorkspaceProbe]):
-
   def start(self) -> None:
     pass
 
@@ -54,8 +56,9 @@ class GoogleWorkspaceProbeContext(ProbeContext[GoogleWorkspaceProbe]):
     return self.empty_result()
 
   @override
-  def invoke(self, info_stack: exception.TInfoStack, timeout: dt.timedelta,
-             **kwargs) -> None:
+  def invoke(
+    self, info_stack: exception.TInfoStack, timeout: dt.timedelta, **kwargs
+  ) -> None:
     del info_stack
     del timeout
 
@@ -80,30 +83,31 @@ class GoogleWorkspaceProbeContext(ProbeContext[GoogleWorkspaceProbe]):
     sa_info = gw_secrets.service_account_key
     scopes = ["https://www.googleapis.com/auth/drive"]
     creds = service_account.Credentials.from_service_account_info(
-        sa_info.to_json(), scopes=scopes)
+      sa_info.to_json(), scopes=scopes
+    )
 
     drive_service = build("drive", "v3", credentials=creds)
 
     # Copy Document
     body = {
-        "name": f"Crossbench-Test-Copy-{template_id}",
-        "parents": [gw_secrets.shared_drive_id],
-        "appProperties": {
-            "crossbench_test":
-                "true",
-            "template_id":
-                template_id,
-            "ttl":
-                (dt.datetime.now(dt.UTC) + dt.timedelta(hours=4)).isoformat(),
-        },
+      "name": f"Crossbench-Test-Copy-{template_id}",
+      "parents": [gw_secrets.shared_drive_id],
+      "appProperties": {
+        "crossbench_test": "true",
+        "template_id": template_id,
+        "ttl": (dt.datetime.now(dt.UTC) + dt.timedelta(hours=4)).isoformat(),
+      },
     }
     copied_file = (
-        drive_service.files().copy(
-            fileId=template_id,
-            body=body,
-            supportsAllDrives=True,
-            fields="id, webViewLink",
-        ).execute())
+      drive_service.files()
+      .copy(
+        fileId=template_id,
+        body=body,
+        supportsAllDrives=True,
+        fields="id, webViewLink",
+      )
+      .execute()
+    )
     new_file_id = copied_file.get("id")
     new_file_link = copied_file.get("webViewLink")
 
@@ -112,6 +116,7 @@ class GoogleWorkspaceProbeContext(ProbeContext[GoogleWorkspaceProbe]):
 
     if not new_file_link:
       raise ValueError(
-          f"API response missing webViewLink for file {new_file_id}")
+        f"API response missing webViewLink for file {new_file_id}"
+      )
 
     self.browser.show_url(new_file_link)

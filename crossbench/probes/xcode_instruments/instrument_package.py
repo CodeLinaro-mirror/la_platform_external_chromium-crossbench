@@ -30,7 +30,8 @@ if TYPE_CHECKING:
 # Apple's own Instruments packages (e.g. "CPU Counters"), relative to the
 # active Xcode's Contents dir (the parent of `xcode-select -p`).
 _APPLE_PACKAGES_DIR: Final[pth.LocalPath] = pth.LocalPath(
-    "Applications/Instruments.app/Contents/Packages")
+  "Applications/Instruments.app/Contents/Packages"
+)
 _APPLE_PACKAGE_SUFFIX: Final[str] = ".instrdst"
 _CACHE_DIR_NAME: Final[str] = "instrument_packages"
 
@@ -38,6 +39,7 @@ _CACHE_DIR_NAME: Final[str] = "instrument_packages"
 @dataclasses.dataclass(frozen=True)
 class InstrumentPackage:
   """A built Instruments package and the titles of its instruments."""
+
   path: pth.LocalPath
   instruments: tuple[str, ...]
 
@@ -56,7 +58,8 @@ class InstrumentPackage:
     if it is not a valid package source declaring instruments."""
     source = PathParser.existing_file_path(value, "instrument")
     with exception.annotate_argparsing(
-        f"Parsing Instruments package source {str(source)!r}"):
+      f"Parsing Instruments package source {str(source)!r}"
+    ):
       cls.parse_instrument_titles(source)
     return source
 
@@ -75,15 +78,20 @@ class InstrumentPackage:
     instruments = cls.parse_instrument_titles(source)
     xcode_contents = cls._xcode_contents_dir(host)
     output = host.local_cache_dir(_CACHE_DIR_NAME) / cls._cache_name(
-        host, source, xcode_contents)
+      host, source, xcode_contents
+    )
     if not host.exists(output):
       cls._build_uncached(host, source, xcode_contents, output)
     return cls(output, instruments)
 
   @classmethod
-  def _build_uncached(cls, host: MacOSPlatform, source: pth.LocalPath,
-                      xcode_contents: pth.LocalPath,
-                      output: pth.LocalPath) -> None:
+  def _build_uncached(
+    cls,
+    host: MacOSPlatform,
+    source: pth.LocalPath,
+    xcode_contents: pth.LocalPath,
+    output: pth.LocalPath,
+  ) -> None:
     """Builds `source` into `output`.
 
     All of Apple's Instruments packages are linked so that the source can import
@@ -94,28 +102,43 @@ class InstrumentPackage:
     apple_packages_dir = xcode_contents / _APPLE_PACKAGES_DIR
     link_args: ListCmdArgs = []
     for package in sorted(
-        host.glob(apple_packages_dir, f"*{_APPLE_PACKAGE_SUFFIX}")):
+      host.glob(apple_packages_dir, f"*{_APPLE_PACKAGE_SUFFIX}")
+    ):
       link_args.extend(("-l", package.name.removesuffix(_APPLE_PACKAGE_SUFFIX)))
     tmp_output = output.with_name(f"tmp-{output.name}")
     host.rm(tmp_output, dir=True, missing_ok=True)
     host.sh(
-        Binaries.XCRUN.resolve_cached(host), "instrumentbuilder", "-i", source,
-        "-o", tmp_output, "-L", apple_packages_dir, *link_args)
+      Binaries.XCRUN.resolve_cached(host),
+      "instrumentbuilder",
+      "-i",
+      source,
+      "-o",
+      tmp_output,
+      "-L",
+      apple_packages_dir,
+      *link_args,
+    )
     host.rename(tmp_output, output)
 
   @classmethod
   def _xcode_contents_dir(cls, host: MacOSPlatform) -> pth.LocalPath:
     """The active Xcode's Contents dir, the parent of `xcode-select -p`."""
     developer_dir = host.sh_stdout(
-        Binaries.XCODE_SELECT.resolve_cached(host), "-p").strip()
+      Binaries.XCODE_SELECT.resolve_cached(host), "-p"
+    ).strip()
     return pth.LocalPath(developer_dir).parent
 
   @classmethod
-  def _cache_name(cls, host: MacOSPlatform, source: pth.LocalPath,
-                  xcode_contents: pth.LocalPath) -> str:
+  def _cache_name(
+    cls,
+    host: MacOSPlatform,
+    source: pth.LocalPath,
+    xcode_contents: pth.LocalPath,
+  ) -> str:
     """A cache name that changes with the source and the Xcode version."""
     version_plist = plistlib.loads(
-        host.read_bytes(xcode_contents / "version.plist"))
+      host.read_bytes(xcode_contents / "version.plist")
+    )
     xcode_version = version_plist.get("ProductBuildVersion", "unknown")
     source_hash = hashlib.sha256(host.read_bytes(source)).hexdigest()[:16]
     return f"{source.stem}-{xcode_version}-{source_hash}{_APPLE_PACKAGE_SUFFIX}"

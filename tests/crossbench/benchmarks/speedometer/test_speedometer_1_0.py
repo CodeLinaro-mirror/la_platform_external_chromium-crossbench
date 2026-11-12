@@ -6,16 +6,19 @@ from __future__ import annotations
 
 from typing import override
 
-from crossbench.benchmarks.speedometer.speedometer_1_0 import \
-    Speedometer10Benchmark, Speedometer10Probe, Speedometer10ProbeContext, \
-    Speedometer10Story
+from crossbench.benchmarks.speedometer.speedometer_1_0 import (
+  Speedometer10Benchmark,
+  Speedometer10Probe,
+  Speedometer10ProbeContext,
+  Speedometer10Story,
+)
 from tests import test_helper
-from tests.crossbench.benchmarks.speedometer.helper import \
-    Speedometer1BaseTestCase
+from tests.crossbench.benchmarks.speedometer.helper import (
+  Speedometer1BaseTestCase,
+)
 
 
 class Speedometer10TestCase(Speedometer1BaseTestCase):
-
   @property
   @override
   def benchmark_cls(self):
@@ -43,10 +46,10 @@ class Speedometer10TestCase(Speedometer1BaseTestCase):
 
   def test_default_all(self):
     default_story_names = [
-        story.name for story in self.story_cls.default(separate=True)
+      story.name for story in self.story_cls.default(separate=True)
     ]
     all_story_names = [
-        story.name for story in self.story_cls.all(separate=True)
+      story.name for story in self.story_cls.all(separate=True)
     ]
     self.assertSequenceEqual(default_story_names, all_story_names)
 

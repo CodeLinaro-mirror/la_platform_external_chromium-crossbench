@@ -1,6 +1,3 @@
-[tool.isort]
-multi_line_output = 2
-
 [project]
 name = "crossbench"
 version = "1.2026.02"
@@ -60,7 +57,6 @@ cb_validate_hjson = 'crossbench.scripts:cb_validate_hjson'
 
 [tool.poetry.group.dev.dependencies]
 debugpy = "1.8.16"
-isort = "6.0.1"
 orjson = "^3.11.8"
 pyfakefs = "6.3.0"
 pyrefly = "1.1.0"
@@ -95,7 +91,12 @@ exclude = [
     "third_party/*",
 ]
 target-version = "py311"
+line-length = 80
 indent-width = 2
+
+[tool.ruff.format]
+indent-style = "space"
+quote-style = "preserve"
 
 [tool.ruff.lint]
 extend-select = [
@@ -107,7 +108,6 @@ extend-select = [
     "T10",  # flake8-debugger
     "C4",   # flake8-comprehensions
     "C901", # mccabe cyclomatic complexity
-    "COM812", # flake8-commas: missing-trailing-comma
     "COM818", # flake8-commas: trailing-comma-on-bare-tuple
     "COM819", # flake8-commas: prohibited-trailing-comma
     "BLE",  # flake8-blind-except
@@ -162,7 +162,6 @@ ignore = [
     "S101",   # Do not use assert
     "S603",   # Untrusted shell inputs.
     "ARG005", # Unused lambda argument
-    "I001",   # Imports sorting and formatting (conflicts if git cl format)
     "N818",   # Exceptions subclass names must end in "Error"
     "PERF401", # force list comprehensions
     "UP035",  # Deprecated import aliases (like typing.Tuple)

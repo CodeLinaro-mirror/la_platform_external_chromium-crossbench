@@ -9,8 +9,16 @@ import datetime as dt
 import functools
 import logging
 import re
-from typing import TYPE_CHECKING, ClassVar, Final, Iterator, Mapping, Self, \
-    Sequence, override
+from typing import (
+  TYPE_CHECKING,
+  ClassVar,
+  Final,
+  Iterator,
+  Mapping,
+  Self,
+  Sequence,
+  override,
+)
 
 from crossbench import path as pth
 from crossbench.action_runner.action.enums import ReadyState, WindowTarget
@@ -20,12 +28,13 @@ from crossbench.action_runner.action.meminfo import MeminfoAction
 from crossbench.action_runner.action.switch_tab import SwitchTabAction
 from crossbench.action_runner.action.wait import WaitAction
 from crossbench.benchmarks.loading.config.blocks import ActionBlock
-from crossbench.benchmarks.loading.loading_benchmark import LoadingBenchmark, \
-    LoadingPageFilter
+from crossbench.benchmarks.loading.loading_benchmark import (
+  LoadingBenchmark,
+  LoadingPageFilter,
+)
 from crossbench.benchmarks.loading.page.base import Page
 from crossbench.benchmarks.loading.page.interactive import InteractivePage
-from crossbench.benchmarks.loading.playback_controller import \
-    PlaybackController
+from crossbench.benchmarks.loading.playback_controller import PlaybackController
 from crossbench.benchmarks.loading.tab_controller import TabController
 from crossbench.config import ConfigObject, ConfigParser
 from crossbench.parse import DurationParser, NumberParser
@@ -45,13 +54,16 @@ SCRIPTS_DIR: Final[pth.LocalPath] = pth.LocalPath(__file__).parent / "scripts"
 STRESS_ALLOC_JS: Final[pth.LocalPath] = SCRIPTS_DIR / "stress_alloc.js"
 REVISIT_TAB_JS: Final[pth.LocalPath] = SCRIPTS_DIR / "revisit_tab.js"
 
-STARTER_URL: Final[str] = ("data:text/html,<title>Starter</title>"
-                           "<body>Starting multiwindow-memory-stress</body>")
+STARTER_URL: Final[str] = (
+  "data:text/html,<title>Starter</title>"
+  "<body>Starting multiwindow-memory-stress</body>"
+)
 # The title is part of the URL so that it is kept if a discarded tab is
 # reloaded, which is needed to find the tab again with SwitchTabAction.
 STRESS_TAB_URL_TEMPLATE: Final[str] = (
-    "data:text/html,<!doctype html><html><head><title>Tab {tab_index}</title>"
-    "</head><body><h2>Stress Tab</h2></body></html>")
+  "data:text/html,<!doctype html><html><head><title>Tab {tab_index}</title>"
+  "</head><body><h2>Stress Tab</h2></body></html>"
+)
 
 DEFAULT_WINDOWS: Final[int] = 6
 DEFAULT_TABS_PER_WINDOW: Final[int] = 5
@@ -72,15 +84,18 @@ COOLDOWN_DURATION: Final[dt.timedelta] = dt.timedelta(seconds=10)
 WINDOWS_HELP: Final[str] = "Number of browser windows to open."
 TABS_PER_WINDOW_HELP: Final[str] = "Number of tabs to open in each window."
 ALLOC_MB_HELP: Final[str] = (
-    "MB of anonymous JS heap to allocate per tab. "
-    f"Default is {ALLOC_MB_PER_GIB} MB per GiB of device memory.")
+  "MB of anonymous JS heap to allocate per tab. "
+  f"Default is {ALLOC_MB_PER_GIB} MB per GiB of device memory."
+)
 IMAGE_COUNT_HELP: Final[str] = (
-    "Number of discardable images (~2 MB each when decoded) to create per "
-    f"tab. Default is {IMAGES_PER_GIB} per GiB of device memory, "
-    f"at least {MIN_IMAGE_COUNT}.")
+  "Number of discardable images (~2 MB each when decoded) to create per "
+  f"tab. Default is {IMAGES_PER_GIB} per GiB of device memory, "
+  f"at least {MIN_IMAGE_COUNT}."
+)
 TAB_WAIT_HELP: Final[str] = (
-    "Wait after the allocation and after the first revisit of each newly "
-    "opened tab.")
+  "Wait after the allocation and after the first revisit of each newly "
+  "opened tab."
+)
 REVISIT_WAIT_HELP: Final[str] = "Wait after revisiting each tab."
 
 
@@ -92,39 +107,46 @@ class MultiwindowMemoryStressStoryFilter(LoadingPageFilter):
   @classmethod
   @override
   def add_cli_arguments(
-      cls, parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+    cls, parser: argparse.ArgumentParser
+  ) -> argparse.ArgumentParser:
     parser = super().add_cli_arguments(parser)
     group = parser.add_argument_group("Multiwindow Memory Stress Options")
     group.add_argument(
-        "--windows",
-        type=NumberParser.positive_int,
-        default=DEFAULT_WINDOWS,
-        help=f"{WINDOWS_HELP} Default is {DEFAULT_WINDOWS}.")
+      "--windows",
+      type=NumberParser.positive_int,
+      default=DEFAULT_WINDOWS,
+      help=f"{WINDOWS_HELP} Default is {DEFAULT_WINDOWS}.",
+    )
     group.add_argument(
-        "--tabs-per-window",
-        type=NumberParser.positive_int,
-        default=DEFAULT_TABS_PER_WINDOW,
-        help=f"{TABS_PER_WINDOW_HELP} Default is {DEFAULT_TABS_PER_WINDOW}.")
+      "--tabs-per-window",
+      type=NumberParser.positive_int,
+      default=DEFAULT_TABS_PER_WINDOW,
+      help=f"{TABS_PER_WINDOW_HELP} Default is {DEFAULT_TABS_PER_WINDOW}.",
+    )
     group.add_argument(
-        "--alloc-mb",
-        type=NumberParser.positive_zero_int,
-        default=None,
-        help=ALLOC_MB_HELP)
+      "--alloc-mb",
+      type=NumberParser.positive_zero_int,
+      default=None,
+      help=ALLOC_MB_HELP,
+    )
     group.add_argument(
-        "--image-count",
-        type=NumberParser.positive_zero_int,
-        default=None,
-        help=IMAGE_COUNT_HELP)
+      "--image-count",
+      type=NumberParser.positive_zero_int,
+      default=None,
+      help=IMAGE_COUNT_HELP,
+    )
     group.add_argument(
-        "--tab-wait",
-        type=DurationParser.positive_or_zero_duration,
-        default=DEFAULT_TAB_WAIT,
-        help=f"{TAB_WAIT_HELP} Default is 400ms.")
+      "--tab-wait",
+      type=DurationParser.positive_or_zero_duration,
+      default=DEFAULT_TAB_WAIT,
+      help=f"{TAB_WAIT_HELP} Default is 400ms.",
+    )
     group.add_argument(
-        "--revisit-wait",
-        type=DurationParser.positive_or_zero_duration,
-        default=DEFAULT_REVISIT_WAIT,
-        help=f"{REVISIT_WAIT_HELP} Default is 250ms.")
+      "--revisit-wait",
+      type=DurationParser.positive_or_zero_duration,
+      default=DEFAULT_REVISIT_WAIT,
+      help=f"{REVISIT_WAIT_HELP} Default is 250ms.",
+    )
     return parser
 
   @classmethod
@@ -137,10 +159,11 @@ class MultiwindowMemoryStressStoryFilter(LoadingPageFilter):
   @classmethod
   def stories_from_cli_args(cls, args: argparse.Namespace) -> tuple[Page, ...]:
     page = MultiwindowMemoryStressPage(
-        StressConfig.from_cli_args(args),
-        playback=args.playback,
-        tabs=args.tabs,
-        about_blank_duration=args.about_blank_duration)
+      StressConfig.from_cli_args(args),
+      playback=args.playback,
+      tabs=args.tabs,
+      about_blank_duration=args.about_blank_duration,
+    )
     return (page,)
 
 
@@ -151,6 +174,7 @@ class StressConfig(ConfigObject):
   alloc_mb and image_count are derived from the device memory at run time if
   they are None.
   """
+
   windows: int = DEFAULT_WINDOWS
   tabs_per_window: int = DEFAULT_TABS_PER_WINDOW
   alloc_mb: int | None = None
@@ -182,46 +206,53 @@ class StressConfig(ConfigObject):
   def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(cls)
     parser.add_default_argument(
-        "windows",
-        type=NumberParser.positive_int,
-        default=DEFAULT_WINDOWS,
-        help=WINDOWS_HELP)
+      "windows",
+      type=NumberParser.positive_int,
+      default=DEFAULT_WINDOWS,
+      help=WINDOWS_HELP,
+    )
     parser.add_argument(
-        "tabs_per_window",
-        type=NumberParser.positive_int,
-        default=DEFAULT_TABS_PER_WINDOW,
-        help=TABS_PER_WINDOW_HELP)
+      "tabs_per_window",
+      type=NumberParser.positive_int,
+      default=DEFAULT_TABS_PER_WINDOW,
+      help=TABS_PER_WINDOW_HELP,
+    )
     parser.add_argument(
-        "alloc_mb",
-        type=NumberParser.positive_zero_int,
-        default=None,
-        help=ALLOC_MB_HELP)
+      "alloc_mb",
+      type=NumberParser.positive_zero_int,
+      default=None,
+      help=ALLOC_MB_HELP,
+    )
     parser.add_argument(
-        "image_count",
-        type=NumberParser.positive_zero_int,
-        default=None,
-        help=IMAGE_COUNT_HELP)
+      "image_count",
+      type=NumberParser.positive_zero_int,
+      default=None,
+      help=IMAGE_COUNT_HELP,
+    )
     parser.add_argument(
-        "tab_wait",
-        type=DurationParser.positive_or_zero_duration,
-        default=DEFAULT_TAB_WAIT,
-        help=TAB_WAIT_HELP)
+      "tab_wait",
+      type=DurationParser.positive_or_zero_duration,
+      default=DEFAULT_TAB_WAIT,
+      help=TAB_WAIT_HELP,
+    )
     parser.add_argument(
-        "revisit_wait",
-        type=DurationParser.positive_or_zero_duration,
-        default=DEFAULT_REVISIT_WAIT,
-        help=REVISIT_WAIT_HELP)
+      "revisit_wait",
+      type=DurationParser.positive_or_zero_duration,
+      default=DEFAULT_REVISIT_WAIT,
+      help=REVISIT_WAIT_HELP,
+    )
     return parser
 
   @classmethod
   def from_cli_args(cls, args: argparse.Namespace) -> Self:
     return cls(
-        windows=args.windows,
-        tabs_per_window=args.tabs_per_window,
-        alloc_mb=args.alloc_mb,
-        image_count=args.image_count,
-        tab_wait=args.tab_wait,
-        revisit_wait=args.revisit_wait)
+      windows=args.windows,
+      tabs_per_window=args.tabs_per_window,
+      alloc_mb=args.alloc_mb,
+      image_count=args.image_count,
+      tab_wait=args.tab_wait,
+      revisit_wait=args.revisit_wait,
+    )
 
   @property
   def is_resolved(self) -> bool:
@@ -246,12 +277,12 @@ class StressConfig(ConfigObject):
 
   def to_json(self) -> JsonDict:
     return {
-        "windows": self.windows,
-        "tabs_per_window": self.tabs_per_window,
-        "alloc_mb": self.alloc_mb,
-        "image_count": self.image_count,
-        "tab_wait": self.tab_wait.total_seconds(),
-        "revisit_wait": self.revisit_wait.total_seconds(),
+      "windows": self.windows,
+      "tabs_per_window": self.tabs_per_window,
+      "alloc_mb": self.alloc_mb,
+      "image_count": self.image_count,
+      "tab_wait": self.tab_wait.total_seconds(),
+      "revisit_wait": self.revisit_wait.total_seconds(),
     }
 
 
@@ -264,21 +295,22 @@ class MultiwindowMemoryStressPage(InteractivePage):
   """
 
   def __init__(
-      self,
-      config: StressConfig,
-      playback: PlaybackController = PlaybackController.default(),
-      tabs: TabController = TabController.default(),
-      about_blank_duration: dt.timedelta = dt.timedelta(),
+    self,
+    config: StressConfig,
+    playback: PlaybackController = PlaybackController.default(),
+    tabs: TabController = TabController.default(),
+    about_blank_duration: dt.timedelta = dt.timedelta(),
   ) -> None:
     self._config: StressConfig = config
     self._resolved_config: StressConfig | None = None
     self._stress_blocks: tuple[ActionBlock, ...] = (self._init_block(),)
     super().__init__(
-        name=STORY_NAME,
-        blocks=self._stress_blocks,
-        playback=playback,
-        tabs=tabs,
-        about_blank_duration=about_blank_duration)
+      name=STORY_NAME,
+      blocks=self._stress_blocks,
+      playback=playback,
+      tabs=tabs,
+      about_blank_duration=about_blank_duration,
+    )
 
   @property
   def config(self) -> StressConfig:
@@ -307,25 +339,33 @@ class MultiwindowMemoryStressPage(InteractivePage):
 
   def _update_blocks(self, run: Run) -> None:
     config = self._config.resolve(run.browser.platform.total_memory_mb())
-    logging.info("%s: alloc_mb=%s image_count=%s per tab", STORY_NAME,
-                 config.alloc_mb, config.image_count)
+    logging.info(
+      "%s: alloc_mb=%s image_count=%s per tab",
+      STORY_NAME,
+      config.alloc_mb,
+      config.image_count,
+    )
     self._resolved_config = config
     init_block = self._init_block()
-    self._stress_blocks = (init_block, *_StressBlocks(
-        config, start_index=init_block.index + 1))
+    self._stress_blocks = (
+      init_block,
+      *_StressBlocks(config, start_index=init_block.index + 1),
+    )
 
   def _init_block(self) -> ActionBlock:
     return ActionBlock(
-        label="stage-0-init",
-        index=0,
-        actions=(
-            GetAction.create(
-                url=STARTER_URL,
-                ready_state=ReadyState.COMPLETE,
-                timeout=STARTER_LOAD_TIMEOUT,
-                target=WindowTarget.SELF),
-            MeminfoAction.create(title="before_open", timeout=MEMINFO_TIMEOUT),
-        ))
+      label="stage-0-init",
+      index=0,
+      actions=(
+        GetAction.create(
+          url=STARTER_URL,
+          ready_state=ReadyState.COMPLETE,
+          timeout=STARTER_LOAD_TIMEOUT,
+          target=WindowTarget.SELF,
+        ),
+        MeminfoAction.create(title="before_open", timeout=MEMINFO_TIMEOUT),
+      ),
+    )
 
   @override
   def details_json(self) -> JsonDict:
@@ -350,11 +390,13 @@ class _StressBlocks:
   def __iter__(self) -> Iterator[ActionBlock]:
     windows = range(1, self._config.windows + 1)
     for window in windows:
-      yield self._block(f"stage-{window}-window-{window}",
-                        self._open_window_actions(window))
+      yield self._block(
+        f"stage-{window}-window-{window}", self._open_window_actions(window)
+      )
     for window in windows:
-      yield self._block(f"cycle-window-{window}",
-                        self._cycle_window_actions(window))
+      yield self._block(
+        f"cycle-window-{window}", self._cycle_window_actions(window)
+      )
     yield self._block("stage-final-cooldown", self._cooldown_actions())
 
   def _block(self, label: str, actions: Sequence[Action]) -> ActionBlock:
@@ -380,7 +422,8 @@ class _StressBlocks:
     for tab in range(self._config.tabs_per_window):
       target = WindowTarget.NEW_WINDOW if tab == 0 else WindowTarget.NEW_TAB
       actions.extend(
-          self._open_tab_actions(window, self._tab_index(window, tab), target))
+        self._open_tab_actions(window, self._tab_index(window, tab), target)
+      )
     actions.append(self._meminfo(self._window_meminfo_title(window)))
     return actions
 
@@ -389,60 +432,70 @@ class _StressBlocks:
       return "after_open"
     return f"after_w{window}_t{window * self._config.tabs_per_window}"
 
-  def _open_tab_actions(self, window: int, tab_index: str,
-                        target: WindowTarget) -> list[Action]:
+  def _open_tab_actions(
+    self, window: int, tab_index: str, target: WindowTarget
+  ) -> list[Action]:
     return [
-        # Emitted in the previous tab, so the page load includes opening the
-        # new tab.
-        self._mark(f"page-load~{tab_index}"),
-        GetAction.create(
-            url=STRESS_TAB_URL_TEMPLATE.format(tab_index=tab_index),
-            ready_state=ReadyState.COMPLETE,
-            timeout=TAB_LOAD_TIMEOUT,
-            target=target),
-        JsAction.create(
-            script_path=STRESS_ALLOC_JS,
-            replacements=Replacements.create({
-                "ALLOC_MB": self._config.alloc_mb,
-                "IMAGE_COUNT": self._config.image_count,
-                "TAB_INDEX": tab_index,
-                "WINDOW_INDEX": str(window),
-            })),
-        # Wait to throttle memory allocation across tabs.
-        self._wait(self._config.tab_wait),
-        self._mark(f"tab-revisit-start~open~{tab_index}"),
-        self._revisit_js("open", tab_index),
-        self._wait(self._config.tab_wait),
+      # Emitted in the previous tab, so the page load includes opening the
+      # new tab.
+      self._mark(f"page-load~{tab_index}"),
+      GetAction.create(
+        url=STRESS_TAB_URL_TEMPLATE.format(tab_index=tab_index),
+        ready_state=ReadyState.COMPLETE,
+        timeout=TAB_LOAD_TIMEOUT,
+        target=target,
+      ),
+      JsAction.create(
+        script_path=STRESS_ALLOC_JS,
+        replacements=Replacements.create(
+          {
+            "ALLOC_MB": self._config.alloc_mb,
+            "IMAGE_COUNT": self._config.image_count,
+            "TAB_INDEX": tab_index,
+            "WINDOW_INDEX": str(window),
+          }
+        ),
+      ),
+      # Wait to throttle memory allocation across tabs.
+      self._wait(self._config.tab_wait),
+      self._mark(f"tab-revisit-start~open~{tab_index}"),
+      self._revisit_js("open", tab_index),
+      self._wait(self._config.tab_wait),
     ]
 
   def _cycle_window_actions(self, window: int) -> list[Action]:
     actions: list[Action] = []
     for tab in range(self._config.tabs_per_window):
       tab_index = self._tab_index(window, tab)
-      actions.extend([
+      actions.extend(
+        [
           # Emitted in the previous tab, so the revisit includes switching to
           # the tab and waking up its renderer.
           self._mark(f"tab-revisit-start~cycle~{tab_index}"),
           SwitchTabAction.create(title=re.compile(f"^Tab {tab_index}$")),
           self._revisit_js("cycle", tab_index),
           self._wait(self._config.revisit_wait),
-      ])
+        ]
+      )
     return actions
 
   def _revisit_js(self, phase: str, tab_index: str) -> JsAction:
     return JsAction.create(
-        script_path=REVISIT_TAB_JS,
-        timeout=REVISIT_JS_TIMEOUT,
-        replacements=Replacements.create({
-            "PHASE": phase,
-            "TAB_INDEX": tab_index,
-        }))
+      script_path=REVISIT_TAB_JS,
+      timeout=REVISIT_JS_TIMEOUT,
+      replacements=Replacements.create(
+        {
+          "PHASE": phase,
+          "TAB_INDEX": tab_index,
+        }
+      ),
+    )
 
   def _cooldown_actions(self) -> list[Action]:
     return [
-        self._meminfo("after_switch"),
-        self._wait(COOLDOWN_DURATION),
-        self._meminfo("after_cooldown"),
+      self._meminfo("after_switch"),
+      self._wait(COOLDOWN_DURATION),
+      self._meminfo("after_cooldown"),
     ]
 
 
@@ -481,6 +534,8 @@ class MultiwindowMemoryStressBenchmark(LoadingBenchmark):
   def describe_stories(cls) -> Mapping[str, str]:
     # The story is generated from CLI args, avoid building it here.
     return {
-        STORY_NAME: ("Open --windows x --tabs-per-window memory-allocating "
-                     "tabs, then revisit every tab."),
+      STORY_NAME: (
+        "Open --windows x --tabs-per-window memory-allocating "
+        "tabs, then revisit every tab."
+      ),
     }

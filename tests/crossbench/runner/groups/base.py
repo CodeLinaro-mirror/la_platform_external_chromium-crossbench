@@ -14,17 +14,23 @@ if TYPE_CHECKING:
 
 
 class BaseRunGroupTestCase(BaseRunnerTestCase):
-
   @override
   def setUp(self):
     super().setUp()
     self.root_dir = self.out_dir / "custom"
     self.runner = self.default_runner()
 
-  def default_session(self,
-                      browser: Browser | None = None,
-                      throw: bool = True) -> BrowserSessionRunGroup:
+  def default_session(
+    self, browser: Browser | None = None, throw: bool = True
+  ) -> BrowserSessionRunGroup:
     browser = browser or self.browsers[0]
-    return BrowserSessionRunGroup(self.runner.env, self.runner.probes, browser,
-                                  Flags(), 0, self.root_dir,
-                                  self.runner.create_symlinks, throw)
+    return BrowserSessionRunGroup(
+      self.runner.env,
+      self.runner.probes,
+      browser,
+      Flags(),
+      0,
+      self.root_dir,
+      self.runner.create_symlinks,
+      throw,
+    )

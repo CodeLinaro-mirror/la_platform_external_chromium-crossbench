@@ -9,13 +9,19 @@ from typing import TYPE_CHECKING, override
 from crossbench import path as pth
 from crossbench.action_runner.action_runner import ActionRunner
 from crossbench.probes.probe import Probe
-from crossbench.probes.results import BrowserProbeResult, \
-    DuplicateProbeResult, EmptyProbeResult, LocalProbeResult, \
-    ProbeResultDict
+from crossbench.probes.results import (
+  BrowserProbeResult,
+  DuplicateProbeResult,
+  EmptyProbeResult,
+  LocalProbeResult,
+  ProbeResultDict,
+)
 from crossbench.runner.run import Run
 from tests import test_helper
-from tests.crossbench.base import BaseCrossbenchTestCase, \
-    CrossbenchFakeFsTestCase
+from tests.crossbench.base import (
+  BaseCrossbenchTestCase,
+  CrossbenchFakeFsTestCase,
+)
 
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser
@@ -23,7 +29,6 @@ if TYPE_CHECKING:
 
 
 class ProbeResultTestCase(CrossbenchFakeFsTestCase):
-
   def test_is_empty(self):
     empty = EmptyProbeResult()
     self.assertTrue(empty.is_empty)
@@ -58,7 +63,8 @@ class ProbeResultTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(LocalProbeResult(url=(url,)), LocalProbeResult(url=(url,)))
     url_b = "http://foo.test.com"
     self.assertNotEqual(
-        LocalProbeResult(url=(url,)), LocalProbeResult(url=(url_b,)))
+      LocalProbeResult(url=(url,)), LocalProbeResult(url=(url_b,))
+    )
 
   def test_invalid_files(self):
     with self.assertRaises(ValueError):
@@ -105,9 +111,13 @@ class ProbeResultTestCase(CrossbenchFakeFsTestCase):
     result = LocalProbeResult(file=[path])
     self.assertFalse(result.is_empty)
     self.assertNotEqual(
-        result, LocalProbeResult(file=[
-            self.create_file("result2.txt"),
-        ]))
+      result,
+      LocalProbeResult(
+        file=[
+          self.create_file("result2.txt"),
+        ]
+      ),
+    )
     self.assertEqual(result.file, path)
     self.assertSequenceEqual(result.file_list, [path])
     self.assertSequenceEqual(list(result.all_files()), [path])
@@ -127,9 +137,13 @@ class ProbeResultTestCase(CrossbenchFakeFsTestCase):
     result = LocalProbeResult(csv=[path])
     self.assertFalse(result.is_empty)
     self.assertNotEqual(
-        result, LocalProbeResult(csv=[
-            self.create_file("result2.csv"),
-        ]))
+      result,
+      LocalProbeResult(
+        csv=[
+          self.create_file("result2.csv"),
+        ]
+      ),
+    )
     self.assertEqual(result.csv, path)
     self.assertEqual(result.get("csv"), path)
     self.assertSequenceEqual(result.csv_list, [path])
@@ -152,9 +166,13 @@ class ProbeResultTestCase(CrossbenchFakeFsTestCase):
     result = LocalProbeResult(json=[path])
     self.assertFalse(result.is_empty)
     self.assertNotEqual(
-        result, LocalProbeResult(json=[
-            self.create_file("result2.json"),
-        ]))
+      result,
+      LocalProbeResult(
+        json=[
+          self.create_file("result2.json"),
+        ]
+      ),
+    )
     self.assertEqual(result.json, path)
     self.assertEqual(result.get("json"), path)
     self.assertSequenceEqual(result.json_list, [path])
@@ -207,7 +225,8 @@ class ProbeResultTestCase(CrossbenchFakeFsTestCase):
     trace = self.create_file("trace.pb")
 
     result = LocalProbeResult(
-        url=(url,), file=(file,), json=(json,), csv=(csv,), perfetto=(trace,))
+      url=(url,), file=(file,), json=(json,), csv=(csv,), perfetto=(trace,)
+    )
     self.assertFalse(result.is_empty)
     self.assertSequenceEqual(list(result.all_files()), [file, json, csv, trace])
     self.assertSequenceEqual(result.url_list, [url])
@@ -225,16 +244,18 @@ class ProbeResultTestCase(CrossbenchFakeFsTestCase):
     url_2 = "http://foo.bar.com/2"
     trace_2 = self.create_file("trace.2.pb")
     other = LocalProbeResult(
-        url=(url_2,),
-        file=(file_2,),
-        json=(json_2,),
-        csv=(csv_2,),
-        perfetto=(trace_2,))
+      url=(url_2,),
+      file=(file_2,),
+      json=(json_2,),
+      csv=(csv_2,),
+      perfetto=(trace_2,),
+    )
     merged = result.merge(other)
     self.assertFalse(merged.is_empty)
     self.assertSequenceEqual(
-        list(merged.all_files()),
-        [file, file_2, json, json_2, csv, csv_2, trace, trace_2])
+      list(merged.all_files()),
+      [file, file_2, json, json_2, csv, csv_2, trace, trace_2],
+    )
     self.assertSequenceEqual(merged.url_list, [url, url_2])
     # result is unchanged:
     self.assertFalse(result.is_empty)
@@ -244,7 +265,8 @@ class ProbeResultTestCase(CrossbenchFakeFsTestCase):
     # other is unchanged:
     self.assertFalse(other.is_empty)
     self.assertSequenceEqual(
-        list(other.all_files()), [file_2, json_2, csv_2, trace_2])
+      list(other.all_files()), [file_2, json_2, csv_2, trace_2]
+    )
     self.assertSequenceEqual(other.url_list, [url_2])
     self.assertSequenceEqual(other.perfetto_list, [trace_2])
 
@@ -278,7 +300,8 @@ class ProbeResultTestCase(CrossbenchFakeFsTestCase):
     # Test with empty
     merged_with_empty = result_1.merge(EmptyProbeResult(), result_2)
     self.assertSequenceEqual(
-        list(merged_with_empty.all_files()), [path_1, path_2])
+      list(merged_with_empty.all_files()), [path_1, path_2]
+    )
 
   def test_perfetto_list_are_files(self):
     trace = self.create_file("trace.pb")
@@ -298,11 +321,12 @@ class ProbeResultTestCase(CrossbenchFakeFsTestCase):
 
 
 class MockRun(Run):
-
-  def __init__(self,
-               browser: Browser,
-               browser_platform: Platform,
-               action_runner: ActionRunner | None = None):
+  def __init__(
+    self,
+    browser: Browser,
+    browser_platform: Platform,
+    action_runner: ActionRunner | None = None,
+  ):
     self._mock_browser: Browser = browser
     self._browser_platform: Platform = browser_platform
     self._is_remote: bool = False
@@ -392,9 +416,11 @@ class BrowserProbeResultTestCase(BaseCrossbenchTestCase):
     browser = BrowserProbeResult(self.run, (url,), (file, json, csv))
     self.assertEqual(local, browser)
     local_kwargs = LocalProbeResult(
-        url=(url,), file=(file,), json=(json,), csv=(csv,))
+      url=(url,), file=(file,), json=(json,), csv=(csv,)
+    )
     browser_kwargs = BrowserProbeResult(
-        self.run, url=(url,), file=(file,), json=(json,), csv=(csv,))
+      self.run, url=(url,), file=(file,), json=(json,), csv=(csv,)
+    )
     self.assertEqual(local, browser)
     self.assertEqual(local, browser_kwargs)
     self.assertEqual(local_kwargs, browser)
@@ -408,9 +434,11 @@ class BrowserProbeResultTestCase(BaseCrossbenchTestCase):
     self.assertTrue(out_dir_local.is_dir())
     self.assertTrue(out_dir_remote.is_dir())
     remote_txt = self.create_file(
-        str(out_dir_remote / "result.txt"), contents="a1 b2 c3")
+      str(out_dir_remote / "result.txt"), contents="a1 b2 c3"
+    )
     remote_json = self.create_file(
-        str(out_dir_remote / "result.json"), contents="[]")
+      str(out_dir_remote / "result.json"), contents="[]"
+    )
     self.run.is_remote = True
     self.run.out_dir = out_dir_local
     self.run.browser_tmp_dir = out_dir_remote
@@ -419,7 +447,8 @@ class BrowserProbeResultTestCase(BaseCrossbenchTestCase):
     with self.assertRaises(DuplicateProbeResult):
       _ = BrowserProbeResult(self.run, json=(remote_json, remote_json))
     result = BrowserProbeResult(
-        self.run, file=(remote_txt,), json=(remote_json,))
+      self.run, file=(remote_txt,), json=(remote_json,)
+    )
     self.assertTrue(remote_txt.is_file())
     with self.assertRaises(ValueError):
       _ = result.file
@@ -435,6 +464,7 @@ class MockProbe(Probe):
   """
   Probe DOC Text
   """
+
   NAME = "mock-probe"
 
   @override
@@ -443,7 +473,6 @@ class MockProbe(Probe):
 
 
 class ProbeResultDictTestCase(CrossbenchFakeFsTestCase):
-
   @override
   def setUp(self) -> None:
     super().setUp()
@@ -484,10 +513,14 @@ class ProbeResultDictTestCase(CrossbenchFakeFsTestCase):
     self.result_dict[probe] = self.local_result
     json = self.result_dict.to_json()
     self.assertDictEqual(
-        json, {MockProbe.NAME: {
-            "csv": [str(csv)],
-            "txt": [str(txt)],
-        }})
+      json,
+      {
+        MockProbe.NAME: {
+          "csv": [str(csv)],
+          "txt": [str(txt)],
+        }
+      },
+    )
 
 
 if __name__ == "__main__":

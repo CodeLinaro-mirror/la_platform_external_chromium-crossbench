@@ -76,8 +76,8 @@ class StdinCoordinator:
     return input(message)
 
   def input_with_timeout(
-      self,
-      timeout: dt.timedelta = _DEFAULT_TIMEOUT,
+    self,
+    timeout: dt.timedelta = _DEFAULT_TIMEOUT,
   ) -> str | None:
     timeout_s = max(0.0, timeout.total_seconds())
     return self._reader.read_line_threaded(timeout_s)
@@ -129,8 +129,8 @@ class PosixStdinCoordinator(StdinCoordinator):
 
   @override
   def input_with_timeout(
-      self,
-      timeout: dt.timedelta = _DEFAULT_TIMEOUT,
+    self,
+    timeout: dt.timedelta = _DEFAULT_TIMEOUT,
   ) -> str | None:
     """Suspends the key listener and reads a line within `timeout`.
 
@@ -171,10 +171,10 @@ class PosixStdinCoordinator(StdinCoordinator):
 
     self._stop_event.clear()
     self._thread = threading.Thread(
-        target=self._listen_loop,
-        args=(fd,),
-        name="crossbench-stdin-listener",
-        daemon=True,
+      target=self._listen_loop,
+      args=(fd,),
+      name="crossbench-stdin-listener",
+      daemon=True,
     )
     self._thread.start()
 
@@ -223,8 +223,9 @@ class _TerminalModeController:
     if not self._old_termios or not termios:
       return
     with contextlib.suppress(Exception):
-      termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN,
-                        self._old_termios)
+      termios.tcsetattr(
+        sys.stdin.fileno(), termios.TCSADRAIN, self._old_termios
+      )
     self._old_termios = None
 
 
@@ -251,7 +252,8 @@ class _StdinReader:
       result[0] = input()
 
     thread = threading.Thread(
-        target=read_target, name="crossbench-stdin-input", daemon=True)
+      target=read_target, name="crossbench-stdin-input", daemon=True
+    )
     thread.start()
     thread.join(timeout=timeout_s)
     return result[0]
@@ -262,4 +264,5 @@ class _StdinReader:
 
 
 _SHARED: Final[StdinCoordinator] = (
-    PosixStdinCoordinator() if termios and tty else StdinCoordinator())
+  PosixStdinCoordinator() if termios and tty else StdinCoordinator()
+)

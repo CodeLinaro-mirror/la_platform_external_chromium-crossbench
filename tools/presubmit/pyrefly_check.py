@@ -27,11 +27,11 @@ class PyreflyOutputDict(TypedDict):
 
 
 def ParsePyreflyOutput(
-    output_api: OutputApi,
-    root_path: pathlib.Path,
-    returncode: int,
-    stdout: str,
-    stderr: str,
+  output_api: OutputApi,
+  root_path: pathlib.Path,
+  returncode: int,
+  stdout: str,
+  stderr: str,
 ) -> list[OutputApi.PresubmitError] | None:
   del stderr
   if returncode == 0:
@@ -47,15 +47,16 @@ def ParsePyreflyOutput(
     col = err["column"]
     stop_line = max(line, err["stop_line"])
     results.append(
-        output_api.PresubmitError(
-            f"pyrefly [{err['name']}] {rel_path}:{line}:{col}: "
-            f"{err['concise_description']}",
-            locations=[
-                output_api.PresubmitResultLocation(
-                    file_path=rel_path,
-                    start_line=line,
-                    end_line=stop_line,
-                ),
-            ],
-        ))
+      output_api.PresubmitError(
+        f"pyrefly [{err['name']}] {rel_path}:{line}:{col}: "
+        f"{err['concise_description']}",
+        locations=[
+          output_api.PresubmitResultLocation(
+            file_path=rel_path,
+            start_line=line,
+            end_line=stop_line,
+          ),
+        ],
+      )
+    )
   return results

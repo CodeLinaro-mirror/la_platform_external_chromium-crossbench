@@ -7,8 +7,13 @@ from __future__ import annotations
 import datetime as dt
 from typing import TYPE_CHECKING, ClassVar, Final, override
 
-from crossbench.benchmarks.web_power.base import WebPowerBenchmarkBase, \
-    WebPowerSiteConfig, WebPowerStory, WebPowerStoryFilter, _value_or
+from crossbench.benchmarks.web_power.base import (
+  WebPowerBenchmarkBase,
+  WebPowerSiteConfig,
+  WebPowerStory,
+  WebPowerStoryFilter,
+  _value_or,
+)
 from crossbench.parse import DurationParser
 
 if TYPE_CHECKING:
@@ -25,13 +30,16 @@ class WebPowerIdleStory(WebPowerStory):
   def story_name_cls(cls) -> str:
     return "idle"
 
-  def __init__(self,
-               name_suffix: str,
-               site_config: WebPowerSiteConfig,
-               duration: dt.timedelta | None = None,
-               stabilization_time: dt.timedelta | None = None) -> None:
-    stabilization_time = _value_or(stabilization_time,
-                                   site_config.default_stabilization_time)
+  def __init__(
+    self,
+    name_suffix: str,
+    site_config: WebPowerSiteConfig,
+    duration: dt.timedelta | None = None,
+    stabilization_time: dt.timedelta | None = None,
+  ) -> None:
+    stabilization_time = _value_or(
+      stabilization_time, site_config.default_stabilization_time
+    )
     duration = _value_or(duration, self.DEFAULT_DURATION)
 
     if duration.total_seconds() == 0:
@@ -40,11 +48,13 @@ class WebPowerIdleStory(WebPowerStory):
       total_duration = dt.timedelta(days=365)
     else:
       total_duration = (
-          duration + stabilization_time + WebPowerStory.DEFAULT_GRACE_PERIOD)
+        duration + stabilization_time + WebPowerStory.DEFAULT_GRACE_PERIOD
+      )
 
     self._idle_duration: Final[dt.timedelta] = duration
-    super().__init__(name_suffix, site_config, total_duration,
-                     stabilization_time)
+    super().__init__(
+      name_suffix, site_config, total_duration, stabilization_time
+    )
 
   @property
   def idle_duration(self) -> dt.timedelta:
@@ -53,8 +63,8 @@ class WebPowerIdleStory(WebPowerStory):
   @override
   def run(self, run: Run) -> None:
     with run.actions(
-        "Idle", verbose=True,
-        performance_mark=WebPowerStory.MEASUREMENT_MARK) as actions:
+      "Idle", verbose=True, performance_mark=WebPowerStory.MEASUREMENT_MARK
+    ) as actions:
       actions.wait(self._idle_duration)
 
 
@@ -82,14 +92,15 @@ class WebPowerIdleBenchmark(WebPowerBenchmarkBase):
 
   @classmethod
   @override
-  def add_scenario_cli_arguments(cls,
-                                 parser: CBArgumentParser) -> CBArgumentParser:
+  def add_scenario_cli_arguments(
+    cls, parser: CBArgumentParser
+  ) -> CBArgumentParser:
     # TODO(eladalon): Avoid accessing private _option_string_actions.
     actions = parser._option_string_actions  # noqa: SLF001
     if "--duration" not in actions:
       parser.add_argument(
-          "--duration",
-          type=DurationParser.positive_or_zero_duration,
-          help="How long to run the idle phase for. (0 indicates forever.)",
+        "--duration",
+        type=DurationParser.positive_or_zero_duration,
+        help="How long to run the idle phase for. (0 indicates forever.)",
       )
     return parser

@@ -74,10 +74,11 @@ class FrequencyProbe(EnvModifier):
   def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
-        "cpus",
-        type=CPUFrequencyMap,
-        default=CPUFrequencyMap.parse({}),
-        help="CPU frequency map, see FrequencyProbe docs")
+      "cpus",
+      type=CPUFrequencyMap,
+      default=CPUFrequencyMap.parse({}),
+      help="CPU frequency map, see FrequencyProbe docs",
+    )
     return parser
 
   @property
@@ -108,7 +109,6 @@ class _FrequencyState:
 
 
 class FrequencyProbeContext(ProbeContext[FrequencyProbe]):
-
   _MIN_FREQUENCY_FILE: str = "scaling_min_freq"
   _MAX_FREQUENCY_FILE: str = "scaling_max_freq"
 
@@ -118,22 +118,25 @@ class FrequencyProbeContext(ProbeContext[FrequencyProbe]):
 
   def start(self) -> None:
     target_cpu_frequencies: immutabledict[pth.AnyPosixPath, int] = (
-        self.probe.cpu_frequency_map.get_target_frequencies(
-            self.browser_platform))
+      self.probe.cpu_frequency_map.get_target_frequencies(self.browser_platform)
+    )
     for cpu_dir in target_cpu_frequencies:
       self._previous_frequencies.append(
-          _FrequencyState(
-              dir=cpu_dir,
-              min=self.browser_platform.cat(cpu_dir / self._MIN_FREQUENCY_FILE),
-              max=self.browser_platform.cat(cpu_dir /
-                                            self._MAX_FREQUENCY_FILE)))
+        _FrequencyState(
+          dir=cpu_dir,
+          min=self.browser_platform.cat(cpu_dir / self._MIN_FREQUENCY_FILE),
+          max=self.browser_platform.cat(cpu_dir / self._MAX_FREQUENCY_FILE),
+        )
+      )
 
     try:
       for cpu_dir, frequency in target_cpu_frequencies.items():
-        self.browser_platform.write_text(cpu_dir / self._MIN_FREQUENCY_FILE,
-                                         f"{frequency}\n")
-        self.browser_platform.write_text(cpu_dir / self._MAX_FREQUENCY_FILE,
-                                         f"{frequency}\n")
+        self.browser_platform.write_text(
+          cpu_dir / self._MIN_FREQUENCY_FILE, f"{frequency}\n"
+        )
+        self.browser_platform.write_text(
+          cpu_dir / self._MAX_FREQUENCY_FILE, f"{frequency}\n"
+        )
     except Exception:
       self._restore_frequencies()
       raise
@@ -143,10 +146,12 @@ class FrequencyProbeContext(ProbeContext[FrequencyProbe]):
 
   def _restore_frequencies(self) -> None:
     for state in self._previous_frequencies:
-      self.browser_platform.write_text(state.dir / self._MIN_FREQUENCY_FILE,
-                                       state.min)
-      self.browser_platform.write_text(state.dir / self._MAX_FREQUENCY_FILE,
-                                       state.max)
+      self.browser_platform.write_text(
+        state.dir / self._MIN_FREQUENCY_FILE, state.min
+      )
+      self.browser_platform.write_text(
+        state.dir / self._MAX_FREQUENCY_FILE, state.max
+      )
 
   def teardown(self) -> ProbeResult:
     return self.empty_result()

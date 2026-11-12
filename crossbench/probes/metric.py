@@ -8,8 +8,7 @@ import json
 import logging
 import statistics
 from math import floor, log10
-from typing import TYPE_CHECKING, Callable, Final, Iterable, Sequence, \
-    TypeGuard
+from typing import TYPE_CHECKING, Callable, Final, Iterable, Sequence, TypeGuard
 
 from crossbench.probes import helper
 
@@ -176,18 +175,20 @@ class MetricsMerger:
   """
 
   @classmethod
-  def merge_json_list(cls,
-                      files: Iterable[pth.LocalPath],
-                      key_fn: helper.KeyFnType | None = None,
-                      merge_duplicate_paths: bool = False) -> Self:
+  def merge_json_list(
+    cls,
+    files: Iterable[pth.LocalPath],
+    key_fn: helper.KeyFnType | None = None,
+    merge_duplicate_paths: bool = False,
+  ) -> Self:
     merger = cls(key_fn=key_fn)
     for file in files:
       merger.merge_json_file(file, merge_duplicate_paths=merge_duplicate_paths)
     return merger
 
-  def __init__(self,
-               *args: dict | Iterable[dict],
-               key_fn: helper.KeyFnType | None = None):
+  def __init__(
+    self, *args: dict | Iterable[dict], key_fn: helper.KeyFnType | None = None
+  ):
     """Create a new MetricsMerger
 
     Args:
@@ -196,8 +197,9 @@ class MetricsMerger:
           as keys to group/merge values, or None to skip property paths.
     """
     self._data: Final[dict[str, Metric]] = {}
-    self._key_fn: Final[
-        helper.KeyFnType] = key_fn or helper.default_flatten_key_fn
+    self._key_fn: Final[helper.KeyFnType] = (
+      key_fn or helper.default_flatten_key_fn
+    )
     self._ignored_keys: Final[set[str]] = set()
     for data in args:
       self.add(data)
@@ -206,20 +208,25 @@ class MetricsMerger:
   def data(self) -> dict[str, Metric]:
     return self._data
 
-  def merge_json_file(self,
-                      file: pth.LocalPath,
-                      prefix_path: tuple[str, ...] = (),
-                      merge_duplicate_paths: bool = False) -> None:
+  def merge_json_file(
+    self,
+    file: pth.LocalPath,
+    prefix_path: tuple[str, ...] = (),
+    merge_duplicate_paths: bool = False,
+  ) -> None:
     with file.open(encoding="utf-8") as f:
       self.merge_values(
-          json.load(f),
-          prefix_path=prefix_path,
-          merge_duplicate_paths=merge_duplicate_paths)
+        json.load(f),
+        prefix_path=prefix_path,
+        merge_duplicate_paths=merge_duplicate_paths,
+      )
 
-  def merge_values(self,
-                   data: dict[str, dict],
-                   prefix_path: tuple[str, ...] = (),
-                   merge_duplicate_paths: bool = False) -> None:
+  def merge_values(
+    self,
+    data: dict[str, dict],
+    prefix_path: tuple[str, ...] = (),
+    merge_duplicate_paths: bool = False,
+  ) -> None:
     """Merge a previously json-serialized MetricsMerger object"""
     for property_name, item in data.items():
       path = (*prefix_path, property_name)
@@ -233,15 +240,18 @@ class MetricsMerger:
             values.append(value)
         else:
           logging.debug(
-              "Removing Metric with the same key-path='%s', key='%s"
-              "from multiple files.", path, key)
+            "Removing Metric with the same key-path='%s', key='%s"
+            "from multiple files.",
+            path,
+            key,
+          )
           del self._data[key]
           self._ignored_keys.add(key)
       else:
         self._data[key] = Metric.from_json(item)
 
   def add(self, data: dict | Iterable[dict]) -> None:
-    """ Merge "arbitrary" hierarchical data that ends up having primitive leafs.
+    """Merge "arbitrary" hierarchical data that ends up having primitive leafs.
     Anything that is not a dict is considered a leaf node.
     """
     if isinstance(data, dict):
@@ -252,7 +262,8 @@ class MetricsMerger:
         self._merge(item)
 
   def _merge(
-      self, data: dict | list[dict], parent_path: tuple[str, ...] = ()) -> None:
+    self, data: dict | list[dict], parent_path: tuple[str, ...] = ()
+  ) -> None:
     assert isinstance(data, dict)
     for property_name, value in data.items():
       path = (*parent_path, property_name)
@@ -272,9 +283,9 @@ class MetricsMerger:
         else:
           values.append(value)
 
-  def to_json(self,
-              value_fn: Callable[[Metric], Json] | None = None,
-              sort: bool = True) -> JsonDict:
+  def to_json(
+    self, value_fn: Callable[[Metric], Json] | None = None, sort: bool = True
+  ) -> JsonDict:
     items = []
     for key, value in self._data.items():
       assert isinstance(value, Metric)
@@ -312,12 +323,14 @@ class CSVFormatter:
   ]
   """
 
-  def __init__(self,
-               metrics: MetricsMerger,
-               value_fn: Callable[[Metric], Json] | None = None,
-               headers: Sequence[tuple[object, ...]] = (),
-               include_parts: bool = True,
-               sort: bool = True):
+  def __init__(
+    self,
+    metrics: MetricsMerger,
+    value_fn: Callable[[Metric], Json] | None = None,
+    headers: Sequence[tuple[object, ...]] = (),
+    include_parts: bool = True,
+    sort: bool = True,
+  ):
     self._table: Final[list[Sequence[object]]] = []
     converted = metrics.to_json(value_fn, sort)
     items = self.format_items(converted, sort=sort)
@@ -325,8 +338,9 @@ class CSVFormatter:
     self.append_headers(headers, max_path_depth)
     self.append_body(items, include_parts, max_path_depth)
 
-  def extract_max_depth(self, items: Sequence[tuple[str, Json]],
-                        include_parts: bool) -> int:
+  def extract_max_depth(
+    self, items: Sequence[tuple[str, Json]], include_parts: bool
+  ) -> int:
     max_path_depth = 0
     if include_parts:
       for path, _ in items:
@@ -334,18 +348,23 @@ class CSVFormatter:
     max_path_depth += 1
     return max_path_depth
 
-  def append_headers(self, headers: Sequence[tuple[object, ...]],
-                     max_path_depth: int) -> None:
+  def append_headers(
+    self, headers: Sequence[tuple[object, ...]], max_path_depth: int
+  ) -> None:
     header_padding = ("",) * max_path_depth
     for header in headers:
       assert isinstance(header, tuple), (
-          f"Additional CSV headers must be tuples, got {type(header)}: "
-          f"{header}")
+        f"Additional CSV headers must be tuples, got {type(header)}: {header}"
+      )
       row = header[:1] + header_padding + header[1:]
       self._table.append(row)
 
-  def append_body(self, items: Sequence[tuple[str, Json]], include_parts: bool,
-                  max_path_depth: int) -> None:
+  def append_body(
+    self,
+    items: Sequence[tuple[str, Json]],
+    include_parts: bool,
+    max_path_depth: int,
+  ) -> None:
     for path, value in items:
       if include_parts:
         parts = tuple(path.split("/"))
@@ -355,8 +374,9 @@ class CSVFormatter:
         row = (path, value)
       self._table.append(row)
 
-  def format_items(self, data: dict[str, Json],
-                   sort: bool) -> Sequence[tuple[str, Json]]:
+  def format_items(
+    self, data: dict[str, Json], sort: bool
+  ) -> Sequence[tuple[str, Json]]:
     items = tuple(data.items())
     if not sort:
       return items

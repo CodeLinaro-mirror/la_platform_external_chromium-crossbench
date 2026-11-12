@@ -21,6 +21,7 @@ class CDPEndpointProbe(Probe):
   e.g. via an agent or other automation infrastructure while keeping the
   crossbench harness for probes and flag management.
   """
+
   NAME: ClassVar = "cdp_endpoint"
   FILE_NAME: ClassVar[str] = "cdp_ws_endpoint.txt"
 
@@ -35,7 +36,6 @@ class CDPEndpointProbe(Probe):
 
 
 class CDPEndpointProbeContext(ProbeContext[CDPEndpointProbe]):
-
   @override
   def start(self) -> None:
     try:
@@ -44,8 +44,9 @@ class CDPEndpointProbeContext(ProbeContext[CDPEndpointProbe]):
       logging.info("CDP WS ENDPOINT: %s", endpoint)
       self.host_platform.write_text(self.local_result_path, endpoint)
     except NotImplementedError:
-      logging.info("CDP WS ENDPOINT: Not supported for %s",
-                   self.run.browser.unique_name)
+      logging.info(
+        "CDP WS ENDPOINT: Not supported for %s", self.run.browser.unique_name
+      )
 
   @override
   def stop(self) -> None:

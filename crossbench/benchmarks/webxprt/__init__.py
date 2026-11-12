@@ -7,5 +7,5 @@ from __future__ import annotations
 from crossbench.benchmarks.webxprt.webxprt_main import WebXPRT5Benchmark
 
 __all__ = [
-    "WebXPRT5Benchmark",
+  "WebXPRT5Benchmark",
 ]

@@ -5,16 +5,24 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, ClassVar, Iterable, Mapping, Sequence, \
-    override
+from typing import (
+  TYPE_CHECKING,
+  ClassVar,
+  Iterable,
+  Mapping,
+  Sequence,
+  override,
+)
 
 from crossbench.action_runner.action.open_devtools import OpenDevToolsAction
 from crossbench.benchmarks.base import Benchmark
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.parse import ObjectParser
 from crossbench.probes.metric import MetricsMerger
-from crossbench.probes.metrics_internals import ChromeMetricsInternalsProbe, \
-    ChromeMetricsInternalsProbeContext
+from crossbench.probes.metrics_internals import (
+  ChromeMetricsInternalsProbe,
+  ChromeMetricsInternalsProbeContext,
+)
 from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
@@ -33,19 +41,22 @@ if TYPE_CHECKING:
   from crossbench.types import Json
 
 
-class DevToolsFrontendLoadTimeProbe(ChromeMetricsInternalsProbe,
-                                    BenchmarkProbeMixin):
+class DevToolsFrontendLoadTimeProbe(
+  ChromeMetricsInternalsProbe, BenchmarkProbeMixin
+):
   """
   Probe that collects DevTools Frontend load time from
   chrome://metrics-internals/structured.
   """
+
   NAME: ClassVar = "devtools_frontend_load_time"
   IS_GENERAL_PURPOSE: ClassVar[bool] = BenchmarkProbeMixin.IS_GENERAL_PURPOSE
 
   def __init__(self, *args, **kwargs) -> None:
     BenchmarkProbeMixin.__init__(self, *args, **kwargs)
-    ChromeMetricsInternalsProbe.__init__(self, "DevTools", "Impression", -1,
-                                         "TimeSinceSessionStart")
+    ChromeMetricsInternalsProbe.__init__(
+      self, "DevTools", "Impression", -1, "TimeSinceSessionStart"
+    )
 
   @override
   def get_context_cls(self) -> type[DevToolsFrontendLoadTimeProbeContext]:
@@ -54,39 +65,48 @@ class DevToolsFrontendLoadTimeProbe(ChromeMetricsInternalsProbe,
   @override
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
     merger = MetricsMerger.merge_json_list(
-        (repetition_group.results[self].json
-         for repetition_group in group.repetitions_groups),
-        key_fn=flatten_key_fn,
-        merge_duplicate_paths=True)
+      (
+        repetition_group.results[self].json
+        for repetition_group in group.repetitions_groups
+      ),
+      key_fn=flatten_key_fn,
+      merge_duplicate_paths=True,
+    )
     self.preserve_high_resolution_data(merger, group.repetitions_groups)
     return self.write_group_result(
-        group,
-        merger,
+      group,
+      merger,
     )
 
   def preserve_high_resolution_data(
-      self, merger: MetricsMerger,
-      repetitions_groups: Iterable[RepetitionsRunGroup]) -> None:
+    self,
+    merger: MetricsMerger,
+    repetitions_groups: Iterable[RepetitionsRunGroup],
+  ) -> None:
     for repetition_group in repetitions_groups:
       story = repetition_group.story
       assert isinstance(story, DevToolsFrontendStory)
       for prefix_path in story.reporting_prefixes():
         merger.merge_json_file(
-            repetition_group.results[self].json,
-            prefix_path=prefix_path,
-            merge_duplicate_paths=True)
+          repetition_group.results[self].json,
+          prefix_path=prefix_path,
+          merge_duplicate_paths=True,
+        )
 
   @override
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
     merger = MetricsMerger.merge_json_list(
-        (repetition_group.results[self].json
-         for repetition_group in group.repetitions_groups),
-        key_fn=flatten_key_fn,
-        merge_duplicate_paths=True)
+      (
+        repetition_group.results[self].json
+        for repetition_group in group.repetitions_groups
+      ),
+      key_fn=flatten_key_fn,
+      merge_duplicate_paths=True,
+    )
     self.preserve_high_resolution_data(merger, group.repetitions_groups)
     return self.write_group_result(
-        group,
-        merger,
+      group,
+      merger,
     )
 
 
@@ -99,15 +119,14 @@ def flatten_key_fn(path: tuple[str, ...]) -> str:
 
 
 class DevToolsFrontendLoadTimeProbeContext(
-    ChromeMetricsInternalsProbeContext[DevToolsFrontendLoadTimeProbe]):
-
+  ChromeMetricsInternalsProbeContext[DevToolsFrontendLoadTimeProbe]
+):
   @override
   def to_json(self, actions: Actions) -> Json:
     return {"load_time": self._metric_value}
 
 
 class DevToolsFrontendStory(Story):
-
   def run(self, run: Run) -> None:
     site, panel = self.name.split("_")
     action_runner = run.action_runner
@@ -132,36 +151,46 @@ class DevToolsFrontendBenchmark(Benchmark):
   """
   Benchmark runner for DevTools.
   """
+
   NAME: ClassVar = "devtools_frontend"
   DEFAULT_STORY_CLS: ClassVar = DevToolsFrontendStory
   STORY_URLS: ClassVar[Mapping[str, str]] = {
-      "blank": "about:blank",
-      "speedometertests":
-          "https://chromium-workloads.web.app/speedometer/v3.1/"
-          "?iterationCount=1&startAutomatically"
-          "&suites=TodoMVC-Angular-Complex-DOM"
-          ",TodoMVC-JavaScript-ES5-Complex-DOM,TodoMVC-React-Complex-DOM",
-      "dailybroadcast": "https://browserben.ch/speedometer/v3.1/resources/"
-                        "newssite/news-next/dist/index.html",
+    "blank": "about:blank",
+    "speedometertests": "https://chromium-workloads.web.app/speedometer/v3.1/"
+    "?iterationCount=1&startAutomatically"
+    "&suites=TodoMVC-Angular-Complex-DOM"
+    ",TodoMVC-JavaScript-ES5-Complex-DOM,TodoMVC-React-Complex-DOM",
+    "dailybroadcast": "https://browserben.ch/speedometer/v3.1/resources/"
+    "newssite/news-next/dist/index.html",
   }
-  PANEL_NAMES: ClassVar[Sequence[str]] = ("elements", "console", "network",
-                                          "sources", "resources", "timeline",
-                                          "chrome-recorder", "heap-profiler",
-                                          "lighthouse", "security")
-  PROBES: ClassVar[tuple[type[DevToolsFrontendLoadTimeProbe],
-                         ...]] = (DevToolsFrontendLoadTimeProbe,)
+  PANEL_NAMES: ClassVar[Sequence[str]] = (
+    "elements",
+    "console",
+    "network",
+    "sources",
+    "resources",
+    "timeline",
+    "chrome-recorder",
+    "heap-profiler",
+    "lighthouse",
+    "security",
+  )
+  PROBES: ClassVar[tuple[type[DevToolsFrontendLoadTimeProbe], ...]] = (
+    DevToolsFrontendLoadTimeProbe,
+  )
   DEFAULT_REPETITIONS: ClassVar[int] = 2
 
   def __init__(
-      self,
-      sites: Sequence[str],
-      panels: Sequence[str],
-      action_runner_config: ActionRunnerConfig | None = None,
+    self,
+    sites: Sequence[str],
+    panels: Sequence[str],
+    action_runner_config: ActionRunnerConfig | None = None,
   ) -> None:
     stories = tuple(
-        DevToolsFrontendStory(f"{site}_{panel}")
-        for site in sites
-        for panel in panels)
+      DevToolsFrontendStory(f"{site}_{panel}")
+      for site in sites
+      for panel in panels
+    )
     super().__init__(stories, action_runner_config)
 
   @classmethod
@@ -169,16 +198,16 @@ class DevToolsFrontendBenchmark(Benchmark):
   def add_cli_arguments(cls, parser: CBArgumentParser) -> CBArgumentParser:
     super().add_cli_arguments(parser)
     parser.add_argument(
-        "--sites",
-        type=ObjectParser.str_tuple,
-        default=tuple(cls.STORY_URLS.keys()),
-        help="The sites to test.",
+      "--sites",
+      type=ObjectParser.str_tuple,
+      default=tuple(cls.STORY_URLS.keys()),
+      help="The sites to test.",
     )
     parser.add_argument(
-        "--panels",
-        type=ObjectParser.str_tuple,
-        default=tuple(cls.PANEL_NAMES),
-        help="The panels to test.",
+      "--panels",
+      type=ObjectParser.str_tuple,
+      default=tuple(cls.PANEL_NAMES),
+      help="The panels to test.",
     )
     return parser
 
@@ -188,24 +217,29 @@ class DevToolsFrontendBenchmark(Benchmark):
     kwargs = super().kwargs_from_cli(args)
     arg_sites = ObjectParser.str_tuple(args.sites, "sites")
     sites = [site for site in arg_sites if site in cls.STORY_URLS] or tuple(
-        cls.STORY_URLS.keys())
+      cls.STORY_URLS.keys()
+    )
     arg_panels = ObjectParser.str_tuple(args.panels, "panels")
-    panels = [panel for panel in arg_panels if panel in cls.PANEL_NAMES
-             ] or tuple(cls.PANEL_NAMES)
+    panels = [
+      panel for panel in arg_panels if panel in cls.PANEL_NAMES
+    ] or tuple(cls.PANEL_NAMES)
     if args.sites and len(arg_sites) != len(sites):
-      logging.warning("Some specified sites are invalid. Using valid sites: %s",
-                      sites)
+      logging.warning(
+        "Some specified sites are invalid. Using valid sites: %s", sites
+      )
     if args.panels and len(arg_panels) != len(panels):
       logging.warning(
-          "Some specified panels are invalid. Using valid panels: %s", panels)
+        "Some specified panels are invalid. Using valid panels: %s", panels
+      )
     kwargs["sites"] = sites
     kwargs["panels"] = panels
     return kwargs
 
   @classmethod
   @override
-  def extra_flags(cls, browser_attributes: BrowserAttributes,
-                  story: Story) -> Flags:
+  def extra_flags(
+    cls, browser_attributes: BrowserAttributes, story: Story
+  ) -> Flags:
     flags: Flags = super().extra_flags(browser_attributes, story)
     if browser_attributes.is_chromium_based:
       # Allows us to establish a CDP session with the browser

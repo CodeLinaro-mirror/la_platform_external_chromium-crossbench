@@ -10,7 +10,8 @@ from tests import test_helper
 
 def test_screenshot(browser_config, test_env) -> None:
   cli = CrossBenchCLI()
-  cli.run([
+  cli.run(
+    [
       "loading",
       "--url=blank",
       f"--browser={browser_config}",
@@ -18,11 +19,16 @@ def test_screenshot(browser_config, test_env) -> None:
       "--throw",
       f"--out-dir={test_env.results_dir}",
       *list(test_env.cq_flags),
-  ])
+    ]
+  )
 
   screenshots = list(test_env.results_dir.rglob("*/screenshot/*.png"))
-  assert {f.name for f in screenshots
-         } == {"start.png", "start_story.png", "stop.png", "stop_story.png"}
+  assert {f.name for f in screenshots} == {
+    "start.png",
+    "start_story.png",
+    "stop.png",
+    "stop_story.png",
+  }
   for f in screenshots:
     assert f.stat().st_size > 0
 

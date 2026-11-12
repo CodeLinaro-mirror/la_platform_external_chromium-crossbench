@@ -34,18 +34,19 @@ class VersionedFlag:
   """Chrome flags restricted to an inclusive ChromiumVersionRange."""
 
   def __init__(
-      self,
-      *,
-      min: VersionPartsData,
-      max: VersionPartsData,
-      flags: FlagsData | str,
-      comment: str,
+    self,
+    *,
+    min: VersionPartsData,
+    max: VersionPartsData,
+    flags: FlagsData | str,
+    comment: str,
   ) -> None:
     if not comment.strip():
       raise ValueError("VersionedFlag requires a non-empty comment.")
     self._comment: Final[str] = comment
     self._version_range: Final[ChromiumVersionRange] = ChromiumVersionRange.any(
-        min, max)
+      min, max
+    )
     self._flags: Final[ChromeFlags] = ChromeFlags.parse(flags).freeze()
     if not self._flags:
       raise ValueError("VersionedFlag requires at least one flag.")
@@ -87,44 +88,44 @@ class VersionedFlag:
 # --enable-benchmarking and/or --no-first-run in Chromium as signals to be
 # disabled by default.
 VERSIONED_DEFAULT_FLAGS: Final[tuple[VersionedFlag, ...]] = (
-    VersionedFlag(
-        min=98,
-        max=100,
-        flags="--disable-features=ChromeWhatsNewUI",
-        comment="Versions [M98, M100] don't respect the --no-first-run flag "
-        "and always display a 'What's New' tab on startup.",
-    ),
-    VersionedFlag(
-        min=120,
-        max=126,
-        flags="--disable-search-engine-choice-screen",
-        comment="This could be enabled via feature-flags as well.",
-    ),
-    VersionedFlag(
-        min=141,
-        max=147,
-        flags="--disable-optimization-guide-model-downloads-for-benchmarking",
-        comment="Disable background optimization guide model downloads.",
-    ),
-    VersionedFlag(
-        min=145,
-        max=147,
-        flags="--disable-crashpad-metrics",
-        comment="We do not need crashpad metrics.",
-    ),
-    VersionedFlag(
-        min=155,
-        max=157,
-        flags="--disable-ntp-theme-promo-bottom-sheet",
-        comment="Disable the Android NTP customization pop up. The switch "
-        "is implied by --no-first-run from M158 onwards.",
-    ),
-    VersionedFlag(
-        min=156,
-        max=157,
-        flags="--disable-translate-trigger",
-        comment="Disable translate trigger during benchmarking.",
-    ),
+  VersionedFlag(
+    min=98,
+    max=100,
+    flags="--disable-features=ChromeWhatsNewUI",
+    comment="Versions [M98, M100] don't respect the --no-first-run flag "
+    "and always display a 'What's New' tab on startup.",
+  ),
+  VersionedFlag(
+    min=120,
+    max=126,
+    flags="--disable-search-engine-choice-screen",
+    comment="This could be enabled via feature-flags as well.",
+  ),
+  VersionedFlag(
+    min=141,
+    max=147,
+    flags="--disable-optimization-guide-model-downloads-for-benchmarking",
+    comment="Disable background optimization guide model downloads.",
+  ),
+  VersionedFlag(
+    min=145,
+    max=147,
+    flags="--disable-crashpad-metrics",
+    comment="We do not need crashpad metrics.",
+  ),
+  VersionedFlag(
+    min=155,
+    max=157,
+    flags="--disable-ntp-theme-promo-bottom-sheet",
+    comment="Disable the Android NTP customization pop up. The switch "
+    "is implied by --no-first-run from M158 onwards.",
+  ),
+  VersionedFlag(
+    min=156,
+    max=157,
+    flags="--disable-translate-trigger",
+    comment="Disable translate trigger during benchmarking.",
+  ),
 )
 
 
@@ -133,15 +134,15 @@ class ChromiumBased(Browser):
   MIN_BENCHMARKING_EXTENSION_FLAG_MILESTONE: Final[int] = 139
   # Do not add temporary workarounds here; use VERSIONED_DEFAULT_FLAGS instead.
   DEFAULT_FLAGS: tuple[str, ...] = (
-      "--no-default-browser-check",
-      "--disable-component-update",
-      "--disable-sync",
-      "--no-first-run",
+    "--no-default-browser-check",
+    "--disable-component-update",
+    "--disable-sync",
+    "--no-first-run",
   )
   # Do not add temporary workarounds here; use VERSIONED_DEFAULT_FLAGS instead.
   FLAGS_FOR_DISABLING_BACKGROUND_INTERVENTIONS: tuple[str, ...] = (
-      "--disable-background-timer-throttling",
-      "--disable-renderer-backgrounding",
+    "--disable-background-timer-throttling",
+    "--disable-renderer-backgrounding",
   )
 
   @classmethod
@@ -156,15 +157,14 @@ class ChromiumBased(Browser):
 
   @classmethod
   @override
-  def default_flags(cls,
-                    initial_data: FlagsData = None,
-                    milestone: int = 0) -> ChromeFlags:
+  def default_flags(
+    cls, initial_data: FlagsData = None, milestone: int = 0
+  ) -> ChromeFlags:
     return ChromeFlags.for_milestone(initial_data, milestone)
 
-  def __init__(self,
-               label: str,
-               path: pth.AnyPath,
-               settings: Settings | None = None) -> None:
+  def __init__(
+    self, label: str, path: pth.AnyPath, settings: Settings | None = None
+  ) -> None:
     super().__init__(label, path, settings=settings)
     self._local_extension_tmp_dir: pth.LocalPath | None = None
     self._remote_extension_tmp_dir: pth.AnyPath | None = None
@@ -237,9 +237,11 @@ class ChromiumBased(Browser):
     user_data_dir = self.settings.cache_dir
     if flag_user_data_dir := self._flags.get("--user-data-dir", None):
       if user_data_dir and str(user_data_dir) != str(flag_user_data_dir):
-        raise ValueError("Conflicting cache_dir from "
-                         f"settings.cache_dir={str(user_data_dir)!r} and "
-                         f"--user-data-dir={str(flag_user_data_dir)!r}")
+        raise ValueError(
+          "Conflicting cache_dir from "
+          f"settings.cache_dir={str(user_data_dir)!r} and "
+          f"--user-data-dir={str(flag_user_data_dir)!r}"
+        )
       return pth.AnyPath(flag_user_data_dir)
 
     if user_data_dir:
@@ -308,24 +310,28 @@ class ChromiumBased(Browser):
 
   def _process_extensions(self) -> dict[str, str]:
     assert not self._local_extension_tmp_dir, (
-        "Local extension temp dir should be uninitialized, "
-        f"but got {self._local_extension_tmp_dir}.")
+      "Local extension temp dir should be uninitialized, "
+      f"but got {self._local_extension_tmp_dir}."
+    )
     self._local_extension_tmp_dir = pth.LocalPath(self.host_platform.mkdtemp())
 
     load_extension: list[str] = []
     extension_paths: list[pth.LocalPath] = []
     for extension in self.settings.extensions:
-      unpacked = extension.get_unpacked(self.version.version_str,
-                                        self._local_extension_tmp_dir,
-                                        self.host_platform)
+      unpacked = extension.get_unpacked(
+        self.version.version_str,
+        self._local_extension_tmp_dir,
+        self.host_platform,
+      )
       extension_paths.append(unpacked)
       load_extension.append(str(unpacked))
 
     if self.platform.is_remote:
       # Create a folder to load the extensions from on the remote device.
       assert not self._remote_extension_tmp_dir, (
-          "Remote extension temp dir should bet uninitialized, "
-          f"but got {self._local_extension_tmp_dir}.")
+        "Remote extension temp dir should bet uninitialized, "
+        f"but got {self._local_extension_tmp_dir}."
+      )
       self._remote_extension_tmp_dir = self.platform.mkdtemp()
       # Android needs executable permission on the temp folder.
       self.platform.chmod(self._remote_extension_tmp_dir, 0o755)
@@ -342,13 +348,14 @@ class ChromiumBased(Browser):
     load_extension_str = ",".join(load_extension)
 
     return {
-        "--load-extension": load_extension_str,
-        "--disable-features": "DisableLoadExtensionCommandLineSwitch",
+      "--load-extension": load_extension_str,
+      "--disable-features": "DisableLoadExtensionCommandLineSwitch",
     }
 
   @override
   def _get_browser_flags_for_session(
-      self, session: BrowserSessionRunGroup) -> tuple[str, ...]:
+    self, session: BrowserSessionRunGroup
+  ) -> tuple[str, ...]:
     js_flags_copy = self.js_flags.copy()
     js_flags_copy.update(session.extra_js_flags)
 
@@ -360,27 +367,30 @@ class ChromiumBased(Browser):
     if "--allow-background-interventions" in flags_copy:
       value = flags_copy.get("--allow-background-interventions")
       assert value is None, (
-          "The --allow-background-interventions flag should have no value, "
-          f"but got {value}")
+        "The --allow-background-interventions flag should have no value, "
+        f"but got {value}"
+      )
       for flag in self.FLAGS_FOR_DISABLING_BACKGROUND_INTERVENTIONS:
         if flag in flags_copy:
           del flags_copy[flag]
     else:
       if not getattr(self, "_warned_about_background_interventions", False):
         logging.warning(
-            "Disabling background interventions for chromium based browser. "
-            "Tests that rely on correct tab discarding or prioritization "
-            "behavior may not work as expected. Add "
-            "--allow-background-interventions to bypass this.")
+          "Disabling background interventions for chromium based browser. "
+          "Tests that rely on correct tab discarding or prioritization "
+          "behavior may not work as expected. Add "
+          "--allow-background-interventions to bypass this."
+        )
         self._warned_about_background_interventions = True
       flags_copy.update(self.FLAGS_FOR_DISABLING_BACKGROUND_INTERVENTIONS)
 
     if len(js_flags_copy):
       flags_copy["--js-flags"] = str(js_flags_copy)
     if user_data_dir := self.flags.get("--user-data-dir"):
-      assert user_data_dir == str(
-          self.cache_dir), (f"--user-data-dir path: {user_data_dir} was passed "
-                            f"but does not match cache-dir: {self.cache_dir}")
+      assert user_data_dir == str(self.cache_dir), (
+        f"--user-data-dir path: {user_data_dir} was passed "
+        f"but does not match cache-dir: {self.cache_dir}"
+      )
     if self.cache_dir:
       flags_copy["--user-data-dir"] = str(self.cache_dir)
     if self.log_file:
@@ -395,16 +405,24 @@ class ChromiumBased(Browser):
     return tuple(flags_copy)
 
   def _handle_viewport_flags(self, flags: Flags) -> None:
-    self._sync_viewport_flag(flags, "--start-fullscreen",
-                             self.viewport.is_fullscreen, Viewport.FULLSCREEN)
-    self._sync_viewport_flag(flags, "--start-maximized",
-                             self.viewport.is_maximized, Viewport.MAXIMIZED)
-    self._sync_viewport_flag(flags, "--headless", self.viewport.is_headless,
-                             Viewport.HEADLESS)
+    self._sync_viewport_flag(
+      flags,
+      "--start-fullscreen",
+      self.viewport.is_fullscreen,
+      Viewport.FULLSCREEN,
+    )
+    self._sync_viewport_flag(
+      flags, "--start-maximized", self.viewport.is_maximized, Viewport.MAXIMIZED
+    )
+    self._sync_viewport_flag(
+      flags, "--headless", self.viewport.is_headless, Viewport.HEADLESS
+    )
     # M112 added --headless=new as replacement for --headless
-    if "--headless" in flags and (
-        self.version.major
-        >= self.MIN_HEADLESS_NEW_VERSION) and flags["--headless"] is None:
+    if (
+      "--headless" in flags
+      and (self.version.major >= self.MIN_HEADLESS_NEW_VERSION)
+      and flags["--headless"] is None
+    ):
       logging.info("Replacing --headless with --headless=new")
       flags.set("--headless", "new", should_override=True)
 
@@ -427,8 +445,9 @@ class ChromiumBased(Browser):
       for flag in ("--window-position", "--window-size"):
         if flag in flags:
           flag_value = flags[flag]
-          raise ValueError(f"Viewport {self.viewport} conflicts with flag "
-                           f"{flag}={flag_value}")
+          raise ValueError(
+            f"Viewport {self.viewport} conflicts with flag {flag}={flag_value}"
+          )
 
   def get_label_from_flags(self) -> str:
     return convert_flags_to_label(*self.flags, *self.js_flags)

@@ -10,15 +10,17 @@ from typing import override
 from unittest import mock
 
 from crossbench.network.live import LiveNetwork
-from crossbench.network.traffic_shaping.ts_proxy import TsProxyProcess, \
-    TsProxyServer, TsProxyTrafficShaper
+from crossbench.network.traffic_shaping.ts_proxy import (
+  TsProxyProcess,
+  TsProxyServer,
+  TsProxyTrafficShaper,
+)
 from crossbench.runner.groups.session import BrowserSessionRunGroup
 from tests import test_helper
 from tests.crossbench.base import BaseCrossbenchTestCase
 
 
 class TsProxyBaseTestCase(BaseCrossbenchTestCase):
-
   @override
   def setUp(self) -> None:
     super().setUp()
@@ -26,22 +28,26 @@ class TsProxyBaseTestCase(BaseCrossbenchTestCase):
     self.fs.create_file(self.ts_proxy_path, st_size=100)
     # Avoid dealing with fcntl for testing.
     patcher = mock.patch.object(
-        TsProxyProcess, "_setup_non_blocking_io", return_value=None)
+      TsProxyProcess, "_setup_non_blocking_io", return_value=None
+    )
     self.addCleanup(patcher.stop)
     patcher.start()
 
   @contextlib.contextmanager
   def startup_process_mock(self):
     proc = mock.Mock()
-    proc.configure_mock(**{
+    proc.configure_mock(
+      **{
         "poll.return_value": None,
         "communicate.return_value": (None, None),
-    })
+      }
+    )
     proc.stdout = mock.Mock()
-    proc.stdout.configure_mock(**{
-        "readline.return_value":
-            "Started Socks5 proxy server on 127.0.0.1:43210",
-    })
+    proc.stdout.configure_mock(
+      **{
+        "readline.return_value": "Started Socks5 proxy server on 127.0.0.1:43210",
+      }
+    )
     proc.stderr = mock.Mock()
 
     def popen_mock(cmd, *args, **kwargs):
@@ -51,18 +57,19 @@ class TsProxyBaseTestCase(BaseCrossbenchTestCase):
       return proc
 
     with mock.patch("subprocess.Popen", side_effect=popen_mock) as mock_popen:
-      with mock.patch.object(self.platform,
-                             "terminate_gracefully") as terminate_gracefully:
+      with mock.patch.object(
+        self.platform, "terminate_gracefully"
+      ) as terminate_gracefully:
         yield proc
     mock_popen.assert_called_once()
     terminate_gracefully.assert_called_once()
 
 
 class TsProxyTrafficShaperTestCase(TsProxyBaseTestCase):
-
   def create_session(self):
     return mock.Mock(
-        spec=BrowserSessionRunGroup, browser_platform=self.platform)
+      spec=BrowserSessionRunGroup, browser_platform=self.platform
+    )
 
   def test_ts_proxy_traffic_shaper_no_tsproxy(self):
     with self.assertRaises(RuntimeError):
@@ -118,11 +125,8 @@ class TsProxyTrafficShaperTestCase(TsProxyBaseTestCase):
 
   def test_ts_proxy_pause_custom(self):
     ts_proxy = TsProxyTrafficShaper(
-        self.platform,
-        self.ts_proxy_path,
-        rtt_ms=101,
-        in_kbps=102,
-        out_kbps=103)
+      self.platform, self.ts_proxy_path, rtt_ms=101, in_kbps=102, out_kbps=103
+    )
     network = LiveNetwork(ts_proxy, self.platform)
     session = self.create_session()
 
@@ -155,7 +159,6 @@ class TsProxyTrafficShaperTestCase(TsProxyBaseTestCase):
 
 
 class TsProxyServerTestCase(TsProxyBaseTestCase):
-
   def test_construct_invalid(self):
     with self.assertRaises(argparse.ArgumentTypeError):
       TsProxyServer(self.platform, pathlib.Path("does/not/exist"))
@@ -182,13 +185,16 @@ class TsProxyServerTestCase(TsProxyBaseTestCase):
       TsProxyServer(self.platform, self.ts_proxy_path, https_port=400)
     with self.assertRaises(ValueError):
       TsProxyServer(
-          self.platform, self.ts_proxy_path, http_port=400, https_port=400)
+        self.platform, self.ts_proxy_path, http_port=400, https_port=400
+      )
     with self.assertRaises(argparse.ArgumentTypeError):
       TsProxyServer(
-          self.platform, self.ts_proxy_path, http_port=-400, https_port=400)
+        self.platform, self.ts_proxy_path, http_port=-400, https_port=400
+      )
     with self.assertRaises(argparse.ArgumentTypeError):
       TsProxyServer(
-          self.platform, self.ts_proxy_path, http_port=400, https_port=-400)
+        self.platform, self.ts_proxy_path, http_port=400, https_port=-400
+      )
 
   def test_start_server(self):
     server = TsProxyServer(self.platform, self.ts_proxy_path)

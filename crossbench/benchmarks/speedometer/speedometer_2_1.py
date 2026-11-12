@@ -6,10 +6,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, ClassVar, override
 
-from crossbench.benchmarks.speedometer.speedometer import ProbeClsTupleT, \
-    SpeedometerBenchmark
-from crossbench.benchmarks.speedometer.speedometer_2 import \
-    Speedometer2Probe, Speedometer2ProbeContext, Speedometer2Story
+from crossbench.benchmarks.speedometer.speedometer import (
+  ProbeClsTupleT,
+  SpeedometerBenchmark,
+)
+from crossbench.benchmarks.speedometer.speedometer_2 import (
+  Speedometer2Probe,
+  Speedometer2ProbeContext,
+  Speedometer2Story,
+)
 
 if TYPE_CHECKING:
   from crossbench.benchmarks.base import VersionParts
@@ -31,14 +36,16 @@ class Speedometer21Story(Speedometer2Story):
   NAME: ClassVar[str] = "speedometer_2.1"
   URL: ClassVar[str] = "https://chromium-workloads.web.app/speedometer/v2.1/"
   URL_OFFICIAL: ClassVar[str] = "https://browserbench.org/Speedometer2.1/"
-  URL_CHROME_FORK: ClassVar[
-      str] = "https://chromium-workloads.web.app/speedometer/v2.1-custom/"
+  URL_CHROME_FORK: ClassVar[str] = (
+    "https://chromium-workloads.web.app/speedometer/v2.1-custom/"
+  )
 
 
 class Speedometer21Benchmark(SpeedometerBenchmark):
   """
   Benchmark runner for Speedometer 2.1
   """
+
   NAME: ClassVar[str] = "speedometer_2.1"
   DEFAULT_STORY_CLS: ClassVar = Speedometer21Story
   PROBES: ClassVar[ProbeClsTupleT] = (Speedometer21Probe,)
@@ -51,5 +58,12 @@ class Speedometer21Benchmark(SpeedometerBenchmark):
   @classmethod
   @override
   def aliases(cls) -> tuple[str, ...]:
-    return ("sp2", "sp2-latest", "speedometer2", "speedometer2-latest",
-            "speedometer_2", "speedometer_2-latest", *super().aliases())
+    return (
+      "sp2",
+      "sp2-latest",
+      "speedometer2",
+      "speedometer2-latest",
+      "speedometer_2",
+      "speedometer_2-latest",
+      *super().aliases(),
+    )

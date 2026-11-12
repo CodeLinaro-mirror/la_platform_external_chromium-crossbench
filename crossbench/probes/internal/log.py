@@ -20,6 +20,7 @@ class LogProbe(InternalProbe):
   Runner-internal meta-probe: Collects the python logging data from the runner
   itself.
   """
+
   NAME: ClassVar = "cb.log"
 
   @override
@@ -28,7 +29,6 @@ class LogProbe(InternalProbe):
 
 
 class LogProbeContext(ProbeContext[LogProbe]):
-
   def __init__(self, probe_instance: LogProbe, run: Run) -> None:
     super().__init__(probe_instance, run)
     self._log_handler: logging.Handler | None = None
@@ -36,8 +36,9 @@ class LogProbeContext(ProbeContext[LogProbe]):
   @override
   def setup(self) -> None:
     log_formatter = logging.Formatter(
-        "%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s] "
-        "[%(name)s]  %(message)s")
+      "%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s] "
+      "[%(name)s]  %(message)s"
+    )
     self._log_handler = logging.FileHandler(self.result_path, encoding="utf-8")
     self._log_handler.setFormatter(log_formatter)
     self._log_handler.setLevel(logging.DEBUG)

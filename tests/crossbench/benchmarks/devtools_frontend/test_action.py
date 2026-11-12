@@ -12,11 +12,10 @@ from tests.crossbench.base import CrossbenchFakeFsTestCase
 
 
 class ActionTestCase(CrossbenchFakeFsTestCase):
-
   def test_open_devtools(self):
     config_dict: dict[str, object] = {
-        "action": "open_devtools",
-        "panel_name": "resources",
+      "action": "open_devtools",
+      "panel_name": "resources",
     }
     action = OpenDevToolsAction.parse_dict(config_dict)
 

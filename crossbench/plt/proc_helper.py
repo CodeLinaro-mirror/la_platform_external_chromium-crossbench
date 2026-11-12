@@ -15,19 +15,24 @@ if TYPE_CHECKING:
   from crossbench.plt.base import Platform, ProcessLike
   from crossbench.plt.signals import Signals
 
-PROCESS_NOT_FOUND_EXCEPTIONS: Final = (psutil.NoSuchProcess,
-                                       psutil.AccessDenied,
-                                       psutil.ZombieProcess, ProcessLookupError)
+PROCESS_NOT_FOUND_EXCEPTIONS: Final = (
+  psutil.NoSuchProcess,
+  psutil.AccessDenied,
+  psutil.ZombieProcess,
+  ProcessLookupError,
+)
 
 
-def terminate_gracefully(platform: Platform,
-                         process: ProcessLike,
-                         timeout: int = 1,
-                         signal: Signals | None = None) -> None:
+def terminate_gracefully(
+  platform: Platform,
+  process: ProcessLike,
+  timeout: int = 1,
+  signal: Signals | None = None,
+) -> None:
   """Graceful process termination
-    1. Send the provided signal or SIGTERM by default
-    2. Wait for the process to terminate
-    3. Kill the process
+  1. Send the provided signal or SIGTERM by default
+  2. Wait for the process to terminate
+  3. Kill the process
   """
   if not signal:
     signal = platform.signals.SIGTERM
@@ -39,8 +44,9 @@ def terminate_gracefully(platform: Platform,
       process.wait(timeout)
     return
   except TimeoutExpired as e:
-    logging.debug("Got timeout while waiting "
-                  "for process shutdown (%s): %s", process, e)
+    logging.debug(
+      "Got timeout while waiting for process shutdown (%s): %s", process, e
+    )
   except PROCESS_NOT_FOUND_EXCEPTIONS as e:  # noqa: BLE001
     logging.debug("Ignoring exception during process termination: %s", e)
   finally:

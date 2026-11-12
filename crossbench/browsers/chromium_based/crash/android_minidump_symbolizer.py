@@ -13,21 +13,23 @@ from typing import TYPE_CHECKING, Final, override
 
 from crossbench import path as pth
 from crossbench.browsers.chromium_based.crash import helper
-from crossbench.browsers.chromium_based.crash.minidump_symbolizer import \
-    MinidumpSymbolizer
+from crossbench.browsers.chromium_based.crash.minidump_symbolizer import (
+  MinidumpSymbolizer,
+)
 from crossbench.helper import path_finder
 
 if TYPE_CHECKING:
-  from crossbench.browsers.chromium_based.crash.minidump_finder import \
-      MinidumpFinder
+  from crossbench.browsers.chromium_based.crash.minidump_finder import (
+    MinidumpFinder,
+  )
   from crossbench.plt.base import Platform
 
 # Directories relative to the build directory that may contain symbol binaries
 # that can be dumped to symbolize a minidump.
 _POSSIBLE_SYMBOL_BINARY_DIRECTORIES: tuple[pth.LocalPath, ...] = (
-    pth.LocalPath("lib.unstripped"),
-    pth.LocalPath("android_clang_arm") / "lib.unstripped",
-    pth.LocalPath("android_clang_arm64") / "lib.unstripped",
+  pth.LocalPath("lib.unstripped"),
+  pth.LocalPath("android_clang_arm") / "lib.unstripped",
+  pth.LocalPath("android_clang_arm64") / "lib.unstripped",
 )
 
 # Mappings from Crashpad/Breakpad processor architecture values to regular
@@ -36,32 +38,35 @@ _POSSIBLE_SYMBOL_BINARY_DIRECTORIES: tuple[pth.LocalPath, ...] = (
 # The Breakpad processor architecture values are hex representations of the
 # values in MDCPUArchitecture from Breakpad's minidump_format.h.
 _BREAKPAD_ARCH_TO_FILE_RE: dict[str, re.Pattern] = {
-    # 32-bit x86 (emulators).
-    "0x0": re.compile(r"32-bit.*Intel"),
-    # 64-bit x86 (Android desktop).
-    "0x9": re.compile(r"64-bit.*x86-64"),
-    # 32-bit ARM.
-    "0x5": re.compile(r"32-bit.*ARM"),
-    # 64-bit ARM.
-    "0xc": re.compile(r"64-bit.*ARM"),
+  # 32-bit x86 (emulators).
+  "0x0": re.compile(r"32-bit.*Intel"),
+  # 64-bit x86 (Android desktop).
+  "0x9": re.compile(r"64-bit.*x86-64"),
+  # 32-bit ARM.
+  "0x5": re.compile(r"32-bit.*ARM"),
+  # 64-bit ARM.
+  "0xc": re.compile(r"64-bit.*ARM"),
 }
 
 # Line looks like " processor_architecture = 0xc ".
 _PROCESSOR_ARCH_RE = re.compile(
-    r"\s*processor_architecture\s*\=\s*(?P<arch>\w*)\s*")
+  r"\s*processor_architecture\s*\=\s*(?P<arch>\w*)\s*"
+)
 
 _MODULE_LIBRARY_LINE_RE = re.compile(
-    r"\((code_file\))\s+= \"(?P<library_name>lib[^. ]+\.so)\"")
+  r"\((code_file\))\s+= \"(?P<library_name>lib[^. ]+\.so)\""
+)
 
 
 class AndroidMinidumpSymbolizer(MinidumpSymbolizer):
-
-  def __init__(self,
-               platform: Platform,
-               dump_finder: MinidumpFinder,
-               build_dir: pth.LocalPath,
-               symbols_dir: pth.LocalPath | None = None,
-               result_dir: pth.LocalPath | None = None) -> None:
+  def __init__(
+    self,
+    platform: Platform,
+    dump_finder: MinidumpFinder,
+    build_dir: pth.LocalPath,
+    symbols_dir: pth.LocalPath | None = None,
+    result_dir: pth.LocalPath | None = None,
+  ) -> None:
     """Class for handling all minidump symbolizing code on Android.
 
     Args:
@@ -81,25 +86,28 @@ class AndroidMinidumpSymbolizer(MinidumpSymbolizer):
     self._minidump_dump_output: Final[dict[pth.LocalPath, str]] = {}
     # Map from minidump path to the directory that should be used when
     # looking for symbol binaries.
-    self._minidump_symbol_binaries_directories: Final[dict[pth.LocalPath,
-                                                           pth.LocalPath
-                                                           | None]] = {}
+    self._minidump_symbol_binaries_directories: Final[
+      dict[pth.LocalPath, pth.LocalPath | None]
+    ] = {}
     super().__init__(
-        platform.host_platform,
-        dump_finder,
-        build_dir,
-        symbols_dir=symbols_dir,
-        result_dir=result_dir)
+      platform.host_platform,
+      dump_finder,
+      build_dir,
+      symbols_dir=symbols_dir,
+      result_dir=result_dir,
+    )
 
   @override
   def symbolize_minidump(self, minidump: pth.LocalPath) -> str | None:
     if not self._platform.is_posix:
       logging.warning(
-          "Cannot get Android stack traces unless running on a Posix host.")
+        "Cannot get Android stack traces unless running on a Posix host."
+      )
       return None
     if not self._build_dir:
       logging.warning(
-          "Cannot get Android stack traces without build directory.")
+        "Cannot get Android stack traces without build directory."
+      )
       return None
     return super().symbolize_minidump(minidump)
 
@@ -112,7 +120,8 @@ class AndroidMinidumpSymbolizer(MinidumpSymbolizer):
     """
     libraries = self._extract_library_names_from_dump(minidump)
     if symbol_binary_dir := self._get_symbol_binary_directory(
-        minidump, libraries):
+      minidump, libraries
+    ):
       return [symbol_binary_dir / lib for lib in libraries]
     return []
 
@@ -120,8 +129,9 @@ class AndroidMinidumpSymbolizer(MinidumpSymbolizer):
   def get_breakpad_platform_override(self) -> str | None:
     return "android"
 
-  def _extract_library_names_from_dump(self,
-                                       minidump: pth.LocalPath) -> list[str]:
+  def _extract_library_names_from_dump(
+    self, minidump: pth.LocalPath
+  ) -> list[str]:
     """Extracts library names that may contain symbols from the minidump.
 
     This is a duplicate of the logic in Chromium's
@@ -135,8 +145,9 @@ class AndroidMinidumpSymbolizer(MinidumpSymbolizer):
     minidump_dump_output = self._get_minidump_dump_output(minidump)
     if not minidump_dump_output:
       logging.warning(
-          "Could not get minidump_dump output, defaulting to library %s",
-          default_library_name)
+        "Could not get minidump_dump output, defaulting to library %s",
+        default_library_name,
+      )
       return [default_library_name]
 
     library_names = []
@@ -156,14 +167,15 @@ class AndroidMinidumpSymbolizer(MinidumpSymbolizer):
 
     if not library_names:
       logging.warning(
-          "Could not find any library name in the dump, "
-          "default to: %s", default_library_name)
+        "Could not find any library name in the dump, default to: %s",
+        default_library_name,
+      )
       return [default_library_name]
     return library_names
 
   def _get_symbol_binary_directory(
-      self, minidump: pth.LocalPath,
-      libraries: list[str]) -> pth.LocalPath | None:
+    self, minidump: pth.LocalPath, libraries: list[str]
+  ) -> pth.LocalPath | None:
     """Gets the directory that should contain symbol binaries for |minidump|.
 
     Args:
@@ -190,17 +202,20 @@ class AndroidMinidumpSymbolizer(MinidumpSymbolizer):
         arch = match["arch"].lower()
         break
     if not arch:
-      logging.error("Unable to find processor architecture for minidump %s",
-                    minidump)
+      logging.error(
+        "Unable to find processor architecture for minidump %s", minidump
+      )
       self._minidump_symbol_binaries_directories[minidump] = None
       return None
     if arch not in _BREAKPAD_ARCH_TO_FILE_RE:
       logging.error(
-          "Unsupported processor architecture %s for minidump %s. "
-          "This is likely fixable by adding the correct mapping for the "
-          "architecture in "
-          "android_minidump_symbolizer._BREAKPAD_ARCH_TO_FILE_RE.", arch,
-          minidump)
+        "Unsupported processor architecture %s for minidump %s. "
+        "This is likely fixable by adding the correct mapping for the "
+        "architecture in "
+        "android_minidump_symbolizer._BREAKPAD_ARCH_TO_FILE_RE.",
+        arch,
+        minidump,
+      )
       self._minidump_symbol_binaries_directories[minidump] = None
       return None
 
@@ -221,11 +236,12 @@ class AndroidMinidumpSymbolizer(MinidumpSymbolizer):
 
     if not symbol_dir:
       logging.error(
-          "Unable to find suitable symbol binary directory for "
-          "architecture %s. "
-          "This is likely fixable by adding the correct directory to "
-          "android_minidump_symbolizer._POSSIBLE_SYMBOL_BINARY_DIRECTORIES.",
-          arch)
+        "Unable to find suitable symbol binary directory for "
+        "architecture %s. "
+        "This is likely fixable by adding the correct directory to "
+        "android_minidump_symbolizer._POSSIBLE_SYMBOL_BINARY_DIRECTORIES.",
+        arch,
+      )
     self._minidump_symbol_binaries_directories[minidump] = symbol_dir
     return symbol_dir
 
@@ -245,9 +261,12 @@ class AndroidMinidumpSymbolizer(MinidumpSymbolizer):
       logging.debug("Returning cached minidump_dump output for %s", minidump)
       return self._minidump_dump_output[minidump]
 
-    dumper_path = helper.find_crash_binary(self._platform, "minidump_dump",
-                                           self._build_dir,
-                                           path_finder.MinidumpDumpFinder)
+    dumper_path = helper.find_crash_binary(
+      self._platform,
+      "minidump_dump",
+      self._build_dir,
+      path_finder.MinidumpDumpFinder,
+    )
     if not dumper_path:
       logging.warning("Could not find minidump_dump.")
       return None
@@ -255,7 +274,8 @@ class AndroidMinidumpSymbolizer(MinidumpSymbolizer):
     # Using platform.sh with capture_output=True instead of sh_stdout to
     # combine stdout and stderr into a single string.
     process = self._platform.sh(
-        dumper_path, minidump, capture_output=True, check=False)
+      dumper_path, minidump, capture_output=True, check=False
+    )
     output = f"{process.stdout.decode()}\n{process.stderr.decode()}"
 
     if process.returncode != 0:
@@ -266,8 +286,10 @@ class AndroidMinidumpSymbolizer(MinidumpSymbolizer):
       suffix = now.strftime("%Y-%m-%d-%H-%M-%S")
       artifact_name = f"{minidump.name}-{suffix}.log"
       logging.warning(
-          "Reading minidump failed, but likely not actually an issue. "
-          "Saving output to artifact %s", artifact_name)
+        "Reading minidump failed, but likely not actually an issue. "
+        "Saving output to artifact %s",
+        artifact_name,
+      )
 
       dest_dir = self._result_dir / "dumper_errors"
       dest_dir.mkdir(parents=True, exist_ok=True)

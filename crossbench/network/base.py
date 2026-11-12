@@ -23,13 +23,15 @@ NetworkT = TypeVar("NetworkT", bound="Network")
 
 
 class Network(abc.ABC):
-
-  def __init__(self,
-               traffic_shaper: TrafficShaper | None = None,
-               browser_platform: plt.Platform | None = None) -> None:
+  def __init__(
+    self,
+    traffic_shaper: TrafficShaper | None = None,
+    browser_platform: plt.Platform | None = None,
+  ) -> None:
     browser_platform = browser_platform or plt.PLATFORM
-    self._traffic_shaper: Final[
-        TrafficShaper] = traffic_shaper or NoTrafficShaper(browser_platform)
+    self._traffic_shaper: Final[TrafficShaper] = (
+      traffic_shaper or NoTrafficShaper(browser_platform)
+    )
     self._browser_platform: Final[plt.Platform] = browser_platform
     self._host_platform: Final[plt.Platform] = browser_platform.host_platform
     self._is_running: bool = False

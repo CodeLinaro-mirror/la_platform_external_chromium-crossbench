@@ -31,7 +31,8 @@ class Durations:
   @contextlib.contextmanager
   def measure(self, name: str) -> Iterator[None]:
     assert name not in self._durations, (
-        f"Cannot measure '{name}' duration twice!")
+      f"Cannot measure '{name}' duration twice!"
+    )
     start_time = dt.datetime.now()
     try:
       yield
@@ -41,8 +42,8 @@ class Durations:
 
   def to_json(self) -> dict[str, float]:
     return {
-        name: self._durations[name].total_seconds()
-        for name in sorted(self._durations.keys())
+      name: self._durations[name].total_seconds()
+      for name in sorted(self._durations.keys())
     }
 
 

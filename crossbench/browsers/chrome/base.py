@@ -15,7 +15,6 @@ if TYPE_CHECKING:
 
 
 class ChromeBaseMixin:
-
   @classmethod
   def version_cls(cls) -> type[ChromiumVersion]:
     return ChromeVersion
@@ -27,34 +26,38 @@ class ChromeBaseMixin:
   @classmethod
   def stable_path(cls, platform: plt.Platform) -> pth.AnyPath:
     return platform.search_app_or_executable(
-        "Chrome Stable",
-        macos=["Google Chrome.app"],
-        linux=["google-chrome", "chrome"],
-        win=["Google/Chrome/Application/chrome.exe"])
+      "Chrome Stable",
+      macos=["Google Chrome.app"],
+      linux=["google-chrome", "chrome"],
+      win=["Google/Chrome/Application/chrome.exe"],
+    )
 
   @classmethod
   def beta_path(cls, platform: plt.Platform) -> pth.AnyPath:
     return platform.search_app_or_executable(
-        "Chrome Beta",
-        macos=["Google Chrome Beta.app"],
-        linux=["google-chrome-beta"],
-        win=["Google/Chrome Beta/Application/chrome.exe"])
+      "Chrome Beta",
+      macos=["Google Chrome Beta.app"],
+      linux=["google-chrome-beta"],
+      win=["Google/Chrome Beta/Application/chrome.exe"],
+    )
 
   @classmethod
   def dev_path(cls, platform: plt.Platform) -> pth.AnyPath:
     return platform.search_app_or_executable(
-        "Chrome Dev",
-        macos=["Google Chrome Dev.app"],
-        linux=["google-chrome-unstable"],
-        win=["Google/Chrome Dev/Application/chrome.exe"])
+      "Chrome Dev",
+      macos=["Google Chrome Dev.app"],
+      linux=["google-chrome-unstable"],
+      win=["Google/Chrome Dev/Application/chrome.exe"],
+    )
 
   @classmethod
   def canary_path(cls, platform: plt.Platform) -> pth.AnyPath:
     return platform.search_app_or_executable(
-        "Chrome Canary",
-        macos=["Google Chrome Canary.app"],
-        linux=["google-chrome-canary"],
-        win=["Google/Chrome SxS/Application/chrome.exe"])
+      "Chrome Canary",
+      macos=["Google Chrome Canary.app"],
+      linux=["google-chrome-canary"],
+      win=["Google/Chrome SxS/Application/chrome.exe"],
+    )
 
   @classmethod
   def type_name(cls) -> str:

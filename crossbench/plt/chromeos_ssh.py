@@ -24,11 +24,12 @@ if TYPE_CHECKING:
 
 
 class ChromeOsSshPlatform(LinuxSshPlatform):
-
   AUTOLOGIN_PATH: Final = pth.AnyPosixPath(
-      "/usr/local/autotest/bin/autologin.py")
+    "/usr/local/autotest/bin/autologin.py"
+  )
   DEVTOOLS_PORT_PATH: Final = pth.AnyPosixPath(
-      "/home/chronos/DevToolsActivePort")
+    "/home/chronos/DevToolsActivePort"
+  )
 
   # ChromeOS does not support comments in EVEMU scripts and defaults
   # to a new enough evemu version where this is not needed.
@@ -83,25 +84,27 @@ class ChromeOsSshPlatform(LinuxSshPlatform):
 
   def _apply_wakelock(self) -> None:
     self.sh(
-        "set_power_policy",
-        "--ac_screen_dim_delay=0",
-        "--ac_screen_off_delay=0",
-        "--ac_idle_action=do_nothing",
-        "--battery_screen_dim_delay=0",
-        "--battery_screen_off_delay=0",
-        "--battery_idle_action=do_nothing",
-        "--dim_wake_lock=1",
-        "--screen_wake_lock=1",
-        "--system_wake_lock=1",
+      "set_power_policy",
+      "--ac_screen_dim_delay=0",
+      "--ac_screen_off_delay=0",
+      "--ac_idle_action=do_nothing",
+      "--battery_screen_dim_delay=0",
+      "--battery_screen_off_delay=0",
+      "--battery_idle_action=do_nothing",
+      "--dim_wake_lock=1",
+      "--screen_wake_lock=1",
+      "--system_wake_lock=1",
     )
 
   def _clear_wakelock(self) -> None:
     self.sh("set_power_policy")
 
-  def create_debugging_session(self,
-                               browser_flags: tuple[str, ...] | None = None,
-                               username: str | None = None,
-                               password: str | None = None) -> int:
+  def create_debugging_session(
+    self,
+    browser_flags: tuple[str, ...] | None = None,
+    username: str | None = None,
+    password: str | None = None,
+  ) -> int:
     disable_extensions_flag: str = "--disable-extensions"
 
     flags_for_session: list[str] = []
@@ -114,8 +117,9 @@ class ChromeOsSshPlatform(LinuxSshPlatform):
       if self.enable_arc:
         if disable_extensions_flag in flags_for_session:
           logging.warning(
-              "'%s' is not compatible with ARC."
-              " Proceeding without this flag.", disable_extensions_flag)
+            "'%s' is not compatible with ARC. Proceeding without this flag.",
+            disable_extensions_flag,
+          )
           flags_for_session.remove(disable_extensions_flag)
         args.append("--arc")
       if username and password:
@@ -125,8 +129,8 @@ class ChromeOsSshPlatform(LinuxSshPlatform):
         args.append("--")
         args.extend(flags_for_session)
       autologin_output = self.sh(
-          *args, stdout=subprocess.PIPE,
-          stderr=subprocess.STDOUT).stdout.decode("utf-8")
+        *args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+      ).stdout.decode("utf-8")
       logging.debug("Autologin Output:")
       logging.debug(autologin_output)
     except plt.SubprocessError as e:
@@ -149,9 +153,11 @@ class ChromeOsSshPlatform(LinuxSshPlatform):
   def system_details(self) -> JsonDict:
     details = super().system_details()
 
-    details.update({
+    details.update(
+      {
         "ChromeOS": self._parse_lsb_release(),
-    })
+      }
+    )
 
     return details
 
@@ -164,15 +170,18 @@ class ChromeOsSshPlatform(LinuxSshPlatform):
   @functools.lru_cache(maxsize=1)
   @override
   def display_resolution(self) -> DisplayResolution:
-    display_info_json = self.sh_stdout("cros-health-tool", "telem",
-                                       "--category=display")
+    display_info_json = self.sh_stdout(
+      "cros-health-tool", "telem", "--category=display"
+    )
     display_info = json.loads(display_info_json)
     display_info = ObjectParser.dict(display_info, "display info")
     embedded_display = ObjectParser.dict(display_info.get("embedded_display"))
     resolution_horizontal = NumberParser.positive_int(
-        embedded_display.get("resolution_horizontal"), "resolution_horizontal")
+      embedded_display.get("resolution_horizontal"), "resolution_horizontal"
+    )
     resolution_vertical = NumberParser.positive_int(
-        embedded_display.get("resolution_vertical"), "resolution_vertical")
+      embedded_display.get("resolution_vertical"), "resolution_vertical"
+    )
     return DisplayResolution(resolution_horizontal, resolution_vertical)
 
   def _parse_lsb_release(self) -> dict[str, str]:

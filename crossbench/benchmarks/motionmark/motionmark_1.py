@@ -44,6 +44,7 @@ class MotionMark1Probe(BenchmarkProbeMixin, JsonResultProbe, abc.ABC):
   MotionMark-specific Probe.
   Extracts all MotionMark times and scores.
   """
+
   SORT_KEYS: ClassVar[bool] = False
 
   @abc.abstractmethod
@@ -54,14 +55,16 @@ class MotionMark1Probe(BenchmarkProbeMixin, JsonResultProbe, abc.ABC):
   @override
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
     merged = MetricsMerger.merge_json_list(
-        repetition_group.results[self].json
-        for repetition_group in group.repetitions_groups)
+      repetition_group.results[self].json
+      for repetition_group in group.repetitions_groups
+    )
     return self.write_group_result(group, merged)
 
   @override
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
     return self.merge_browsers_json_list(group).merge(
-        self.merge_browsers_csv_list(group))
+      self.merge_browsers_csv_list(group)
+    )
 
   @override
   def log_run_result(self, run: Run) -> None:
@@ -71,8 +74,9 @@ class MotionMark1Probe(BenchmarkProbeMixin, JsonResultProbe, abc.ABC):
   def log_browsers_result(self, group: BrowsersRunGroup) -> None:
     self._log_result(group.results, single_result=False)
 
-  def _log_result(self, result_dict: ProbeResultDict,
-                  single_result: bool) -> None:
+  def _log_result(
+    self, result_dict: ProbeResultDict, single_result: bool
+  ) -> None:
     if self not in result_dict:
       return
     results_json: pth.LocalPath = result_dict[self].json
@@ -91,19 +95,22 @@ class MotionMark1Probe(BenchmarkProbeMixin, JsonResultProbe, abc.ABC):
         self._log_result_metrics(data)
 
   @override
-  def _extract_result_metrics_table(self, metrics: JsonDict,
-                                    table: dict[str, list[str]]) -> None:
+  def _extract_result_metrics_table(
+    self, metrics: JsonDict, table: dict[str, list[str]]
+  ) -> None:
     for metric_key, metric in metrics.items():
       if not self._valid_metric_key(metric_key):
         continue
       assert isinstance(metric, Mapping)
       table[metric_key].append(
-          Metric.format(metric["average"], metric["stddev"]))
+        Metric.format(metric["average"], metric["stddev"])
+      )
     # Separate runs don't produce a score
     if total_metric := metrics.get("score") or metrics.get("Score"):
       assert isinstance(total_metric, Mapping)
       table["Score"].append(
-          Metric.format(total_metric["average"], total_metric["stddev"]))
+        Metric.format(total_metric["average"], total_metric["stddev"])
+      )
 
   def _valid_metric_key(self, metric_key: str) -> bool:
     parts = metric_key.split("/")
@@ -128,110 +135,112 @@ class MotionMark1ProbeContext(JsonResultProbeContext):
     first_data = json_data[0]
     assert isinstance(first_data, dict)
     return Flatten(
-        first_data, key_fn=_clean_up_path_segments,
-        sort=self.probe.SORT_KEYS).data
+      first_data, key_fn=_clean_up_path_segments, sort=self.probe.SORT_KEYS
+    ).data
 
 
 class MotionMark1Story(PressBenchmarkStory):
   URL_LOCAL: ClassVar[str] = "http://localhost:8000/"
   ALL_STORIES: ClassVar = {
-      "MotionMark": (
-          "Multiply",
-          "Canvas Arcs",
-          "Leaves",
-          "Paths",
-          "Canvas Lines",
-          "Images",
-          "Design",
-          "Suits",
-      ),
-      "HTML suite": (
-          "CSS bouncing circles",
-          "CSS bouncing clipped rects",
-          "CSS bouncing gradient circles",
-          "CSS bouncing blend circles",
-          "CSS bouncing filter circles",
-          # "CSS bouncing SVG images",
-          "CSS bouncing tagged images",
-          "Focus 2.0",
-          "DOM particles, SVG masks",
-          # "Composited Transforms",
-      ),
-      "Canvas suite": (
-          "canvas bouncing clipped rects",
-          "canvas bouncing gradient circles",
-          # "canvas bouncing SVG images",
-          # "canvas bouncing PNG images",
-          "Stroke shapes",
-          "Fill shapes",
-          "Canvas put/get image data",
-      ),
-      "SVG suite": (
-          "SVG bouncing circles",
-          "SVG bouncing clipped rects",
-          "SVG bouncing gradient circles",
-          # "SVG bouncing SVG images",
-          # "SVG bouncing PNG images",
-      ),
-      "Leaves suite": (
-          "Translate-only Leaves",
-          "Translate + Scale Leaves",
-          "Translate + Opacity Leaves",
-      ),
-      "Multiply suite": (
-          "Multiply: CSS opacity only",
-          "Multiply: CSS display only",
-          "Multiply: CSS visibility only",
-      ),
-      "Text suite": (
-          "Design: Latin only (12 items)",
-          "Design: CJK only (12 items)",
-          "Design: RTL and complex scripts only (12 items)",
-          "Design: Latin only (6 items)",
-          "Design: CJK only (6 items)",
-          "Design: RTL and complex scripts only (6 items)",
-      ),
-      "Suits suite": (
-          "Suits: clip only",
-          "Suits: shape only",
-          "Suits: clip, shape, rotation",
-          "Suits: clip, shape, gradient",
-          "Suits: static",
-      ),
-      "3D Graphics": (
-          "Triangles (WebGL)",
-          # "Triangles (WebGPU)",
-      ),
-      "Basic canvas path suite": (
-          "Canvas line segments, butt caps",
-          "Canvas line segments, round caps",
-          "Canvas line segments, square caps",
-          "Canvas line path, bevel join",
-          "Canvas line path, round join",
-          "Canvas line path, miter join",
-          "Canvas line path with dash pattern",
-          "Canvas quadratic segments",
-          "Canvas quadratic path",
-          "Canvas bezier segments",
-          "Canvas bezier path",
-          "Canvas arcTo segments",
-          "Canvas arc segments",
-          "Canvas rects",
-          "Canvas ellipses",
-          "Canvas line path, fill",
-          "Canvas quadratic path, fill",
-          "Canvas bezier path, fill",
-          "Canvas arcTo segments, fill",
-          "Canvas arc segments, fill",
-          "Canvas rects, fill",
-          "Canvas ellipses, fill",
-      ),
+    "MotionMark": (
+      "Multiply",
+      "Canvas Arcs",
+      "Leaves",
+      "Paths",
+      "Canvas Lines",
+      "Images",
+      "Design",
+      "Suits",
+    ),
+    "HTML suite": (
+      "CSS bouncing circles",
+      "CSS bouncing clipped rects",
+      "CSS bouncing gradient circles",
+      "CSS bouncing blend circles",
+      "CSS bouncing filter circles",
+      # "CSS bouncing SVG images",
+      "CSS bouncing tagged images",
+      "Focus 2.0",
+      "DOM particles, SVG masks",
+      # "Composited Transforms",
+    ),
+    "Canvas suite": (
+      "canvas bouncing clipped rects",
+      "canvas bouncing gradient circles",
+      # "canvas bouncing SVG images",
+      # "canvas bouncing PNG images",
+      "Stroke shapes",
+      "Fill shapes",
+      "Canvas put/get image data",
+    ),
+    "SVG suite": (
+      "SVG bouncing circles",
+      "SVG bouncing clipped rects",
+      "SVG bouncing gradient circles",
+      # "SVG bouncing SVG images",
+      # "SVG bouncing PNG images",
+    ),
+    "Leaves suite": (
+      "Translate-only Leaves",
+      "Translate + Scale Leaves",
+      "Translate + Opacity Leaves",
+    ),
+    "Multiply suite": (
+      "Multiply: CSS opacity only",
+      "Multiply: CSS display only",
+      "Multiply: CSS visibility only",
+    ),
+    "Text suite": (
+      "Design: Latin only (12 items)",
+      "Design: CJK only (12 items)",
+      "Design: RTL and complex scripts only (12 items)",
+      "Design: Latin only (6 items)",
+      "Design: CJK only (6 items)",
+      "Design: RTL and complex scripts only (6 items)",
+    ),
+    "Suits suite": (
+      "Suits: clip only",
+      "Suits: shape only",
+      "Suits: clip, shape, rotation",
+      "Suits: clip, shape, gradient",
+      "Suits: static",
+    ),
+    "3D Graphics": (
+      "Triangles (WebGL)",
+      # "Triangles (WebGPU)",
+    ),
+    "Basic canvas path suite": (
+      "Canvas line segments, butt caps",
+      "Canvas line segments, round caps",
+      "Canvas line segments, square caps",
+      "Canvas line path, bevel join",
+      "Canvas line path, round join",
+      "Canvas line path, miter join",
+      "Canvas line path with dash pattern",
+      "Canvas quadratic segments",
+      "Canvas quadratic path",
+      "Canvas bezier segments",
+      "Canvas bezier path",
+      "Canvas arcTo segments",
+      "Canvas arc segments",
+      "Canvas rects",
+      "Canvas ellipses",
+      "Canvas line path, fill",
+      "Canvas quadratic path, fill",
+      "Canvas bezier path, fill",
+      "Canvas arcTo segments, fill",
+      "Canvas arc segments, fill",
+      "Canvas rects, fill",
+      "Canvas ellipses, fill",
+    ),
   }
   SUBSTORIES: ClassVar = tuple(
-      itertools.chain.from_iterable(ALL_STORIES.values()))
+    itertools.chain.from_iterable(ALL_STORIES.values())
+  )
   READY_TIMEOUT: ClassVar = dt.timedelta(seconds=10)
   DEVELOPER_READY_JS: ClassVar[str] = (
-      "return document.querySelector('tree > li') !== undefined;")
+    "return document.querySelector('tree > li') !== undefined;"
+  )
   # The default page is ready immediately.
   READY_JS: ClassVar[str] = "return true;"
 
@@ -265,15 +274,17 @@ class MotionMark1Story(PressBenchmarkStory):
     use_developer_url = "/developer.html" in test_url
     with run.actions("Setup") as actions:
       actions.show_url(
-          url=test_url,
-          ready_state=ReadyState.COMPLETE,
-          timeout=dt.timedelta(seconds=10))
+        url=test_url,
+        ready_state=ReadyState.COMPLETE,
+        timeout=dt.timedelta(seconds=10),
+      )
       self._setup_wait_until_ready(actions, use_developer_url)
       if use_developer_url:
         self._setup_filter_stories(actions)
 
-  def _setup_wait_until_ready(self, actions: Actions,
-                              use_developer_url: bool) -> None:
+  def _setup_wait_until_ready(
+    self, actions: Actions, use_developer_url: bool
+  ) -> None:
     if use_developer_url:
       wait_js = self.DEVELOPER_READY_JS
     else:
@@ -282,7 +293,7 @@ class MotionMark1Story(PressBenchmarkStory):
 
   def _setup_filter_stories(self, actions: Actions) -> None:
     num_enabled = actions.js(
-        """
+      """
       let benchmarks = arguments[0];
       const list = document.querySelectorAll(".tree li");
       let counter = 0;
@@ -299,7 +310,8 @@ class MotionMark1Story(PressBenchmarkStory):
       }
       return counter
       """,
-        arguments=[self._substories])
+      arguments=[self._substories],
+    )
     assert isinstance(num_enabled, int)
     assert num_enabled > 0, "No tests were enabled"
     actions.wait(0.1)
@@ -310,12 +322,13 @@ class MotionMark1Story(PressBenchmarkStory):
       actions.wait(self.fast_duration)
     with run.actions("Waiting for completion") as actions:
       actions.wait_js_condition(
-          """
+        """
           return window.benchmarkRunnerClient.results._results != undefined
           """,
-          0.5,
-          timeout=self.slow_duration,
-          delay=self.substory_duration / 4)
+        0.5,
+        timeout=self.slow_duration,
+        delay=self.substory_duration / 4,
+      )
 
 
 class MotionMark1Benchmark(MotionMarkBenchmark):

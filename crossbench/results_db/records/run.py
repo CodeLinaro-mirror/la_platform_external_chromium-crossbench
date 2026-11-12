@@ -14,6 +14,7 @@ from crossbench.results_db import sqlalchemy_helpers as orm
 from crossbench.results_db.records.base import BaseRecord
 from crossbench.results_db.records.browser import BrowserRecord
 from crossbench.results_db.sqlalchemy_helpers import Mapped
+
 # SQLAlchemy evaluates Mapped[Json] at runtime via typing.get_type_hints(),
 # which requires Json's forward-referenced aliases in module globals.
 from crossbench.types import Json, JsonMapping, JsonSequence  # noqa: F401
@@ -28,13 +29,15 @@ class RunRecord(BaseRecord):
   @classmethod
   def create(cls, session: orm.Session, run: Run) -> Self:
     return cls(
-        index=run.index,
-        repetition=run.repetition,
-        cache_temperature=str(run.temperature),
-        name=run.name,
-        browser=session.query(BrowserRecord).filter(
-            BrowserRecord.label == run.browser.label).first(),
-        story=run.story.name)
+      index=run.index,
+      repetition=run.repetition,
+      cache_temperature=str(run.temperature),
+      name=run.name,
+      browser=session.query(BrowserRecord)
+      .filter(BrowserRecord.label == run.browser.label)
+      .first(),
+      story=run.story.name,
+    )
 
   index: Mapped[int] = orm.mapped_column(orm_types.Integer(), primary_key=True)
   repetition: Mapped[int] = orm.mapped_column(orm_types.Integer())
@@ -42,15 +45,18 @@ class RunRecord(BaseRecord):
   name: Mapped[str] = orm.mapped_column(orm_types.String())
 
   browser_label: Mapped[int] = orm.mapped_column(
-      orm_schema.ForeignKey("browser.label"))
+    orm_schema.ForeignKey("browser.label")
+  )
   browser: Mapped[BrowserRecord] = orm.relationship()
 
   story: Mapped[str] = orm.mapped_column(orm_types.String())
 
   error_count: Mapped[int] = orm.mapped_column(
-      orm_types.Integer(), nullable=True)
+    orm_types.Integer(), nullable=True
+  )
   errors: Mapped[Json] = orm.mapped_column(orm_types.JSON(), nullable=True)
 
   start_datetime: Mapped[dt.datetime] = orm.mapped_column(
-      orm_types.DateTime(), nullable=True)
+    orm_types.DateTime(), nullable=True
+  )
   durations: Mapped[Json] = orm.mapped_column(orm_types.JSON(), nullable=True)

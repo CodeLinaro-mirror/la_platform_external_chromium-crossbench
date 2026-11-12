@@ -21,5 +21,7 @@ def list_user(value: str) -> UserEnum | str:
     return UserEnum.ALL
   if "@" in value:
     return value
-  raise argparse.ArgumentTypeError(f"'{value}' is not a valid user email. "
-                                   "Expected 'me', 'all', or an email address.")
+  raise argparse.ArgumentTypeError(
+    f"'{value}' is not a valid user email. "
+    "Expected 'me', 'all', or an email address."
+  )

@@ -27,8 +27,17 @@ import urllib.error
 import urllib.request
 import weakref
 import webbrowser
-from typing import TYPE_CHECKING, Callable, Final, Generator, Iterable, \
-    Iterator, Mapping, Sequence, cast
+from typing import (
+  TYPE_CHECKING,
+  Callable,
+  Final,
+  Generator,
+  Iterable,
+  Iterator,
+  Mapping,
+  Sequence,
+  cast,
+)
 
 import google.api_core.exceptions as gcloud_exceptions
 import google.cloud.storage as gcloud_storage
@@ -42,8 +51,7 @@ from crossbench.parse import NumberParser, ObjectParser
 from crossbench.plt import proc_helper
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.bin import Binary
-from crossbench.plt.port_manager import LocalPortManager, PortManager, \
-    PortScope
+from crossbench.plt.port_manager import LocalPortManager, PortManager, PortScope
 from crossbench.plt.remote import RemotePopen
 
 if TYPE_CHECKING:
@@ -52,16 +60,26 @@ if TYPE_CHECKING:
   from crossbench.action_runner.action.position import UiSelectorConfig
   from crossbench.action_runner.display_rectangle import DisplayRectangle
   from crossbench.action_runner.input_events import InputEvent
-  from crossbench.action_runner.virtual_device.virtual_device_config import \
-      VirtualDeviceConfig
+  from crossbench.action_runner.virtual_device.virtual_device_config import (
+    VirtualDeviceConfig,
+  )
   from crossbench.device_config import DeviceConfigKeyPath, DeviceConfigMap
   from crossbench.plt.details import CpuDetails, OsDetails, PythonDetails
-  from crossbench.plt.display_info import DisplayInfo, \
-      DisplayRefreshRateResult, DisplayResolution
+  from crossbench.plt.display_info import (
+    DisplayInfo,
+    DisplayRefreshRateResult,
+    DisplayResolution,
+  )
   from crossbench.plt.process_meminfo import ProcessMeminfo
   from crossbench.plt.signals import AnySignals, Signals
-  from crossbench.plt.types import CmdArg, PlatformKey, ProcessInfo, \
-      ProcessIo, ProcessLike, TupleCmdArgs
+  from crossbench.plt.types import (
+    CmdArg,
+    PlatformKey,
+    ProcessInfo,
+    ProcessIo,
+    ProcessLike,
+    TupleCmdArgs,
+  )
   from crossbench.plt.version import PlatformVersion
   from crossbench.plt.version_details import VersionDetails
   from crossbench.types import Json, JsonDict
@@ -72,7 +90,6 @@ class Environ(collections.abc.MutableMapping, metaclass=abc.ABCMeta):
 
 
 class LocalEnviron(Environ):
-
   def __init__(self) -> None:
     self._environ: Final[os._Environ[str]] = os.environ
 
@@ -93,13 +110,18 @@ class LocalEnviron(Environ):
 
 
 class SubprocessError(subprocess.CalledProcessError):
-  """ Custom version that also prints stderr for debugging"""
+  """Custom version that also prints stderr for debugging"""
 
-  def __init__(self, platform: Platform,
-               process: subprocess.CompletedProcess) -> None:
+  def __init__(
+    self, platform: Platform, process: subprocess.CompletedProcess
+  ) -> None:
     self.platform: Final[Platform] = platform
-    super().__init__(process.returncode, shlex.join(map(str, process.args)),
-                     process.stdout, process.stderr)
+    super().__init__(
+      process.returncode,
+      shlex.join(map(str, process.args)),
+      process.stdout,
+      process.stderr,
+    )
 
   def __str__(self) -> str:
     super_str = super().__str__()
@@ -153,7 +175,8 @@ class Platform(abc.ABC):
     return self._virtual_device_configs
 
   def setup_virtual_devices(
-      self, virtual_devices: tuple[VirtualDeviceConfig, ...]) -> None:
+    self, virtual_devices: tuple[VirtualDeviceConfig, ...]
+  ) -> None:
     for device in virtual_devices:
       self._virtual_device_configs[device.name] = device
 
@@ -165,8 +188,9 @@ class Platform(abc.ABC):
       return
     caller = "assert_is_local"
     caller = inspect.stack()[1].function
-    raise RuntimeError(f"{type(self).__name__}.{caller}(...) is not supported "
-                       "on remote platform")
+    raise RuntimeError(
+      f"{type(self).__name__}.{caller}(...) is not supported on remote platform"
+    )
 
   @property
   @abc.abstractmethod
@@ -359,22 +383,24 @@ class Platform(abc.ABC):
   def cpu_details(self) -> CpuDetails:
     self.assert_is_local()
     details: CpuDetails = {
-        "physical_cores": self.cpu_cores(logical=False),
-        "logical_cores": self.cpu_cores(logical=True),
-        "usage": psutil.cpu_percent(percpu=True, interval=0.1),
-        "total_usage": psutil.cpu_percent(),
-        "system_load": psutil.getloadavg(),
-        "info": self.cpu,
-        "min_frequency": "N/A",
-        "max_frequency": "N/A",
-        "current_frequency": "N/A",
+      "physical_cores": self.cpu_cores(logical=False),
+      "logical_cores": self.cpu_cores(logical=True),
+      "usage": psutil.cpu_percent(percpu=True, interval=0.1),
+      "total_usage": psutil.cpu_percent(),
+      "system_load": psutil.getloadavg(),
+      "info": self.cpu,
+      "min_frequency": "N/A",
+      "max_frequency": "N/A",
+      "current_frequency": "N/A",
     }
     if cpu_freq := self._cpu_freq():
-      details.update({
+      details.update(
+        {
           "min_frequency": f"{cpu_freq.min:.2f}MHz",
           "max_frequency": f"{cpu_freq.max:.2f}MHz",
           "current_frequency": f"{cpu_freq.current:.2f}MHz",
-      })
+        }
+      )
     return details
 
   def _cpu_freq(self) -> CPUFreqInfo | None:
@@ -406,8 +432,9 @@ class Platform(abc.ABC):
     """
     return {}
 
-  def set_device_config_value(self, key_path: DeviceConfigKeyPath,
-                              value: str | None) -> None:
+  def set_device_config_value(
+    self, key_path: DeviceConfigKeyPath, value: str | None
+  ) -> None:
     """Writes a single device configuration value, deleting it if None.
 
     Key paths are relative to the platform namespace of device_config(),
@@ -425,11 +452,11 @@ class Platform(abc.ABC):
     # TODO: remove once mypy is replaced by pyrefly
     # https://peps.python.org/pep-0728
     details: JsonDict = {
-        "machine": str(self.machine),
-        "os": cast("Json", self.os_details()),
-        "python": cast("Json", self.python_details()),
-        "CPU": cast("Json", self.cpu_details()),
-        "display": cast("Json", self.display_details()),
+      "machine": str(self.machine),
+      "os": cast("Json", self.os_details()),
+      "python": cast("Json", self.python_details()),
+      "CPU": cast("Json", self.cpu_details()),
+      "display": cast("Json", self.display_details()),
     }
     if self.is_local:
       # TODO: remove once mypy is replaced by pyrefly
@@ -441,18 +468,18 @@ class Platform(abc.ABC):
   def os_details(self) -> OsDetails:
     self.assert_is_local()
     return {
-        "system": py_platform.system(),
-        "release": py_platform.release(),
-        "version": py_platform.version(),
-        "platform": py_platform.platform(),
+      "system": py_platform.system(),
+      "release": py_platform.release(),
+      "version": py_platform.version(),
+      "platform": py_platform.platform(),
     }
 
   @functools.lru_cache(maxsize=1)
   def python_details(self) -> PythonDetails:
     self.assert_is_local()
     return {
-        "version": py_platform.python_version(),
-        "bits": 64 if sys.maxsize > 2**32 else 32,
+      "version": py_platform.python_version(),
+      "bits": 64 if sys.maxsize > 2**32 else 32,
     }
 
   @functools.lru_cache(maxsize=1)
@@ -468,10 +495,10 @@ class Platform(abc.ABC):
       return res.strip()
 
     return {
-        "version": __version__,
-        "current_hash": run_git("rev-parse", "HEAD"),
-        "canonical_parent_hash": run_git("merge-base", "HEAD", "origin/main"),
-        "has_uncommitted_changes": bool(run_git("status", "--porcelain")),
+      "version": __version__,
+      "current_hash": run_git("rev-parse", "HEAD"),
+      "canonical_parent_hash": run_git("merge-base", "HEAD", "origin/main"),
+      "has_uncommitted_changes": bool(run_git("status", "--porcelain")),
     }
 
   def display_details(self) -> tuple[DisplayInfo, ...]:
@@ -505,12 +532,12 @@ class Platform(abc.ABC):
     return 1 - psutil.cpu_times_percent().idle / 100
 
   def _search_executable(
-      self,
-      name: str,
-      macos: Sequence[str],
-      win: Sequence[str],
-      linux: Sequence[str],
-      lookup_callable: Callable[[pth.AnyPath], pth.AnyPath | None],
+    self,
+    name: str,
+    macos: Sequence[str],
+    win: Sequence[str],
+    linux: Sequence[str],
+    lookup_callable: Callable[[pth.AnyPath], pth.AnyPath | None],
   ) -> pth.AnyPath:
     executables: Sequence[str] = []
     if self.is_macos:
@@ -529,20 +556,20 @@ class Platform(abc.ABC):
     raise ValueError(f"Executable {name} not found on {self}")
 
   def search_app_or_executable(
-      self,
-      name: str,
-      macos: Sequence[str] = (),
-      win: Sequence[str] = (),
-      linux: Sequence[str] = (),
+    self,
+    name: str,
+    macos: Sequence[str] = (),
+    win: Sequence[str] = (),
+    linux: Sequence[str] = (),
   ) -> pth.AnyPath:
     return self._search_executable(name, macos, win, linux, self.search_app)
 
   def search_platform_binary(
-      self,
-      name: str,
-      macos: Sequence[str] = (),
-      win: Sequence[str] = (),
-      linux: Sequence[str] = (),
+    self,
+    name: str,
+    macos: Sequence[str] = (),
+    win: Sequence[str] = (),
+    linux: Sequence[str] = (),
   ) -> pth.AnyPath:
     return self._search_executable(name, macos, win, linux, self.search_binary)
 
@@ -560,7 +587,8 @@ class Platform(abc.ABC):
     """
 
   def _search_binary_in_search_path(
-      self, app_or_bin: pth.AnyPath) -> pth.AnyPath | None:
+    self, app_or_bin: pth.AnyPath
+  ) -> pth.AnyPath | None:
     for path in self.SEARCH_PATHS:
       # Recreate Path object for easier pyfakefs testing
       result_path = self.path(path) / app_or_bin
@@ -582,27 +610,29 @@ class Platform(abc.ABC):
     This can be false on linux without $DISPLAY, true an all other platforms."""
     return True
 
-  def inject_input_events(self, device_name: str,
-                          events: Iterable[InputEvent]) -> None:
+  def inject_input_events(
+    self, device_name: str, events: Iterable[InputEvent]
+  ) -> None:
     """
     Injects abstract input events and blocks until all events are
     processed.
     """
     raise NotImplementedError(
-        f"inject_input_events not implemented for {self}.")
+      f"inject_input_events not implemented for {self}."
+    )
 
   def sleep(self, seconds: float | dt.timedelta) -> None:
     wait.sleep(seconds)
 
-  def parse_binary_path(self,
-                        value: pth.AnyPathLike,
-                        name: str = "value") -> pth.AnyPath:
+  def parse_binary_path(
+    self, value: pth.AnyPathLike, name: str = "value"
+  ) -> pth.AnyPath:
     # Helper to avoid circular imports.
     return parse.PathParser.binary_path(value, self, name)
 
-  def parse_local_binary_path(self,
-                              value: pth.AnyPathLike,
-                              name: str = "value") -> pth.LocalPath:
+  def parse_local_binary_path(
+    self, value: pth.AnyPathLike, name: str = "value"
+  ) -> pth.LocalPath:
     self.assert_is_local()
     # Helper to avoid circular imports.
     return parse.PathParser.local_binary_path(value, self, name)
@@ -620,27 +650,32 @@ class Platform(abc.ABC):
     return None
 
   def lookup_binary_override(
-      self, binary_name: pth.AnyPathLike) -> pth.AnyPath | None:
+    self, binary_name: pth.AnyPathLike
+  ) -> pth.AnyPath | None:
     return self._binary_lookup_override.get(os.fspath(binary_name))
 
-  def set_binary_lookup_override(self, binary_name: pth.AnyPathLike,
-                                 new_path: pth.AnyPath | None) -> None:
+  def set_binary_lookup_override(
+    self, binary_name: pth.AnyPathLike, new_path: pth.AnyPath | None
+  ) -> None:
     name = os.fspath(binary_name)
     if new_path is None:
       prev_result = self._binary_lookup_override.pop(name, None)
       if prev_result is None:
         logging.debug(
-            "Could not remove binary override for %s as it was never set",
-            binary_name)
+          "Could not remove binary override for %s as it was never set",
+          binary_name,
+        )
       return
     if self.search_binary(new_path) is None:
-      raise ValueError(f"Suggested binary override for {name!r} "
-                       f"does not exist: {new_path}")
+      raise ValueError(
+        f"Suggested binary override for {name!r} does not exist: {new_path}"
+      )
     self._binary_lookup_override[name] = new_path
 
   @contextlib.contextmanager
-  def override_binary(self, binary: pth.AnyPathLike | Binary,
-                      result: pth.AnyPath | None) -> Iterator[None]:
+  def override_binary(
+    self, binary: pth.AnyPathLike | Binary, result: pth.AnyPath | None
+  ) -> Iterator[None]:
     binary_name: pth.AnyPathLike = ""
     if isinstance(binary, Binary):
       binary_name = binary.name
@@ -679,10 +714,9 @@ class Platform(abc.ABC):
       with contextlib.suppress(*proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS):
         self.kill(proc)
 
-  def terminate_gracefully(self,
-                           process: ProcessLike,
-                           timeout: int = 1,
-                           signal: Signals | None = None) -> None:
+  def terminate_gracefully(
+    self, process: ProcessLike, timeout: int = 1, signal: Signals | None = None
+  ) -> None:
     proc_helper.terminate_gracefully(self, process, timeout, signal)
 
   def process_pid(self, process: ProcessLike) -> int:
@@ -690,12 +724,14 @@ class Platform(abc.ABC):
       return process
     if isinstance(process, RemotePopen):
       assert self.is_remote, (
-          f"Cannot access remote process {process} on local platform {self}")
+        f"Cannot access remote process {process} on local platform {self}"
+      )
       return process.remote_pid
     return process.pid
 
-  def _handle_process_tree(self, process: ProcessLike,
-                           callback: Callable[[psutil.Process], None]) -> None:
+  def _handle_process_tree(
+    self, process: ProcessLike, callback: Callable[[psutil.Process], None]
+  ) -> None:
     self.assert_is_local()
     try:
       pid: int = self.process_pid(process)
@@ -723,10 +759,12 @@ class Platform(abc.ABC):
           return name
     return None
 
-  def process_children(self,
-                       parent_pid: int,
-                       recursive: bool = False,
-                       attrs: list[str] | None = None) -> list[ProcessInfo]:
+  def process_children(
+    self,
+    parent_pid: int,
+    recursive: bool = False,
+    attrs: list[str] | None = None,
+  ) -> list[ProcessInfo]:
     self.assert_is_local()
     # TODO(cbruni): support remote platforms
     try:
@@ -734,12 +772,14 @@ class Platform(abc.ABC):
     except proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS:
       return []
     return self._collect_process_dict(
-        process.children(recursive=recursive), attrs=attrs)
+      process.children(recursive=recursive), attrs=attrs
+    )
 
   def _collect_process_dict(
-      self,
-      process_iterator: Iterable[psutil.Process],
-      attrs: list[str] | None = None) -> list[ProcessInfo]:
+    self,
+    process_iterator: Iterable[psutil.Process],
+    attrs: list[str] | None = None,
+  ) -> list[ProcessInfo]:
     process_info_list: list[ProcessInfo] = []
     for process in process_iterator:
       with contextlib.suppress(*proc_helper.PROCESS_NOT_FOUND_EXCEPTIONS):
@@ -751,12 +791,13 @@ class Platform(abc.ABC):
           process_info_list.append(info.copy())
         else:
           process_info_list.append(
-              cast("ProcessInfo", process.as_dict(attrs=attrs)))
+            cast("ProcessInfo", process.as_dict(attrs=attrs))
+          )
     return process_info_list
 
-  def process_info(self,
-                   process: ProcessLike,
-                   attrs: list[str] | None = None) -> ProcessInfo | None:
+  def process_info(
+    self, process: ProcessLike, attrs: list[str] | None = None
+  ) -> ProcessInfo | None:
     self.assert_is_local()
     # TODO(cbruni): support remote platforms
     try:
@@ -769,8 +810,9 @@ class Platform(abc.ABC):
     info = self.process_info(process)
     return bool(info and info.get("status") != psutil.STATUS_ZOMBIE)
 
-  def process_meminfo(self, process_name: str,
-                      timeout: dt.timedelta) -> list[ProcessMeminfo]:
+  def process_meminfo(
+    self, process_name: str, timeout: dt.timedelta
+  ) -> list[ProcessMeminfo]:
     del process_name, timeout
     raise NotImplementedError(f"process_meminfo not implemented for {self}.")
 
@@ -786,9 +828,13 @@ class Platform(abc.ABC):
   def foreground_process(self) -> ProcessInfo | None:
     return None
 
-  def dump_java_heap(self, identifier: str, label: str,
-                     trace_buffer_size_kb: int,
-                     timeout: dt.timedelta) -> pth.AnyPath:
+  def dump_java_heap(
+    self,
+    identifier: str,
+    label: str,
+    trace_buffer_size_kb: int,
+    timeout: dt.timedelta,
+  ) -> pth.AnyPath:
     del identifier, label, trace_buffer_size_kb, timeout
     raise NotImplementedError(f"dump_java_heap not implemented for {self}.")
 
@@ -864,10 +910,9 @@ class Platform(abc.ABC):
   def read_text(self, file: pth.AnyPathLike, encoding: str = "utf-8") -> str:
     return self.cat(file, encoding)
 
-  def write_text(self,
-                 file: pth.AnyPathLike,
-                 data: str,
-                 encoding: str = "utf-8") -> None:
+  def write_text(
+    self, file: pth.AnyPathLike, data: str, encoding: str = "utf-8"
+  ) -> None:
     self.local_path(file).write_text(data, encoding)
 
   def read_bytes(self, file: pth.AnyPathLike) -> bytes:
@@ -876,31 +921,33 @@ class Platform(abc.ABC):
   def write_bytes(self, file: pth.AnyPathLike, data: bytes) -> None:
     self.local_path(file).write_bytes(data)
 
-  def pull(self, from_path: pth.AnyPath,
-           to_path: pth.LocalPath) -> pth.LocalPath:
-    """ Download / Copy a (remote) file to the local filesystem.
+  def pull(
+    self, from_path: pth.AnyPath, to_path: pth.LocalPath
+  ) -> pth.LocalPath:
+    """Download / Copy a (remote) file to the local filesystem.
     By default this is just a copy operation on the local filesystem.
     """
     self.assert_is_local()
     return self.local_path(self.copy_file(from_path, to_path))
 
   def push(self, from_path: pth.LocalPath, to_path: pth.AnyPath) -> pth.AnyPath:
-    """ Copy a local file to this (remote) platform.
+    """Copy a local file to this (remote) platform.
     By default this is just a copy operation on the local filesystem.
     """
     self.assert_is_local()
     return self.copy_file(from_path, to_path)
 
   def copy(self, from_path: pth.AnyPath, to_path: pth.AnyPath) -> pth.AnyPath:
-    """ Convenience implementation for copying local files and dirs """
+    """Convenience implementation for copying local files and dirs"""
     if not self.exists(from_path):
       raise ValueError(f"Cannot copy non-existing source path: {from_path}")
     if self.is_dir(from_path):
       return self.copy_dir(from_path, to_path)
     return self.copy_file(from_path, to_path)
 
-  def copy_dir(self, from_path: pth.AnyPathLike,
-               to_path: pth.AnyPathLike) -> pth.AnyPath:
+  def copy_dir(
+    self, from_path: pth.AnyPathLike, to_path: pth.AnyPathLike
+  ) -> pth.AnyPath:
     from_path = self.local_path(from_path)
     to_path = self.local_path(to_path)
     if from_path != to_path:
@@ -908,8 +955,9 @@ class Platform(abc.ABC):
       shutil.copytree(os.fspath(from_path), os.fspath(to_path))
     return to_path
 
-  def copy_file(self, from_path: pth.AnyPathLike,
-                to_path: pth.AnyPathLike) -> pth.AnyPath:
+  def copy_file(
+    self, from_path: pth.AnyPathLike, to_path: pth.AnyPathLike
+  ) -> pth.AnyPath:
     from_path = self.local_path(from_path)
     to_path = self.local_path(to_path)
     if from_path != to_path:
@@ -917,10 +965,9 @@ class Platform(abc.ABC):
       shutil.copy2(os.fspath(from_path), os.fspath(to_path))
     return to_path
 
-  def rm(self,
-         path: pth.AnyPathLike,
-         dir: bool = False,
-         missing_ok: bool = False) -> None:
+  def rm(
+    self, path: pth.AnyPathLike, dir: bool = False, missing_ok: bool = False
+  ) -> None:
     """Remove a single file on this platform."""
     path = self.local_path(path)
     if dir:
@@ -930,8 +977,9 @@ class Platform(abc.ABC):
     else:
       path.unlink(missing_ok)
 
-  def rename(self, src_path: pth.AnyPathLike,
-             dst_path: pth.AnyPathLike) -> pth.AnyPath:
+  def rename(
+    self, src_path: pth.AnyPathLike, dst_path: pth.AnyPathLike
+  ) -> pth.AnyPath:
     """Remove a single file on this platform."""
     return self.local_path(src_path).rename(dst_path)
 
@@ -950,8 +998,9 @@ class Platform(abc.ABC):
     local_path.unlink()
     return dst_path
 
-  def symlink_or_copy(self, src: pth.AnyPathLike,
-                      dst: pth.AnyPathLike) -> pth.AnyPath:
+  def symlink_or_copy(
+    self, src: pth.AnyPathLike, dst: pth.AnyPathLike
+  ) -> pth.AnyPath:
     """Windows does not support symlinking without admin support.
     Copy files on windows (see WinPlatform) but symlink everywhere else."""
     assert not self.is_win, "Unsupported operation 'symlink_or_copy' on windows"
@@ -960,7 +1009,7 @@ class Platform(abc.ABC):
     return dst_path
 
   def path(self, path: pth.AnyPathLike) -> pth.AnyPath:
-    """"Used to convert any paths and strings to a platform specific
+    """ "Used to convert any paths and strings to a platform specific
     remote path.
     For instance a remote ADB platform on windows returns posix paths:
       posix_path = adb_remote_platform.patch(windows_path)
@@ -981,7 +1030,8 @@ class Platform(abc.ABC):
     if platform_path.is_absolute():
       return platform_path
     raise RuntimeError(
-        f"Converting relative to absolute paths is not supported on {self}")
+      f"Converting relative to absolute paths is not supported on {self}"
+    )
 
   def is_absolute(self, path: pth.AnyPathLike) -> bool:
     path = self.path(path)
@@ -994,8 +1044,9 @@ class Platform(abc.ABC):
       return self.home().joinpath(*parts[1:])
     return platform_path
 
-  def join_path_list(self,
-                     paths: Iterable[pth.AnyPathLike] | pth.AnyPathLike) -> str:
+  def join_path_list(
+    self, paths: Iterable[pth.AnyPathLike] | pth.AnyPathLike
+  ) -> str:
     """Joins paths into a search path string using the platform's pathsep."""
     if isinstance(paths, (str, os.PathLike)):
       paths = (paths,)
@@ -1022,23 +1073,26 @@ class Platform(abc.ABC):
   def touch(self, path: pth.AnyPathLike) -> None:
     self.local_path(path).touch(exist_ok=True)
 
-  def mkdir(self,
-            path: pth.AnyPathLike,
-            parents: bool = True,
-            exist_ok: bool = True) -> None:
+  def mkdir(
+    self, path: pth.AnyPathLike, parents: bool = True, exist_ok: bool = True
+  ) -> None:
     self.local_path(path).mkdir(parents=parents, exist_ok=exist_ok)
 
-  def mkdtemp(self,
-              suffix: str | None = None,
-              prefix: str | None = None,
-              dir: pth.AnyPathLike | None = None) -> pth.AnyPath:
+  def mkdtemp(
+    self,
+    suffix: str | None = None,
+    prefix: str | None = None,
+    dir: pth.AnyPathLike | None = None,
+  ) -> pth.AnyPath:
     self.assert_is_local()
     return self.path(tempfile.mkdtemp(suffix=suffix, prefix=prefix, dir=dir))
 
-  def mktemp(self,
-             suffix: str | None = None,
-             prefix: str | None = None,
-             dir: pth.AnyPathLike | None = None) -> pth.AnyPath:
+  def mktemp(
+    self,
+    suffix: str | None = None,
+    prefix: str | None = None,
+    dir: pth.AnyPathLike | None = None,
+  ) -> pth.AnyPath:
     self.assert_is_local()
     fd, name = tempfile.mkstemp(suffix=suffix, prefix=prefix, dir=dir)
     os.close(fd)
@@ -1046,10 +1100,11 @@ class Platform(abc.ABC):
 
   @contextlib.contextmanager
   def NamedTemporaryFile(  # noqa: N802
-      self,
-      suffix: str | None = None,
-      prefix: str | None = None,
-      dir: pth.AnyPathLike | None = None) -> Iterator[pth.AnyPath]:
+    self,
+    suffix: str | None = None,
+    prefix: str | None = None,
+    dir: pth.AnyPathLike | None = None,
+  ) -> Iterator[pth.AnyPath]:
     tmp_file: pth.AnyPath = self.mktemp(suffix, prefix, dir)
     try:
       yield tmp_file
@@ -1058,10 +1113,11 @@ class Platform(abc.ABC):
 
   @contextlib.contextmanager
   def TemporaryDirectory(  # noqa: N802
-      self,
-      suffix: str | None = None,
-      prefix: str | None = None,
-      dir: pth.AnyPathLike | None = None) -> Iterator[pth.AnyPath]:
+    self,
+    suffix: str | None = None,
+    prefix: str | None = None,
+    dir: pth.AnyPathLike | None = None,
+  ) -> Iterator[pth.AnyPath]:
     tmp_dir = self.mkdtemp(suffix, prefix, dir)
     try:
       yield tmp_dir
@@ -1077,8 +1133,9 @@ class Platform(abc.ABC):
   def is_dir(self, path: pth.AnyPathLike) -> bool:
     return self.local_path(path).is_dir()
 
-  def iterdir(self,
-              path: pth.AnyPathLike) -> Generator[pth.AnyPath, None, None]:
+  def iterdir(
+    self, path: pth.AnyPathLike
+  ) -> Generator[pth.AnyPath, None, None]:
     return self.local_path(path).iterdir()
 
   def glob(self, path: pth.AnyPathLike, pattern: str) -> Iterator[pth.AnyPath]:
@@ -1095,71 +1152,80 @@ class Platform(abc.ABC):
   def last_modified(self, path: pth.AnyPathLike) -> float:
     return self.local_path(path).stat().st_mtime
 
-  def sh_stdout(self,
-                *args: CmdArg,
-                shell: bool = False,
-                quiet: bool = False,
-                encoding: str = "utf-8",
-                stdin: ProcessIo = None,
-                input: bytes | None = None,
-                env: Mapping[str, str] | None = None,
-                cwd: pth.AnyPath | None = None,
-                check: bool = True) -> str:
-    """ Platform-dependent wrapper around subprocess.run which captures the
-      output as text (use sh_stdout_bytes for bytes).
-      See subprocess.run for detailed argument help. """
+  def sh_stdout(
+    self,
+    *args: CmdArg,
+    shell: bool = False,
+    quiet: bool = False,
+    encoding: str = "utf-8",
+    stdin: ProcessIo = None,
+    input: bytes | None = None,
+    env: Mapping[str, str] | None = None,
+    cwd: pth.AnyPath | None = None,
+    check: bool = True,
+  ) -> str:
+    """Platform-dependent wrapper around subprocess.run which captures the
+    output as text (use sh_stdout_bytes for bytes).
+    See subprocess.run for detailed argument help."""
     result = self.sh_stdout_bytes(
-        *args,
-        shell=shell,
-        quiet=quiet,
-        stdin=stdin,
-        input=input,
-        env=env,
-        cwd=cwd,
-        check=check)
+      *args,
+      shell=shell,
+      quiet=quiet,
+      stdin=stdin,
+      input=input,
+      env=env,
+      cwd=cwd,
+      check=check,
+    )
     return result.decode(encoding)
 
-  def sh_stdout_bytes(self,
-                      *args: CmdArg,
-                      shell: bool = False,
-                      quiet: bool = False,
-                      stdin: ProcessIo = None,
-                      input: bytes | None = None,
-                      env: Mapping[str, str] | None = None,
-                      cwd: pth.AnyPath | None = None,
-                      check: bool = True) -> bytes:
-    """ Platform-dependent wrapper around subprocess.run which captures the
-      output as bytes (use the sh_stdout for text).
-      See subprocess.run for detailed argument help. """
+  def sh_stdout_bytes(
+    self,
+    *args: CmdArg,
+    shell: bool = False,
+    quiet: bool = False,
+    stdin: ProcessIo = None,
+    input: bytes | None = None,
+    env: Mapping[str, str] | None = None,
+    cwd: pth.AnyPath | None = None,
+    check: bool = True,
+  ) -> bytes:
+    """Platform-dependent wrapper around subprocess.run which captures the
+    output as bytes (use the sh_stdout for text).
+    See subprocess.run for detailed argument help."""
     completed_process = self.sh(
-        *args,
-        shell=shell,
-        capture_output=True,
-        quiet=quiet,
-        stdin=stdin,
-        input=input,
-        env=env,
-        cwd=cwd,
-        check=check)
+      *args,
+      shell=shell,
+      capture_output=True,
+      quiet=quiet,
+      stdin=stdin,
+      input=input,
+      env=env,
+      cwd=cwd,
+      check=check,
+    )
     return completed_process.stdout
 
   def validate_shell_args(self, args: TupleCmdArgs, shell: bool) -> None:
     if shell and len(args) != 1:
-      raise ValueError("Expected single sh arg with shell=True, "
-                       f"but got: {args}")
+      raise ValueError(
+        f"Expected single sh arg with shell=True, but got: {args}"
+      )
 
-  def popen(self,
-            *args: CmdArg,
-            bufsize: int = -1,
-            shell: bool = False,
-            stdout: ProcessIo = None,
-            stderr: ProcessIo = None,
-            stdin: ProcessIo = None,
-            env: Mapping[str, str] | None = None,
-            cwd: pth.AnyPath | None = None,
-            encoding: str | None = None,
-            quiet: bool = False,
-            auto_terminate: bool = True) -> subprocess.Popen:
+  def popen(
+    self,
+    *args: CmdArg,
+    bufsize: int = -1,
+    shell: bool = False,
+    stdout: ProcessIo = None,
+    stderr: ProcessIo = None,
+    stdin: ProcessIo = None,
+    env: Mapping[str, str] | None = None,
+    cwd: pth.AnyPath | None = None,
+    encoding: str | None = None,
+    quiet: bool = False,
+    auto_terminate: bool = True,
+  ) -> subprocess.Popen:
     """Platform-dependent wrapper around subprocess.Popen.
     See subprocess.run for detailed argument help.
     - auto_terminate: if enabled the Popen's will be tracked and auto-killed
@@ -1170,81 +1236,89 @@ class Platform(abc.ABC):
       logging.debug("SHELL: %s", shlex.join(map(str, args)))
       logging.debug("CWD: %s", pth.LocalPath.cwd())
     proc = self._popen(
-        *args,
-        bufsize=bufsize,
-        shell=shell,
-        stdout=stdout,
-        stderr=stderr,
-        stdin=stdin,
-        env=env,
-        cwd=cwd,
-        encoding=encoding,
-        quiet=quiet,
-        auto_terminate=auto_terminate)
+      *args,
+      bufsize=bufsize,
+      shell=shell,
+      stdout=stdout,
+      stderr=stderr,
+      stdin=stdin,
+      env=env,
+      cwd=cwd,
+      encoding=encoding,
+      quiet=quiet,
+      auto_terminate=auto_terminate,
+    )
     if auto_terminate:
       self._popens.add(proc)
     return proc
 
-  def _popen(self,
-             *args: CmdArg,
-             bufsize: int = -1,
-             shell: bool = False,
-             stdout: ProcessIo = None,
-             stderr: ProcessIo = None,
-             stdin: ProcessIo = None,
-             env: Mapping[str, str] | None = None,
-             cwd: pth.AnyPath | None = None,
-             encoding: str | None = None,
-             quiet: bool = False,
-             auto_terminate: bool = True) -> subprocess.Popen:
+  def _popen(
+    self,
+    *args: CmdArg,
+    bufsize: int = -1,
+    shell: bool = False,
+    stdout: ProcessIo = None,
+    stderr: ProcessIo = None,
+    stdin: ProcessIo = None,
+    env: Mapping[str, str] | None = None,
+    cwd: pth.AnyPath | None = None,
+    encoding: str | None = None,
+    quiet: bool = False,
+    auto_terminate: bool = True,
+  ) -> subprocess.Popen:
     self.assert_is_local()
     del quiet, auto_terminate
     return subprocess.Popen(
-        args,
-        bufsize=bufsize,
-        shell=shell,
-        stdin=stdin,
-        stderr=stderr,
-        stdout=stdout,
-        env=env,
-        cwd=cwd,
-        encoding=encoding)
+      args,
+      bufsize=bufsize,
+      shell=shell,
+      stdin=stdin,
+      stderr=stderr,
+      stdout=stdout,
+      env=env,
+      cwd=cwd,
+      encoding=encoding,
+    )
 
   def clear_memory_page_cache(self) -> None:
     """Drop clean page caches, dentries, and inodes to free memory."""
     raise NotImplementedError(
-        f"clear_memory_page_cache is not implemented on {self}")
+      f"clear_memory_page_cache is not implemented on {self}"
+    )
 
-  def sh(self,
-         *args: CmdArg,
-         shell: bool = False,
-         capture_output: bool = False,
-         stdout: ProcessIo = None,
-         stderr: ProcessIo = None,
-         stdin: ProcessIo = None,
-         input: bytes | None = None,
-         env: Mapping[str, str] | None = None,
-         cwd: pth.AnyPath | None = None,
-         quiet: bool = False,
-         check: bool = True) -> subprocess.CompletedProcess:
-    """ Platform-dependent wrapper around subprocess.run.
-      See subprocess.run for detailed argument help. """
+  def sh(
+    self,
+    *args: CmdArg,
+    shell: bool = False,
+    capture_output: bool = False,
+    stdout: ProcessIo = None,
+    stderr: ProcessIo = None,
+    stdin: ProcessIo = None,
+    input: bytes | None = None,
+    env: Mapping[str, str] | None = None,
+    cwd: pth.AnyPath | None = None,
+    quiet: bool = False,
+    check: bool = True,
+  ) -> subprocess.CompletedProcess:
+    """Platform-dependent wrapper around subprocess.run.
+    See subprocess.run for detailed argument help."""
     self.assert_is_local()
     self.validate_shell_args(args, shell)
     if not quiet:
       logging.debug("SHELL: %s", shlex.join(map(str, args)))
       logging.debug("CWD: %s", pth.LocalPath.cwd())
     process = subprocess.run(
-        args=args,
-        shell=shell,
-        stdin=stdin,
-        input=input,
-        stdout=stdout,
-        stderr=stderr,
-        env=env,
-        capture_output=capture_output,
-        check=False,
-        cwd=cwd)
+      args=args,
+      shell=shell,
+      stdin=stdin,
+      input=input,
+      stdout=stdout,
+      stderr=stderr,
+      env=env,
+      capture_output=capture_output,
+      check=False,
+      cwd=cwd,
+    )
     if check and process.returncode != 0:
       raise SubprocessError(self, process)
     return process
@@ -1300,7 +1374,8 @@ class Platform(abc.ABC):
       self.rm(path, missing_ok=True)
       raise
     assert self.exists(path), (
-        f"Downloading {url} failed. Downloaded file {path} doesn't exist.")
+      f"Downloading {url} failed. Downloaded file {path} doesn't exist."
+    )
     return path
 
   def download_gcs_file(self, gcs_url: str, local_path: pth.LocalPath) -> None:
@@ -1310,8 +1385,10 @@ class Platform(abc.ABC):
       blob.download_to_filename(str(local_path))
       downloaded_size: int = self.host_platform.file_size(local_path)
       if downloaded_size != blob.size:
-        raise OSError(f"Size mismatch for {gcs_url}: expected "
-                      f"{blob.size} bytes, but got {downloaded_size}.")
+        raise OSError(
+          f"Size mismatch for {gcs_url}: expected "
+          f"{blob.size} bytes, but got {downloaded_size}."
+        )
     except BaseException:
       # Caches treat the existence of a file as proof that it is complete,
       # so never leave a partially downloaded file behind.
@@ -1326,8 +1403,9 @@ class Platform(abc.ABC):
       raise ValueError(f"Missing bucket name in URL: {gcs_url}")
     generation: int | None = None
     if parsed.fragment:
-      generation = NumberParser.positive_int(parsed.fragment,
-                                             f"GCS generation in {gcs_url}")
+      generation = NumberParser.positive_int(
+        parsed.fragment, f"GCS generation in {gcs_url}"
+      )
     client = gcloud_storage.Client(project="")
     bucket = client.bucket(bucket_name)
     return bucket.blob(object_name, generation=generation)
@@ -1337,8 +1415,9 @@ class Platform(abc.ABC):
     try:
       return blob.exists()
     except gcloud_exceptions.Forbidden as e:
-      raise PermissionError(f"Access denied to {gcs_url}. "
-                            "Run 'gcloud auth login' to get access.") from e
+      raise PermissionError(
+        f"Access denied to {gcs_url}. Run 'gcloud auth login' to get access."
+      ) from e
     except gcloud_exceptions.NotFound:
       return False
 
@@ -1347,10 +1426,12 @@ class Platform(abc.ABC):
     blob.reload()
     return blob
 
-  def concat_files(self,
-                   inputs: Iterable[pth.LocalPath],
-                   output: pth.LocalPath,
-                   prefix: str = "") -> pth.LocalPath:
+  def concat_files(
+    self,
+    inputs: Iterable[pth.LocalPath],
+    output: pth.LocalPath,
+    prefix: str = "",
+  ) -> pth.LocalPath:
     self.assert_is_local()
     with output.open("w", encoding="utf-8") as output_f:
       if prefix:
@@ -1381,33 +1462,39 @@ class Platform(abc.ABC):
 
   def set_all_cpus_power_mode(self, mode: str | None) -> None:
     raise NotImplementedError(
-        "'set_all_cpus_power_mode' is only available on Android for now")
+      "'set_all_cpus_power_mode' is only available on Android for now"
+    )
 
   def get_all_cpus_power_modes(self) -> set[str]:
     raise NotImplementedError(
-        "'get_all_cpus_power_modes' is only available on Android for now")
+      "'get_all_cpus_power_modes' is only available on Android for now"
+    )
 
   def set_main_display_brightness(self, brightness_level: int) -> None:
     raise NotImplementedError(
-        "'set_main_display_brightness' is only available on MacOS for now")
+      "'set_main_display_brightness' is only available on MacOS for now"
+    )
 
   def get_main_display_brightness(self) -> int:
     raise NotImplementedError(
-        "'get_main_display_brightness' is only available on MacOS for now")
+      "'get_main_display_brightness' is only available on MacOS for now"
+    )
 
-  def set_display_refresh_rate(self,
-                               refresh_rate: int,
-                               retry: int = 3) -> DisplayRefreshRateResult:
+  def set_display_refresh_rate(
+    self, refresh_rate: int, retry: int = 3
+  ) -> DisplayRefreshRateResult:
     raise NotImplementedError(
-        "'set_display_refresh_rate' is only available on MacOS and "
-        "Android for now")
+      "'set_display_refresh_rate' is only available on MacOS and "
+      "Android for now"
+    )
 
   def reset_display_refresh_rate(self) -> None:
     pass
 
   def check_autobrightness(self) -> bool:
     raise NotImplementedError(
-        "'check_autobrightness' is only available on MacOS for now")
+      "'check_autobrightness' is only available on MacOS for now"
+    )
 
   def screenshot(self, result_path: pth.AnyPath) -> None:
     # TODO: support screen coordinates
@@ -1415,16 +1502,17 @@ class Platform(abc.ABC):
 
   def display_resolution(self) -> DisplayResolution:
     raise NotImplementedError(
-        "'display_resolution' is only available on Android and ChromeOS for "
-        "now")
+      "'display_resolution' is only available on Android and ChromeOS for now"
+    )
 
   def get_ui_element_rect(
-      self,
-      ui_selector: UiSelectorConfig,
-      timeout: dt.timedelta = dt.timedelta(seconds=10),
+    self,
+    ui_selector: UiSelectorConfig,
+    timeout: dt.timedelta = dt.timedelta(seconds=10),
   ) -> DisplayRectangle:
     raise NotImplementedError(
-        f"'get_ui_element_rect' is not supported on {self.name}")
+      f"'get_ui_element_rect' is not supported on {self.name}"
+    )
 
   @contextlib.contextmanager
   def low_power_mode(self) -> Iterator[None]:
@@ -1436,7 +1524,8 @@ class Platform(abc.ABC):
 
   def set_clipboard(self, text: str) -> None:
     raise NotImplementedError(
-        f"'set_clipboard' is not supported on {self.name}")
+      f"'set_clipboard' is not supported on {self.name}"
+    )
 
   def launch_app(self, component: str) -> None:
     raise NotImplementedError(f"'launch_app' is not supported on {self.name}")
@@ -1446,7 +1535,8 @@ class Platform(abc.ABC):
 
   def close_all_apps(self) -> None:
     raise NotImplementedError(
-        f"'close_all_apps' is not supported on {self.name}")
+      f"'close_all_apps' is not supported on {self.name}"
+    )
 
   def get_active_tasks(self) -> list[str]:
     """Returns user-perceptible application windows or tasks that can be

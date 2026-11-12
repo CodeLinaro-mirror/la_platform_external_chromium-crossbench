@@ -8,8 +8,11 @@ import argparse
 import unittest
 from typing import Any
 
-from crossbench.cli.config.browser_variants import FlagsConfig, \
-    FlagsGroupConfig, FlagsVariantConfig
+from crossbench.cli.config.browser_variants import (
+  FlagsConfig,
+  FlagsGroupConfig,
+  FlagsVariantConfig,
+)
 from crossbench.cli.config.flags import DEFAULT_LABEL
 from crossbench.config import ConfigError
 from crossbench.exception import ArgumentTypeMultiException
@@ -20,10 +23,10 @@ from tests.crossbench.base import CrossbenchMockArgsMixin
 
 
 class FlagsConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
-
   def test_invalid_empty(self):
-    with self.assertRaisesRegex(ArgumentTypeMultiException,
-                                r"(?i)empty string"):
+    with self.assertRaisesRegex(
+      ArgumentTypeMultiException, r"(?i)empty string"
+    ):
       FlagsConfig.parse("")
     with self.assertRaisesRegex(ConfigError, r"(?i)empty string"):
       FlagsConfig.parse_str("")
@@ -33,11 +36,13 @@ class FlagsConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
     self.assertFalse(config)
 
   def test_parse_empty_group(self):
-    config = FlagsConfig.parse({
+    config = FlagsConfig.parse(
+      {
         "a": None,
         "b": {},
         "c": (),
-    })
+      }
+    )
     self.assertEqual(len(config), 3)
     for group in config.values():
       self.assertFalse(group)
@@ -51,10 +56,12 @@ class FlagsConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
     self.assertEqual(str(config["default"][0].flags), "--foo --bar")
 
   def test_parse_single_str_groups(self):
-    config = FlagsConfig.parse({
+    config = FlagsConfig.parse(
+      {
         "a": "--foo=1 --bar",
         "b": "--foo=2 --bar",
-    })
+      }
+    )
     self.assertEqual(len(config), 2)
     self.assertEqual(len(config["a"]), 1)
     self.assertEqual(len(config["b"]), 1)
@@ -66,16 +73,18 @@ class FlagsConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
     self.assertEqual(str(flags_b), "--foo=2 --bar")
 
   def test_parse_single_dict_groups(self):
-    config = FlagsConfig.parse({
+    config = FlagsConfig.parse(
+      {
         "a": {
-            "--foo": "1",
-            "--bar": None,
+          "--foo": "1",
+          "--bar": None,
         },
         "b": {
-            "--foo": "2",
-            "--bar": None,
+          "--foo": "2",
+          "--bar": None,
         },
-    })
+      }
+    )
     self.assertEqual(len(config), 2)
     self.assertEqual(len(config["a"]), 1)
     self.assertEqual(len(config["b"]), 1)
@@ -87,13 +96,15 @@ class FlagsConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
     self.assertEqual(str(flags_b), "--foo=2 --bar")
 
   def test_parse_multi_str_groups(self):
-    config = FlagsConfig.parse({
+    config = FlagsConfig.parse(
+      {
         "a": [
-            "--foo=1 --bar=1",
-            "--foo=1 --bar=2",
+          "--foo=1 --bar=1",
+          "--foo=1 --bar=2",
         ],
         "b": "--foo=2 --bar",
-    })
+      }
+    )
     self.assertEqual(len(config), 2)
     self.assertEqual(len(config["a"]), 2)
     self.assertEqual(len(config["b"]), 1)
@@ -110,17 +121,20 @@ class FlagsConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
     self.assertEqual(str(flags_b), "--foo=2 --bar")
 
   def test_parse_multi_dict_str_groups(self):
-    config = FlagsConfig.parse({
+    config = FlagsConfig.parse(
+      {
         "a": {
-            "label_a_1": "--foo=1 --bar=1",
-            "label_a_2": "--foo=1 --bar=2",
+          "label_a_1": "--foo=1 --bar=1",
+          "label_a_2": "--foo=1 --bar=2",
         },
-    })
+      }
+    )
     self.assertEqual(len(config), 1)
     self.assertEqual(len(config["a"]), 2)
 
     self.assertSequenceEqual(
-        tuple(v.label for v in config["a"]), ("label_a_1", "label_a_2"))
+      tuple(v.label for v in config["a"]), ("label_a_1", "label_a_2")
+    )
     variants_a = config["a"]
     flags_a_1 = variants_a[0].flags
     flags_a_2 = variants_a[1].flags
@@ -128,16 +142,19 @@ class FlagsConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
     self.assertEqual(str(flags_a_2), "--foo=1 --bar=2")
 
   def test_parse_multi_dict_list_groups(self):
-    config = FlagsConfig.parse({
+    config = FlagsConfig.parse(
+      {
         "a": {
-            "label_a_1": ["--foo=1", "--bar=1"],
-            "label_a_2": ["--foo=1", "--bar=2"],
+          "label_a_1": ["--foo=1", "--bar=1"],
+          "label_a_2": ["--foo=1", "--bar=2"],
         },
-    })
+      }
+    )
     self.assertEqual(len(config), 1)
     self.assertEqual(len(config["a"]), 2)
     self.assertSequenceEqual(
-        tuple(v.label for v in config["a"]), ("label_a_1", "label_a_2"))
+      tuple(v.label for v in config["a"]), ("label_a_1", "label_a_2")
+    )
     variants_a = config["a"]
     flags_a_1 = variants_a[0].flags
     flags_a_2 = variants_a[1].flags
@@ -145,22 +162,25 @@ class FlagsConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
     self.assertEqual(str(flags_a_2), "--foo=1 --bar=2")
 
   def test_parse_multi_dict_dict_groups(self):
-    config = FlagsConfig.parse({
+    config = FlagsConfig.parse(
+      {
         "a": {
-            "label_a_1": {
-                "--foo": "1",
-                "--bar": "1",
-            },
-            "label_a_2": {
-                "--bar": "2",
-                "--foo": "1",
-            },
+          "label_a_1": {
+            "--foo": "1",
+            "--bar": "1",
+          },
+          "label_a_2": {
+            "--bar": "2",
+            "--foo": "1",
+          },
         },
-    })
+      }
+    )
     self.assertEqual(len(config), 1)
     self.assertEqual(len(config["a"]), 2)
     self.assertSequenceEqual(
-        tuple(v.label for v in config["a"]), ("label_a_1", "label_a_2"))
+      tuple(v.label for v in config["a"]), ("label_a_1", "label_a_2")
+    )
     variants_a = config["a"]
     flags_a_1 = variants_a[0].flags
     flags_a_2 = variants_a[1].flags
@@ -169,16 +189,20 @@ class FlagsConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
 
   def test_parse_variants_groups(self):
     config = FlagsConfig.parse(
-        {"a": {
-            "--foo": [None, "1"],
-            "--bar": ["1", "2"],
-        }})
+      {
+        "a": {
+          "--foo": [None, "1"],
+          "--bar": ["1", "2"],
+        }
+      }
+    )
     self.assertEqual(len(config), 1)
     self.assertEqual(len(config["a"]), 4)
 
     self.assertSequenceEqual(
-        tuple(v.label for v in config["a"]),
-        ("bar=1", "bar=2", "foo=1_bar=1", "foo=1_bar=2"))
+      tuple(v.label for v in config["a"]),
+      ("bar=1", "bar=2", "foo=1_bar=1", "foo=1_bar=2"),
+    )
     variants_a = config["a"]
     self.assertEqual(str(variants_a[0].flags), "--bar=1")
     self.assertEqual(str(variants_a[1].flags), "--bar=2")
@@ -187,7 +211,6 @@ class FlagsConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
 
 
 class FlagsVariantConfigTestCase(unittest.TestCase):
-
   def test_empty(self):
     empty = FlagsVariantConfig("default")
     self.assertEqual(empty.label, "default")
@@ -226,7 +249,6 @@ class FlagsVariantConfigTestCase(unittest.TestCase):
 
 
 class FlagsGroupConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
-
   def test_parse_empty(self):
     empty: Any
     for empty in (None, [], (), {}, "", "  "):
@@ -274,11 +296,13 @@ class FlagsGroupConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
     for invalid in (-1, 0):
       with self.subTest(invalid=invalid):
         with self.assertRaises(ValueError):
-          FlagsGroupConfig.parse({
+          FlagsGroupConfig.parse(
+            {
               "--foo": "1",
               "--invalid": invalid,
               "--bar": "2",
-          })
+            }
+          )
 
   def test_parse_duplicate_variant_value(self):
     for duplicate in (None, "", "value"):
@@ -288,14 +312,17 @@ class FlagsGroupConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
         self.assertIn("duplicate", str(cm.exception))
     with self.assertRaises(ConfigError) as cm:
       FlagsGroupConfig.parse(
-          ["--foo --duplicate='foo'", "--foo --duplicate='foo'"])
+        ["--foo --duplicate='foo'", "--foo --duplicate='foo'"]
+      )
     self.assertIn("duplicate", str(cm.exception))
 
   def test_parse_dict_single_with_labels(self):
-    group = FlagsGroupConfig.parse({
+    group = FlagsGroupConfig.parse(
+      {
         "config_1": "--foo=1 --bar",
         "config_2": "",
-    })
+      }
+    )
     self.assertEqual(len(group), 2)
     self.assertEqual(str(group[0].flags), "--foo=1 --bar")
     self.assertEqual(str(group[1].flags), "")
@@ -306,46 +333,60 @@ class FlagsGroupConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
 
   def test_parse_dict_with_labels_duplicate_flags(self):
     with self.assertRaises(argparse.ArgumentTypeError) as cm:
-      _ = FlagsGroupConfig.parse({
+      _ = FlagsGroupConfig.parse(
+        {
           "config_1": "--foo=1 --bar",
           "config_2": "--foo=1 --bar",
-      })
+        }
+      )
     self.assertIn("duplicate", str(cm.exception).lower())
     self.assertIn("--foo=1 --bar", str(cm.exception).lower())
 
   def test_parse_dict_single(self):
-    group = FlagsGroupConfig.parse({
+    group = FlagsGroupConfig.parse(
+      {
         "--foo": "1",
         "--bar": None,
-    })
+      }
+    )
     self.assertEqual(len(group), 1)
     self.assertEqual(str(group[0].flags), "--foo=1 --bar")
 
   def test_parse_dict_duplicates(self):
     with self.assertRaisesRegex(argparse.ArgumentTypeError, "duplicates"):
-      FlagsGroupConfig.parse({
+      FlagsGroupConfig.parse(
+        {
           "--foo": [None, "1", "1"],
-      })
+        }
+      )
 
   def test_parse_dict_invalid_values(self):
-    with self.assertRaisesRegex(argparse.ArgumentTypeError,
-                                "Invalid flag variant value"):
-      FlagsGroupConfig.parse({
+    with self.assertRaisesRegex(
+      argparse.ArgumentTypeError, "Invalid flag variant value"
+    ):
+      FlagsGroupConfig.parse(
+        {
           "--foo": [None, "1", 1],
-      })
+        }
+      )
 
   def test_parse_invalid_value(self):
-    with self.assertRaisesRegex(argparse.ArgumentTypeError,
-                                "Invalid flag variant value"):
-      FlagsGroupConfig.parse({
+    with self.assertRaisesRegex(
+      argparse.ArgumentTypeError, "Invalid flag variant value"
+    ):
+      FlagsGroupConfig.parse(
+        {
           "--foo": 1,
-      })
+        }
+      )
 
   def test_parse_dict_multiple_3_x_1(self):
-    group = FlagsGroupConfig.parse({
+    group = FlagsGroupConfig.parse(
+      {
         "--foo": [None, "1", "2"],
         "--bar": None,
-    })
+      }
+    )
     self.assertEqual(len(group), 3)
     self.assertEqual(str(group[0].flags), "--bar")
     self.assertEqual(str(group[1].flags), "--foo=1 --bar")
@@ -354,10 +395,12 @@ class FlagsGroupConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
       self.assertEqual(variant.index, index)
 
   def test_parse_dict_multiple_2_x_2(self):
-    group = FlagsGroupConfig.parse({
+    group = FlagsGroupConfig.parse(
+      {
         "--foo": [None, "a"],
         "--bar": [None, "b"],
-    })
+      }
+    )
     self.assertEqual(len(group), 4)
     self.assertEqual(str(group[0].flags), "")
     self.assertEqual(str(group[1].flags), "--bar=b")
@@ -421,10 +464,12 @@ class FlagsGroupConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
     self.assertEqual(str(group[0].flags), "--foo-b=1")
 
   def test_product_2_x_1(self):
-    group_a = FlagsGroupConfig.parse((
+    group_a = FlagsGroupConfig.parse(
+      (
         None,
         "--foo-a=1",
-    ))
+      )
+    )
     group_b = FlagsGroupConfig.parse("--foo-b=1")
     group = group_a.product(group_b)
     self.assertEqual(len(group), 2)
@@ -434,10 +479,12 @@ class FlagsGroupConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
     self.assertEqual(group[1].label, "foo_a=1")
 
   def test_product_2_x_2(self):
-    group_a = FlagsGroupConfig.parse((
+    group_a = FlagsGroupConfig.parse(
+      (
         None,
         "--foo-a=1",
-    ))
+      )
+    )
     group_b = FlagsGroupConfig.parse((None, "--foo-b=1"))
     group = group_a.product(group_b)
     self.assertEqual(len(group), 4)
@@ -521,15 +568,16 @@ class FlagsGroupConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
     group_space = FlagsGroupConfig.parse_args(args)
     self.assertEqual(group_inline, group_space)
     args = self.mock_args(
-        extra_browser_args=("--bar",),
-        js_flags=("--foo",),
+      extra_browser_args=("--bar",),
+      js_flags=("--foo",),
     )
     group_separate = FlagsGroupConfig.parse_args(args)
     self.assertEqual(group_inline, group_separate)
 
   def test_parse_args_extra_browser_args_mixed(self):
     args = self.mock_args(
-        extra_browser_args=("--js-flags=--no-turbofan --enable-features=FOO",))
+      extra_browser_args=("--js-flags=--no-turbofan --enable-features=FOO",)
+    )
     group = FlagsGroupConfig.parse_args(args)
     self.assertEqual(len(group), 1)
     flags = group[0].flags
@@ -539,7 +587,8 @@ class FlagsGroupConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
 
   def test_parse_args_extra_and_other_browser_args(self):
     args = self.mock_args(
-        extra_browser_args=("--foo=1",), other_browser_args=("--bar=2"))
+      extra_browser_args=("--foo=1",), other_browser_args=("--bar=2")
+    )
     group_args = FlagsGroupConfig.parse_args(args)
     self.assertEqual(len(group_args), 1)
     group_a = FlagsGroupConfig.parse("--bar=2 --foo=1")
@@ -549,8 +598,9 @@ class FlagsGroupConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
 
   def test_parse_args_extra_and_other_browser_args_js_flags(self):
     args = self.mock_args(
-        extra_browser_args=("--js-flags=--foo=1",),
-        other_browser_args=("--js-flags=--bar=2"))
+      extra_browser_args=("--js-flags=--foo=1",),
+      other_browser_args=("--js-flags=--bar=2"),
+    )
     group_args = FlagsGroupConfig.parse_args(args)
     self.assertEqual(len(group_args), 1)
     group_a = FlagsGroupConfig.parse("--js-flags='--bar=2 --foo=1'")
@@ -562,26 +612,30 @@ class FlagsGroupConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
 
   def test_parse_args_extra_and_other_browser_args_conflict(self):
     args = self.mock_args(
-        extra_browser_args=("--foo=1",), other_browser_args=("--foo=2"))
+      extra_browser_args=("--foo=1",), other_browser_args=("--foo=2")
+    )
     with self.assertRaisesRegex(ValueError, "--foo"):
       FlagsGroupConfig.parse_args(args)
 
   def test_parse_args_extra_and_other_browser_args_conflict_2(self):
     args = self.mock_args(
-        extra_browser_args=("--js-flags=--foo=1",),
-        other_browser_args=("--js-flags=--foo=2"))
+      extra_browser_args=("--js-flags=--foo=1",),
+      other_browser_args=("--js-flags=--foo=2"),
+    )
     with self.assertRaisesRegex(ValueError, "--foo"):
       FlagsGroupConfig.parse_args(args)
 
   def test_parse_args_features(self):
     args = self.mock_args(
-        other_browser_args=("--foo=1", "--bar"),
-        enable_features="Feature1",
-        disable_features="Feature2")
+      other_browser_args=("--foo=1", "--bar"),
+      enable_features="Feature1",
+      disable_features="Feature2",
+    )
     group_inline = FlagsGroupConfig.parse_args(args)
     self.assertEqual(len(group_inline), 1)
-    raw_flags = ("--foo=1 --bar"
-                 " --enable-features=Feature1 --disable-features=Feature2")
+    raw_flags = (
+      "--foo=1 --bar --enable-features=Feature1 --disable-features=Feature2"
+    )
     group_a = FlagsGroupConfig.parse((raw_flags,))
     group_b = FlagsGroupConfig.parse(raw_flags)
     self.assertEqual(group_inline, group_a)
@@ -628,11 +682,13 @@ class FlagsGroupConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
 
   def test_parse_args_js_flags_other_browser_args(self):
     args = self.mock_args(
-        other_browser_args=["--js-flags=--max-opt=1,--log-all"])
+      other_browser_args=["--js-flags=--max-opt=1,--log-all"]
+    )
     group_inline = FlagsGroupConfig.parse_args(args)
     self.assertEqual(len(group_inline), 1)
     self.assertEqual(
-        str(group_inline[0].flags), "--js-flags=--max-opt=1,--log-all")
+      str(group_inline[0].flags), "--js-flags=--max-opt=1,--log-all"
+    )
     raw_flags = "--js-flags='--max-opt=1,--log-all'"
     group = FlagsGroupConfig.parse(raw_flags)
     self.assertEqual(group_inline, group)
@@ -642,19 +698,23 @@ class FlagsGroupConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
     group_inline = FlagsGroupConfig.parse_args(args)
     self.assertEqual(len(group_inline), 2)
     group_a = FlagsGroupConfig.parse(
-        ("--js-flags=--max-opt=1", "--js-flags=--log-all"))
+      ("--js-flags=--max-opt=1", "--js-flags=--log-all")
+    )
     self.assertEqual(group_inline, group_a)
 
   def test_parse_args_js_flags_2_other_browser_args(self):
     args = self.mock_args(
-        js_flags=["--max-opt=1", "--log-all"],
-        other_browser_args=["--js-flags=--no-turbofan"])
+      js_flags=["--max-opt=1", "--log-all"],
+      other_browser_args=["--js-flags=--no-turbofan"],
+    )
     group_inline = FlagsGroupConfig.parse_args(args)
     self.assertEqual(len(group_inline), 2)
     self.assertEqual(
-        str(group_inline[0].flags), "--js-flags=--max-opt=1,--no-turbofan")
+      str(group_inline[0].flags), "--js-flags=--max-opt=1,--no-turbofan"
+    )
     self.assertEqual(
-        str(group_inline[1].flags), "--js-flags=--log-all,--no-turbofan")
+      str(group_inline[1].flags), "--js-flags=--log-all,--no-turbofan"
+    )
 
   def test_parse_args_js_flags_2_with_empty(self):
     args = self.mock_args(js_flags=["", "--log-all"])
@@ -674,17 +734,20 @@ class FlagsGroupConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
 
   def test_parse_args_js_flags_2_with_empty_and_other_browser_args(self):
     args = self.mock_args(
-        js_flags=["", "--log-all"],
-        other_browser_args=["--js-flags=--no-turbofan"])
+      js_flags=["", "--log-all"],
+      other_browser_args=["--js-flags=--no-turbofan"],
+    )
     group_inline = FlagsGroupConfig.parse_args(args)
     self.assertEqual(len(group_inline), 2)
     self.assertEqual(str(group_inline[0].flags), "--js-flags=--no-turbofan")
     self.assertEqual(
-        str(group_inline[1].flags), "--js-flags=--log-all,--no-turbofan")
+      str(group_inline[1].flags), "--js-flags=--log-all,--no-turbofan"
+    )
 
   def test_parse_args_js_flags_2_with_empty_and_other_browser_args_empty(self):
     args = self.mock_args(
-        js_flags=["", "--log-all"], other_browser_args=["--js-flags"])
+      js_flags=["", "--log-all"], other_browser_args=["--js-flags"]
+    )
     group_inline = FlagsGroupConfig.parse_args(args)
     self.assertEqual(len(group_inline), 2)
     self.assertEqual(str(group_inline[0].flags), "")
@@ -692,14 +755,18 @@ class FlagsGroupConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
 
   def test_parse_args_combined(self):
     args = self.mock_args(
-        other_browser_args=("--bar"),
-        enable_features="Feature1",
-        js_flags=["--max-opt=1", "--log-all"])
+      other_browser_args=("--bar"),
+      enable_features="Feature1",
+      js_flags=["--max-opt=1", "--log-all"],
+    )
     group_inline = FlagsGroupConfig.parse_args(args)
     self.assertEqual(len(group_inline), 2)
     group_a = FlagsGroupConfig.parse(
-        ("--bar --enable-features=Feature1 --js-flags=--max-opt=1",
-         "--bar --enable-features=Feature1 --js-flags=--log-all"))
+      (
+        "--bar --enable-features=Feature1 --js-flags=--max-opt=1",
+        "--bar --enable-features=Feature1 --js-flags=--log-all",
+      )
+    )
     self.assertEqual(group_inline, group_a)
 
   def test_parse_args_product_js_flags(self):
@@ -712,9 +779,11 @@ class FlagsGroupConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
     product = group_a.product(group_b)
     self.assertEqual(len(product), 2)
     self.assertEqual(
-        str(product[0].flags), "--js-flags=--max-opt=1,--no-turbofan")
+      str(product[0].flags), "--js-flags=--max-opt=1,--no-turbofan"
+    )
     self.assertEqual(
-        str(product[1].flags), "--js-flags=--log-all,--no-turbofan")
+      str(product[1].flags), "--js-flags=--log-all,--no-turbofan"
+    )
 
   def test_parse_chrome_flags(self):
     args = self.mock_args(js_flags=["--no-opt"])
@@ -746,7 +815,8 @@ class FlagsGroupConfigTestCase(CrossbenchMockArgsMixin, unittest.TestCase):
     group = FlagsGroupConfig.parse(args)
     self.assertEqual(len(group), 1)
     self.assertEqual(
-        str(group[0].flags), "--enable-field-trial-config=benchmarking")
+      str(group[0].flags), "--enable-field-trial-config=benchmarking"
+    )
 
     args = self.mock_args(enable_field_trial_config=False)
     group = FlagsGroupConfig.parse(args)

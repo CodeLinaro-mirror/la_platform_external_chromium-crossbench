@@ -37,39 +37,41 @@ class PressBenchmarkStory(Story, metaclass=abc.ABCMeta):
     return cls.SUBSTORIES
 
   @classmethod
-  def all(cls,
-          separate: bool = False,
-          url: str | None = None,
-          **kwargs) -> tuple[Self, ...]:
+  def all(
+    cls, separate: bool = False, url: str | None = None, **kwargs
+  ) -> tuple[Self, ...]:
     return cls.from_names(cls.all_story_names(), separate, url, **kwargs)
 
   @classmethod
-  def default(cls,
-              separate: bool = False,
-              url: str | None = None,
-              **kwargs) -> tuple[Self, ...]:
+  def default(
+    cls, separate: bool = False, url: str | None = None, **kwargs
+  ) -> tuple[Self, ...]:
     return cls.from_names(cls.default_story_names(), separate, url, **kwargs)
 
   @classmethod
-  def from_names(cls,
-                 substories: Sequence[str],
-                 separate: bool = False,
-                 url: str | None = None,
-                 **kwargs) -> tuple[Self, ...]:
+  def from_names(
+    cls,
+    substories: Sequence[str],
+    separate: bool = False,
+    url: str | None = None,
+    **kwargs,
+  ) -> tuple[Self, ...]:
     if not substories:
       raise ValueError("No substories provided")
     if separate:
       return tuple(
-          cls(url=url, substories=[substory], **kwargs)
-          for substory in substories)
+        cls(url=url, substories=[substory], **kwargs) for substory in substories
+      )
     return (cls(url=url, substories=substories, **kwargs),)
 
-  def __init__(self,
-               *args,
-               substories: Sequence[str] = (),
-               duration: float | None = None,
-               url: str | None = None,
-               **kwargs) -> None:
+  def __init__(
+    self,
+    *args,
+    substories: Sequence[str] = (),
+    duration: float | None = None,
+    url: str | None = None,
+    **kwargs,
+  ) -> None:
     cls = self.__class__
     assert self.SUBSTORIES, f"{cls}.SUBSTORIES is not set."
     assert self.NAME is not None, f"{cls}.NAME is not set."
@@ -100,7 +102,8 @@ class PressBenchmarkStory(Story, metaclass=abc.ABCMeta):
       # Crop the name and append a stable hash of the full name to keep
       # different substory selections distinguishable.
       digest = hashlib.sha1(
-          name.encode("utf-8"), usedforsecurity=False).hexdigest()
+        name.encode("utf-8"), usedforsecurity=False
+      ).hexdigest()
       prefix_len = MAX_STORY_NAME_LEN - _NAME_HASH_LEN - 1
       name = f"{name[:prefix_len]}_{digest[:_NAME_HASH_LEN]}"
     return name

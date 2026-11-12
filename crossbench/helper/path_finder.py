@@ -27,15 +27,17 @@ class BasePathFinder(path_finder_base.BasePathFinder):
   """
 
   @classmethod
-  def local_binary(cls,
-                   override: pth.AnyPath | None = None) -> pth.LocalPath | None:
+  def local_binary(
+    cls, override: pth.AnyPath | None = None
+  ) -> pth.LocalPath | None:
     if override:
       return plt.PLATFORM.parse_local_binary_path(override)
     return cls(plt.PLATFORM).local_path
 
 
-class ChromiumCheckoutFinder(BasePathFinder,
-                             path_finder_base.ChromiumCheckoutFinder):
+class ChromiumCheckoutFinder(
+  BasePathFinder, path_finder_base.ChromiumCheckoutFinder
+):
   """Finds a chromium src checkout at either given locations or at
   some preset known checkout locations.
   """
@@ -45,11 +47,21 @@ class ChromiumBuildBinaryFinder(BasePathFinder):
   """Finds a custom-built binary in either a given out/BUILD dir or
   tries to find it in build dirs in common known chromium checkout locations."""
 
-  BUILD_DIR_NAMES: Final[Sequence[str]] = ("Release", "release", "rel",
-                                           "Optdebug", "optdebug", "opt")
+  BUILD_DIR_NAMES: Final[Sequence[str]] = (
+    "Release",
+    "release",
+    "rel",
+    "Optdebug",
+    "optdebug",
+    "opt",
+  )
 
-  def __init__(self, platform: Platform, binary_name: str,
-               candidates: tuple[pth.AnyPath, ...]) -> None:
+  def __init__(
+    self,
+    platform: Platform,
+    binary_name: str,
+    candidates: tuple[pth.AnyPath, ...],
+  ) -> None:
     self._binary_name: Final[str] = binary_name
     self._candidates: Final[tuple[pth.AnyPath, ...]] = candidates
     super().__init__(platform)
@@ -71,7 +83,8 @@ class ChromiumBuildBinaryFinder(BasePathFinder):
         yield candidate_dir / build / self._binary_name
 
     for candidate in path_finder_base.default_chromium_candidates(
-        self.platform):
+      self.platform
+    ):
       candidate_out = candidate / "out"
       if not self.platform.is_dir(candidate_out):
         continue
@@ -82,32 +95,33 @@ class ChromiumBuildBinaryFinder(BasePathFinder):
   @override
   def is_valid_path(self, candidate: pth.AnyPath) -> bool:
     assert candidate.name == self._binary_name, (
-        f"Name mismatch: {candidate.name} != {self._binary_name}")
+      f"Name mismatch: {candidate.name} != {self._binary_name}"
+    )
     if not self.platform.is_file(candidate):
       return False
     # .../chromium/src/out/Release/BINARY => .../chromium/src/
     # Don't use parents[] access to stop at the root.
     maybe_checkout_dir = candidate.parent.parent.parent
-    return path_finder_base.is_chromium_checkout_dir(self._platform,
-                                                     maybe_checkout_dir)
+    return path_finder_base.is_chromium_checkout_dir(
+      self._platform, maybe_checkout_dir
+    )
 
 
 class V8CheckoutFinder(BasePathFinder):
-
   @override
   def candidates(self) -> tuple[pth.AnyPath, ...]:
     if self.platform.is_android:
       return ()
     home_dir = self._platform.home()
     return (
-        # V8 Checkouts
-        home_dir / "Documents/v8/v8",
-        home_dir / "v8/v8",
-        self._platform.path("C:/src/v8/v8"),
-        # Raw V8 checkouts
-        home_dir / "Documents/v8",
-        home_dir / "v8",
-        self._platform.path("C:/src/v8/"),
+      # V8 Checkouts
+      home_dir / "Documents/v8/v8",
+      home_dir / "v8/v8",
+      self._platform.path("C:/src/v8/v8"),
+      # Raw V8 checkouts
+      home_dir / "Documents/v8",
+      home_dir / "v8",
+      self._platform.path("C:/src/v8/"),
     )
 
   @override
@@ -125,8 +139,9 @@ class V8CheckoutFinder(BasePathFinder):
   @override
   def is_valid_path(self, candidate: pth.AnyPath) -> bool:
     v8_header_file = candidate / "include/v8.h"
-    return (self.platform.is_file(v8_header_file) and
-            (self.platform.is_dir(candidate / ".git")))
+    return self.platform.is_file(v8_header_file) and (
+      self.platform.is_dir(candidate / ".git")
+    )
 
 
 class V8ToolsFinder:
@@ -134,10 +149,12 @@ class V8ToolsFinder:
   If no explicit d8 and checkout path are given, $D8_PATH and common v8 and
   chromium installation directories are checked."""
 
-  def __init__(self,
-               platform: Platform,
-               d8_binary: pth.AnyPath | None = None,
-               v8_checkout: pth.AnyPath | None = None) -> None:
+  def __init__(
+    self,
+    platform: Platform,
+    d8_binary: pth.AnyPath | None = None,
+    v8_checkout: pth.AnyPath | None = None,
+  ) -> None:
     self.platform: Final[Platform] = platform
     self.d8_binary: pth.AnyPath | None = d8_binary
     self.v8_checkout: pth.AnyPath | None = None
@@ -152,9 +169,12 @@ class V8ToolsFinder:
       self.tick_processor = self._find_v8_tick_processor()
       self.v8_logviewer = self._find_v8_logviewer()
     logging.debug(
-        "V8ToolsFinder found d8_binary='%s' tick_processor='%s' "
-        "v8_logviewer='%s'", self.d8_binary, self.tick_processor,
-        self.v8_logviewer)
+      "V8ToolsFinder found d8_binary='%s' tick_processor='%s' "
+      "v8_logviewer='%s'",
+      self.d8_binary,
+      self.tick_processor,
+      self.v8_logviewer,
+    )
 
   def _find_d8(self) -> pth.AnyPath | None:
     if self.d8_binary and self.platform.is_file(self.d8_binary):
@@ -171,7 +191,8 @@ class V8ToolsFinder:
     for candidate_dir in V8CheckoutFinder(self.platform).candidates():
       for build_type in ("release", "optdebug", "Default", "Release"):
         candidates = list(
-            self.platform.glob(candidate_dir, f"out/*{build_type}/d8"))
+          self.platform.glob(candidate_dir, f"out/*{build_type}/d8")
+        )
         if not candidates:
           continue
         d8_candidate = candidates[0]
@@ -188,8 +209,9 @@ class V8ToolsFinder:
       tick_processor = "tools/windows-tick-processor.bat"
     else:
       logging.debug(
-          "Not looking for the v8 tick-processor on unsupported platform: %s",
-          self.platform)
+        "Not looking for the v8 tick-processor on unsupported platform: %s",
+        self.platform,
+      )
       return None
     return self._find_v8_tool(tick_processor)
 
@@ -201,7 +223,8 @@ class V8ToolsFinder:
     if self.v8_checkout and self.platform.is_dir(self.v8_checkout):
       candidate = self.v8_checkout / tool_path
       assert self.platform.is_file(candidate), (
-          f"Provided v8_checkout has no '{tool_path}' at {candidate}")
+        f"Provided v8_checkout has no '{tool_path}' at {candidate}"
+      )
     assert self.d8_binary, "No d8 binary found"
     # Try inferring the V8 checkout from a built d8:
     # .../foo/v8/v8/out/x64.release/d8
@@ -216,7 +239,6 @@ class V8ToolsFinder:
 
 
 class BaseChromiumPathFinder(BasePathFinder, metaclass=abc.ABCMeta):
-
   @override
   def is_valid_path(self, candidate: pth.AnyPath) -> bool:
     return self._platform.is_file(candidate)
@@ -224,7 +246,7 @@ class BaseChromiumPathFinder(BasePathFinder, metaclass=abc.ABCMeta):
   @classmethod
   @abc.abstractmethod
   def chrome_path(cls) -> pth.AnyPath:
-    """ Path within a chromium checkout. """
+    """Path within a chromium checkout."""
     raise NotImplementedError
 
   @override
@@ -235,7 +257,6 @@ class BaseChromiumPathFinder(BasePathFinder, metaclass=abc.ABCMeta):
 
 
 class PerfettoFinder(BaseChromiumPathFinder, metaclass=abc.ABCMeta):
-
   @classmethod
   @abc.abstractmethod
   def binary_name(cls) -> str:
@@ -252,7 +273,6 @@ class PerfettoFinder(BaseChromiumPathFinder, metaclass=abc.ABCMeta):
 
 
 class TraceconvFinder(PerfettoFinder):
-
   @classmethod
   @override
   def binary_name(cls) -> str:
@@ -260,7 +280,6 @@ class TraceconvFinder(PerfettoFinder):
 
 
 class TraceboxFinder(PerfettoFinder):
-
   @classmethod
   @override
   def binary_name(cls) -> str:
@@ -268,7 +287,6 @@ class TraceboxFinder(PerfettoFinder):
 
 
 class TraceProcessorFinder(PerfettoFinder):
-
   @classmethod
   @override
   def binary_name(cls) -> str:
@@ -279,7 +297,6 @@ CROSSBENCH_DIR: Final = pth.LocalPath(__file__).parents[2]
 
 
 class BaseCrossbenchPathFinder(BaseChromiumPathFinder):
-
   @override
   def candidates(self) -> tuple[pth.AnyPath, ...]:
     candidates = super().candidates()
@@ -292,7 +309,6 @@ class BaseCrossbenchPathFinder(BaseChromiumPathFinder):
 
 
 class WprGoFinder(BaseCrossbenchPathFinder):
-
   @override
   def candidates(self) -> tuple[pth.AnyPath, ...]:
     candidates = super().candidates()
@@ -322,24 +338,27 @@ class WprGoFinder(BaseCrossbenchPathFinder):
     os_name, arch = target_platform.type_key
     out_dir = self.platform.local_cache_dir("webpagereplay") / os_name / arch
     env = dict(self.platform.environ)
-    if (target_platform.is_android or target_platform.is_linux or
-        target_platform.is_chromeos):
+    if (
+      target_platform.is_android
+      or target_platform.is_linux
+      or target_platform.is_chromeos
+    ):
       # Ensure 16KB page alignment for ELF binaries on Android/Linux.
       goflags = env.get("GOFLAGS", "")
       env["GOFLAGS"] = f"{goflags} -ldflags=-R=0x4000".strip()
     self.platform.sh(
-        sys.executable or "python3",
-        build_script,
-        "--os",
-        os_name,
-        "--arch",
-        arch,
-        "--out-dir",
-        out_dir,
-        "--binary",
-        binary,
-        env=env,
-        capture_output=True,
+      sys.executable or "python3",
+      build_script,
+      "--os",
+      os_name,
+      "--arch",
+      arch,
+      "--out-dir",
+      out_dir,
+      "--binary",
+      binary,
+      env=env,
+      capture_output=True,
     )
     return out_dir / binary
 
@@ -361,12 +380,12 @@ class WprGoFinder(BaseCrossbenchPathFinder):
 
 
 class BundletoolFinder(BaseChromiumPathFinder):
-
   @classmethod
   @override
   def chrome_path(cls) -> pth.AnyPath:
     return pth.AnyPath(
-        "third_party/android_build_tools/bundletool/cipd/bundletool.jar")
+      "third_party/android_build_tools/bundletool/cipd/bundletool.jar"
+    )
 
   @override
   def candidates(self) -> tuple[pth.AnyPath, ...]:
@@ -376,27 +395,29 @@ class BundletoolFinder(BaseChromiumPathFinder):
 
     try:
       brew_path: pth.LocalPath = self.platform.local_path(
-          self.platform.sh_stdout("brew", "--prefix").strip("\n"))
+        self.platform.sh_stdout("brew", "--prefix").strip("\n")
+      )
     except FileNotFoundError:
       return super_candidates
     except subprocess.CalledProcessError:
       return super_candidates
 
-    return (*super_candidates,
-            self.platform.local_path(brew_path / "bin/bundletool"))
+    return (
+      *super_candidates,
+      self.platform.local_path(brew_path / "bin/bundletool"),
+    )
 
 
 class LlvmSymbolizerFinder(BaseChromiumPathFinder):
-
   @classmethod
   @override
   def chrome_path(cls) -> pth.AnyPath:
     return pth.AnyPath(
-        "third_party/llvm-build/Release+Asserts/bin/llvm-symbolizer")
+      "third_party/llvm-build/Release+Asserts/bin/llvm-symbolizer"
+    )
 
 
 class TsProxyFinder(BaseCrossbenchPathFinder):
-
   @classmethod
   @override
   def chrome_path(cls) -> pth.AnyPath:
@@ -409,7 +430,6 @@ class TsProxyFinder(BaseCrossbenchPathFinder):
 
 
 class MinidumpStackwalkFinder(BaseChromiumPathFinder):
-
   @classmethod
   @override
   def chrome_path(cls) -> pth.AnyPath:
@@ -417,40 +437,42 @@ class MinidumpStackwalkFinder(BaseChromiumPathFinder):
     # BaseChromiumPathFinder will try build dirs if we use
     # ChromiumBuildBinaryFinder.
     return pth.AnyPath(
-        "third_party/breakpad/breakpad/src/processor/minidump_stackwalk")
+      "third_party/breakpad/breakpad/src/processor/minidump_stackwalk"
+    )
 
 
 class MinidumpDumpFinder(BaseChromiumPathFinder):
-
   @classmethod
   @override
   def chrome_path(cls) -> pth.AnyPath:
     return pth.AnyPath(
-        "third_party/breakpad/breakpad/src/processor/minidump_dump")
+      "third_party/breakpad/breakpad/src/processor/minidump_dump"
+    )
 
 
 class DumpSymsFinder(BaseChromiumPathFinder):
-
   @classmethod
   @override
   def chrome_path(cls) -> pth.AnyPath:
     return pth.AnyPath(
-        "third_party/breakpad/breakpad/src/tools/linux/dump_syms/dump_syms")
+      "third_party/breakpad/breakpad/src/tools/linux/dump_syms/dump_syms"
+    )
 
 
 class CrashpadDatabaseUtilFinder(BaseChromiumPathFinder):
-
   @classmethod
   @override
   def chrome_path(cls) -> pth.AnyPath:
     return pth.AnyPath(
-        "third_party/crashpad/crashpad/tools/crashpad_database_util")
+      "third_party/crashpad/crashpad/tools/crashpad_database_util"
+    )
 
 
 class GenerateBreakpadSymbolsFinder(BaseChromiumPathFinder):
-
   @classmethod
   @override
   def chrome_path(cls) -> pth.AnyPath:
-    return pth.AnyPath("third_party/breakpad/breakpad/src/tools/"
-                       "linux/generate_breakpad_symbols.py")
+    return pth.AnyPath(
+      "third_party/breakpad/breakpad/src/tools/"
+      "linux/generate_breakpad_symbols.py"
+    )

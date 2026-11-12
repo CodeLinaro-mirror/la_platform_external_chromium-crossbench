@@ -27,26 +27,41 @@ if TYPE_CHECKING:
 
 
 class RunTestCase(BaseRunGroupTestCase):
-
   @override
   def default_runner(
-      self,
-      browsers: Iterable[Browser] | None = None,
-      benchmark: Benchmark | None = None,
-      probes: Iterable[Probe] | None = None,
-      throw: bool = True,
-      create_symlinks: bool = False,
-      disabled_probes: Iterable[str] = (),
-      pause_on_error: bool = False,
+    self,
+    browsers: Iterable[Browser] | None = None,
+    benchmark: Benchmark | None = None,
+    probes: Iterable[Probe] | None = None,
+    throw: bool = True,
+    create_symlinks: bool = False,
+    disabled_probes: Iterable[str] = (),
+    pause_on_error: bool = False,
   ) -> Runner:
-    return super().default_runner(browsers, benchmark, probes, throw,
-                                  create_symlinks, disabled_probes,
-                                  pause_on_error)
+    return super().default_runner(
+      browsers,
+      benchmark,
+      probes,
+      throw,
+      create_symlinks,
+      disabled_probes,
+      pause_on_error,
+    )
 
   def _create_run(self) -> Run:
     session = self.default_session()
-    return Run(self.runner, session, MockStory("mock story"), 1, False,
-               "1_default", 1, "test run", dt.timedelta(minutes=1), True)
+    return Run(
+      self.runner,
+      session,
+      MockStory("mock story"),
+      1,
+      False,
+      "1_default",
+      1,
+      "test run",
+      dt.timedelta(minutes=1),
+      True,
+    )
 
   def _run_actions_and_get_new_marks(self, **kwargs) -> list[str]:
     run = self._create_run()
@@ -57,12 +72,15 @@ class RunTestCase(BaseRunGroupTestCase):
       pass
     new_marks = run.browser.performance_marks
     new_trace_marks = self.platform.trace_marks
-    self.assertSequenceEqual(new_marks[:len(initial_marks)], initial_marks)
-    self.assertSequenceEqual(new_trace_marks[:len(initial_trace_marks)],
-                             initial_trace_marks)
-    self.assertSequenceEqual(new_marks[len(initial_marks):],
-                             new_trace_marks[len(initial_trace_marks):])
-    return new_marks[len(initial_marks):]
+    self.assertSequenceEqual(new_marks[: len(initial_marks)], initial_marks)
+    self.assertSequenceEqual(
+      new_trace_marks[: len(initial_trace_marks)], initial_trace_marks
+    )
+    self.assertSequenceEqual(
+      new_marks[len(initial_marks) :],
+      new_trace_marks[len(initial_trace_marks) :],
+    )
+    return new_marks[len(initial_marks) :]
 
   def test_find_probe_context(self):
     self.runner.attach_probe(MockProbe())
@@ -73,8 +91,9 @@ class RunTestCase(BaseRunGroupTestCase):
       self.assertIsNotNone(run.get_probe_context(MockProbe))
       self.assertIsNone(run.get_probe_context(ScreenshotProbe))
 
-  def _assert_has_probe_context(self, attached_probe, unattached_probe_cls,
-                                invalid_name: str):
+  def _assert_has_probe_context(
+    self, attached_probe, unattached_probe_cls, invalid_name: str
+  ):
     self.runner.attach_probe(attached_probe)
     run = self._create_run()
     session = run.browser_session
@@ -82,13 +101,14 @@ class RunTestCase(BaseRunGroupTestCase):
     with session.open():
       self.assertTrue(run.has_probe_context_by_name(attached_probe.NAME))
       self.assertFalse(run.has_probe_context_by_name(unattached_probe_cls.NAME))
-      with self.assertRaisesRegex(ValueError,
-                                  f"Unknown probe name: '{invalid_name}'"):
+      with self.assertRaisesRegex(
+        ValueError, f"Unknown probe name: '{invalid_name}'"
+      ):
         run.has_probe_context_by_name(invalid_name)
 
   def test_has_probe_context_by_name(self):
     """Check that real probes return True/False if attached/unattached,
-       and typos yield exceptions."""
+    and typos yield exceptions."""
 
     class MockProbe1(MockProbe):
       NAME = "probe_attached"
@@ -97,24 +117,28 @@ class RunTestCase(BaseRunGroupTestCase):
       NAME = "probe_unattached"
 
     # We inject our mock probes into the PROBE_LOOKUP so validation passes.
-    with mock.patch.dict("crossbench.runner.probe_context_manager.PROBE_LOOKUP",
-                         {
-                             "probe_attached": MockProbe1,
-                             "probe_unattached": MockProbe2,
-                         }):
+    with mock.patch.dict(
+      "crossbench.runner.probe_context_manager.PROBE_LOOKUP",
+      {
+        "probe_attached": MockProbe1,
+        "probe_unattached": MockProbe2,
+      },
+    ):
       self._assert_has_probe_context(
-          attached_probe=MockProbe1(),
-          unattached_probe_cls=MockProbe2,
-          invalid_name="probe_invalid")
+        attached_probe=MockProbe1(),
+        unattached_probe_cls=MockProbe2,
+        invalid_name="probe_invalid",
+      )
 
   def test_has_probe_context_by_name_real_probes(self):
     """Repeat `test_has_probe_context_by_name` with real probes.
-       The choice of probes is arbitrary; should breaking changes ever
-       be made, choose other probes to fix this test."""
+    The choice of probes is arbitrary; should breaking changes ever
+    be made, choose other probes to fix this test."""
     self._assert_has_probe_context(
-        attached_probe=VideoProbe(),
-        unattached_probe_cls=ScreenshotProbe,
-        invalid_name="video_probee")
+      attached_probe=VideoProbe(),
+      unattached_probe_cls=ScreenshotProbe,
+      invalid_name="video_probee",
+    )
 
   def test_annotate(self):
     run = self._create_run()
@@ -135,12 +159,14 @@ class RunTestCase(BaseRunGroupTestCase):
 
   def test_actions_explicit_empty_performance_mark(self):
     self.assertSequenceEqual(
-        self._run_actions_and_get_new_marks(performance_mark=""), [])
+      self._run_actions_and_get_new_marks(performance_mark=""), []
+    )
 
   def test_actions_with_performance_mark(self):
     self.assertSequenceEqual(
-        self._run_actions_and_get_new_marks(performance_mark="custom-marker"),
-        ["crossbench-custom-marker-start", "crossbench-custom-marker-stop"])
+      self._run_actions_and_get_new_marks(performance_mark="custom-marker"),
+      ["crossbench-custom-marker-start", "crossbench-custom-marker-stop"],
+    )
 
   def test_mark_skipped(self) -> None:
     run = self._create_run()
@@ -151,16 +177,26 @@ class RunTestCase(BaseRunGroupTestCase):
   def test_run_without_starting_browser(self) -> None:
 
     class NoBrowserStory(MockStory):
-
       @override
       def run(self, run: Run) -> None:
         run.performance_mark("no-browser-mark")
 
     browser = MockChromeDev(
-        "dev", settings=Settings(platform=self.platform, start_browser=False))
+      "dev", settings=Settings(platform=self.platform, start_browser=False)
+    )
     session = self.default_session(browser=browser)
-    run = Run(self.runner, session, NoBrowserStory("no_browser"), 1, False,
-              "1_default", 1, "test run", dt.timedelta(minutes=1), True)
+    run = Run(
+      self.runner,
+      session,
+      NoBrowserStory("no_browser"),
+      1,
+      False,
+      "1_default",
+      1,
+      "test run",
+      dt.timedelta(minutes=1),
+      True,
+    )
     session.set_ready()
     with mock.patch.object(run, "teardown_write_results_db"), session.open():
       run.run(is_dry_run=False)
@@ -169,14 +205,14 @@ class RunTestCase(BaseRunGroupTestCase):
       self.assertFalse(run.browser.is_running)
       self.assertFalse(run.browser.did_run)
       self.assertEqual(run.browser.url_list, [])
-      self.assertEqual(run.browser.performance_marks,
-                       ["crossbench-no-browser-mark"])
+      self.assertEqual(
+        run.browser.performance_marks, ["crossbench-no-browser-mark"]
+      )
       self.assertIn("crossbench-no-browser-mark", self.platform.trace_marks)
 
   def test_run_starts_and_stops_browser_explicitly(self) -> None:
 
     class ExplicitBrowserStory(MockStory):
-
       @override
       def run(self, run: Run) -> None:
         assert not run.browser.is_running
@@ -192,16 +228,27 @@ class RunTestCase(BaseRunGroupTestCase):
           actions.show_url("https://example.org")
 
     browser = MockChromeDev(
-        "dev", settings=Settings(platform=self.platform, start_browser=False))
+      "dev", settings=Settings(platform=self.platform, start_browser=False)
+    )
     session = self.default_session(browser=browser)
-    run = Run(self.runner, session, ExplicitBrowserStory("explicit_browser"), 1,
-              False, "1_default", 1, "test run", dt.timedelta(minutes=1), True)
+    run = Run(
+      self.runner,
+      session,
+      ExplicitBrowserStory("explicit_browser"),
+      1,
+      False,
+      "1_default",
+      1,
+      "test run",
+      dt.timedelta(minutes=1),
+      True,
+    )
     session.set_ready()
     with (
-        mock.patch.object(run, "teardown_write_results_db"),
-        mock.patch.object(
-            run, "_run_splashscreen", wraps=run._run_splashscreen) as
-        mock_splashscreen,
+      mock.patch.object(run, "teardown_write_results_db"),
+      mock.patch.object(
+        run, "_run_splashscreen", wraps=run._run_splashscreen
+      ) as mock_splashscreen,
     ):
       with session.open():
         run.run(is_dry_run=False)

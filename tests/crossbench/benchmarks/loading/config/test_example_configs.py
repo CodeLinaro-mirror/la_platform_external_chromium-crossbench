@@ -18,16 +18,17 @@ from tests.crossbench.base import CrossbenchFakeFsTestCase
 
 
 class TestExamplePageConfig(CrossbenchFakeFsTestCase):
-
   CNN_JS_INSTRUMENTATION_PATH = (
-      test_helper.config_dir() / "benchmark/loadline/cnn_instrumentation.js")
+    test_helper.config_dir() / "benchmark/loadline/cnn_instrumentation.js"
+  )
 
   GLOBO_JS_INSTRUMENTATION_PATH = (
-      test_helper.config_dir() / "benchmark/loadline/globo_instrumentation.js")
+    test_helper.config_dir() / "benchmark/loadline/globo_instrumentation.js"
+  )
 
   YT_JS_INSTRUMENTATION_PATH = (
-      test_helper.config_dir() /
-      "benchmark/loadline/youtube_instrumentation.js")
+    test_helper.config_dir() / "benchmark/loadline/youtube_instrumentation.js"
+  )
 
   def test_parse_example_page_config_file(self):
     example_config_file = test_helper.config_dir() / "doc/page.config.hjson"
@@ -44,7 +45,8 @@ class TestExamplePageConfig(CrossbenchFakeFsTestCase):
 
   def test_parse_example_templated_config_file(self):
     example_config_file = (
-        test_helper.config_dir() / "doc/templated.config.hjson")
+      test_helper.config_dir() / "doc/templated.config.hjson"
+    )
     self.fs.add_real_file(example_config_file)
 
     file_config = PagesConfig.parse(example_config_file)
@@ -63,8 +65,10 @@ class TestExamplePageConfig(CrossbenchFakeFsTestCase):
     cookie_banner_action = block.actions[1]
     self.assertIsInstance(cookie_banner_action, ClickAction)
     self.assertIsNotNone(cookie_banner_action.position.selector)
-    self.assertEqual(cookie_banner_action.position.selector.selector,
-                     "xpath///button/div[contains(text(),'akzeptieren')]")
+    self.assertEqual(
+      cookie_banner_action.position.selector.selector,
+      "xpath///button/div[contains(text(),'akzeptieren')]",
+    )
 
     scroll_action = block.actions[2]
     self.assertIsInstance(scroll_action, ScrollAction)
@@ -73,7 +77,8 @@ class TestExamplePageConfig(CrossbenchFakeFsTestCase):
 
   def test_parse_android_page_config_file(self):
     example_config_file = (
-        test_helper.config_dir() / "team/woa/android_input_page_config.hjson")
+      test_helper.config_dir() / "team/woa/android_input_page_config.hjson"
+    )
     self.fs.add_real_file(example_config_file)
     file_config = PagesConfig.parse(example_config_file)
     with example_config_file.open(encoding="utf-8") as f:
@@ -90,7 +95,8 @@ class TestExamplePageConfig(CrossbenchFakeFsTestCase):
     self.fs.add_real_file(self.GLOBO_JS_INSTRUMENTATION_PATH)
 
     config_file = (
-        test_helper.config_dir() / "benchmark/loadline/page_config_phone.hjson")
+      test_helper.config_dir() / "benchmark/loadline/page_config_phone.hjson"
+    )
     self.fs.add_real_file(config_file)
     file_config = PagesConfig.parse(config_file)
     with config_file.open(encoding="utf-8") as f:
@@ -108,8 +114,8 @@ class TestExamplePageConfig(CrossbenchFakeFsTestCase):
     self.fs.add_real_file(self.YT_JS_INSTRUMENTATION_PATH)
 
     config_file = (
-        test_helper.config_dir() /
-        "benchmark/loadline/page_config_tablet.hjson")
+      test_helper.config_dir() / "benchmark/loadline/page_config_tablet.hjson"
+    )
     self.fs.add_real_file(config_file)
     file_config = PagesConfig.parse(config_file)
     with config_file.open(encoding="utf-8") as f:

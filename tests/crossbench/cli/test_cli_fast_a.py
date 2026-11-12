@@ -38,7 +38,8 @@ class FastCliTestCasePartA(BaseCliTestCase):
 
   def test_benchmark_order(self):
     sorted_benchmark_classes = sorted(
-        CrossBenchCLI.BENCHMARKS, key=lambda cls: cls.NAME)
+      CrossBenchCLI.BENCHMARKS, key=lambda cls: cls.NAME
+    )
     self.assertSequenceEqual(sorted_benchmark_classes, CrossBenchCLI.BENCHMARKS)
 
   def test_invalid(self):
@@ -186,8 +187,9 @@ class FastCliTestCasePartA(BaseCliTestCase):
 
   def test_describe_config_objects(self):
     self.run_cli("describe", "config-objects")
-    _, stdout, stderr = self.run_cli_output("describe", "--json",
-                                            "config-objects")
+    _, stdout, stderr = self.run_cli_output(
+      "describe", "--json", "config-objects"
+    )
     self.assertFalse(stderr)
     data = json.loads(stdout)
     self.assertNotIn("benchmarks", data)
@@ -230,8 +232,9 @@ class FastCliTestCasePartA(BaseCliTestCase):
 
   def test_describe_all_json_filtered(self):
     self.run_cli("describe", "probes")
-    _, stdout, stderr = self.run_cli_output("describe", "--json", "all",
-                                            "v8.log")
+    _, stdout, stderr = self.run_cli_output(
+      "describe", "--json", "all", "v8.log"
+    )
     self.assertFalse(stderr)
     data = json.loads(stdout)
     self.assertIsInstance(data, dict)
@@ -245,7 +248,8 @@ class FastCliTestCasePartA(BaseCliTestCase):
       self.run_cli("--help")
     self.assertEqual(cm.exception.exit_code, 0)
     _, stdout, stderr = self.run_cli_output(
-        "--help", raises=SysExitTestException)
+      "--help", raises=SysExitTestException
+    )
     self.assertFalse(stderr)
     self.assertIn("usage:", stdout)
     self.assertIn("Subcommands:", stdout)
@@ -272,7 +276,8 @@ class FastCliTestCasePartA(BaseCliTestCase):
       self.run_cli("help", "probes")
     self.assertEqual(cm.exception.exit_code, 0)
     _, stdout, stderr = self.run_cli_output(
-        "help", "probes", raises=SysExitTestException)
+      "help", "probes", raises=SysExitTestException
+    )
     self.assertFalse(stderr)
     self.assertIn("v8.log", stdout)
     self.assertIn("V8LogProbe", stdout)
@@ -283,7 +288,8 @@ class FastCliTestCasePartA(BaseCliTestCase):
       self.run_cli("help", "v8.log")
     self.assertEqual(cm.exception.exit_code, 0)
     _, stdout, stderr = self.run_cli_output(
-        "help", "v8.log", raises=SysExitTestException)
+      "help", "v8.log", raises=SysExitTestException
+    )
     self.assertFalse(stderr)
     self.assertIn("v8.log", stdout)
     self.assertIn("V8LogProbe", stdout)
@@ -294,7 +300,8 @@ class FastCliTestCasePartA(BaseCliTestCase):
       self.run_cli("help", "probe", "v8.log")
     self.assertEqual(cm.exception.exit_code, 0)
     _, stdout, stderr = self.run_cli_output(
-        "help", "probe", "v8.log", raises=SysExitTestException)
+      "help", "probe", "v8.log", raises=SysExitTestException
+    )
     self.assertFalse(stderr)
     self.assertIn("v8.log", stdout)
     self.assertIn("V8LogProbe", stdout)
@@ -305,7 +312,8 @@ class FastCliTestCasePartA(BaseCliTestCase):
       self.run_cli("help", "sp3.0")
     self.assertEqual(cm.exception.exit_code, 0)
     _, stdout, stderr = self.run_cli_output(
-        "help", "sp3.0", raises=SysExitTestException)
+      "help", "sp3.0", raises=SysExitTestException
+    )
     self.assertFalse(stderr)
     self.assertIn("Speedometer 3.0", stdout)
     self.assertIn("https://browserbench.org/Speedometer3.0/", stdout)
@@ -315,7 +323,8 @@ class FastCliTestCasePartA(BaseCliTestCase):
       self.run_cli("--version")
     self.assertEqual(cm.exception.exit_code, 0)
     _, stdout, stderr = self.run_cli_output(
-        "--version", raises=SysExitTestException)
+      "--version", raises=SysExitTestException
+    )
     self.assertFalse(stderr)
     self.assertIn(__version__, stdout)
 
@@ -324,17 +333,21 @@ class FastCliTestCasePartA(BaseCliTestCase):
       self.run_cli("version")
     self.assertEqual(cm.exception.exit_code, 0)
     _, stdout, stderr = self.run_cli_output(
-        "version", raises=SysExitTestException)
+      "version", raises=SysExitTestException
+    )
     self.assertFalse(stderr)
     self.assertIn(__version__, stdout)
 
   def test_subcommand_run_subcommand(self):
     with self._patch_get_browser():
       url = "http://test.com"
-      cli = self.run_cli("loading", "run", f"--urls={url}",
-                         "--env-validation=skip", "--throw")
+      cli = self.run_cli(
+        "loading", "run", f"--urls={url}", "--env-validation=skip", "--throw"
+      )
       for browser in self.browsers:
-        self.assertSequenceEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
+        self.assertSequenceEqual(
+          [url], browser.url_list[self.SPLASH_URLS_LEN :]
+        )
       runner = cli.last_subcommand.runner
       self.assertEqual(len(runner.cache_temperatures), 1)
       self.assertIn(CacheTemperature.DEFAULT, runner.cache_temperatures)
@@ -348,17 +361,29 @@ class FastCliTestCasePartA(BaseCliTestCase):
   def test_basic_probe_setting(self):
     with self._patch_get_browser():
       url = "http://test.com"
-      self.run_cli("loading", "--probe=v8.log", f"--urls={url}",
-                   "--env-validation=skip", "--throw")
+      self.run_cli(
+        "loading",
+        "--probe=v8.log",
+        f"--urls={url}",
+        "--env-validation=skip",
+        "--throw",
+      )
       for browser in self.browsers:
-        self.assertSequenceEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
+        self.assertSequenceEqual(
+          [url], browser.url_list[self.SPLASH_URLS_LEN :]
+        )
         self.assertIn("--log-deopt", browser.js_flags)
 
   def test_cache_temperatures_flag(self):
     with self._patch_get_browser():
       url = "http://test.com"
-      cli = self.run_cli("loading", "--cache-temperatures", f"--urls={url}",
-                         "--env-validation=skip", "--throw")
+      cli = self.run_cli(
+        "loading",
+        "--cache-temperatures",
+        f"--urls={url}",
+        "--env-validation=skip",
+        "--throw",
+      )
       runner = cli.last_subcommand.runner
       self.assertEqual(len(runner.cache_temperatures), 3)
       self.assertIn(CacheTemperature.COLD, runner.cache_temperatures)
@@ -371,13 +396,18 @@ class FastCliTestCasePartA(BaseCliTestCase):
     with self._patch_get_browser():
       url = "http://test.com"
       with self.assertRaises(argparse.ArgumentError) as cm:
-        self.run_cli("loading", f"--probe-config={config_file}",
-                     f"--urls={url}", "--env-validation=skip", "--throw")
+        self.run_cli(
+          "loading",
+          f"--probe-config={config_file}",
+          f"--urls={url}",
+          "--env-validation=skip",
+          "--throw",
+        )
       message = str(cm.exception)
       self.assertIn("--probe-config", message)
       self.assertIn("empty", message)
       for browser in self.browsers:
-        self.assertSequenceEqual([], browser.url_list[self.SPLASH_URLS_LEN:])
+        self.assertSequenceEqual([], browser.url_list[self.SPLASH_URLS_LEN :])
         self.assertNotIn("--log", browser.js_flags)
 
   def test_empty_probe_config_file(self):
@@ -388,10 +418,16 @@ class FastCliTestCasePartA(BaseCliTestCase):
 
     with self._patch_get_browser():
       url = "http://test.com"
-      self.run_cli("loading", f"--probe-config={config_file}", f"--urls={url}",
-                   "--env-validation=skip")
+      self.run_cli(
+        "loading",
+        f"--probe-config={config_file}",
+        f"--urls={url}",
+        "--env-validation=skip",
+      )
       for browser in self.browsers:
-        self.assertSequenceEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
+        self.assertSequenceEqual(
+          [url], browser.url_list[self.SPLASH_URLS_LEN :]
+        )
         self.assertNotIn("--log", browser.js_flags)
 
   def test_invalid_probe_config_file(self):
@@ -402,8 +438,13 @@ class FastCliTestCasePartA(BaseCliTestCase):
     with self._patch_get_browser():
       url = "http://test.com"
       with self.assertRaises(argparse.ArgumentTypeError):
-        self.run_cli("loading", f"--probe-config={config_file}",
-                     f"--urls={url}", "--env-validation=skip", "--throw")
+        self.run_cli(
+          "loading",
+          f"--probe-config={config_file}",
+          f"--urls={url}",
+          "--env-validation=skip",
+          "--throw",
+        )
       for browser in self.browsers:
         self.assertSequenceEqual([], browser.url_list)
         self.assertEqual(len(browser.js_flags), 0)
@@ -417,10 +458,16 @@ class FastCliTestCasePartA(BaseCliTestCase):
 
     with self._patch_get_browser():
       url = "http://test.com"
-      self.run_cli("loading", f"--probe-config={config_file}", f"--urls={url}",
-                   "--env-validation=skip")
+      self.run_cli(
+        "loading",
+        f"--probe-config={config_file}",
+        f"--urls={url}",
+        "--env-validation=skip",
+      )
       for browser in self.browsers:
-        self.assertSequenceEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
+        self.assertSequenceEqual(
+          [url], browser.url_list[self.SPLASH_URLS_LEN :]
+        )
         for flag in js_flags:
           self.assertIn(flag, browser.js_flags)
 
@@ -429,27 +476,41 @@ class FastCliTestCasePartA(BaseCliTestCase):
     config_data: dict[str, dict] = {"probes": {"invalid probe name": {}}}
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
-    with self.assertRaises(
-        argparse.ArgumentTypeError) as cm, self._patch_get_browser():
-      self.run_cli("loading", f"--probe-config={config_file}",
-                   "--urls=http://test.com", "--env-validation=skip", "--throw")
+    with (
+      self.assertRaises(argparse.ArgumentTypeError) as cm,
+      self._patch_get_browser(),
+    ):
+      self.run_cli(
+        "loading",
+        f"--probe-config={config_file}",
+        "--urls=http://test.com",
+        "--env-validation=skip",
+        "--throw",
+      )
     self.assertIn("invalid probe name", str(cm.exception))
 
   def test_empty_config_file_properties(self):
     config_file = pathlib.Path("/config.hjson")
     config_data: dict[str, dict] = {
-        "probes": {},
-        "env": {},
-        "browsers": {},
-        "network": {},
+      "probes": {},
+      "env": {},
+      "browsers": {},
+      "network": {},
     }
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
-    with self.assertRaises(
-        argparse.ArgumentTypeError) as cm, self._patch_get_browser():
+    with (
+      self.assertRaises(argparse.ArgumentTypeError) as cm,
+      self._patch_get_browser(),
+    ):
       url = "http://test.com"
-      self.run_cli("loading", f"--config={config_file}", f"--urls={url}",
-                   "--env-validation=skip", "--throw")
+      self.run_cli(
+        "loading",
+        f"--config={config_file}",
+        f"--urls={url}",
+        "--env-validation=skip",
+        "--throw",
+      )
     self.assertIn("no config properties", str(cm.exception))
 
   def test_empty_config_files(self):
@@ -457,29 +518,44 @@ class FastCliTestCasePartA(BaseCliTestCase):
     config_data: dict[str, dict] = {}
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
-    with self.assertRaises(
-        argparse.ArgumentTypeError) as cm, self._patch_get_browser():
+    with (
+      self.assertRaises(argparse.ArgumentTypeError) as cm,
+      self._patch_get_browser(),
+    ):
       url = "http://test.com"
-      self.run_cli("loading", f"--config={config_file}", f"--urls={url}",
-                   "--env-validation=skip", "--throw")
+      self.run_cli(
+        "loading",
+        f"--config={config_file}",
+        f"--urls={url}",
+        "--env-validation=skip",
+        "--throw",
+      )
     self.assertIn("no config properties", str(cm.exception))
 
   def test_conflicting_config_flags(self):
     config_file = pathlib.Path("/config.hjson")
     config_data: dict[str, dict] = {
-        "probes": {},
-        "env": {},
-        "browsers": {},
-        "network": {},
+      "probes": {},
+      "env": {},
+      "browsers": {},
+      "network": {},
     }
-    for config_flag in ("--probe-config", "--env-config", "--browser-config",
-                        "--network-config"):
+    for config_flag in (
+      "--probe-config",
+      "--env-config",
+      "--browser-config",
+      "--network-config",
+    ):
       with config_file.open("w", encoding="utf-8") as f:
         hjson.dump(config_data, f)
       with self.assertRaises(argparse.ArgumentTypeError) as cm:
-        self.run_cli("sp2", f"--config={config_file}",
-                     f"{config_flag}={config_file}", "--env-validation=skip",
-                     "--throw")
+        self.run_cli(
+          "sp2",
+          f"--config={config_file}",
+          f"{config_flag}={config_file}",
+          "--env-validation=skip",
+          "--throw",
+        )
       message = str(cm.exception)
       self.assertIn("--config", message)
       self.assertIn(config_flag, message)
@@ -488,47 +564,59 @@ class FastCliTestCasePartA(BaseCliTestCase):
     config_file = pathlib.Path("/config.hjson")
     js_flags = ["--log-foo", "--log-bar"]
     config_data = {
-        "probes": {
-            "v8.log": {
-                "js_flags": js_flags,
-            },
+      "probes": {
+        "v8.log": {
+          "js_flags": js_flags,
         },
-        "env": {},
-        "browsers": {},
-        "network": {},
+      },
+      "env": {},
+      "browsers": {},
+      "network": {},
     }
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
 
     with self._patch_get_browser():
       url = "http://test.com"
-      self.run_cli("loading", f"--config={config_file}", f"--urls={url}",
-                   "--env-validation=skip")
+      self.run_cli(
+        "loading",
+        f"--config={config_file}",
+        f"--urls={url}",
+        "--env-validation=skip",
+      )
       for browser in self.browsers:
-        self.assertSequenceEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
+        self.assertSequenceEqual(
+          [url], browser.url_list[self.SPLASH_URLS_LEN :]
+        )
         for flag in js_flags:
           self.assertIn(flag, browser.js_flags)
 
   def test_config_file_with_env(self):
     config_file = pathlib.Path("/config.hjson")
     config_data = {
-        "probes": {},
-        "env": {
-            "screen_brightness_percent": 66,
-            "cpu_max_usage_percent": 77,
-        },
-        "browsers": {},
-        "network": {},
+      "probes": {},
+      "env": {
+        "screen_brightness_percent": 66,
+        "cpu_max_usage_percent": 77,
+      },
+      "browsers": {},
+      "network": {},
     }
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
 
     with self._patch_get_browser():
       url = "http://test.com"
-      cli = self.run_cli("loading", f"--config={config_file}", f"--urls={url}",
-                         "--env-validation=skip")
+      cli = self.run_cli(
+        "loading",
+        f"--config={config_file}",
+        f"--urls={url}",
+        "--env-validation=skip",
+      )
       for browser in self.browsers:
-        self.assertSequenceEqual([url], browser.url_list[self.SPLASH_URLS_LEN:])
+        self.assertSequenceEqual(
+          [url], browser.url_list[self.SPLASH_URLS_LEN :]
+        )
         self.assertFalse(browser.js_flags)
       config = cli.last_subcommand.runner.env.config
       self.assertEqual(config.disk_min_free_space_gib, EnvConfig.IGNORE)
@@ -538,17 +626,17 @@ class FastCliTestCasePartA(BaseCliTestCase):
   def test_config_file_with_browser(self):
     config_file = pathlib.Path("/config.hjson")
     config_data = {
-        "probes": {},
-        "env": {},
-        "browsers": {
-            "browser_1": {
-                "path": "chrome-dev",
-            },
-            "browser_2": {
-                "path": "chrome-stable",
-            },
+      "probes": {},
+      "env": {},
+      "browsers": {
+        "browser_1": {
+          "path": "chrome-dev",
         },
-        "network": {},
+        "browser_2": {
+          "path": "chrome-stable",
+        },
+      },
+      "network": {},
     }
     with config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
@@ -561,8 +649,12 @@ class FastCliTestCasePartA(BaseCliTestCase):
 
     with self._patch_get_browser_cls(side_effect=mock_get_browser_cls):
       url = "http://test.com"
-      cli = self.run_cli("loading", f"--config={config_file}", f"--urls={url}",
-                         "--env-validation=skip")
+      cli = self.run_cli(
+        "loading",
+        f"--config={config_file}",
+        f"--urls={url}",
+        "--env-validation=skip",
+      )
       browsers = cli.last_subcommand.runner.browsers
       self.assertEqual(len(browsers), 2)
       self.assertEqual(browsers[0].label, "browser_1")
@@ -572,8 +664,13 @@ class FastCliTestCasePartA(BaseCliTestCase):
 
   def test_invalid_browser_identifier(self):
     with self.assertRaises(argparse.ArgumentError) as cm:
-      self.run_cli("loading", "--browser=unknown_browser_identifier",
-                   "--urls=http://test.com", "--env-validation=skip", "--throw")
+      self.run_cli(
+        "loading",
+        "--browser=unknown_browser_identifier",
+        "--urls=http://test.com",
+        "--env-validation=skip",
+        "--throw",
+      )
     self.assertIn("--browser", str(cm.exception))
     self.assertIn("unknown_browser_identifier", str(cm.exception))
 
@@ -582,8 +679,13 @@ class FastCliTestCasePartA(BaseCliTestCase):
     browser_bin.parent.mkdir(parents=True)
     browser_bin.touch()
     with self.assertRaises(argparse.ArgumentError) as cm:
-      self.run_cli("loading", f"--browser={browser_bin}",
-                   "--urls=http://test.com", "--env-validation=skip", "--throw")
+      self.run_cli(
+        "loading",
+        f"--browser={browser_bin}",
+        "--urls=http://test.com",
+        "--env-validation=skip",
+        "--throw",
+      )
     self.assertIn("--browser", str(cm.exception))
     self.assertIn(str(browser_bin), str(cm.exception))
 
@@ -593,8 +695,13 @@ class FastCliTestCasePartA(BaseCliTestCase):
     browser_bin.parent.mkdir(parents=True)
     browser_bin.touch()
     with self.assertRaises(argparse.ArgumentError) as cm:
-      self.run_cli("loading", f"--browser={browser_bin}",
-                   "--urls=http://test.com", "--env-validation=skip", "--throw")
+      self.run_cli(
+        "loading",
+        f"--browser={browser_bin}",
+        "--urls=http://test.com",
+        "--env-validation=skip",
+        "--throw",
+      )
     self.assertIn("--browser", str(cm.exception))
     self.assertIn(str(browser_bin), str(cm.exception))
 
@@ -607,17 +714,21 @@ class FastCliTestCasePartA(BaseCliTestCase):
     self.addCleanup(plt.PLATFORM.set_binary_lookup_override, "my_bin", None)
 
     with unittest.mock.patch(
-        "crossbench.cli.subcommand.benchmark.BenchmarkSubcommand.run"):
-      self.run_cli("loading", "--browser=chrome",
-                   f"--bin-override=my_bin={bin_path}")
+      "crossbench.cli.subcommand.benchmark.BenchmarkSubcommand.run"
+    ):
+      self.run_cli(
+        "loading", "--browser=chrome", f"--bin-override=my_bin={bin_path}"
+      )
 
     self.assertEqual(
-        plt.PLATFORM.lookup_binary_override("my_bin"),
-        plt.PLATFORM.path(str(bin_path)))
+      plt.PLATFORM.lookup_binary_override("my_bin"),
+      plt.PLATFORM.path(str(bin_path)),
+    )
 
   def test_invalid_bin_override_format(self):
     _, _, stderr = self.run_cli_output(
-        "loading", "--bin-override=my_bin_no_path", raises=SysExitTestException)
+      "loading", "--bin-override=my_bin_no_path", raises=SysExitTestException
+    )
     self.assertIn("Invalid --bin-override format", stderr)
 
   def test_explicit_network_flag_preserved(self):
@@ -625,7 +736,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
     self.fs.create_file(network_path, st_size=100)
     network_arg = f'{{"type": "wpr", "path": "{network_path}"}}'
     with unittest.mock.patch(
-        "crossbench.cli.subcommand.benchmark.BenchmarkSubcommand.run",
+      "crossbench.cli.subcommand.benchmark.BenchmarkSubcommand.run",
     ) as mock_run:
       self.run_cli("loading", "--browser=chrome", f"--network={network_arg}")
     self.assertTrue(mock_run.called)
@@ -638,7 +749,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
     network_path = pathlib.Path("/test/archive.wprgo")
     self.fs.create_file(network_path, st_size=100)
     with unittest.mock.patch(
-        "crossbench.cli.subcommand.benchmark.BenchmarkSubcommand.run",
+      "crossbench.cli.subcommand.benchmark.BenchmarkSubcommand.run",
     ) as mock_run:
       self.run_cli("loading", "--browser=chrome", "--network=default")
     self.assertTrue(mock_run.called)
@@ -651,10 +762,11 @@ class FastCliTestCasePartA(BaseCliTestCase):
     self.fs.create_dir(local_path)
     self.fs.create_file(local_path / "index.html", st_size=100)
     with unittest.mock.patch(
-        "crossbench.cli.subcommand.benchmark.BenchmarkSubcommand.run",
+      "crossbench.cli.subcommand.benchmark.BenchmarkSubcommand.run",
     ) as mock_run:
-      self.run_cli("loading", "--browser=chrome",
-                   f"--local-file-server={local_path}")
+      self.run_cli(
+        "loading", "--browser=chrome", f"--local-file-server={local_path}"
+      )
     self.assertTrue(mock_run.called)
     args = mock_run.call_args[0][0]
     self.assertIsNotNone(args.network_config)
@@ -665,7 +777,7 @@ class FastCliTestCasePartA(BaseCliTestCase):
     network_path = pathlib.Path("/test/archive.wprgo")
     self.fs.create_file(network_path, st_size=100)
     with unittest.mock.patch(
-        "crossbench.cli.subcommand.benchmark.BenchmarkSubcommand.run",
+      "crossbench.cli.subcommand.benchmark.BenchmarkSubcommand.run",
     ) as mock_run:
       self.run_cli("loading", "--browser=chrome", f"--wpr={network_path}")
     self.assertTrue(mock_run.called)
@@ -687,48 +799,48 @@ class NoProbeFlagCliTestCase(BaseCliTestCase):
     super().setUp()
     self.config_file = pathlib.Path("/config.hjson")
     config_data: dict[str, dict] = {
-        "probes": {
-            self._PROBE_1: {},
-            self._PROBE_2: {},
-            self._PROBE_3: {},
-        },
+      "probes": {
+        self._PROBE_1: {},
+        self._PROBE_2: {},
+        self._PROBE_3: {},
+      },
     }
     with self.config_file.open("w", encoding="utf-8") as f:
       hjson.dump(config_data, f)
 
   def _run_no_probe_flag_test(
-      self,
-      no_probe_flags: Sequence[str],
-      expected_present: Iterable[str] = (),
-      expected_absent: Iterable[str] = (),
+    self,
+    no_probe_flags: Sequence[str],
+    expected_present: Iterable[str] = (),
+    expected_absent: Iterable[str] = (),
   ) -> None:
     loading_cls = self._BENCHMARK_CLASS
     url = "http://test.com"
     with (
-        self._patch_get_browser(),
-        mock.patch.object(
-            loading_cls,
-            "default_probe_config_path",
-            return_value=self.config_file),
+      self._patch_get_browser(),
+      mock.patch.object(
+        loading_cls, "default_probe_config_path", return_value=self.config_file
+      ),
     ):
-      cli = self.run_cli(self._BENCHMARK_CLASS.NAME, *no_probe_flags,
-                         f"--story={url}")
+      cli = self.run_cli(
+        self._BENCHMARK_CLASS.NAME, *no_probe_flags, f"--story={url}"
+      )
       runner_probes = {p.name for p in cli.last_subcommand.runner.probes}
       self.assertTrue(all(name in runner_probes for name in expected_present))
       self.assertFalse(any(name in runner_probes for name in expected_absent))
 
   def test_no_probe_flag_single(self) -> None:
     self._run_no_probe_flag_test(
-        [f"--no-probe={self._PROBE_1}"],
-        expected_present=[self._PROBE_2, self._PROBE_3],
-        expected_absent=[self._PROBE_1],
+      [f"--no-probe={self._PROBE_1}"],
+      expected_present=[self._PROBE_2, self._PROBE_3],
+      expected_absent=[self._PROBE_1],
     )
 
   def test_no_probe_flag_multiple_comma_separated(self) -> None:
     self._run_no_probe_flag_test(
-        [f"--no-probe={self._PROBE_1},{self._PROBE_2}"],
-        expected_present=[self._PROBE_3],
-        expected_absent=[self._PROBE_1, self._PROBE_2],
+      [f"--no-probe={self._PROBE_1},{self._PROBE_2}"],
+      expected_present=[self._PROBE_3],
+      expected_absent=[self._PROBE_1, self._PROBE_2],
     )
 
   # Note: In a real shell environment, quotes are stripped before they reach
@@ -736,98 +848,100 @@ class NoProbeFlagCliTestCase(BaseCliTestCase):
   # Thus, we test without literal double quotes around the argument value.
   def test_no_probe_flag_multiple_comma_separated_whitespace(self) -> None:
     self._run_no_probe_flag_test(
-        [f"--no-probe={self._PROBE_1}, {self._PROBE_2}"],
-        expected_present=[self._PROBE_3],
-        expected_absent=[self._PROBE_1, self._PROBE_2],
+      [f"--no-probe={self._PROBE_1}, {self._PROBE_2}"],
+      expected_present=[self._PROBE_3],
+      expected_absent=[self._PROBE_1, self._PROBE_2],
     )
 
   def test_no_probe_flag_multiple_flags(self) -> None:
     self._run_no_probe_flag_test(
-        [f"--no-probe={self._PROBE_1}", f"--no-probe={self._PROBE_2}"],
-        expected_present=[self._PROBE_3],
-        expected_absent=[self._PROBE_1, self._PROBE_2],
+      [f"--no-probe={self._PROBE_1}", f"--no-probe={self._PROBE_2}"],
+      expected_present=[self._PROBE_3],
+      expected_absent=[self._PROBE_1, self._PROBE_2],
     )
 
   def test_no_probe_flag_invalid(self) -> None:
     with self.assertRaises(argparse.ArgumentError), self._patch_get_browser():
       self.run_cli(
-          self._BENCHMARK_CLASS.NAME,
-          "--no-probe=invalid_probe_name",
-          "http://test.com",
-          "--throw",
+        self._BENCHMARK_CLASS.NAME,
+        "--no-probe=invalid_probe_name",
+        "http://test.com",
+        "--throw",
       )
 
   def test_no_probe_flag_invalid_multiple(self) -> None:
     with self.assertRaises(argparse.ArgumentError), self._patch_get_browser():
       self.run_cli(
-          self._BENCHMARK_CLASS.NAME,
-          f"--no-probe={self._PROBE_1},invalid_probe_name",
-          "http://test.com",
-          "--throw",
+        self._BENCHMARK_CLASS.NAME,
+        f"--no-probe={self._PROBE_1},invalid_probe_name",
+        "http://test.com",
+        "--throw",
       )
 
   def test_no_probe_flag_empty(self) -> None:
     with self.assertRaises(argparse.ArgumentError), self._patch_get_browser():
       self.run_cli(
-          self._BENCHMARK_CLASS.NAME,
-          "--no-probe=",
-          "http://test.com",
-          "--throw",
+        self._BENCHMARK_CLASS.NAME,
+        "--no-probe=",
+        "http://test.com",
+        "--throw",
       )
 
   def test_no_probe_flag_empty_comma(self) -> None:
     with self.assertRaises(argparse.ArgumentError), self._patch_get_browser():
       self.run_cli(
-          self._BENCHMARK_CLASS.NAME,
-          "--no-probe=,",
-          "http://test.com",
-          "--throw",
+        self._BENCHMARK_CLASS.NAME,
+        "--no-probe=,",
+        "http://test.com",
+        "--throw",
       )
 
   def test_no_probe_flag_empty_leading_comma(self) -> None:
     with self.assertRaises(argparse.ArgumentError), self._patch_get_browser():
       self.run_cli(
-          self._BENCHMARK_CLASS.NAME,
-          f"--no-probe=,{self._PROBE_1}",
-          "http://test.com",
-          "--throw",
+        self._BENCHMARK_CLASS.NAME,
+        f"--no-probe=,{self._PROBE_1}",
+        "http://test.com",
+        "--throw",
       )
 
   def test_no_probe_flag_empty_trailing_comma(self) -> None:
     with self.assertRaises(argparse.ArgumentError), self._patch_get_browser():
       self.run_cli(
-          self._BENCHMARK_CLASS.NAME,
-          f"--no-probe={self._PROBE_1},",
-          "http://test.com",
-          "--throw",
+        self._BENCHMARK_CLASS.NAME,
+        f"--no-probe={self._PROBE_1},",
+        "http://test.com",
+        "--throw",
       )
 
   def test_no_probe_flag_empty_middle(self) -> None:
     with self.assertRaises(argparse.ArgumentError), self._patch_get_browser():
       self.run_cli(
-          self._BENCHMARK_CLASS.NAME,
-          f"--no-probe={self._PROBE_1},,{self._PROBE_2}",
-          "http://test.com",
-          "--throw",
+        self._BENCHMARK_CLASS.NAME,
+        f"--no-probe={self._PROBE_1},,{self._PROBE_2}",
+        "http://test.com",
+        "--throw",
       )
 
   def test_no_probe_flag_inline_config(self) -> None:
     with self.assertRaises(argparse.ArgumentError), self._patch_get_browser():
       self.run_cli(
-          self._BENCHMARK_CLASS.NAME,
-          "--no-probe=v8.log{log_all:true}",
-          "http://test.com",
-          "--throw",
+        self._BENCHMARK_CLASS.NAME,
+        "--no-probe=v8.log{log_all:true}",
+        "http://test.com",
+        "--throw",
       )
 
   def test_no_probe_flag_close_match(self) -> None:
-    with self.assertRaisesRegex(argparse.ArgumentError,
-                                "v8.log") as cm, self._patch_get_browser():
+    with (
+      self.assertRaisesRegex(argparse.ArgumentError, "v8.log") as cm,
+      self._patch_get_browser(),
+    ):
       self.run_cli(
-          self._BENCHMARK_CLASS.NAME,
-          "--no-probe=v8.lo",
-          "http://test.com",
-          "--throw",
+        self._BENCHMARK_CLASS.NAME,
+        "--no-probe=v8.lo",
+        "http://test.com",
+        "--throw",
       )
     self.assertIn("Did you mean 'v8.log'?", str(cm.exception))
 
@@ -839,25 +953,28 @@ class NoProbeFlagCliTestCase(BaseCliTestCase):
     # The conflict exception is only thrown when a probe is explicitly
     # enabled via the inline --probe flag AND disabled via --no-probe.
     self._run_no_probe_flag_test(
-        [f"--probe-config={self.config_file}", f"--no-probe={self._PROBE_1}"],
-        expected_present=[self._PROBE_2, self._PROBE_3],
-        expected_absent=[self._PROBE_1],
+      [f"--probe-config={self.config_file}", f"--no-probe={self._PROBE_1}"],
+      expected_present=[self._PROBE_2, self._PROBE_3],
+      expected_absent=[self._PROBE_1],
     )
 
   def _test_no_probe_flag_conflicting(self, flags: Iterable[str]) -> None:
-    with self.assertRaisesRegex(argparse.ArgumentTypeError,
-                                "enable and disable") as cm:
+    with self.assertRaisesRegex(
+      argparse.ArgumentTypeError, "enable and disable"
+    ) as cm:
       self._run_no_probe_flag_test(tuple(flags))
     self.assertIn(self._PROBE_1, str(cm.exception))
     self.assertIn("Cannot both enable and disable probes", str(cm.exception))
 
   def test_no_probe_flag_conflicting(self) -> None:
     self._test_no_probe_flag_conflicting(
-        [f"--no-probe={self._PROBE_1}", f"--probe={self._PROBE_1}", "--throw"])
+      [f"--no-probe={self._PROBE_1}", f"--probe={self._PROBE_1}", "--throw"]
+    )
 
   def test_no_probe_flag_conflicting_reversed(self) -> None:
     self._test_no_probe_flag_conflicting(
-        [f"--probe={self._PROBE_1}", f"--no-probe={self._PROBE_1}", "--throw"])
+      [f"--probe={self._PROBE_1}", f"--no-probe={self._PROBE_1}", "--throw"]
+    )
 
 
 if __name__ == "__main__":

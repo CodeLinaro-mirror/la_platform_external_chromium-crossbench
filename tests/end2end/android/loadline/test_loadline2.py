@@ -17,14 +17,16 @@ if TYPE_CHECKING:
 
 
 def _browser_config(device_id, adb_path) -> str:
-  return json.dumps({
+  return json.dumps(
+    {
       "browser": "chrome-stable",
       "driver": {
-          "type": "adb",
-          "device_id": device_id,
-          "adb_bin": adb_path,
+        "type": "adb",
+        "device_id": device_id,
+        "adb_bin": adb_path,
       },
-  })
+    }
+  )
 
 
 class BenchmarkType(enum.StrEnum):
@@ -53,13 +55,14 @@ def _verify_default_metrics(out_dir, require_all_metrics=True):
       val = val.strip()
       parts = val.split(" ± ")
       assert len(parts) in (
-          1,
-          2,
+        1,
+        2,
       ), f"Value '{val}' does not match expected metric format"
       assert float(parts[0]) > 0, f"Expected positive mean, got {parts[0]}"
       if len(parts) == 2:
-        assert (float(parts[1])
-                >= 0), f"Expected non-negative delta, got {parts[1]}"
+        assert float(parts[1]) >= 0, (
+          f"Expected non-negative delta, got {parts[1]}"
+        )
 
     for metric, value in metrics.items():
       assert metric, f"Encountered empty metric name. CSV contents: {lines}"
@@ -85,28 +88,33 @@ def test_loadline2_tablet(device_id, adb_path, test_env: TestEnv) -> None:
 # TODO(crbug.com/489679186): Find a way to test LoadLine 2 WebAPI without root.
 @unittest.skip("LoadLine2 WebAPI requires root to run")
 def test_loadline2_webapi_phone(device_id, adb_path, test_env: TestEnv) -> None:
-  _test_loadline2_default(device_id, adb_path, BenchmarkType.WEBAPI_PHONE,
-                          test_env)
+  _test_loadline2_default(
+    device_id, adb_path, BenchmarkType.WEBAPI_PHONE, test_env
+  )
 
 
 # TODO(crbug.com/489679186): Find a way to test LoadLine 2 WebAPI without root.
 @unittest.skip("LoadLine2 WebAPI requires root to run")
-def test_loadline2_webapi_tablet(device_id, adb_path,
-                                 test_env: TestEnv) -> None:
-  _test_loadline2_default(device_id, adb_path, BenchmarkType.WEBAPI_TABLET,
-                          test_env)
+def test_loadline2_webapi_tablet(
+  device_id, adb_path, test_env: TestEnv
+) -> None:
+  _test_loadline2_default(
+    device_id, adb_path, BenchmarkType.WEBAPI_TABLET, test_env
+  )
 
 
 def test_loadline2_debug(device_id, adb_path, test_env: TestEnv) -> None:
   _test_loadline2_default(device_id, adb_path, BenchmarkType.DEBUG, test_env)
 
 
-def _test_loadline2_default(device_id, adb_path, benchmark_type,
-                            test_env: TestEnv) -> None:
+def _test_loadline2_default(
+  device_id, adb_path, benchmark_type, test_env: TestEnv
+) -> None:
   cli = CrossBenchCLI()
   browser_config = _browser_config(device_id, adb_path)
   out_dir = test_env.results_dir / f"default_{benchmark_type}"
-  cli.run([
+  cli.run(
+    [
       benchmark_type,
       f"--browser={browser_config}",
       "--repeat=1",
@@ -114,7 +122,8 @@ def _test_loadline2_default(device_id, adb_path, benchmark_type,
       f"--out-dir={out_dir}",
       "--time-unit=2s",
       *list(test_env.cq_flags),
-  ])
+    ]
+  )
 
   # With only 1 repetition, there's a chance that one story won't produce a
   # metric. To avoid flaky failures, we only check that some metrics are

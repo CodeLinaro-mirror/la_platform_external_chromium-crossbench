@@ -13,8 +13,10 @@ from crossbench.action_runner.action.js import JsAction
 from crossbench.action_runner.action.start_browser import StartBrowserAction
 from crossbench.action_runner.action.stop_browser import StopBrowserAction
 from crossbench.action_runner.action.wait import WaitAction
-from crossbench.benchmarks.loading.config.blocks import ActionBlock, \
-    ActionBlockListConfig
+from crossbench.benchmarks.loading.config.blocks import (
+  ActionBlock,
+  ActionBlockListConfig,
+)
 from crossbench.benchmarks.loading.config.login.custom import LoginBlock
 from crossbench.benchmarks.loading.config.login.google import GoogleLogin
 from crossbench.config import ConfigError
@@ -22,7 +24,6 @@ from tests import test_helper
 
 
 class ActionBlockTestCase(unittest.TestCase):
-
   def test_create_empty_valid(self):
     block = ActionBlock()
     self.assertFalse(bool(block))
@@ -35,7 +36,8 @@ class ActionBlockTestCase(unittest.TestCase):
 
   def test_single_action(self):
     action = GetAction.create(
-        "http://test.com", duration=dt.timedelta(seconds=3))
+      "http://test.com", duration=dt.timedelta(seconds=3)
+    )
     block = ActionBlock(actions=(action,))
     self.assertTrue(bool(block))
     self.assertFalse(block.is_login)
@@ -53,9 +55,11 @@ class ActionBlockTestCase(unittest.TestCase):
 
   def test_multi_action(self):
     action_2 = GetAction.create(
-        "http://test.com/0", duration=dt.timedelta(seconds=1))
+      "http://test.com/0", duration=dt.timedelta(seconds=1)
+    )
     action_1 = GetAction.create(
-        "http://test.com/1", duration=dt.timedelta(seconds=2))
+      "http://test.com/1", duration=dt.timedelta(seconds=2)
+    )
     block = ActionBlock(actions=(action_1, action_2))
     self.assertTrue(bool(block))
     self.assertFalse(block.is_login)
@@ -73,14 +77,14 @@ class ActionBlockTestCase(unittest.TestCase):
 
   def test_multi_action_with_zero_duration(self):
     action_1 = GetAction.create(
-        "http://test.com/1", duration=dt.timedelta(seconds=2))
+      "http://test.com/1", duration=dt.timedelta(seconds=2)
+    )
     action_2 = JsAction.create("console.log('hi');")
     self.assertEqual(action_2.duration, dt.timedelta())
     with self.assertRaises(TypeError):
       JsAction(duration=dt.timedelta(seconds=1))  # type: ignore[call-arg]
     with self.assertRaises(TypeError):
-      JsAction.create(
-          duration=dt.timedelta(seconds=1))  # type: ignore[call-arg]
+      JsAction.create(duration=dt.timedelta(seconds=1))  # type: ignore[call-arg]
     block = ActionBlock(actions=(action_1, action_2))
     self.assertEqual(block.duration, dt.timedelta(seconds=2))
 
@@ -92,12 +96,12 @@ class ActionBlockTestCase(unittest.TestCase):
     stop = StopBrowserAction()
     wait = WaitAction.create(duration=dt.timedelta(seconds=1))
     for actions in (
-        (start,),
-        (stop,),
-        (start, wait, stop),
-        (stop, wait, start),
-        (start, wait, stop, wait, start),
-        (stop, wait, start, wait, stop, wait, start),
+      (start,),
+      (stop,),
+      (start, wait, stop),
+      (stop, wait, start),
+      (start, wait, stop, wait, start),
+      (stop, wait, start, wait, stop, wait, start),
     ):
       with self.subTest(actions=tuple(str(a.TYPE) for a in actions)):
         block = ActionBlock(actions=actions)
@@ -108,10 +112,10 @@ class ActionBlockTestCase(unittest.TestCase):
     stop = StopBrowserAction()
     wait = WaitAction.create(duration=dt.timedelta(seconds=1))
     for actions in (
-        (start, start),
-        (start, wait, start),
-        (start, wait, start, stop),
-        (stop, start, wait, start),
+      (start, start),
+      (start, wait, start),
+      (start, wait, start, stop),
+      (stop, start, wait, start),
     ):
       with self.subTest(actions=tuple(str(a.TYPE) for a in actions)):
         with self.assertRaisesRegex(ConfigError, "two 'start_browser' actions"):
@@ -122,10 +126,10 @@ class ActionBlockTestCase(unittest.TestCase):
     stop = StopBrowserAction()
     wait = WaitAction.create(duration=dt.timedelta(seconds=1))
     for actions in (
-        (stop, stop),
-        (stop, wait, stop),
-        (stop, wait, stop, start),
-        (start, stop, wait, stop),
+      (stop, stop),
+      (stop, wait, stop),
+      (stop, wait, stop, start),
+      (start, stop, wait, stop),
     ):
       with self.subTest(actions=tuple(str(a.TYPE) for a in actions)):
         with self.assertRaisesRegex(ConfigError, "two 'stop_browser' actions"):
@@ -157,7 +161,8 @@ class ActionBlockTestCase(unittest.TestCase):
   def test_find_first_url_empty(self) -> None:
     self.assertIsNone(ActionBlock.find_first_url(()))
     self.assertIsNone(
-        ActionBlock.find_first_url((ActionBlock(), ActionBlock())))
+      ActionBlock.find_first_url((ActionBlock(), ActionBlock()))
+    )
 
   def test_find_first_url_no_get(self) -> None:
     wait = WaitAction.create(duration=dt.timedelta(seconds=1))
@@ -173,49 +178,53 @@ class ActionBlockTestCase(unittest.TestCase):
     get_2 = GetAction.create("http://test.com/2")
     get_3 = GetAction.create("http://test.com/3")
     blocks = (
-        ActionBlock(),
-        ActionBlock(actions=(wait, js)),
-        ActionBlock(actions=(wait, get_1, get_2)),
-        ActionBlock(actions=(get_3,)),
+      ActionBlock(),
+      ActionBlock(actions=(wait, js)),
+      ActionBlock(actions=(wait, get_1, get_2)),
+      ActionBlock(actions=(get_3,)),
     )
     self.assertEqual(ActionBlock.find_first_url(blocks), "http://test.com/1")
     self.assertEqual(
-        ActionBlock.find_first_url(iter(blocks)), "http://test.com/1")
+      ActionBlock.find_first_url(iter(blocks)), "http://test.com/1"
+    )
 
   def test_first_url(self) -> None:
     wait = WaitAction.create(duration=dt.timedelta(seconds=1))
     get_1 = GetAction.create("http://test.com/1")
     get_2 = GetAction.create("http://test.com/2")
     self.assertEqual(
-        ActionBlock(actions=(get_1,)).first_url, "http://test.com/1")
+      ActionBlock(actions=(get_1,)).first_url, "http://test.com/1"
+    )
     self.assertEqual(
-        ActionBlock(actions=(wait, get_1, get_2)).first_url,
-        "http://test.com/1")
+      ActionBlock(actions=(wait, get_1, get_2)).first_url, "http://test.com/1"
+    )
 
   def test_first_url_missing(self) -> None:
     wait = WaitAction.create(duration=dt.timedelta(seconds=1))
     for block in (
-        ActionBlock(),
-        ActionBlock(actions=(wait,)),
-        ActionBlock(actions=(StartBrowserAction(),)),
+      ActionBlock(),
+      ActionBlock(actions=(wait,)),
+      ActionBlock(actions=(StartBrowserAction(),)),
     ):
       with self.subTest(actions=tuple(str(a.TYPE) for a in block)):
-        with self.assertRaisesRegex(RuntimeError,
-                                    "No GET action with an URL found."):
+        with self.assertRaisesRegex(
+          RuntimeError, "No GET action with an URL found."
+        ):
           _ = block.first_url
 
   def test_first_url_from_start_browser_action(self) -> None:
     start_with_url = StartBrowserAction(
-        startup_urls=("https://www.google.com/",))
+      startup_urls=("https://www.google.com/",)
+    )
     block = ActionBlock(actions=(start_with_url,))
     self.assertEqual(block.first_url, "https://www.google.com/")
 
 
 class LoginBlockTestCase(unittest.TestCase):
-
   def test_single_action(self):
     action = GetAction.create(
-        "http://test.com", duration=dt.timedelta(seconds=3))
+      "http://test.com", duration=dt.timedelta(seconds=3)
+    )
     block = LoginBlock(actions=(action,))
     self.assertTrue(bool(block))
     self.assertTrue(block.is_login)
@@ -231,9 +240,11 @@ class LoginBlockTestCase(unittest.TestCase):
 
   def test_multi_action(self):
     action_2 = GetAction.create(
-        "http://test.com/0", duration=dt.timedelta(seconds=1))
+      "http://test.com/0", duration=dt.timedelta(seconds=1)
+    )
     action_1 = GetAction.create(
-        "http://test.com/1", duration=dt.timedelta(seconds=2))
+      "http://test.com/1", duration=dt.timedelta(seconds=2)
+    )
     block = LoginBlock(actions=(action_1, action_2))
     self.assertTrue(bool(block))
     self.assertTrue(block.is_login)
@@ -249,7 +260,6 @@ class LoginBlockTestCase(unittest.TestCase):
 
 
 class PresetLoginBlockTestCase(unittest.TestCase):
-
   def test_google_login_block(self):
     block = GoogleLogin()
     self.assertTrue(bool(block))

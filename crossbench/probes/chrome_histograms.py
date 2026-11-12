@@ -11,8 +11,15 @@ import datetime as dt
 import functools
 import logging
 import re
-from typing import TYPE_CHECKING, ClassVar, Final, Mapping, Self, Sequence, \
-    override
+from typing import (
+  TYPE_CHECKING,
+  ClassVar,
+  Final,
+  Mapping,
+  Self,
+  Sequence,
+  override,
+)
 
 from crossbench.action_runner.action.enums import ReadyState
 from crossbench.browsers.attributes import BrowserAttributes
@@ -54,42 +61,43 @@ class ChromeHistogramMetric(abc.ABC):
     return self._histogram_name
 
   @abc.abstractmethod
-  def compute(self, delta: ChromeHistogramSample,
-              baseline: ChromeHistogramSample) -> float:
+  def compute(
+    self, delta: ChromeHistogramSample, baseline: ChromeHistogramSample
+  ) -> float:
     pass
 
 
 class ChromeHistogramCountMetric(ChromeHistogramMetric):
-
   def __init__(self, histogram_name: str) -> None:
     super().__init__(f"{histogram_name}_count", histogram_name)
 
   @override
-  def compute(self, delta: ChromeHistogramSample,
-              baseline: ChromeHistogramSample) -> float:
+  def compute(
+    self, delta: ChromeHistogramSample, baseline: ChromeHistogramSample
+  ) -> float:
     return delta.diff_count(baseline)
 
 
 class ChromeHistogramMeanMetric(ChromeHistogramMetric):
-
   def __init__(self, histogram_name: str) -> None:
     super().__init__(f"{histogram_name}_mean", histogram_name)
 
   @override
-  def compute(self, delta: ChromeHistogramSample,
-              baseline: ChromeHistogramSample) -> float:
+  def compute(
+    self, delta: ChromeHistogramSample, baseline: ChromeHistogramSample
+  ) -> float:
     return delta.diff_mean(baseline)
 
 
 class ChromeHistogramPercentileMetric(ChromeHistogramMetric):
-
   def __init__(self, histogram_name: str, percentile: int) -> None:
     super().__init__(f"{histogram_name}_p{percentile}", histogram_name)
     self._percentile: Final[int] = percentile
 
   @override
-  def compute(self, delta: ChromeHistogramSample,
-              baseline: ChromeHistogramSample) -> float:
+  def compute(
+    self, delta: ChromeHistogramSample, baseline: ChromeHistogramSample
+  ) -> float:
     return delta.diff_percentile(baseline, self._percentile)
 
 
@@ -97,15 +105,16 @@ PERCENTILE_METRIC_RE: re.Pattern[str] = re.compile(r"^p(\d+)$")
 
 
 def parse_histogram_metrics(
-    value: object,
-    name: str = "value",
+  value: object,
+  name: str = "value",
 ) -> Sequence[ChromeHistogramMetric]:
   result: list[ChromeHistogramMetric] = []
   d = ObjectParser.dict(value, name)
   for k, v in d.items():
     histogram_name = ObjectParser.any_str(k, f"{name} name")
     metrics = ObjectParser.non_empty_sequence(
-        v, f"{name} {histogram_name} metrics")
+      v, f"{name} {histogram_name} metrics"
+    )
     for x in metrics:
       metric = ObjectParser.any_str(x)
       if metric == "count":
@@ -116,13 +125,14 @@ def parse_histogram_metrics(
         continue
       m = re.match(PERCENTILE_METRIC_RE, metric)
       if not m:
-        raise argparse.ArgumentTypeError(f"{name} {histogram_name!r} "
-                                         f"{metric!r} is not a valid metric")
+        raise argparse.ArgumentTypeError(
+          f"{name} {histogram_name!r} {metric!r} is not a valid metric"
+        )
       percentile = int(m[1])
       if percentile < 0 or percentile > 100:
         raise argparse.ArgumentTypeError(
-            f"{name} {histogram_name!r} "
-            f"{metric!r} is not a valid percentile")
+          f"{name} {histogram_name!r} {metric!r} is not a valid percentile"
+        )
       result.append(ChromeHistogramPercentileMetric(histogram_name, percentile))
   return result
 
@@ -131,6 +141,7 @@ class ChromeHistogramsProbe(JsonResultProbe):
   """
   Probe that collects UMA histogram metrics from Chrome.
   """
+
   NAME: ClassVar = "chrome_histograms"
   PRIORITY: ClassVar = ProbePriority.PRE_USER
 
@@ -139,25 +150,29 @@ class ChromeHistogramsProbe(JsonResultProbe):
   def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
-        "metrics",
-        required=True,
-        type=parse_histogram_metrics,
-        help=("Required dictionary of Chrome UMA histogram metric names. "
-              "Histograms are recorded before and after a test and any "
-              "differences logged. "
-              "See tools/metrics/histograms/metadata/storage/histograms.xml "
-              "or chrome://histograms for a list of available histograms."))
+      "metrics",
+      required=True,
+      type=parse_histogram_metrics,
+      help=(
+        "Required dictionary of Chrome UMA histogram metric names. "
+        "Histograms are recorded before and after a test and any "
+        "differences logged. "
+        "See tools/metrics/histograms/metadata/storage/histograms.xml "
+        "or chrome://histograms for a list of available histograms."
+      ),
+    )
     parser.add_argument(
-        "use_baseline",
-        aliases=("baseline",),
-        type=ObjectParser.bool,
-        default=True,
-        help="Dump histograms at start to use as baseline")
+      "use_baseline",
+      aliases=("baseline",),
+      type=ObjectParser.bool,
+      default=True,
+      help="Dump histograms at start to use as baseline",
+    )
     return parser
 
-  def __init__(self,
-               metrics: Sequence[ChromeHistogramMetric],
-               use_baseline: bool = True) -> None:
+  def __init__(
+    self, metrics: Sequence[ChromeHistogramMetric], use_baseline: bool = True
+  ) -> None:
     super().__init__()
     self._metrics: Final[Sequence[ChromeHistogramMetric]] = metrics
     self._use_baseline: Final[bool] = use_baseline
@@ -180,14 +195,18 @@ class ChromeHistogramsProbe(JsonResultProbe):
   @override
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
     merged = MetricsMerger.merge_json_list(
-        (repetition_group.results[self].json
-         for repetition_group in group.repetitions_groups),
-        merge_duplicate_paths=True)
+      (
+        repetition_group.results[self].json
+        for repetition_group in group.repetitions_groups
+      ),
+      merge_duplicate_paths=True,
+    )
     return self.write_group_result(group, merged)
 
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
     return self.merge_browsers_json_list(group).merge(
-        self.merge_browsers_csv_list(group))
+      self.merge_browsers_csv_list(group)
+    )
 
 
 @dataclasses.dataclass
@@ -213,9 +232,9 @@ class ChromeHistogramSample:
   # "12  ... "
   # "1000..."
   _BUCKET_RE: Final[re.Pattern] = re.compile(
-      r"^(-?\d+) *(?:(?:-*O "  # Bucket min and ASCII bar
-      r"+\((\d+) = \d+\.\d%\)(?: \{\d+\.\d%\}"  # Count and optional sum %
-      r")?)|(?:\.\.\. ))$",  # Or a "..." line
+    r"^(-?\d+) *(?:(?:-*O "  # Bucket min and ASCII bar
+    r"+\((\d+) = \d+\.\d%\)(?: \{\d+\.\d%\}"  # Count and optional sum %
+    r")?)|(?:\.\.\. ))$",  # Or a "..." line
   )
 
   # Generated by https://source.chromium.org/chromium/chromium/src/+/main:base/metrics/sample_vector.cc;l=538;drc=de573334f8fa97f9a7c99577611302736d2490b6
@@ -223,13 +242,15 @@ class ChromeHistogramSample:
   # "Histogram: UKM.InitSequence recorded 1 samples, mean = 1.0 (flags = 0x41)"
   # "Histogram: WebUI.CreatedForUrl recorded 30 samples (flags = 0x41)"
   _HEADER_RE: Final[re.Pattern] = re.compile(
-      r"^Histogram: +.* recorded (\d+) samples"
-      r"(?:, mean = (-?\d+\.\d+))?"
-      r"(?: \(flags = (0x[0-9A-Fa-f]+)\))?$")
+    r"^Histogram: +.* recorded (\d+) samples"
+    r"(?:, mean = (-?\d+\.\d+))?"
+    r"(?: \(flags = (0x[0-9A-Fa-f]+)\))?$"
+  )
 
   @classmethod
-  def from_json(cls, histogram_dict: Mapping[str,
-                                             object]) -> ChromeHistogramSample:
+  def from_json(
+    cls, histogram_dict: Mapping[str, object]
+  ) -> ChromeHistogramSample:
     name = ObjectParser.any_str(histogram_dict["name"], "histogram name")
     header = ObjectParser.any_str(histogram_dict["header"], "histogram header")
     body = ObjectParser.any_str(histogram_dict["body"], "histogram body")
@@ -237,7 +258,8 @@ class ChromeHistogramSample:
     m = re.match(cls._HEADER_RE, header)
     if not m:
       raise argparse.ArgumentTypeError(
-          f"{name} histogram header has invalid data: {header}")
+        f"{name} histogram header has invalid data: {header}"
+      )
     count = int(m.group(1))
     mean = float(m.group(2)) if m.group(2) is not None else None
     flags = int(m.group(3), 16) if m.group(3) is not None else 0
@@ -249,7 +271,8 @@ class ChromeHistogramSample:
       m = re.match(cls._BUCKET_RE, line)
       if not m:
         raise argparse.ArgumentTypeError(
-            f"{name} histogram body line {i} has invalid data: {line}")
+          f"{name} histogram body line {i} has invalid data: {line}"
+        )
 
       bucket_min = int(m.group(1))
 
@@ -262,16 +285,19 @@ class ChromeHistogramSample:
         bucket_count = int(bucket_count_str)
         if bucket_count > 0:
           bucket_counts[bucket_min] = bucket_count
-    return ChromeHistogramSample(name, count, mean, flags, bucket_counts,
-                                 bucket_maxes)
+    return ChromeHistogramSample(
+      name, count, mean, flags, bucket_counts, bucket_maxes
+    )
 
-  def __init__(self,
-               name: str,
-               count: int = 0,
-               mean: float | None = 0,
-               flags: int = 0,
-               bucket_counts: dict[int, int] | None = None,
-               bucket_maxes: dict[int, int] | None = None) -> None:
+  def __init__(
+    self,
+    name: str,
+    count: int = 0,
+    mean: float | None = 0,
+    flags: int = 0,
+    bucket_counts: dict[int, int] | None = None,
+    bucket_maxes: dict[int, int] | None = None,
+  ) -> None:
     self._name: Final[str] = name
     self._count: Final[int] = count
     self._mean: Final[float | None] = mean
@@ -280,8 +306,10 @@ class ChromeHistogramSample:
     self._bucket_maxes: Final[dict[int, int]] = bucket_maxes or {}
     bucket_sum = sum(self._bucket_counts.values())
     if count != bucket_sum:
-      raise ValueError(f"Histogram {name} has {count} total samples, "
-                       f"but buckets add to {bucket_sum}")
+      raise ValueError(
+        f"Histogram {name} has {count} total samples, "
+        f"but buckets add to {bucket_sum}"
+      )
 
   @property
   def mean(self) -> float | None:
@@ -301,25 +329,29 @@ class ChromeHistogramSample:
   def bucket_count(self, bucket_min: int) -> int:
     return self._bucket_counts.get(bucket_min, 0)
 
-  def diff_buckets(self,
-                   baseline: ChromeHistogramSample) -> ChromeHistogramBuckets:
+  def diff_buckets(
+    self, baseline: ChromeHistogramSample
+  ) -> ChromeHistogramBuckets:
     buckets: ChromeHistogramBuckets = []
     for bucket_min, bucket_count in self._bucket_counts.items():
       bucket_count = bucket_count - baseline.bucket_count(bucket_min)
       bucket_max: int | None = self._bucket_maxes.get(bucket_min)
       buckets.append(
-          ChromeHistogramBucket(bucket_min, bucket_max, bucket_count))
+        ChromeHistogramBucket(bucket_min, bucket_max, bucket_count)
+      )
     return buckets
 
-  def diff_percentile(self, baseline: ChromeHistogramSample,
-                      percentile: int) -> float:
+  def diff_percentile(
+    self, baseline: ChromeHistogramSample, percentile: int
+  ) -> float:
     if percentile < 0 or percentile > 100:
       raise ValueError(f"{percentile} is not a valid percentile")
     buckets = self.diff_buckets(baseline)
     count = functools.reduce(lambda s, b: b.count + s, buckets, 0)
     if count == 0:
       raise ValueError(
-          f"{self._name} can not compute percentile without any samples")
+        f"{self._name} can not compute percentile without any samples"
+      )
     target = count * percentile / 100
     for bucket in buckets:
       if target <= bucket.count:
@@ -338,7 +370,8 @@ class ChromeHistogramSample:
       raise ValueError(f"{self._name} can not compute mean without any samples")
     if self._mean is None or baseline.mean is None:
       raise ValueError(
-          f"{self._name} has no mean reported, is it an enum histogram?")
+        f"{self._name} has no mean reported, is it an enum histogram?"
+      )
 
     return (self._mean * self._count - baseline.mean * baseline.count) / count
 
@@ -354,7 +387,6 @@ _BaseContext = JsonResultProbeContext[ChromeHistogramsProbe]
 
 
 class ChromeHistogramsProbeContext(_BaseContext):
-
   # JS code that overrides the chrome.send response handler and requests
   # histograms.
   HISTOGRAM_SEND: Final = """
@@ -380,11 +412,13 @@ chrome.send("requestHistograms", ["crossbench_histograms_1", "", true]);
 
   def dump_histograms(self, name: str) -> dict[str, ChromeHistogramSample]:
     with self.run.actions(
-        f"Probe({self.probe.name}) dump histograms {name}") as actions:
+      f"Probe({self.probe.name}) dump histograms {name}"
+    ) as actions:
       actions.show_url(
-          "chrome://histograms",
-          ready_state=ReadyState.COMPLETE,
-          timeout=dt.timedelta(seconds=10))
+        "chrome://histograms",
+        ready_state=ReadyState.COMPLETE,
+        timeout=dt.timedelta(seconds=10),
+      )
       actions.js(self.HISTOGRAM_SEND)
       actions.wait_js_condition(self.HISTOGRAM_WAIT, 0.1, timeout=10.0)
       data = actions.js(self.HISTOGRAM_DATA)
@@ -392,10 +426,12 @@ chrome.send("requestHistograms", ["crossbench_histograms_1", "", true]);
       histograms: dict[str, ChromeHistogramSample] = {}
       for histogram_dict in histogram_list:
         histogram = ChromeHistogramSample.from_json(
-            ObjectParser.dict(histogram_dict))
+          ObjectParser.dict(histogram_dict)
+        )
         histograms[histogram.name] = histogram
-      logging.debug("Extracted histograms:\n%s",
-                    str.join("\n", histograms.keys()))
+      logging.debug(
+        "Extracted histograms:\n%s", str.join("\n", histograms.keys())
+      )
       return histograms
 
   def start(self) -> None:
@@ -427,9 +463,11 @@ chrome.send("requestHistograms", ["crossbench_histograms_1", "", true]);
     json = {}
     for metric in self.probe.metrics:
       baseline = self._baseline.get(
-          metric.histogram_name, ChromeHistogramSample(metric.histogram_name))
-      delta = self._delta.get(metric.histogram_name,
-                              ChromeHistogramSample(metric.histogram_name))
+        metric.histogram_name, ChromeHistogramSample(metric.histogram_name)
+      )
+      delta = self._delta.get(
+        metric.histogram_name, ChromeHistogramSample(metric.histogram_name)
+      )
       try:
         json[metric.name] = metric.compute(delta, baseline)
       except Exception as e:  # noqa: BLE001

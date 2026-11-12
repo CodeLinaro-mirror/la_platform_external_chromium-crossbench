@@ -29,16 +29,15 @@ if TYPE_CHECKING:
 
 
 class McpSubcommandTest(unittest.TestCase):
-
   def setUp(self):
     super().setUp()
 
     class MockBenchmarkCls(Benchmark):
       """Manual benchmark"""
+
       NAME = "manual"
 
     class MockSubcommand(BenchmarkSubcommand):
-
       def __init__(self) -> None:
         self._parser: argparse.ArgumentParser | None = CBArgumentParser()
 
@@ -50,10 +49,12 @@ class McpSubcommandTest(unittest.TestCase):
       BENCHMARKS: tuple[BenchmarkClass, ...] = (MockBenchmarkCls,)
 
       def __init__(self) -> None:
-        self._dummy_subparsers: Subparsers = (
-            CBArgumentParser().add_subparsers(parser_class=CBArgumentParser))
+        self._dummy_subparsers: Subparsers = CBArgumentParser().add_subparsers(
+          parser_class=CBArgumentParser
+        )
         self._dummy_benchmark_subcommands: BenchmarkSubcommands = immutabledict(
-            {MockBenchmarkCls: MockSubcommand()})
+          {MockBenchmarkCls: MockSubcommand()}
+        )
 
       @property
       @override
@@ -67,8 +68,8 @@ class McpSubcommandTest(unittest.TestCase):
 
       @override
       def add_debugging_arguments(
-          self,
-          parser: argparse.ArgumentParser,
+        self,
+        parser: argparse.ArgumentParser,
       ) -> argparse._ArgumentGroup:
         return parser.add_argument_group()
 
@@ -90,14 +91,17 @@ class McpSubcommandTest(unittest.TestCase):
 
   def test_status_running(self):
     self.mock_state_file.exists.return_value = True
-    self.mock_state_file.read_text.return_value = json.dumps({
+    self.mock_state_file.read_text.return_value = json.dumps(
+      {
         "pid": 123,
         "endpoint": "ws://localhost:1234",
         "cmd": [],
-    })
+      }
+    )
 
     with mock.patch(
-        "crossbench.plt.PLATFORM.process_info") as mock_process_info:
+      "crossbench.plt.PLATFORM.process_info"
+    ) as mock_process_info:
       mock_process_info.return_value = {"pid": 123}
       status = self.mcp_cmd.status()
       self.assertTrue(status.running)
@@ -121,8 +125,9 @@ class McpSubcommandTest(unittest.TestCase):
     mock_cdp_file.read_text.return_value = "ws://localhost:1234"
     self.mock_out_dir.glob.return_value = [mock_cdp_file]
 
-    status = self.mcp_cmd.start_benchmark("manual",
-                                          ["--url=https://google.com"])
+    status = self.mcp_cmd.start_benchmark(
+      "manual", ["--url=https://google.com"]
+    )
 
     self.assertTrue(status.running)
     self.assertEqual(status.pid, 123)
@@ -145,7 +150,8 @@ class McpSubcommandTest(unittest.TestCase):
 
   def test_start_build_command_manual_override(self):
     cmd = self.mcp_cmd._start_build_command(
-        "manual", ["--start-after=10s", "--run-for=60s"])
+      "manual", ["--start-after=10s", "--run-for=60s"]
+    )
     self.assertIn("--expose-cdp", cmd)
     self.assertIn("--start-after=10s", cmd)
     self.assertNotIn("--start-after=0s", cmd)
@@ -173,67 +179,74 @@ class McpSubcommandTest(unittest.TestCase):
 
   def test_start_build_command_with_positional(self):
     cmd = self.mcp_cmd._start_build_command(
-        "loading", ["--url=https://google.com", "extra_arg"])
+      "loading", ["--url=https://google.com", "extra_arg"]
+    )
     self.assertIn("--no-splash", cmd)
     self.assertIn("--url=https://google.com", cmd)
     self.assertIn("extra_arg", cmd)
 
   def test_split_args(self):
     cb_args, browser_args = self.mcp_cmd._split_args(
-        ["--url=https://google.com", "--", "--chrome-flag"])
+      ["--url=https://google.com", "--", "--chrome-flag"]
+    )
     self.assertSequenceEqual(cb_args, ["--url=https://google.com"])
     self.assertSequenceEqual(browser_args, ["--", "--chrome-flag"])
 
     cb_args, browser_args = self.mcp_cmd._split_args(
-        ["--url=https://google.com"])
+      ["--url=https://google.com"]
+    )
     self.assertSequenceEqual(cb_args, ["--url=https://google.com"])
     self.assertSequenceEqual(browser_args, [])
 
     # Test that _start_build_command preserves them and adds MCP flags
     with mock.patch(
-        "crossbench.plt.base.Platform.is_headless",
-        new_callable=mock.PropertyMock) as mock_headless:
+      "crossbench.plt.base.Platform.is_headless", new_callable=mock.PropertyMock
+    ) as mock_headless:
       mock_headless.return_value = True
       cmd = self.mcp_cmd._start_build_command(
-          "manual", ["--url=https://google.com", "--", "--chrome-flag"])
+        "manual", ["--url=https://google.com", "--", "--chrome-flag"]
+      )
 
     expected_cmd = [
-        sys.executable,
-        str(pth.ROOT_DIR / "cb.py"),
-        "manual",
-        "--url=https://google.com",
-        "--expose-cdp",
-        "--start-after=0s",
-        "--run-for=1800s",
-        "--no-splash",
-        "--headless",
-        mock.ANY,
-        "--",
-        "--chrome-flag",
+      sys.executable,
+      str(pth.ROOT_DIR / "cb.py"),
+      "manual",
+      "--url=https://google.com",
+      "--expose-cdp",
+      "--start-after=0s",
+      "--run-for=1800s",
+      "--no-splash",
+      "--headless",
+      mock.ANY,
+      "--",
+      "--chrome-flag",
     ]
     self.assertEqual(cmd, expected_cmd)
     self.assertTrue(cmd[9].startswith("--out-dir="))
 
   def test_stop(self):
     self.mock_state_file.exists.return_value = True
-    self.mock_state_file.read_text.return_value = json.dumps({
+    self.mock_state_file.read_text.return_value = json.dumps(
+      {
         "pid": 123,
         "endpoint": "ws://localhost:1234",
         "cmd": [],
-    })
+      }
+    )
 
     mock_process = mock.MagicMock()
     mock_process.poll.return_value = 0
     self.mcp_cmd._process = mock_process
 
-    with mock.patch(
-        "crossbench.plt.PLATFORM.send_signal") as mock_send_signal, \
-         mock.patch(
-             "crossbench.plt.PLATFORM.kill") as mock_kill:
+    with (
+      mock.patch("crossbench.plt.PLATFORM.send_signal") as mock_send_signal,
+      mock.patch("crossbench.plt.PLATFORM.kill") as mock_kill,
+    ):
       with mock.patch.object(
-          self.mcp_cmd,
-          "_get_results_data",
-          side_effect=RuntimeError("No results")):
+        self.mcp_cmd,
+        "_get_results_data",
+        side_effect=RuntimeError("No results"),
+      ):
         res = self.mcp_cmd.stop()
         mock_send_signal.assert_called_once()
         mock_kill.assert_not_called()
@@ -245,11 +258,13 @@ class McpSubcommandTest(unittest.TestCase):
     self.mcp_cmd._process = None
 
     with mock.patch(
-        "crossbench.plt.PLATFORM.terminate_gracefully") as mock_terminate:
+      "crossbench.plt.PLATFORM.terminate_gracefully"
+    ) as mock_terminate:
       with mock.patch.object(
-          self.mcp_cmd,
-          "_get_results_data",
-          side_effect=RuntimeError("No results")):
+        self.mcp_cmd,
+        "_get_results_data",
+        side_effect=RuntimeError("No results"),
+      ):
         res = self.mcp_cmd.stop()
         mock_terminate.assert_not_called()
         self.mock_state_file.unlink.assert_called_once()
@@ -259,17 +274,20 @@ class McpSubcommandTest(unittest.TestCase):
     self.mock_state_file.exists.return_value = True
     self.mock_state_file.read_text.return_value = json.dumps({"pid": 123})
     with mock.patch(
-        "crossbench.plt.PLATFORM.process_info", return_value=mock.MagicMock()):
+      "crossbench.plt.PLATFORM.process_info", return_value=mock.MagicMock()
+    ):
       with self.assertRaises(RuntimeError):
         self.mcp_cmd.results()
 
   def test_results_success(self):
     self.mock_state_file.exists.return_value = True
     self.mock_state_file.read_text.return_value = json.dumps(
-        {"out_dir": str(self.mock_out_dir)})
+      {"out_dir": str(self.mock_out_dir)}
+    )
 
     with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".json", delete=False) as tmp:
+      mode="w", suffix=".json", delete=False
+    ) as tmp:
       tmp.write('{"score": 100}')
       tmp_path = pth.LocalPath(tmp.name)
 
@@ -290,10 +308,12 @@ class McpSubcommandTest(unittest.TestCase):
   def test_results_with_run(self):
     self.mock_state_file.exists.return_value = True
     self.mock_state_file.read_text.return_value = json.dumps(
-        {"out_dir": str(self.mock_out_dir)})
+      {"out_dir": str(self.mock_out_dir)}
+    )
 
     with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".json", delete=False) as tmp:
+      mode="w", suffix=".json", delete=False
+    ) as tmp:
       tmp.write('{"run": {"index": 1}, "probes": {"probe1": {"data": 1}}}')
       tmp_path = pth.LocalPath(tmp.name)
 
@@ -314,10 +334,12 @@ class McpSubcommandTest(unittest.TestCase):
   def test_results_with_run_and_probe(self):
     self.mock_state_file.exists.return_value = True
     self.mock_state_file.read_text.return_value = json.dumps(
-        {"out_dir": str(self.mock_out_dir)})
+      {"out_dir": str(self.mock_out_dir)}
+    )
 
     with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".json", delete=False) as tmp:
+      mode="w", suffix=".json", delete=False
+    ) as tmp:
       tmp.write('{"run": {"index": 1}, "probes": {"probe1": {"data": 1}}}')
       tmp_path = pth.LocalPath(tmp.name)
 

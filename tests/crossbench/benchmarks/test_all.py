@@ -13,8 +13,11 @@ from ordered_set import OrderedSet
 
 import crossbench.benchmarks.all as all_benchmarks
 from crossbench import path as pth
-from crossbench.benchmarks.base import Benchmark, PressBenchmark, \
-    SubStoryBenchmark
+from crossbench.benchmarks.base import (
+  Benchmark,
+  PressBenchmark,
+  SubStoryBenchmark,
+)
 from crossbench.benchmarks.loading.loading_benchmark import LoadingBenchmark
 from crossbench.benchmarks.memory.memory_benchmark import MemoryBenchmark
 from crossbench.benchmarks.web_power.base import WebPowerBenchmarkBase
@@ -24,8 +27,8 @@ if TYPE_CHECKING:
   from crossbench.stories.story import Story
 
 EXCLUDED_BENCHMARKS: Final[tuple[type[Benchmark], ...]] = (
-    SubStoryBenchmark,
-    WebPowerBenchmarkBase,
+  SubStoryBenchmark,
+  WebPowerBenchmarkBase,
 )
 
 _MOCK_CLASS_RE: Final[re.Pattern[str]] = re.compile(r"^Mock|Mock$")
@@ -34,7 +37,8 @@ _MOCK_CLASS_RE: Final[re.Pattern[str]] = re.compile(r"^Mock|Mock$")
 def all_benchmark_classes() -> tuple[type[Benchmark], ...]:
 
   def all_subclasses(
-      benchmark_cls: type[Benchmark]) -> Iterator[type[Benchmark]]:
+    benchmark_cls: type[Benchmark],
+  ) -> Iterator[type[Benchmark]]:
     for sub_cls in benchmark_cls.__subclasses__():
       if _MOCK_CLASS_RE.search(sub_cls.__name__):
         continue
@@ -55,7 +59,6 @@ ALL: Final[tuple[type[Benchmark], ...]] = all_benchmark_classes()
 
 
 class AllBenchmarksTestCase(unittest.TestCase):
-
   def test_unique_classes(self):
     self.assertSequenceEqual(ALL, tuple(OrderedSet(ALL)))
 
@@ -80,9 +83,9 @@ class AllBenchmarksTestCase(unittest.TestCase):
     for benchmark_cls in ALL:
       if benchmark_cls is MemoryBenchmark:
         continue
-      if issubclass(benchmark_cls,
-                    LoadingBenchmark) and (benchmark_cls
-                                           is not LoadingBenchmark):
+      if issubclass(benchmark_cls, LoadingBenchmark) and (
+        benchmark_cls is not LoadingBenchmark
+      ):
         continue
       if not issubclass(benchmark_cls, SubStoryBenchmark):
         continue
@@ -98,8 +101,9 @@ class AllBenchmarksTestCase(unittest.TestCase):
       with self.subTest(benchmark_cls=benchmark_cls.__name__):
         self.assertFalse(benchmark_cls.LOCAL_DIR.is_absolute())
         index_html = pth.ROOT_DIR / benchmark_cls.LOCAL_DIR / "index.html"
-        self.assertTrue(index_html.is_file(),
-                        f"Missing {index_html}, run `gclient sync`.")
+        self.assertTrue(
+          index_html.is_file(), f"Missing {index_html}, run `gclient sync`."
+        )
 
 
 if __name__ == "__main__":

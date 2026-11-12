@@ -27,25 +27,25 @@ class Settings:
   """Container object for browser agnostic settings."""
 
   def __init__(
-      self,
-      flags: FlagsData | None = None,
-      js_flags: FlagsData | None = None,
-      cache_dir: pth.AnyPath | None = None,
-      clear_cache_dir: bool = True,
-      network: Network | None = None,
-      driver_path: pth.AnyPath | None = None,
-      viewport: Viewport | None = None,
-      splash_screen: SplashScreen | None = None,
-      platform: plt.Platform | None = None,
-      secrets: Secrets = Secrets(),
-      driver_logging: bool = False,
-      wipe_system_user_data: bool = False,
-      http_request_timeout: dt.timedelta = dt.timedelta(),
-      env_config: EnvConfig | None = None,
-      extensions: tuple[ExtensionConfig, ...] | None = None,
-      apk_config: ApkConfig | None = None,
-      browser_version: str | None = None,
-      start_browser: bool = True,
+    self,
+    flags: FlagsData | None = None,
+    js_flags: FlagsData | None = None,
+    cache_dir: pth.AnyPath | None = None,
+    clear_cache_dir: bool = True,
+    network: Network | None = None,
+    driver_path: pth.AnyPath | None = None,
+    viewport: Viewport | None = None,
+    splash_screen: SplashScreen | None = None,
+    platform: plt.Platform | None = None,
+    secrets: Secrets = Secrets(),
+    driver_logging: bool = False,
+    wipe_system_user_data: bool = False,
+    http_request_timeout: dt.timedelta = dt.timedelta(),
+    env_config: EnvConfig | None = None,
+    extensions: tuple[ExtensionConfig, ...] | None = None,
+    apk_config: ApkConfig | None = None,
+    browser_version: str | None = None,
+    start_browser: bool = True,
   ) -> None:
     self._flags: Final[Flags] = self._convert_flags(flags, "flags")
     self._js_flags: Final[Flags] = self._extract_js_flags(self._flags, js_flags)
@@ -58,10 +58,12 @@ class Settings:
     if not start_browser:
       if splash_screen and splash_screen is not SplashScreen.NONE:
         raise ValueError(
-            "SplashScreen cannot be used when start_browser is False.")
+          "SplashScreen cannot be used when start_browser is False."
+        )
       splash_screen = SplashScreen.NONE
-    self._splash_screen: Final[
-        SplashScreen] = splash_screen or SplashScreen.DEFAULT
+    self._splash_screen: Final[SplashScreen] = (
+      splash_screen or SplashScreen.DEFAULT
+    )
     self._secrets: Final[Secrets] = secrets
     self._driver_logging: Final[bool] = driver_logging
     self._wipe_system_user_data: Final[bool] = wipe_system_user_data
@@ -72,16 +74,18 @@ class Settings:
     self._browser_version: Final[str | None] = browser_version
     self._start_browser: Final[bool] = start_browser
 
-  def _extract_js_flags(self, flags: Flags,
-                        js_flags: FlagsData | None) -> Flags:
+  def _extract_js_flags(
+    self, flags: Flags, js_flags: FlagsData | None
+  ) -> Flags:
     if isinstance(flags, ChromeFlags):
       chrome_js_flags = flags.js_flags
       if not js_flags:
         return chrome_js_flags
       if chrome_js_flags:
         raise ValueError(
-            f"Ambiguous js-flags: flags.js_flags={chrome_js_flags!r}, "
-            f"js_flags={js_flags!r}")
+          f"Ambiguous js-flags: flags.js_flags={chrome_js_flags!r}, "
+          f"js_flags={js_flags!r}"
+        )
     return self._convert_flags(js_flags, "--js-flags")
 
   def _convert_flags(self, flags: FlagsData | None, label: str) -> Flags:

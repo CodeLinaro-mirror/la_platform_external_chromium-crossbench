@@ -13,9 +13,11 @@ from crossbench.config import ConfigEnum
 class StartTracingSequence(ConfigEnum):
   PROBE_START = ("probe_start", "Start tracing as soon as the probe starts.")
   STORY_SETUP = (
-      "story_setup",
-      "Start tracing immediately before the story setup workload is started.")
+    "story_setup",
+    "Start tracing immediately before the story setup workload is started.",
+  )
   STORY_RUN = (
-      "story_run",
-      "Start tracing immediately before the first iteration of the core story "
-      "workload.")
+    "story_run",
+    "Start tracing immediately before the first iteration of the core story "
+    "workload.",
+  )

@@ -11,7 +11,6 @@ from tests import test_helper
 
 
 class SplashScreenTestCase(unittest.TestCase):
-
   def test_prase_invalid(self):
     for invalid in ("a", "1", "{}"):
       with self.assertRaises(ArgumentTypeError):

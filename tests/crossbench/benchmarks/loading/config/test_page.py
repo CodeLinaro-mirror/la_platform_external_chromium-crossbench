@@ -17,10 +17,10 @@ from tests import test_helper
 
 
 class PageConfigTestsCase(unittest.TestCase):
-
   def test_parse_empty(self):
-    with self.assertRaisesRegex(argparse.ArgumentTypeError,
-                                r"(?i)non-empty.*url"):
+    with self.assertRaisesRegex(
+      argparse.ArgumentTypeError, r"(?i)non-empty.*url"
+    ):
       PageConfig.parse("")
 
   def test_parse_unknown_type(self):
@@ -41,16 +41,20 @@ class PageConfigTestsCase(unittest.TestCase):
     self.assertEqual(config.tags, frozenset())
 
   def test_parse_tags(self):
-    config = PageConfig.parse({
+    config = PageConfig.parse(
+      {
         "actions": ["http://a.com"],
         "tags": "tag1,tag2",
-    })
+      }
+    )
     self.assertEqual(config.tags, frozenset(["tag1", "tag2"]))
 
-    config2 = PageConfig.parse({
+    config2 = PageConfig.parse(
+      {
         "actions": ["http://a.com"],
         "tags": ["tag1", "tag2"],
-    })
+      }
+    )
     self.assertEqual(config2.tags, frozenset(["tag1", "tag2"]))
 
     with self.assertRaises(argparse.ArgumentTypeError):
@@ -127,8 +131,8 @@ class PageConfigTestsCase(unittest.TestCase):
 
   def test_parse_sequence_urls(self):
     config_urls = [
-        "http://test.com/0",
-        "http://test.com/0,123s",
+      "http://test.com/0",
+      "http://test.com/0,123s",
     ]
     config_1 = PageConfig.parse(config_urls)
     self.assertIsNone(config_1.login)
@@ -140,8 +144,9 @@ class PageConfigTestsCase(unittest.TestCase):
     self.assertIsInstance(config_1.blocks[0].actions[0], GetAction)
     self.assertIsInstance(config_1.blocks[0].actions[1], GetAction)
     self.assertEqual(config_1.blocks[0].actions[0].url, "http://test.com/0")
-    self.assertEqual(config_1.blocks[0].actions[1].url,
-                     "http://test.com/0,123s")
+    self.assertEqual(
+      config_1.blocks[0].actions[1].url, "http://test.com/0,123s"
+    )
 
     config_data = {"urls": config_urls}
     config_2 = PageConfig.parse(config_data)
@@ -154,19 +159,24 @@ class PageConfigTestsCase(unittest.TestCase):
   def test_parse_sequence_preset_urls(self):
     # Known url names only work at PageConfig level at this point.
     config_urls = [
-        "cnn",
+      "cnn",
     ]
     with self.assertRaisesRegex(argparse.ArgumentTypeError, "cnn"):
       PageConfig.parse(config_urls)
 
   def test_parse_action_sequence(self):
-    config = PageConfig.parse([{
-        "action": "get",
-        "url": "http://test.com/click",
-    }, {
-        "action": "click",
-        "selector": "#foo",
-    }])
+    config = PageConfig.parse(
+      [
+        {
+          "action": "get",
+          "url": "http://test.com/click",
+        },
+        {
+          "action": "click",
+          "selector": "#foo",
+        },
+      ]
+    )
     self.assertEqual(config.first_url, "http://test.com/click")
     self.assertIsNone(config.login)
     self.assertIsNone(config.setup)
@@ -175,13 +185,16 @@ class PageConfigTestsCase(unittest.TestCase):
 
   def test_parse_actions_dict(self):
     config_data = {
-        "actions": [{
-            "action": "get",
-            "url": "http://test.com/click",
-        }, {
-            "action": "click",
-            "selector": "#foo",
-        }],
+      "actions": [
+        {
+          "action": "get",
+          "url": "http://test.com/click",
+        },
+        {
+          "action": "click",
+          "selector": "#foo",
+        },
+      ],
     }
     config_1 = PageConfig.parse(config_data)
     self.assertIsNone(config_1.login)
@@ -196,14 +209,17 @@ class PageConfigTestsCase(unittest.TestCase):
 
   def test_parse_login_block(self):
     config_data = {
-        "login": [{
-            "action": "get",
-            "url": "http://test.com/login",
-        }, {
-            "action": "click",
-            "selector": "#foo",
-        }],
-        "urls": ["http://test.com/charts"],
+      "login": [
+        {
+          "action": "get",
+          "url": "http://test.com/login",
+        },
+        {
+          "action": "click",
+          "selector": "#foo",
+        },
+      ],
+      "urls": ["http://test.com/charts"],
     }
     config = PageConfig.parse(config_data)
     login = config.login
@@ -221,15 +237,18 @@ class PageConfigTestsCase(unittest.TestCase):
 
   def test_parse_setup_block(self):
     config_data = {
-        "login": ["http://test.com/login"],
-        "setup": [{
-            "action": "get",
-            "url": "http://test.com/setup",
-        }, {
-            "action": "click",
-            "selector": "#foo",
-        }],
-        "actions": ["http://test.com/charts"],
+      "login": ["http://test.com/login"],
+      "setup": [
+        {
+          "action": "get",
+          "url": "http://test.com/setup",
+        },
+        {
+          "action": "click",
+          "selector": "#foo",
+        },
+      ],
+      "actions": ["http://test.com/charts"],
     }
     config = PageConfig.parse(config_data)
     self.assertIsNotNone(config.login)
@@ -257,14 +276,17 @@ class PageConfigTestsCase(unittest.TestCase):
 
   def test_parse_teardown_block(self):
     config_data = {
-        "actions": ["http://test.com/charts"],
-        "teardown": [{
-            "action": "get",
-            "url": "http://test.com/teardown",
-        }, {
-            "action": "click",
-            "selector": "#foo",
-        }],
+      "actions": ["http://test.com/charts"],
+      "teardown": [
+        {
+          "action": "get",
+          "url": "http://test.com/teardown",
+        },
+        {
+          "action": "click",
+          "selector": "#foo",
+        },
+      ],
     }
 
     config = PageConfig.parse(config_data)
@@ -276,37 +298,50 @@ class PageConfigTestsCase(unittest.TestCase):
     self.assertEqual(config.teardown.first_url, "http://test.com/teardown")
 
   def test_first_url_missing(self):
-    setup_only = PageConfig.parse({
+    setup_only = PageConfig.parse(
+      {
         "login": ["http://test.com/login"],
         "setup": ["http://test.com/setup"],
         "teardown": ["http://test.com/teardown"],
-    })
+      }
+    )
     self.assertEqual(setup_only.first_url, "")
 
-    non_get_blocks = PageConfig.parse({
-        "actions": [{
+    non_get_blocks = PageConfig.parse(
+      {
+        "actions": [
+          {
             "action": "wait",
             "duration": "1s",
-        }],
-    })
+          }
+        ],
+      }
+    )
     self.assertEqual(non_get_blocks.first_url, "")
 
   def test_first_url_later_block(self):
-    config = PageConfig.parse({
+    config = PageConfig.parse(
+      {
         "blocks": {
-            "b0": [{
-                "action": "wait",
-                "duration": "1s",
-            }],
-            "b1": [{
-                "action": "get",
-                "url": "http://test.com/1",
-            }, {
-                "action": "get",
-                "url": "http://test.com/2",
-            }],
+          "b0": [
+            {
+              "action": "wait",
+              "duration": "1s",
+            }
+          ],
+          "b1": [
+            {
+              "action": "get",
+              "url": "http://test.com/1",
+            },
+            {
+              "action": "get",
+              "url": "http://test.com/2",
+            },
+          ],
         },
-    })
+      }
+    )
     self.assertEqual(config.first_url, "http://test.com/1")
 
 

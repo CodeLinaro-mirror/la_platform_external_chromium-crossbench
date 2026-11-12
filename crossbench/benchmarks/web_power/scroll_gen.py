@@ -23,6 +23,7 @@ class GeneratorConfig:
   Each iteration consists of `swipes_per_direction` swipes down, followed
   by the inverse swipes back up.
   """
+
   input_rate: int = 240
   scroll_count: int = 5
   swipes_per_direction: int = 5
@@ -49,6 +50,7 @@ class GeneratorConfig:
 
 class EvemuEvent:
   """Helper to construct and emit EVEMU synthetic touch events."""
+
   PRESSURE: ClassVar[int] = 50
   TOUCH_MAJOR: ClassVar[int] = 30
 
@@ -57,14 +59,14 @@ class EvemuEvent:
   EV_ABS: ClassVar[int] = 0x0003
 
   SYN_REPORT: ClassVar[int] = 0x0000
-  BTN_TOUCH: ClassVar[int] = 0x014a
+  BTN_TOUCH: ClassVar[int] = 0x014A
 
-  ABS_MT_SLOT: ClassVar[int] = 0x002f
+  ABS_MT_SLOT: ClassVar[int] = 0x002F
   ABS_MT_TOUCH_MAJOR: ClassVar[int] = 0x0030
   ABS_MT_POSITION_X: ClassVar[int] = 0x0035
   ABS_MT_POSITION_Y: ClassVar[int] = 0x0036
   ABS_MT_TRACKING_ID: ClassVar[int] = 0x0039
-  ABS_MT_PRESSURE: ClassVar[int] = 0x003a
+  ABS_MT_PRESSURE: ClassVar[int] = 0x003A
 
   def __init__(self, timestamp: float) -> None:
     self.time: Final[float] = timestamp
@@ -95,7 +97,8 @@ class EvemuEvent:
     for etype, code, value in self.events:
       out.append(f"E: {self.time:.6f} {etype:04x} {code:04x} {value:04d}")
     out.append(
-        f"E: {self.time:.6f} {self.EV_SYN:04x} {self.SYN_REPORT:04x} 0000")
+      f"E: {self.time:.6f} {self.EV_SYN:04x} {self.SYN_REPORT:04x} 0000"
+    )
 
 
 def emit_header(max_x: int, max_y: int, out: list[str]) -> None:
@@ -137,8 +140,9 @@ A: 3a 0 255 0 0 0"""
   out.append(header)
 
 
-def generate_event(time: float, x: int, y: int, finger_down: bool,
-                   out: list[str]) -> None:
+def generate_event(
+  time: float, x: int, y: int, finger_down: bool, out: list[str]
+) -> None:
   event = EvemuEvent(time)
   event.set_btn_touch(1 if finger_down else 0)
   event.set_tracking_id(0 if finger_down else -1)
@@ -151,17 +155,18 @@ def generate_event(time: float, x: int, y: int, finger_down: bool,
 
 
 def generate_swipes(
-    time: float,
-    start_y: int,
-    end_y: int,
-    fixed_x: int,
-    config: GeneratorConfig,
-    out: list[str],
+  time: float,
+  start_y: int,
+  end_y: int,
+  fixed_x: int,
+  config: GeneratorConfig,
+  out: list[str],
 ) -> float:
   period = 1.0 / config.input_rate
   input_frames = int(config.swipe_duration.total_seconds() * config.input_rate)
-  settle_frames = int(config.settle_duration.total_seconds() *
-                      config.input_rate)
+  settle_frames = int(
+    config.settle_duration.total_seconds() * config.input_rate
+  )
 
   for _ in range(config.swipes_per_direction):
     cycle_start_time = time
@@ -177,7 +182,8 @@ def generate_swipes(
       multiplier = (1 - math.cos(math.pi * progress)) / 2
       current_y_pos = start_y + (end_y - start_y) * multiplier
       generate_event(
-          time, fixed_x, int(current_y_pos), finger_down=True, out=out)
+        time, fixed_x, int(current_y_pos), finger_down=True, out=out
+      )
       time += period
 
     # Frames generated: 1 Touch Down Frame + (input_frames - 1) = input_frames
@@ -196,8 +202,9 @@ def generate_swipes(
   return time
 
 
-def generate_scroll_commands(config: GeneratorConfig,
-                             display_resolution: DisplayResolution) -> str:
+def generate_scroll_commands(
+  config: GeneratorConfig, display_resolution: DisplayResolution
+) -> str:
   max_x = display_resolution.width
   max_y = display_resolution.height
   assert max_x > 0

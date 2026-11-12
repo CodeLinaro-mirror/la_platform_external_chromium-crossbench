@@ -18,7 +18,6 @@ from tests.crossbench.runner.mocks import MockProbe
 
 
 class MockProbeWithName(Probe):
-
   def __init__(self, name: str = "additional_probe"):
     self._name = name
     super().__init__()
@@ -29,7 +28,6 @@ class MockProbeWithName(Probe):
 
 
 class MockProbeWithAdditional(MockProbeWithName):
-
   def __init__(self, additional_probe: Probe, name: str):
     super().__init__(name)
     self.additional_probe = additional_probe
@@ -40,7 +38,6 @@ class MockProbeWithAdditional(MockProbeWithName):
 
 
 class TestRunnerProbes(BaseRunnerTestCase):
-
   def test_auto_add_probe(self):
     additional_probe = MockProbeWithName("js")
     main_probe = MockProbeWithAdditional(additional_probe, "perfetto")
@@ -62,8 +59,9 @@ class TestRunnerProbes(BaseRunnerTestCase):
 
   def test_auto_add_probe_recursive(self):
     additional_probe_2 = MockProbeWithName("additional_probe_2")
-    additional_probe_1 = MockProbeWithAdditional(additional_probe_2,
-                                                 "additional_probe_1")
+    additional_probe_1 = MockProbeWithAdditional(
+      additional_probe_2, "additional_probe_1"
+    )
     main_probe = MockProbeWithAdditional(additional_probe_1, "main_probe")
 
     runner = self.default_runner(probes=[main_probe])
@@ -120,7 +118,8 @@ class TestRunnerProbes(BaseRunnerTestCase):
 
     benchmark = BenchmarkWithProbe(self.stories)
     runner = self.default_runner(
-        benchmark=benchmark, disabled_probes=["perfetto"])
+      benchmark=benchmark, disabled_probes=["perfetto"]
+    )
 
     self.assertFalse(runner.has_probe("perfetto"))
     self.assertTrue(runner.is_probe_disabled("perfetto"))

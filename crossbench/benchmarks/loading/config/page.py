@@ -10,12 +10,13 @@ import logging
 from typing import TYPE_CHECKING, ClassVar, Iterator, Self, Sequence, override
 
 from crossbench import path as pth
-from crossbench.benchmarks.loading.config.blocks import ActionBlock, \
-    ActionBlockListConfig
+from crossbench.benchmarks.loading.config.blocks import (
+  ActionBlock,
+  ActionBlockListConfig,
+)
 from crossbench.benchmarks.loading.config.login.custom import LoginBlock
 from crossbench.benchmarks.loading.page.live import PAGES
-from crossbench.benchmarks.loading.playback_controller import \
-    PlaybackController
+from crossbench.benchmarks.loading.playback_controller import PlaybackController
 from crossbench.cli.config.secrets import Secrets
 from crossbench.config import ConfigObject, ConfigParser
 from crossbench.parse import DurationParser, ObjectParser
@@ -48,8 +49,8 @@ class PageConfig(ConfigObject):
   def parse_tags(cls, tags: object) -> frozenset[str]:
     tags_list = ObjectParser.str_list(tags, name="tags", error_cls=ValueError)
     return frozenset(
-        ObjectParser.unique_sequence(
-            tags_list, name="tags", error_cls=ValueError))
+      ObjectParser.unique_sequence(tags_list, name="tags", error_cls=ValueError)
+    )
 
   @classmethod
   def parse_other(cls, value: object, **kwargs) -> Self:
@@ -77,10 +78,12 @@ class PageConfig(ConfigObject):
     return cls.from_url(label, url, duration)
 
   @classmethod
-  def parse_sequence(cls,
-                     value: Sequence[object],
-                     label: str | None = None,
-                     secrets: Secrets | None = None) -> Self:
+  def parse_sequence(
+    cls,
+    value: Sequence[object],
+    label: str | None = None,
+    secrets: Secrets | None = None,
+  ) -> Self:
     value = ObjectParser.non_empty_sequence(value, "story actions or blocks")
     blocks = ActionBlockListConfig.parse_sequence(value)
     if label is not None:
@@ -90,14 +93,17 @@ class PageConfig(ConfigObject):
 
   @classmethod
   @override
-  def parse_dict(cls,
-                 config: dict[str, object],
-                 label: str | None = None,
-                 secrets: Secrets | None = None,
-                 **kwargs) -> Self:
+  def parse_dict(
+    cls,
+    config: dict[str, object],
+    label: str | None = None,
+    secrets: Secrets | None = None,
+    **kwargs,
+  ) -> Self:
     config = ObjectParser.non_empty_dict(config, "story actions or blocks")
     page_config = cls.config_parser().parse(
-        config, label=label, secrets=secrets, **kwargs)
+      config, label=label, secrets=secrets, **kwargs
+    )
     return page_config
 
   @classmethod
@@ -111,17 +117,15 @@ class PageConfig(ConfigObject):
     parser.add_argument("login", type=LoginBlock)
     parser.add_argument("setup", type=ActionBlock)
     parser.add_argument(
-        "blocks",
-        aliases=("actions", "url", "urls"),
-        type=ActionBlockListConfig)
+      "blocks", aliases=("actions", "url", "urls"), type=ActionBlockListConfig
+    )
     parser.add_argument("teardown", type=ActionBlock)
     return parser
 
   @classmethod
-  def from_url(cls,
-               label: str | None,
-               url: str,
-               duration: dt.timedelta = dt.timedelta()) -> Self:
+  def from_url(
+    cls, label: str | None, url: str, duration: dt.timedelta = dt.timedelta()
+  ) -> Self:
     blocks = (ActionBlock.from_url(url, duration),)
     return cls(label=label, blocks=blocks)
 
@@ -167,7 +171,7 @@ class PageConfig(ConfigObject):
       return pth.LocalPath(url.path).name
     if hostname := url.hostname:
       if hostname.startswith("www."):
-        return hostname[len("www."):]
+        return hostname[len("www.") :]
       return hostname
     return str(url)
 

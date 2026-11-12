@@ -14,8 +14,11 @@ from crossbench.config import ConfigObject, ConfigParser
 from crossbench.helper.collection_helper import close_matches_message
 from crossbench.parse import NumberParser, ObjectParser
 from crossbench.pinpoint import patch_resolver
-from crossbench.pinpoint.benchmarks import all_stories, default_story, \
-    is_crossbench_benchmark
+from crossbench.pinpoint.benchmarks import (
+  all_stories,
+  default_story,
+  is_crossbench_benchmark,
+)
 from crossbench.pinpoint.helper import annotate
 from crossbench.pinpoint.list_benchmarks import fetch_benchmarks
 from crossbench.pinpoint.list_bots import fetch_bots
@@ -37,10 +40,10 @@ class VariantConfig(ConfigObject):
   @classmethod
   @override
   def create(
-      cls,
-      commit: str = "recent",
-      patch: str | None = None,
-      flags: FlagsConfig | None = None,
+    cls,
+    commit: str = "recent",
+    patch: str | None = None,
+    flags: FlagsConfig | None = None,
   ) -> Self:
     if flags is None:
       flags = FlagsConfig()
@@ -51,25 +54,28 @@ class VariantConfig(ConfigObject):
   def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(cls)
     parser.add_argument(
-        "commit",
-        default="recent",
-        type=cls.parse_commit,
-        help="Git commit hash for the build. Accepts a full commit hash, "
-        "'HEAD' (latest commit), or 'recent' (the most recent build).")
+      "commit",
+      default="recent",
+      type=cls.parse_commit,
+      help="Git commit hash for the build. Accepts a full commit hash, "
+      "'HEAD' (latest commit), or 'recent' (the most recent build).",
+    )
     parser.add_argument(
-        "patch",
-        type=cls.parse_patch,
-        help="Gerrit patch to apply to the commit. Supported formats: "
-        "'12345' (optional patchset: '12345/6'), 'c/12345', "
-        "'crrev/c/12345', 'crrev/12345', 'crrev.com/c/12345' "
-        "'crrev.com/12345', or a full URL. "
-        "Note: All patches must be for chromium-review; "
-        "chrome-internal-review is not supported.")
+      "patch",
+      type=cls.parse_patch,
+      help="Gerrit patch to apply to the commit. Supported formats: "
+      "'12345' (optional patchset: '12345/6'), 'c/12345', "
+      "'crrev/c/12345', 'crrev/12345', 'crrev.com/c/12345' "
+      "'crrev.com/12345', or a full URL. "
+      "Note: All patches must be for chromium-review; "
+      "chrome-internal-review is not supported.",
+    )
     parser.add_argument(
-        "flags",
-        type=FlagsConfig,
-        default=FlagsConfig(),
-        help="Chrome flags forwarded to the browser.")
+      "flags",
+      type=FlagsConfig,
+      default=FlagsConfig(),
+      help="Chrome flags forwarded to the browser.",
+    )
     return parser
 
   @classmethod
@@ -102,28 +108,31 @@ class VariantConfig(ConfigObject):
       return self
     return dataclasses.replace(self, patch=self.parse_patch(patch))
 
-  def override_flags(self,
-                     flags: str | None = None,
-                     js_flags: str | None = None,
-                     enable_features: str | None = None,
-                     disable_features: str | None = None,
-                     enable_blink_features: str | None = None,
-                     disable_blink_features: str | None = None) -> Self:
+  def override_flags(
+    self,
+    flags: str | None = None,
+    js_flags: str | None = None,
+    enable_features: str | None = None,
+    disable_features: str | None = None,
+    enable_blink_features: str | None = None,
+    disable_blink_features: str | None = None,
+  ) -> Self:
     extra_flags: dict[str, str | None] = {}
     if flags and flags.strip():
       extra_flags = dict(FlagsConfig.parse(flags)["default"][0].flags.items())
     input_flags = {
-        "--js-flags": js_flags,
-        "--enable-features": enable_features,
-        "--disable-features": disable_features,
-        "--enable-blink-features": enable_blink_features,
-        "--disable-blink-features": disable_blink_features,
+      "--js-flags": js_flags,
+      "--enable-features": enable_features,
+      "--disable-features": disable_features,
+      "--enable-blink-features": enable_blink_features,
+      "--disable-blink-features": disable_blink_features,
     }
     filtered_flags = {k: v for k, v in input_flags.items() if v is not None}
     combined_flags = self.flags_as_dict() | extra_flags | filtered_flags
     if combined_flags_str := self.flags_dict_to_str(combined_flags):
       return dataclasses.replace(
-          self, flags=FlagsConfig.parse(combined_flags_str))
+        self, flags=FlagsConfig.parse(combined_flags_str)
+      )
     return self
 
   def flags_as_dict(self) -> dict[str, str | None]:
@@ -160,7 +169,8 @@ class BisectStartVariantConfig(VariantConfig):
   def validate(self) -> None:
     if self.patch:
       raise ValueError(
-          "Patch is not supported for start variant in bisect jobs.")
+        "Patch is not supported for start variant in bisect jobs."
+      )
 
 
 @dataclasses.dataclass(frozen=True)
@@ -172,7 +182,8 @@ class BisectEndVariantConfig(VariantConfig):
       raise ValueError("Patch is not supported for end variant in bisect jobs.")
     if self.flags and self.flags != FlagsConfig():
       raise ValueError(
-          "Flags are not supported for end variant in bisect jobs.")
+        "Flags are not supported for end variant in bisect jobs."
+      )
 
 
 @dataclasses.dataclass(frozen=True)
@@ -185,12 +196,14 @@ class PinpointJobConfigMixin:
   def resolve_benchmark(cls, benchmark: str) -> str | None:
     if not benchmark:
       raise ValueError(
-          "Benchmark is required. "
-          "Run 'cb pp benchmarks' to list all available benchmarks.")
+        "Benchmark is required. "
+        "Run 'cb pp benchmarks' to list all available benchmarks."
+      )
     available_benchmarks = fetch_benchmarks()
     if benchmark not in available_benchmarks:
-      msg, _ = close_matches_message(benchmark, available_benchmarks,
-                                     "benchmark")
+      msg, _ = close_matches_message(
+        benchmark, available_benchmarks, "benchmark"
+      )
       return f"{msg}\nRun 'cb pp benchmarks' to list all available benchmarks."
     return None
 
@@ -198,7 +211,8 @@ class PinpointJobConfigMixin:
   def resolve_bot(cls, bot: str) -> str | None:
     if not bot:
       raise ValueError(
-          "Bot is required. Run 'cb pp bots' to list all available bots.")
+        "Bot is required. Run 'cb pp bots' to list all available bots."
+      )
     available_bots = fetch_bots()
     if bot not in available_bots:
       msg, _ = close_matches_message(bot, available_bots, "bot")
@@ -206,8 +220,9 @@ class PinpointJobConfigMixin:
     return None
 
   @classmethod
-  def resolve_story(cls, benchmark: str,
-                    story: str | None) -> tuple[str | None, str | None]:
+  def resolve_story(
+    cls, benchmark: str, story: str | None
+  ) -> tuple[str | None, str | None]:
     if not benchmark:
       return story, None
     if is_crossbench_benchmark(benchmark):
@@ -221,20 +236,22 @@ class PinpointJobConfigMixin:
 
     if not story:
       return story, (
-          f"Missing story for benchmark {benchmark}.\n"
-          f"Run 'cb pp stories {benchmark}' to list all available stories.")
+        f"Missing story for benchmark {benchmark}.\n"
+        f"Run 'cb pp stories {benchmark}' to list all available stories."
+      )
     if not stories:
       return story, f"Unknown story: {story}"
     if story not in stories:
       msg, _ = close_matches_message(story, stories, "story")
       return story, (
-          f"{msg}\n"
-          f"Run 'cb pp stories {benchmark}' to list all available stories.")
+        f"{msg}\nRun 'cb pp stories {benchmark}' to list all available stories."
+      )
     return story, None
 
   @classmethod
-  def parse_extra_browser_args(cls,
-                               extra_browser_args: str | None) -> FlagsConfig:
+  def parse_extra_browser_args(
+    cls, extra_browser_args: str | None
+  ) -> FlagsConfig:
     if not extra_browser_args:
       return FlagsConfig()
     if match := re.search(r'--extra-browser-args="(.*?)"', extra_browser_args):
@@ -255,29 +272,29 @@ class PinpointTryJobConfig(PinpointJobConfigMixin, ConfigObject):
   @classmethod
   @override
   def create(
-      cls,
-      benchmark: str,
-      bot: str,
-      story: str | None = None,
-      story_tags: str | None = None,
-      base: VariantConfig | None = None,
-      experiment: VariantConfig | None = None,
-      repeat: int = 30,
-      bug: int | None = None,
+    cls,
+    benchmark: str,
+    bot: str,
+    story: str | None = None,
+    story_tags: str | None = None,
+    base: VariantConfig | None = None,
+    experiment: VariantConfig | None = None,
+    repeat: int = 30,
+    bug: int | None = None,
   ) -> Self:
     if base is None:
       base = VariantConfig()
     if experiment is None:
       experiment = VariantConfig()
     return cls(
-        benchmark=benchmark,
-        bot=bot,
-        story=story,
-        story_tags=story_tags,
-        base=base,
-        experiment=experiment,
-        repeat=repeat,
-        bug=bug,
+      benchmark=benchmark,
+      bot=bot,
+      story=story,
+      story_tags=story_tags,
+      base=base,
+      experiment=experiment,
+      repeat=repeat,
+      bug=bug,
     )
 
   @classmethod
@@ -285,45 +302,50 @@ class PinpointTryJobConfig(PinpointJobConfigMixin, ConfigObject):
   def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(cls)
     parser.add_argument(
-        "benchmark",
-        type=str,
-        help="Benchmark name (e.g., 'speedometer3').",
+      "benchmark",
+      type=str,
+      help="Benchmark name (e.g., 'speedometer3').",
     )
     parser.add_argument(
-        "bot",
-        type=str,
-        help="The bot configuration to run on (e.g., 'linux-perf')")
-    parser.add_argument(
-        "story",
-        type=str,
-        help="Optional story to run within the benchmark. "
-        "Obtained automatically for the given benchmark if not specified.",
+      "bot",
+      type=str,
+      help="The bot configuration to run on (e.g., 'linux-perf')",
     )
     parser.add_argument(
-        "story_tags",
-        type=str,
-        help="Optional story tags to filter stories. "
-        "Required if no story can be obtained automatically.",
+      "story",
+      type=str,
+      help="Optional story to run within the benchmark. "
+      "Obtained automatically for the given benchmark if not specified.",
     )
     parser.add_argument(
-        "base",
-        type=VariantConfig,
-        default=VariantConfig(),
-        help="Configuration for the base variant of the A/B test.")
+      "story_tags",
+      type=str,
+      help="Optional story tags to filter stories. "
+      "Required if no story can be obtained automatically.",
+    )
     parser.add_argument(
-        "experiment",
-        type=VariantConfig,
-        default=VariantConfig(),
-        help="Configuration for the experiment variant of the A/B test.")
+      "base",
+      type=VariantConfig,
+      default=VariantConfig(),
+      help="Configuration for the base variant of the A/B test.",
+    )
     parser.add_argument(
-        "repeat",
-        type=NumberParser.positive_int,
-        default=30,
-        help="The number of times to repeat the experiment.")
+      "experiment",
+      type=VariantConfig,
+      default=VariantConfig(),
+      help="Configuration for the experiment variant of the A/B test.",
+    )
     parser.add_argument(
-        "bug",
-        type=NumberParser.positive_int,
-        help="Optional bug ID associated with the job.")
+      "repeat",
+      type=NumberParser.positive_int,
+      default=30,
+      help="The number of times to repeat the experiment.",
+    )
+    parser.add_argument(
+      "bug",
+      type=NumberParser.positive_int,
+      help="Optional bug ID associated with the job.",
+    )
     return parser
 
   @classmethod
@@ -333,30 +355,30 @@ class PinpointTryJobConfig(PinpointJobConfigMixin, ConfigObject):
 
   @classmethod
   def parse_and_override(
-      cls,
-      config: str | None = None,
-      benchmark: str | None = None,
-      bot: str | None = None,
-      story: str | None = None,
-      story_tags: str | None = None,
-      repeat: int | None = None,
-      bug: int | None = None,
-      base_commit: str | None = None,
-      exp_commit: str | None = None,
-      base_patch: str | None = None,
-      exp_patch: str | None = None,
-      base_flags: str | None = None,
-      exp_flags: str | None = None,
-      base_js_flags: str | None = None,
-      exp_js_flags: str | None = None,
-      base_enable_features: str | None = None,
-      exp_enable_features: str | None = None,
-      base_disable_features: str | None = None,
-      exp_disable_features: str | None = None,
-      base_enable_blink_features: str | None = None,
-      exp_enable_blink_features: str | None = None,
-      base_disable_blink_features: str | None = None,
-      exp_disable_blink_features: str | None = None,
+    cls,
+    config: str | None = None,
+    benchmark: str | None = None,
+    bot: str | None = None,
+    story: str | None = None,
+    story_tags: str | None = None,
+    repeat: int | None = None,
+    bug: int | None = None,
+    base_commit: str | None = None,
+    exp_commit: str | None = None,
+    base_patch: str | None = None,
+    exp_patch: str | None = None,
+    base_flags: str | None = None,
+    exp_flags: str | None = None,
+    base_js_flags: str | None = None,
+    exp_js_flags: str | None = None,
+    base_enable_features: str | None = None,
+    exp_enable_features: str | None = None,
+    base_disable_features: str | None = None,
+    exp_disable_features: str | None = None,
+    base_enable_blink_features: str | None = None,
+    exp_enable_blink_features: str | None = None,
+    base_disable_blink_features: str | None = None,
+    exp_disable_blink_features: str | None = None,
   ) -> Self:
     """Create a new valid PinpointTryJobConfig instance for new jobs."""
     with annotate("Parsing job configuration"):
@@ -371,8 +393,9 @@ class PinpointTryJobConfig(PinpointJobConfigMixin, ConfigObject):
 
       benchmark_warning = cls.resolve_benchmark(resolved_benchmark)
       bot_warning = cls.resolve_bot(resolved_bot)
-      resolved_story, story_warning = cls.resolve_story(resolved_benchmark,
-                                                        resolved_story)
+      resolved_story, story_warning = cls.resolve_story(
+        resolved_benchmark, resolved_story
+      )
 
       warnings = [benchmark_warning, bot_warning, story_warning]
 
@@ -386,71 +409,60 @@ class PinpointTryJobConfig(PinpointJobConfigMixin, ConfigObject):
       base = parsed.base.override_commit(base_commit, bot=resolved_bot)
       base = base.override_patch(base_patch)
       base = base.override_flags(
-          flags=base_flags,
-          js_flags=base_js_flags,
-          enable_features=base_enable_features,
-          disable_features=base_disable_features,
-          enable_blink_features=base_enable_blink_features,
-          disable_blink_features=base_disable_blink_features,
+        flags=base_flags,
+        js_flags=base_js_flags,
+        enable_features=base_enable_features,
+        disable_features=base_disable_features,
+        enable_blink_features=base_enable_blink_features,
+        disable_blink_features=base_disable_blink_features,
       )
 
       experiment = parsed.experiment.override_commit(
-          exp_commit, bot=resolved_bot)
+        exp_commit, bot=resolved_bot
+      )
       experiment = experiment.override_patch(exp_patch)
       experiment = experiment.override_flags(
-          flags=exp_flags,
-          js_flags=exp_js_flags,
-          enable_features=exp_enable_features,
-          disable_features=exp_disable_features,
-          enable_blink_features=exp_enable_blink_features,
-          disable_blink_features=exp_disable_blink_features,
+        flags=exp_flags,
+        js_flags=exp_js_flags,
+        enable_features=exp_enable_features,
+        disable_features=exp_disable_features,
+        enable_blink_features=exp_enable_blink_features,
+        disable_blink_features=exp_disable_blink_features,
       )
 
     show_warnings([w for w in warnings if w])
 
     return cls(
-        benchmark=resolved_benchmark,
-        bot=resolved_bot,
-        story=resolved_story,
-        story_tags=resolved_story_tags,
-        base=base,
-        experiment=experiment,
-        repeat=resolved_repeat,
-        bug=resolved_bug,
+      benchmark=resolved_benchmark,
+      bot=resolved_bot,
+      story=resolved_story,
+      story_tags=resolved_story_tags,
+      base=base,
+      experiment=experiment,
+      repeat=resolved_repeat,
+      bug=resolved_bug,
     )
 
   def to_request_dict(self) -> JsonDict:
     return {
-        "comparison_mode":
-            "try",
-        "benchmark":
-            self.benchmark,
-        "configuration":
-            self.bot,
-        "story":
-            self.story,
-        "story_tags":
-            self.story_tags,
-        "initial_attempt_count":
-            self.repeat,
-        "bug_id":
-            self.bug,
-        "base_git_hash":
-            self.base.commit,
-        "end_git_hash":
-            self.experiment.commit,
-        "base_patch":
-            self.base.patch,
-        "experiment_patch":
-            self.experiment.patch,
-        "base_extra_args":
-            self.base.extra_browser_flags(
-                is_crossbench_benchmark(self.benchmark)),
-        "experiment_extra_args":
-            self.experiment.extra_browser_flags(
-                is_crossbench_benchmark(self.benchmark)),
-        "tags":
-            '{"origin": "pinpoint_cli"}',
+      "comparison_mode": "try",
+      "benchmark": self.benchmark,
+      "configuration": self.bot,
+      "story": self.story,
+      "story_tags": self.story_tags,
+      "initial_attempt_count": self.repeat,
+      "bug_id": self.bug,
+      "base_git_hash": self.base.commit,
+      "end_git_hash": self.experiment.commit,
+      "base_patch": self.base.patch,
+      "experiment_patch": self.experiment.patch,
+      "base_extra_args": self.base.extra_browser_flags(
+        is_crossbench_benchmark(self.benchmark)
+      ),
+      "experiment_extra_args": self.experiment.extra_browser_flags(
+        is_crossbench_benchmark(self.benchmark)
+      ),
+      "tags": '{"origin": "pinpoint_cli"}',
     }
 
   @classmethod
@@ -459,42 +471,52 @@ class PinpointTryJobConfig(PinpointJobConfigMixin, ConfigObject):
     comparison_mode = raw_dict.get("comparison_mode")
     if comparison_mode != "try":
       raise ValueError(
-          'Invalid comparison mode {comparison_mode} expected "try".')
+        'Invalid comparison mode {comparison_mode} expected "try".'
+      )
     arguments = ObjectParser.dict(raw_dict["arguments"], "arguments")
 
     # An empty field created from the Web UI is an empty string. Such empty
     # fields are replaced with None to make it possible to convert the result
     # config to JSON and back to PinpointTryJobConfig for creating new jobs.
     return cls(
-        benchmark=ObjectParser.non_empty_str(arguments["benchmark"],
-                                             "benchmark"),
-        bot=ObjectParser.non_empty_str(arguments["configuration"],
-                                       "configuration"),
-        story=ObjectParser.optional_str(arguments.get("story"), "story"),
-        story_tags=ObjectParser.optional_str(
-            arguments.get("story_tags"), "story_tags"),
-        repeat=NumberParser.positive_int(arguments["initial_attempt_count"],
-                                         "repeat"),
-        bug=NumberParser.optional_positive_int(arguments.get("bug_id"), "bug"),
-        base=VariantConfig(
-            commit=ObjectParser.any_str(
-                arguments.get("base_git_hash", ""), "base_git_hash"),
-            patch=ObjectParser.optional_str(
-                arguments.get("base_patch"), "base_patch"),
-            flags=cls.parse_extra_browser_args(
-                ObjectParser.optional_str(
-                    arguments.get("base_extra_args"), "base_extra_args")),
+      benchmark=ObjectParser.non_empty_str(arguments["benchmark"], "benchmark"),
+      bot=ObjectParser.non_empty_str(
+        arguments["configuration"], "configuration"
+      ),
+      story=ObjectParser.optional_str(arguments.get("story"), "story"),
+      story_tags=ObjectParser.optional_str(
+        arguments.get("story_tags"), "story_tags"
+      ),
+      repeat=NumberParser.positive_int(
+        arguments["initial_attempt_count"], "repeat"
+      ),
+      bug=NumberParser.optional_positive_int(arguments.get("bug_id"), "bug"),
+      base=VariantConfig(
+        commit=ObjectParser.any_str(
+          arguments.get("base_git_hash", ""), "base_git_hash"
         ),
-        experiment=VariantConfig(
-            commit=ObjectParser.any_str(
-                arguments.get("end_git_hash", ""), "end_git_hash"),
-            patch=ObjectParser.optional_str(
-                arguments.get("experiment_patch"), "experiment_patch"),
-            flags=cls.parse_extra_browser_args(
-                ObjectParser.optional_str(
-                    arguments.get("experiment_extra_args"),
-                    "experiment_extra_args")),
+        patch=ObjectParser.optional_str(
+          arguments.get("base_patch"), "base_patch"
         ),
+        flags=cls.parse_extra_browser_args(
+          ObjectParser.optional_str(
+            arguments.get("base_extra_args"), "base_extra_args"
+          )
+        ),
+      ),
+      experiment=VariantConfig(
+        commit=ObjectParser.any_str(
+          arguments.get("end_git_hash", ""), "end_git_hash"
+        ),
+        patch=ObjectParser.optional_str(
+          arguments.get("experiment_patch"), "experiment_patch"
+        ),
+        flags=cls.parse_extra_browser_args(
+          ObjectParser.optional_str(
+            arguments.get("experiment_extra_args"), "experiment_extra_args"
+          )
+        ),
+      ),
     )
 
   def to_dict(self) -> JsonDict:
@@ -511,40 +533,42 @@ class PinpointBisectJobConfig(PinpointJobConfigMixin, ConfigObject):
   chart: str | None = None
   story_tags: str | None = None
   start: BisectStartVariantConfig = dataclasses.field(
-      default_factory=BisectStartVariantConfig)
+    default_factory=BisectStartVariantConfig
+  )
   end: BisectEndVariantConfig = dataclasses.field(
-      default_factory=BisectEndVariantConfig)
+    default_factory=BisectEndVariantConfig
+  )
   repeat: int = 30
   bug: int | None = None
 
   @classmethod
   @override
   def create(
-      cls,
-      benchmark: str,
-      bot: str,
-      chart: str | None = None,
-      story: str | None = None,
-      story_tags: str | None = None,
-      start: BisectStartVariantConfig | None = None,
-      end: BisectEndVariantConfig | None = None,
-      repeat: int = 30,
-      bug: int | None = None,
+    cls,
+    benchmark: str,
+    bot: str,
+    chart: str | None = None,
+    story: str | None = None,
+    story_tags: str | None = None,
+    start: BisectStartVariantConfig | None = None,
+    end: BisectEndVariantConfig | None = None,
+    repeat: int = 30,
+    bug: int | None = None,
   ) -> Self:
     if start is None:
       start = BisectStartVariantConfig()
     if end is None:
       end = BisectEndVariantConfig()
     return cls(
-        benchmark=benchmark,
-        bot=bot,
-        chart=chart,
-        story=story,
-        story_tags=story_tags,
-        start=start,
-        end=end,
-        repeat=repeat,
-        bug=bug,
+      benchmark=benchmark,
+      bot=bot,
+      chart=chart,
+      story=story,
+      story_tags=story_tags,
+      start=start,
+      end=end,
+      repeat=repeat,
+      bug=bug,
     )
 
   @classmethod
@@ -552,47 +576,53 @@ class PinpointBisectJobConfig(PinpointJobConfigMixin, ConfigObject):
   def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(cls)
     parser.add_argument(
-        "benchmark",
-        type=str,
-        help="Benchmark name (e.g., 'speedometer3').",
+      "benchmark",
+      type=str,
+      help="Benchmark name (e.g., 'speedometer3').",
     )
     parser.add_argument(
-        "bot",
-        type=str,
-        help="The bot configuration to run on (e.g., 'linux-perf')")
-    parser.add_argument(
-        "chart", type=str, help="The chart (measurement) to bisect.")
-    parser.add_argument(
-        "story",
-        type=str,
-        help="Optional story to run within the benchmark. "
-        "Obtained automatically for the given benchmark if not specified.",
+      "bot",
+      type=str,
+      help="The bot configuration to run on (e.g., 'linux-perf')",
     )
     parser.add_argument(
-        "story_tags",
-        type=str,
-        help="Optional story tags to filter stories. "
-        "Required if no story can be obtained automatically.",
+      "chart", type=str, help="The chart (measurement) to bisect."
     )
     parser.add_argument(
-        "start",
-        type=BisectStartVariantConfig,
-        default=BisectStartVariantConfig(),
-        help="Configuration for the start variant of the bisect.")
+      "story",
+      type=str,
+      help="Optional story to run within the benchmark. "
+      "Obtained automatically for the given benchmark if not specified.",
+    )
     parser.add_argument(
-        "end",
-        type=BisectEndVariantConfig,
-        default=BisectEndVariantConfig(),
-        help="Configuration for the end variant of the bisect.")
+      "story_tags",
+      type=str,
+      help="Optional story tags to filter stories. "
+      "Required if no story can be obtained automatically.",
+    )
     parser.add_argument(
-        "repeat",
-        type=NumberParser.positive_int,
-        default=30,
-        help="The number of times to repeat the experiment.")
+      "start",
+      type=BisectStartVariantConfig,
+      default=BisectStartVariantConfig(),
+      help="Configuration for the start variant of the bisect.",
+    )
     parser.add_argument(
-        "bug",
-        type=NumberParser.positive_int,
-        help="Optional bug ID associated with the job.")
+      "end",
+      type=BisectEndVariantConfig,
+      default=BisectEndVariantConfig(),
+      help="Configuration for the end variant of the bisect.",
+    )
+    parser.add_argument(
+      "repeat",
+      type=NumberParser.positive_int,
+      default=30,
+      help="The number of times to repeat the experiment.",
+    )
+    parser.add_argument(
+      "bug",
+      type=NumberParser.positive_int,
+      help="Optional bug ID associated with the job.",
+    )
     return parser
 
   @classmethod
@@ -602,23 +632,23 @@ class PinpointBisectJobConfig(PinpointJobConfigMixin, ConfigObject):
 
   @classmethod
   def parse_and_override(
-      cls,
-      config: str | None = None,
-      benchmark: str | None = None,
-      bot: str | None = None,
-      chart: str | None = None,
-      story: str | None = None,
-      story_tags: str | None = None,
-      repeat: int | None = None,
-      bug: int | None = None,
-      start_commit: str | None = None,
-      end_commit: str | None = None,
-      flags: str | None = None,
-      js_flags: str | None = None,
-      enable_features: str | None = None,
-      disable_features: str | None = None,
-      enable_blink_features: str | None = None,
-      disable_blink_features: str | None = None,
+    cls,
+    config: str | None = None,
+    benchmark: str | None = None,
+    bot: str | None = None,
+    chart: str | None = None,
+    story: str | None = None,
+    story_tags: str | None = None,
+    repeat: int | None = None,
+    bug: int | None = None,
+    start_commit: str | None = None,
+    end_commit: str | None = None,
+    flags: str | None = None,
+    js_flags: str | None = None,
+    enable_features: str | None = None,
+    disable_features: str | None = None,
+    enable_blink_features: str | None = None,
+    disable_blink_features: str | None = None,
   ) -> Self:
     """Create a new valid PinpointBisectJobConfig instance for new jobs."""
     with annotate("Parsing job configuration"):
@@ -633,8 +663,9 @@ class PinpointBisectJobConfig(PinpointJobConfigMixin, ConfigObject):
 
       benchmark_warning = cls.resolve_benchmark(resolved_benchmark)
       bot_warning = cls.resolve_bot(resolved_bot)
-      resolved_story, story_warning = cls.resolve_story(resolved_benchmark,
-                                                        resolved_story)
+      resolved_story, story_warning = cls.resolve_story(
+        resolved_benchmark, resolved_story
+      )
 
       warnings = [benchmark_warning, bot_warning, story_warning]
 
@@ -653,12 +684,12 @@ class PinpointBisectJobConfig(PinpointJobConfigMixin, ConfigObject):
       end = parsed.end.override_commit(end_commit, bot=resolved_bot)
 
       start = start.override_flags(
-          flags=flags,
-          js_flags=js_flags,
-          enable_features=enable_features,
-          disable_features=disable_features,
-          enable_blink_features=enable_blink_features,
-          disable_blink_features=disable_blink_features,
+        flags=flags,
+        js_flags=js_flags,
+        enable_features=enable_features,
+        disable_features=disable_features,
+        enable_blink_features=enable_blink_features,
+        disable_blink_features=disable_blink_features,
       )
 
       start.validate()
@@ -667,44 +698,33 @@ class PinpointBisectJobConfig(PinpointJobConfigMixin, ConfigObject):
     show_warnings([w for w in warnings if w])
 
     return cls(
-        benchmark=resolved_benchmark,
-        bot=resolved_bot,
-        chart=resolved_chart,
-        story=resolved_story,
-        story_tags=resolved_story_tags,
-        start=start,
-        end=end,
-        repeat=resolved_repeat,
-        bug=resolved_bug,
+      benchmark=resolved_benchmark,
+      bot=resolved_bot,
+      chart=resolved_chart,
+      story=resolved_story,
+      story_tags=resolved_story_tags,
+      start=start,
+      end=end,
+      repeat=resolved_repeat,
+      bug=resolved_bug,
     )
 
   def to_request_dict(self) -> JsonDict:
     return {
-        "comparison_mode":
-            "performance",
-        "benchmark":
-            self.benchmark,
-        "configuration":
-            self.bot,
-        "chart":
-            self.chart,
-        "story":
-            self.story,
-        "story_tags":
-            self.story_tags,
-        "initial_attempt_count":
-            self.repeat,
-        "bug_id":
-            self.bug,
-        "start_git_hash":
-            self.start.commit,
-        "end_git_hash":
-            self.end.commit,
-        "extra_test_args":
-            self.start.extra_browser_flags(
-                is_crossbench_benchmark(self.benchmark)),
-        "tags":
-            '{"origin": "pinpoint_cli"}',
+      "comparison_mode": "performance",
+      "benchmark": self.benchmark,
+      "configuration": self.bot,
+      "chart": self.chart,
+      "story": self.story,
+      "story_tags": self.story_tags,
+      "initial_attempt_count": self.repeat,
+      "bug_id": self.bug,
+      "start_git_hash": self.start.commit,
+      "end_git_hash": self.end.commit,
+      "extra_test_args": self.start.extra_browser_flags(
+        is_crossbench_benchmark(self.benchmark)
+      ),
+      "tags": '{"origin": "pinpoint_cli"}',
     }
 
   @classmethod
@@ -714,34 +734,42 @@ class PinpointBisectJobConfig(PinpointJobConfigMixin, ConfigObject):
     comparison_mode = raw_dict.get("comparison_mode")
     if comparison_mode != "performance":
       raise ValueError(
-          f'Invalid comparison mode {comparison_mode} expected "performance".')
+        f'Invalid comparison mode {comparison_mode} expected "performance".'
+      )
     arguments = ObjectParser.dict(raw_dict["arguments"], "arguments")
 
     # An empty field created from the Web UI is an empty string. Such empty
     # fields are replaced with None to make it possible to convert the result
     # config to JSON and back to PinpointBisectJobConfig for creating new jobs.
     return cls(
-        benchmark=ObjectParser.non_empty_str(arguments["benchmark"],
-                                             "benchmark"),
-        bot=ObjectParser.non_empty_str(arguments["configuration"],
-                                       "configuration"),
-        chart=ObjectParser.non_empty_str(arguments["chart"], "chart"),
-        story=ObjectParser.optional_str(arguments.get("story"), "story"),
-        story_tags=ObjectParser.optional_str(
-            arguments.get("story_tags"), "story_tags"),
-        repeat=NumberParser.positive_int(arguments["initial_attempt_count"],
-                                         "repeat"),
-        bug=NumberParser.optional_positive_int(arguments.get("bug_id"), "bug"),
-        start=BisectStartVariantConfig(
-            commit=ObjectParser.any_str(
-                arguments.get("start_git_hash", ""), "start_git_hash"),
-            flags=cls.parse_extra_browser_args(
-                ObjectParser.optional_str(
-                    arguments.get("extra_test_args"), "extra_test_args")),
+      benchmark=ObjectParser.non_empty_str(arguments["benchmark"], "benchmark"),
+      bot=ObjectParser.non_empty_str(
+        arguments["configuration"], "configuration"
+      ),
+      chart=ObjectParser.non_empty_str(arguments["chart"], "chart"),
+      story=ObjectParser.optional_str(arguments.get("story"), "story"),
+      story_tags=ObjectParser.optional_str(
+        arguments.get("story_tags"), "story_tags"
+      ),
+      repeat=NumberParser.positive_int(
+        arguments["initial_attempt_count"], "repeat"
+      ),
+      bug=NumberParser.optional_positive_int(arguments.get("bug_id"), "bug"),
+      start=BisectStartVariantConfig(
+        commit=ObjectParser.any_str(
+          arguments.get("start_git_hash", ""), "start_git_hash"
         ),
-        end=BisectEndVariantConfig(
-            commit=ObjectParser.any_str(
-                arguments.get("end_git_hash", ""), "end_git_hash")),
+        flags=cls.parse_extra_browser_args(
+          ObjectParser.optional_str(
+            arguments.get("extra_test_args"), "extra_test_args"
+          )
+        ),
+      ),
+      end=BisectEndVariantConfig(
+        commit=ObjectParser.any_str(
+          arguments.get("end_git_hash", ""), "end_git_hash"
+        )
+      ),
     )
 
   def to_dict(self) -> JsonDict:

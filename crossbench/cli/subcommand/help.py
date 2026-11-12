@@ -20,13 +20,17 @@ class HelpSubcommand(CrossbenchSubcommand):
   NAME: ClassVar[str] = "help"
 
   @override
-  def register_subcommand(self,
-                          subparsers: Subparsers) -> argparse.ArgumentParser:
+  def register_subcommand(
+    self, subparsers: Subparsers
+  ) -> argparse.ArgumentParser:
     # Just for completeness we want to support "--help" and "help"
     self._parser = subparsers.add_parser(
-        self.NAME,
-        help=("Print the top-level by default, same as --help. "
-              "Use `help $PROBE`, or `help $BENCHMARK` to print more details."))
+      self.NAME,
+      help=(
+        "Print the top-level by default, same as --help. "
+        "Use `help $PROBE`, or `help $BENCHMARK` to print more details."
+      ),
+    )
     self._parser.set_defaults(crossbench_subcommand=self)
     return self.parser
 
@@ -34,9 +38,10 @@ class HelpSubcommand(CrossbenchSubcommand):
   def add_cli_arguments(self, parser: CBArgumentParser) -> CBArgumentParser:
     help_parser = parser
     help_parser.add_argument(
-        "search_terms",
-        nargs="*",
-        help="Use a benchmark, probe or network name to display more details.")
+      "search_terms",
+      nargs="*",
+      help="Use a benchmark, probe or network name to display more details.",
+    )
     return help_parser
 
   @override

@@ -8,8 +8,19 @@ import dataclasses
 import datetime as dt
 import functools
 import inspect
-from typing import TYPE_CHECKING, ClassVar, Final, Generic, Iterable, \
-    Mapping, Self, Sequence, TypeVar, cast, override
+from typing import (
+  TYPE_CHECKING,
+  ClassVar,
+  Final,
+  Generic,
+  Iterable,
+  Mapping,
+  Self,
+  Sequence,
+  TypeVar,
+  cast,
+  override,
+)
 
 from crossbench import config
 from crossbench.action_runner.action.enums import WindowTarget
@@ -21,12 +32,17 @@ from crossbench.cli.config.network import NetworkConfig, NetworkType
 from crossbench.cli.parser import CBArgumentParser
 from crossbench.helper.path_finder import WprGoFinder
 from crossbench.network.replay.wpr import WprReplayNetwork
-from crossbench.parse import DurationParser, NumberParser, ObjectParser, \
-    PathParser
+from crossbench.parse import (
+  DurationParser,
+  NumberParser,
+  ObjectParser,
+  PathParser,
+)
 from crossbench.plt.android_adb import AndroidAdbPlatform, AndroidBuildType
 from crossbench.probes.bits import BitsProbe
-from crossbench.probes.junction_temperature import \
-    JunctionTemperatureProbe as JtProbe
+from crossbench.probes.junction_temperature import (
+  JunctionTemperatureProbe as JtProbe,
+)
 from crossbench.stories.story import Story
 
 if TYPE_CHECKING:
@@ -92,79 +108,74 @@ class WebPowerStory(Story):
 
   _WEB_POWER_GCS = "gs://chrome-partner-loadline/power"
   _LEGACY_WPR_RECORDING = (
-      f"{_WEB_POWER_GCS}/"
-      "CHROME_EFFICIENCY_KPI_2026_04_03.wprgo#1775177008532597")
+    f"{_WEB_POWER_GCS}/CHROME_EFFICIENCY_KPI_2026_04_03.wprgo#1775177008532597"
+  )
   _LEGACY_WPR_MD5_HASH: Final[bytes] = ObjectParser.md5_hash(
-      "8375843a6828b282eef16042c21e903b")
+    "8375843a6828b282eef16042c21e903b"
+  )
 
   _CANONICAL_SITES: ClassVar[dict[str, WebPowerSiteConfig]] = {
-      "ajnews":
-          WebPowerSiteConfig(
-              url="https://aljazeera.com",
-              archive=_LEGACY_WPR_RECORDING,
-              archive_md5_hash=_LEGACY_WPR_MD5_HASH,
-          ),
-      "cnn":
-          WebPowerSiteConfig(
-              url="https://www.cnn.com",
-              archive=(f"{_WEB_POWER_GCS}/"
-                       "cnn_20260513.wprgo#1778683962813986"),
-              archive_md5_hash=ObjectParser.md5_hash(
-                  "04d258d7a6c207b41c591fbb55c53397"),
-          ),
-      "msn":
-          WebPowerSiteConfig(
-              url="https://msn.com/en-us",
-              archive=_LEGACY_WPR_RECORDING,
-              archive_md5_hash=_LEGACY_WPR_MD5_HASH,
-              default_stabilization_time=dt.timedelta(seconds=60),
-          ),
-      "youtube":
-          WebPowerSiteConfig(
-              url="https://www.youtube.com/watch?v=XITHbsUUlYI",
-              archive=(f"{_WEB_POWER_GCS}/"
-                       "youtube_2026_05_18.wprgo#1779096503585939"),
-              archive_md5_hash=ObjectParser.md5_hash(
-                  "fcfa2979d058d5a5d8e4900cfc994570"),
-          ),
+    "ajnews": WebPowerSiteConfig(
+      url="https://aljazeera.com",
+      archive=_LEGACY_WPR_RECORDING,
+      archive_md5_hash=_LEGACY_WPR_MD5_HASH,
+    ),
+    "cnn": WebPowerSiteConfig(
+      url="https://www.cnn.com",
+      archive=(f"{_WEB_POWER_GCS}/cnn_20260513.wprgo#1778683962813986"),
+      archive_md5_hash=ObjectParser.md5_hash(
+        "04d258d7a6c207b41c591fbb55c53397"
+      ),
+    ),
+    "msn": WebPowerSiteConfig(
+      url="https://msn.com/en-us",
+      archive=_LEGACY_WPR_RECORDING,
+      archive_md5_hash=_LEGACY_WPR_MD5_HASH,
+      default_stabilization_time=dt.timedelta(seconds=60),
+    ),
+    "youtube": WebPowerSiteConfig(
+      url="https://www.youtube.com/watch?v=XITHbsUUlYI",
+      archive=(f"{_WEB_POWER_GCS}/youtube_2026_05_18.wprgo#1779096503585939"),
+      archive_md5_hash=ObjectParser.md5_hash(
+        "fcfa2979d058d5a5d8e4900cfc994570"
+      ),
+    ),
   }
 
   _NON_CANONICAL_SITES: ClassVar[dict[str, WebPowerSiteConfig]] = {
-      "allrecipes":
-          WebPowerSiteConfig(
-              url="https://www.allrecipes.com",
-              archive=(f"{_WEB_POWER_GCS}/"
-                       "allrecipes_2026_08_20.wprgo#1787264877985233"),
-              archive_md5_hash=ObjectParser.md5_hash(
-                  "25ce6da90f35259679183edb6c118f7c"),
-          ),
-      "sfgate":
-          WebPowerSiteConfig(
-              url="https://www.sfgate.com",
-              archive=(f"{_WEB_POWER_GCS}/"
-                       "sfgate_2026_09_29.wprgo#1791811360926572"),
-              archive_md5_hash=ObjectParser.md5_hash(
-                  "5e285774f55bf5f29e7e58b196954705"),
-          ),
-      "telegraph":
-          WebPowerSiteConfig(
-              url="https://www.telegraph.co.uk",
-              archive=(f"{_WEB_POWER_GCS}/"
-                       "telegraph_2026_08_20.wprgo#1787267900613867"),
-              archive_md5_hash=ObjectParser.md5_hash(
-                  "acb3bafa7081ede2c74d25d882b72c40"),
-          ),
-      "yahoo":
-          WebPowerSiteConfig(
-              url="https://www.yahoo.com",
-              archive=_LEGACY_WPR_RECORDING,
-              archive_md5_hash=_LEGACY_WPR_MD5_HASH,
-          ),
+    "allrecipes": WebPowerSiteConfig(
+      url="https://www.allrecipes.com",
+      archive=(
+        f"{_WEB_POWER_GCS}/allrecipes_2026_08_20.wprgo#1787264877985233"
+      ),
+      archive_md5_hash=ObjectParser.md5_hash(
+        "25ce6da90f35259679183edb6c118f7c"
+      ),
+    ),
+    "sfgate": WebPowerSiteConfig(
+      url="https://www.sfgate.com",
+      archive=(f"{_WEB_POWER_GCS}/sfgate_2026_09_29.wprgo#1791811360926572"),
+      archive_md5_hash=ObjectParser.md5_hash(
+        "5e285774f55bf5f29e7e58b196954705"
+      ),
+    ),
+    "telegraph": WebPowerSiteConfig(
+      url="https://www.telegraph.co.uk",
+      archive=(f"{_WEB_POWER_GCS}/telegraph_2026_08_20.wprgo#1787267900613867"),
+      archive_md5_hash=ObjectParser.md5_hash(
+        "acb3bafa7081ede2c74d25d882b72c40"
+      ),
+    ),
+    "yahoo": WebPowerSiteConfig(
+      url="https://www.yahoo.com",
+      archive=_LEGACY_WPR_RECORDING,
+      archive_md5_hash=_LEGACY_WPR_MD5_HASH,
+    ),
   }
 
   SITES: ClassVar[dict[str, WebPowerSiteConfig]] = {
-      **_CANONICAL_SITES,
-      **_NON_CANONICAL_SITES,
+    **_CANONICAL_SITES,
+    **_NON_CANONICAL_SITES,
   }
 
   @classmethod
@@ -177,13 +188,18 @@ class WebPowerStory(Story):
   def from_url(cls, url: str, *args, **kwargs) -> Self:
     return cls("custom", WebPowerSiteConfig(url=url), *args, **kwargs)
 
-  def __init__(self, name_suffix: str, site_config: WebPowerSiteConfig,
-               total_duration: dt.timedelta,
-               stabilization_time: dt.timedelta) -> None:
+  def __init__(
+    self,
+    name_suffix: str,
+    site_config: WebPowerSiteConfig,
+    total_duration: dt.timedelta,
+    stabilization_time: dt.timedelta,
+  ) -> None:
     self.site_config: Final[WebPowerSiteConfig] = site_config
     self.stabilization_time: Final[dt.timedelta] = stabilization_time
-    super().__init__(f"web-power-{self.story_name}-{name_suffix}",
-                     total_duration)
+    super().__init__(
+      f"web-power-{self.story_name}-{name_suffix}", total_duration
+    )
 
   @property
   def url(self) -> str:
@@ -212,8 +228,11 @@ class WebPowerStory(Story):
   @classmethod
   @override
   def default_story_names(cls) -> tuple[str, ...]:
-    return tuple(name for name in cls.all_story_names()
-                 if name.rsplit("-", 1)[-1] in cls._CANONICAL_SITES)
+    return tuple(
+      name
+      for name in cls.all_story_names()
+      if name.rsplit("-", 1)[-1] in cls._CANONICAL_SITES
+    )
 
   @classmethod
   @override
@@ -272,14 +291,14 @@ class WebPowerStoryFilter(StoryFilter[WebPowerStoryT], Generic[WebPowerStoryT]):
     return tuple(cls._scenario_filters)
 
   def __init__(
-      self,
-      story_cls: type[WebPowerStoryT],
-      patterns: Sequence[str],
-      args: argparse.Namespace,
-      separate: bool = True,
-      tags: Iterable[str] = (),
-      url: str = "",
-      **story_kwargs: object,
+    self,
+    story_cls: type[WebPowerStoryT],
+    patterns: Sequence[str],
+    args: argparse.Namespace,
+    separate: bool = True,
+    tags: Iterable[str] = (),
+    url: str = "",
+    **story_kwargs: object,
   ) -> None:
     self._url: Final[str] = url
     self._story_kwargs: Final[dict[str, object]] = story_kwargs
@@ -298,7 +317,8 @@ class WebPowerStoryFilter(StoryFilter[WebPowerStoryT], Generic[WebPowerStoryT]):
   @classmethod
   @override
   def add_cli_arguments(
-      cls, parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+    cls, parser: argparse.ArgumentParser
+  ) -> argparse.ArgumentParser:
     parser = super().add_cli_arguments(parser)
     parser.set_defaults(separate=True)
     return parser
@@ -306,12 +326,13 @@ class WebPowerStoryFilter(StoryFilter[WebPowerStoryT], Generic[WebPowerStoryT]):
   @classmethod
   @override
   def _add_story_filtering_arguments(
-      cls, group: argparse._MutuallyExclusiveGroup) -> None:
+    cls, group: argparse._MutuallyExclusiveGroup
+  ) -> None:
     super()._add_story_filtering_arguments(group)
     group.add_argument(
-        "--site",
-        choices=cls.STORY_CLS.all_story_names(),
-        help="Specific pre-recorded site to run (from a closed list).",
+      "--site",
+      choices=cls.STORY_CLS.all_story_names(),
+      help="Specific pre-recorded site to run (from a closed list).",
     )
     group.add_argument("--url", default="", help="Custom URL to run.")
 
@@ -322,31 +343,36 @@ class WebPowerStoryFilter(StoryFilter[WebPowerStoryT], Generic[WebPowerStoryT]):
     return super().filter()
 
   @override
-  def stories_from_names(self,
-                         names: Sequence[str]) -> tuple[WebPowerStoryT, ...]:
+  def stories_from_names(
+    self, names: Sequence[str]
+  ) -> tuple[WebPowerStoryT, ...]:
     return tuple(
-        self._instantiate_story(self.story_cls, name) for name in names)
+      self._instantiate_story(self.story_cls, name) for name in names
+    )
 
-  def _filter_kwargs(self,
-                     story_cls: type[WebPowerStoryT]) -> dict[str, object]:
+  def _filter_kwargs(
+    self, story_cls: type[WebPowerStoryT]
+  ) -> dict[str, object]:
     """Filters all parsed CLI arguments to only forward parameters accepted by
     the target story constructor (preventing TypeErrors)."""
     constructor_sig = inspect.signature(story_cls.__init__)
     accepted_params = constructor_sig.parameters
 
     return {
-        key: value
-        for key, value in self._story_kwargs.items()
-        if key in accepted_params and value is not None
+      key: value
+      for key, value in self._story_kwargs.items()
+      if key in accepted_params and value is not None
     }
 
-  def _instantiate_story(self, story_cls: type[WebPowerStoryT],
-                         site_name: str) -> WebPowerStoryT:
+  def _instantiate_story(
+    self, story_cls: type[WebPowerStoryT], site_name: str
+  ) -> WebPowerStoryT:
     """Instantiates a story class with site-specific configurations."""
     return story_cls.from_site(site_name, **self._filter_kwargs(story_cls))
 
-  def _instantiate_story_from_url(self, story_cls: type[WebPowerStoryT],
-                                  url: str) -> WebPowerStoryT:
+  def _instantiate_story_from_url(
+    self, story_cls: type[WebPowerStoryT], url: str
+  ) -> WebPowerStoryT:
     """Instantiates a story class with custom URL configuration."""
     return story_cls.from_url(url, **self._filter_kwargs(story_cls))
 
@@ -373,8 +399,9 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
     return tuple(cls._scenario_benchmarks)
 
   @classmethod
-  def add_scenario_cli_arguments(cls,
-                                 parser: CBArgumentParser) -> CBArgumentParser:
+  def add_scenario_cli_arguments(
+    cls, parser: CBArgumentParser
+  ) -> CBArgumentParser:
     raise NotImplementedError
 
   @classmethod
@@ -394,22 +421,25 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
   PROBES: ClassVar = (WebPowerProbe,)
 
   DEFAULT_ALLOWED_BUILD_TYPES: ClassVar[frozenset[AndroidBuildType]] = (
-      frozenset({AndroidBuildType.USER}))
+    frozenset({AndroidBuildType.USER})
+  )
 
   def __init__(
-      self,
-      stories: Sequence[WebPowerStory],
-      action_runner_config: ActionRunnerConfig | None = None,
-      bits_probe: BitsProbe | None = None,
-      has_custom_network: bool = False,
-      allowed_build_types: frozenset[AndroidBuildType]
-      | None = (DEFAULT_ALLOWED_BUILD_TYPES),
+    self,
+    stories: Sequence[WebPowerStory],
+    action_runner_config: ActionRunnerConfig | None = None,
+    bits_probe: BitsProbe | None = None,
+    has_custom_network: bool = False,
+    allowed_build_types: frozenset[AndroidBuildType] | None = (
+      DEFAULT_ALLOWED_BUILD_TYPES
+    ),
   ) -> None:
     self._bits_probe: Final[BitsProbe | None] = bits_probe
     self._has_custom_network: Final[bool] = has_custom_network
     # None means any build type is allowed, including unknown ones.
     self._allowed_build_types: Final[frozenset[AndroidBuildType] | None] = (
-        allowed_build_types)
+      allowed_build_types
+    )
     super().__init__(stories, action_runner_config)
 
   @property
@@ -432,9 +462,9 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
     self._validate_build_types(runner)
     if any(b.platform.is_ios for b in runner.browsers):
       wda_flags = [
-          story.REQUIRES_IOS_WDA
-          for story in self.stories
-          if isinstance(story, WebPowerStory)
+        story.REQUIRES_IOS_WDA
+        for story in self.stories
+        if isinstance(story, WebPowerStory)
       ]
       if any(wda_flags) and not all(wda_flags):
         raise ValueError("Cannot mix WDA and non-WDA stories on iOS.")
@@ -463,11 +493,12 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
     details = "\n".join(f"  - {violation}" for violation in violations)
     allowed_str = ", ".join(repr(build_type) for build_type in allowed)
     runner.env.handle_validation_warning(
-        f"Web Power only allows build types {allowed_str}, but got:\n"
-        f"{details}\n"
-        "Other build types are usually unintended. Use --allow-build-type to "
-        "set the allowed types, e.g. --allow-build-type=user,userdebug or "
-        "--allow-build-type=*.")
+      f"Web Power only allows build types {allowed_str}, but got:\n"
+      f"{details}\n"
+      "Other build types are usually unintended. Use --allow-build-type to "
+      "set the allowed types, e.g. --allow-build-type=user,userdebug or "
+      "--allow-build-type=*."
+    )
 
   @override
   def teardown(self, runner: Runner) -> None:
@@ -494,19 +525,20 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
 
     if network.archive_path:
       httparchive_path = WprGoFinder(session.host_platform).httparchive()
-      self._setup_single_wpr_transformation(session.host_platform, network,
-                                            httparchive_path)
+      self._setup_single_wpr_transformation(
+        session.host_platform, network, httparchive_path
+      )
 
   def _setup_single_wpr_transformation(
-      self,
-      host_platform: Platform,
-      network: WprReplayNetwork,
-      httparchive_path: pth.LocalPath,
+    self,
+    host_platform: Platform,
+    network: WprReplayNetwork,
+    httparchive_path: pth.LocalPath,
   ) -> None:
     args: ListCmdArgs = [
-        httparchive_path,
-        "read-metadata",
-        network.archive_path,
+      httparchive_path,
+      "read-metadata",
+      network.archive_path,
     ]
     metadata = host_platform.sh_stdout(*args)
     if res := WprBannerDismisser.create_rules(metadata):
@@ -516,8 +548,9 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
 
   @classmethod
   @override
-  def extra_flags(cls, browser_attributes: BrowserAttributes,
-                  story: Story) -> Flags:
+  def extra_flags(
+    cls, browser_attributes: BrowserAttributes, story: Story
+  ) -> Flags:
     flags: Flags = super().extra_flags(browser_attributes, story)
     if browser_attributes.is_chromium_based:
       assert isinstance(story, WebPowerStory)
@@ -525,14 +558,14 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
         flags.set("--autoplay-policy", "no-user-gesture-required")
       flags.set("--remote-allow-origins", "*")
       for flag in (
-          "--disable-background-timer-throttling",
-          "--disable-component-update",
-          "--disable-external-intent-requests",
-          "--disable-optimization-guide-model-downloads-for-benchmarking",
-          "--disable-renderer-backgrounding",
-          "--disable-stack-profiler",
-          "--disable-gesture-requirement-for-presentation",
-          "--disable-notifications",
+        "--disable-background-timer-throttling",
+        "--disable-component-update",
+        "--disable-external-intent-requests",
+        "--disable-optimization-guide-model-downloads-for-benchmarking",
+        "--disable-renderer-backgrounding",
+        "--disable-stack-profiler",
+        "--disable-gesture-requirement-for-presentation",
+        "--disable-notifications",
       ):
         flags.set(flag)
     return flags
@@ -545,49 +578,54 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
     assert isinstance(filter_parser, CBArgumentParser)
     parser = filter_parser
     parser.add_argument(
-        "--benchmark-version", action="version", version=f"{VERSION_STRING}")
-    parser.add_argument(
-        "--bits-path",
-        type=PathParser.existing_file_path,
-        help="Path to the BITS external tool binary on the host.",
+      "--benchmark-version", action="version", version=f"{VERSION_STRING}"
     )
     parser.add_argument(
-        "--bits-out",
-        help="Output identifier for the BITS tool.",
+      "--bits-path",
+      type=PathParser.existing_file_path,
+      help="Path to the BITS external tool binary on the host.",
     )
     parser.add_argument(
-        "--bits-device",
-        default="",
-        help="Device identifier for the BITS tool.",
+      "--bits-out",
+      help="Output identifier for the BITS tool.",
     )
     parser.add_argument(
-        "--bits-duration",
-        type=DurationParser.positive_duration,
-        default=BitsProbe.DEFAULT_DURATION,
-        help="Duration for the BITS tool to run.",
+      "--bits-device",
+      default="",
+      help="Device identifier for the BITS tool.",
     )
     parser.add_argument(
-        "--bits-port",
-        type=NumberParser.port_number,
-        default=None,
-        help="Port for the BITS tool to use.",
+      "--bits-duration",
+      type=DurationParser.positive_duration,
+      default=BitsProbe.DEFAULT_DURATION,
+      help="Duration for the BITS tool to run.",
     )
     parser.add_argument(
-        "--stabilization",
-        "--stabilization-time",
-        dest="stabilization_time",
-        type=DurationParser.positive_or_zero_duration,
-        help=("How long to wait to stabilize after loading the page, "
-              "but before the story run starts."),
+      "--bits-port",
+      type=NumberParser.port_number,
+      default=None,
+      help="Port for the BITS tool to use.",
     )
     parser.add_argument(
-        "--allow-build-type",
-        dest="allowed_build_types",
-        type=AndroidBuildType.parse_set,
-        default=cls.DEFAULT_ALLOWED_BUILD_TYPES,
-        help=("Comma-separated Android build types (ro.build.type) to allow, "
-              "or '*' for any, including unknown ones. Defaults to 'user'. "
-              "Choices:\n" + AndroidBuildType.help_text(indent=2)),
+      "--stabilization",
+      "--stabilization-time",
+      dest="stabilization_time",
+      type=DurationParser.positive_or_zero_duration,
+      help=(
+        "How long to wait to stabilize after loading the page, "
+        "but before the story run starts."
+      ),
+    )
+    parser.add_argument(
+      "--allow-build-type",
+      dest="allowed_build_types",
+      type=AndroidBuildType.parse_set,
+      default=cls.DEFAULT_ALLOWED_BUILD_TYPES,
+      help=(
+        "Comma-separated Android build types (ro.build.type) to allow, "
+        "or '*' for any, including unknown ones. Defaults to 'user'. "
+        "Choices:\n" + AndroidBuildType.help_text(indent=2)
+      ),
     )
     if cls.IS_SCENARIO_CLASS:
       return cls.add_scenario_cli_arguments(parser)
@@ -599,8 +637,9 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
     kwargs = super().kwargs_from_cli(args)
     stories = cast(Sequence[WebPowerStory], kwargs["stories"])
     cls._configure_ios_browsers(args, stories)
-    kwargs["has_custom_network"] = bool(args.network_config and
-                                        not args.network_config.is_default())
+    kwargs["has_custom_network"] = bool(
+      args.network_config and not args.network_config.is_default()
+    )
     kwargs["allowed_build_types"] = args.allowed_build_types
     cls._select_network(args)
     if bits_probe := cls._parse_bits_probe(args):
@@ -608,8 +647,9 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
     return kwargs
 
   @classmethod
-  def _configure_ios_browsers(cls, args: argparse.Namespace,
-                              stories: Sequence[WebPowerStory]) -> None:
+  def _configure_ios_browsers(
+    cls, args: argparse.Namespace, stories: Sequence[WebPowerStory]
+  ) -> None:
     if not (browsers := args.browser):
       return
     if not any(b.driver.driver_type.is_ios for b in browsers):
@@ -623,7 +663,8 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
     for b in browsers:
       if b.driver.driver_type == BrowserDriverType.IOS:
         wda_driver = dataclasses.replace(
-            b.driver, driver_type=BrowserDriverType.IOS_WDA)
+          b.driver, driver_type=BrowserDriverType.IOS_WDA
+        )
         b = dataclasses.replace(b, driver=wda_driver)
       updated_browsers.append(b)
     args.browser = updated_browsers
@@ -632,13 +673,15 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
   def _parse_bits_probe(cls, args: argparse.Namespace) -> BitsProbe | None:
     if not args.bits_path and not args.bits_out:
       return None
-    return BitsProbe.parse_dict({
+    return BitsProbe.parse_dict(
+      {
         "path": args.bits_path,
         "out": args.bits_out,
         "device": args.bits_device,
         "duration": args.bits_duration,
         "port": args.bits_port,
-    })
+      }
+    )
 
   @classmethod
   def _select_network(cls, args: argparse.Namespace) -> None:
@@ -649,17 +692,20 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
       cls._setup_pre_recorded_site_network(args)
 
   @classmethod
-  def _setup_explicit_network(cls, args: argparse.Namespace,
-                              network: NetworkConfig) -> None:
+  def _setup_explicit_network(
+    cls, args: argparse.Namespace, network: NetworkConfig
+  ) -> None:
     if args.site:
       raise ValueError(
-          "Specifying '--site' is mutually exclusive with explicit "
-          "'--network' or '--wpr' flags, as it implies the selection "
-          "of a specific WPR recording. Explicit networks are only "
-          "supported when testing with '--url'.")
+        "Specifying '--site' is mutually exclusive with explicit "
+        "'--network' or '--wpr' flags, as it implies the selection "
+        "of a specific WPR recording. Explicit networks are only "
+        "supported when testing with '--url'."
+      )
     if network.type == NetworkType.WPR:
       args.network_config = dataclasses.replace(
-          network, no_archive_certificates=True)
+        network, no_archive_certificates=True
+      )
 
   @classmethod
   def _setup_pre_recorded_site_network(cls, args: argparse.Namespace) -> None:
@@ -672,16 +718,18 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
     for scenario in ("idle", "scroll", "page-load", "media-playback"):
       prefix = f"{scenario}-"
       if site.startswith(prefix):
-        site_key = site[len(prefix):]
+        site_key = site[len(prefix) :]
         break
     story_cls = cls.DEFAULT_STORY_CLS
     site_config = story_cls.SITES.get(site_key)
     if not site_config or not site_config.archive:
       raise ValueError(
-          "Web Power benchmarks require an explicit, known '--site' "
-          f"or '--story' to use a mapped WPR recording. Got: {site}")
+        "Web Power benchmarks require an explicit, known '--site' "
+        f"or '--story' to use a mapped WPR recording. Got: {site}"
+      )
     args.network_config = NetworkConfig(
-        type=NetworkType.WPR,
-        url=site_config.archive,
-        expected_md5_hash=site_config.archive_md5_hash,
-        no_archive_certificates=True)
+      type=NetworkType.WPR,
+      url=site_config.archive,
+      expected_md5_hash=site_config.archive_md5_hash,
+      no_archive_certificates=True,
+    )

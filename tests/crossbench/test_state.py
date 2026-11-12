@@ -6,8 +6,11 @@ from __future__ import annotations
 import enum
 import unittest
 
-from crossbench.helper.state import BaseState, StateMachine, \
-    UnexpectedStateError
+from crossbench.helper.state import (
+  BaseState,
+  StateMachine,
+  UnexpectedStateError,
+)
 from tests import test_helper
 
 
@@ -19,7 +22,6 @@ class CustomState(BaseState):
 
 
 class StateMachineTestCase(unittest.TestCase):
-
   def test_init(self):
     state_machine = StateMachine(CustomState.INITIAL)
     self.assertIs(state_machine.state, CustomState.INITIAL)
@@ -48,17 +50,21 @@ class StateMachineTestCase(unittest.TestCase):
   def test_transition_multi_current(self):
     state_machine = StateMachine(CustomState.INITIAL)
     state_machine.transition(
-        CustomState.INITIAL, CustomState.READY, to=CustomState.READY)
+      CustomState.INITIAL, CustomState.READY, to=CustomState.READY
+    )
     self.assertEqual(state_machine.state, CustomState.READY)
     state_machine.transition(
-        CustomState.INITIAL, CustomState.READY, to=CustomState.READY)
+      CustomState.INITIAL, CustomState.READY, to=CustomState.READY
+    )
     self.assertEqual(state_machine.state, CustomState.READY)
     state_machine.transition(
-        CustomState.INITIAL, CustomState.READY, to=CustomState.DONE)
+      CustomState.INITIAL, CustomState.READY, to=CustomState.DONE
+    )
     self.assertEqual(state_machine.state, CustomState.DONE)
     with self.assertRaises(UnexpectedStateError) as cm:
       state_machine.transition(
-          CustomState.INITIAL, CustomState.READY, to=CustomState.DONE)
+        CustomState.INITIAL, CustomState.READY, to=CustomState.DONE
+      )
     self.assertIn("INITIAL", str(cm.exception))
     self.assertIn("READY", str(cm.exception))
     self.assertIn("DONE", str(cm.exception))
@@ -87,16 +93,18 @@ class StateMachineTestCase(unittest.TestCase):
     with self.assertRaises(UnexpectedStateError) as cm:
       state_machine.expect_before(CustomState.DONE)
     self.assertEqual(cm.exception.state, CustomState.DONE)
-    self.assertSequenceEqual(cm.exception.expected,
-                             (CustomState.INITIAL, CustomState.READY))
+    self.assertSequenceEqual(
+      cm.exception.expected, (CustomState.INITIAL, CustomState.READY)
+    )
 
   def test_expect_at_least(self):
     state_machine = StateMachine(CustomState.INITIAL)
     with self.assertRaises(UnexpectedStateError) as cm:
       state_machine.expect_at_least(CustomState.READY)
     self.assertEqual(cm.exception.state, CustomState.INITIAL)
-    self.assertSequenceEqual(cm.exception.expected,
-                             (CustomState.READY, CustomState.DONE))
+    self.assertSequenceEqual(
+      cm.exception.expected, (CustomState.READY, CustomState.DONE)
+    )
     with self.assertRaises(UnexpectedStateError) as cm:
       state_machine.expect_at_least(CustomState.DONE)
     self.assertEqual(cm.exception.state, CustomState.INITIAL)

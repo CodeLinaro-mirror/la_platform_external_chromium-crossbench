@@ -15,9 +15,11 @@ from .language_model import LANGUAGE_MODEL_API
 if TYPE_CHECKING:
   from .base import BlinkAIApiConfig
 
-API_CONFIGS: Final[immutabledict[str, BlinkAIApiConfig]] = immutabledict({
+API_CONFIGS: Final[immutabledict[str, BlinkAIApiConfig]] = immutabledict(
+  {
     LANGUAGE_MODEL_API.name: LANGUAGE_MODEL_API,
-})
+  }
+)
 
 
 class BlinkAIApiRegistry:
@@ -28,8 +30,9 @@ class BlinkAIApiRegistry:
     """Returns the registered BlinkAIApiConfig for the given API name."""
     if cfg := API_CONFIGS.get(api_name):
       return cfg
-    message, _ = close_matches_message(api_name, API_CONFIGS.keys(),
-                                       "Blink AI API")
+    message, _ = close_matches_message(
+      api_name, API_CONFIGS.keys(), "Blink AI API"
+    )
     raise ValueError(message)
 
 

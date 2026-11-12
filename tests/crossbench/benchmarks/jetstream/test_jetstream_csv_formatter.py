@@ -14,51 +14,64 @@ from tests import test_helper
 
 
 class JetStreamCSVFormatterTestCase(unittest.TestCase):
-
   def test_throw_missing_score(self):
-    metrics = MetricsMerger({
+    metrics = MetricsMerger(
+      {
         "Total/Average": 10,
         "cdjs/Average": 30,
         "cdjs/Score": 40,
-    })
+      }
+    )
     with self.assertRaisesRegex(KeyError, "Total/Score"):
       _ = JetStreamCSVFormatter(metrics, lambda metric: metric.geomean).table
 
   def test_format_sorted(self):
-    metrics = MetricsMerger({
+    metrics = MetricsMerger(
+      {
         "Total/Average": 10,
         "Total/Score": 20,
         "cdjs/Average": 30,
         "cdjs/Score": 40,
-    })
+      }
+    )
     table = JetStreamCSVFormatter(
-        metrics, lambda metric: round(metric.geomean, 10)).table
-    self.assertSequenceEqual(table, [
+      metrics, lambda metric: round(metric.geomean, 10)
+    ).table
+    self.assertSequenceEqual(
+      table,
+      [
         ("Total/Score", "Total", "Score", 20.0),
         ("cdjs/Score", "cdjs", "Score", 40.0),
         ("Total/Average", "Total", "Average", 10.0),
         ("Total/Score", "Total", "Score", 20.0),
         ("cdjs/Average", "cdjs", "Average", 30.0),
         ("cdjs/Score", "cdjs", "Score", 40.0),
-    ])
+      ],
+    )
 
   def test_format_unsorted(self):
-    metrics = MetricsMerger({
+    metrics = MetricsMerger(
+      {
         "cdjs/Average": 30,
         "cdjs/Score": 40,
         "Total/Average": 10,
         "Total/Score": 20,
-    })
+      }
+    )
     table = JetStreamCSVFormatter(
-        metrics, lambda metric: round(metric.geomean, 10), sort=False).table
-    self.assertSequenceEqual(table, [
+      metrics, lambda metric: round(metric.geomean, 10), sort=False
+    ).table
+    self.assertSequenceEqual(
+      table,
+      [
         ("Total/Score", "Total", "Score", 20.0),
         ("cdjs/Score", "cdjs", "Score", 40.0),
         ("cdjs/Average", "cdjs", "Average", 30.0),
         ("cdjs/Score", "cdjs", "Score", 40.0),
         ("Total/Average", "Total", "Average", 10.0),
         ("Total/Score", "Total", "Score", 20.0),
-    ])
+      ],
+    )
 
 
 if __name__ == "__main__":

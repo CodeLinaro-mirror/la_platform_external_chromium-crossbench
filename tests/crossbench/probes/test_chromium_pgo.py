@@ -10,8 +10,10 @@ from unittest import mock
 
 from crossbench.browsers.chromium.devtools import DevToolsCommandResult
 from crossbench.browsers.chromium.webdriver import ChromiumWebDriverAndroid
-from crossbench.probes.chromium_pgo import ChromiumPgoProbe, \
-    ChromiumPgoProbeContextAndroid
+from crossbench.probes.chromium_pgo import (
+  ChromiumPgoProbe,
+  ChromiumPgoProbeContextAndroid,
+)
 from crossbench.runner.run import Run
 from tests import test_helper
 from tests.crossbench.probes.helper import GenericProbeTestCase
@@ -19,8 +21,8 @@ from tests.crossbench.probes.helper import GenericProbeTestCase
 
 @contextlib.contextmanager
 def _mock_devtools_client(
-    context: ChromiumPgoProbeContextAndroid,
-    response: DevToolsCommandResult) -> Iterator[mock.MagicMock]:
+  context: ChromiumPgoProbeContextAndroid, response: DevToolsCommandResult
+) -> Iterator[mock.MagicMock]:
   client = mock.MagicMock()
   client.open.return_value.__enter__.return_value = client
   client.send_command.return_value = response
@@ -29,7 +31,6 @@ def _mock_devtools_client(
 
 
 class ChromiumPgoProbeContextAndroidTestCase(GenericProbeTestCase):
-
   def create_context(self) -> ChromiumPgoProbeContextAndroid:
     mock_run = mock.MagicMock(spec=Run)
     mock_run.browser = mock.MagicMock(spec=ChromiumWebDriverAndroid)
@@ -42,10 +43,12 @@ class ChromiumPgoProbeContextAndroidTestCase(GenericProbeTestCase):
     result = DevToolsCommandResult(True, {"result": {}})
     with _mock_devtools_client(context, result) as client:
       self.assertTrue(context._trigger_pgo_dump())
-    client.send_command.assert_called_once_with({
+    client.send_command.assert_called_once_with(
+      {
         "method": "NativeProfiling.dumpProfilingDataOfAllProcesses",
         "id": context.PGO_CMD_ID,
-    })
+      }
+    )
 
   def test_trigger_pgo_dump_failure(self) -> None:
     context = self.create_context()

@@ -16,13 +16,13 @@ from tests.crossbench.pinpoint.http_requests_mixin import MockHttpRequestsMixin
 
 
 class ListStoriesTest(MockHttpRequestsMixin):
-
   def setUp(self):
     super().setUp()
 
     def mock_post_side_effect(url, params, *args, **kwargs):
-      self.assertEqual(url, CHROMEPERF_DESCRIBE_API_URL,
-                       f"Unexpected URL called: {url}")
+      self.assertEqual(
+        url, CHROMEPERF_DESCRIBE_API_URL, f"Unexpected URL called: {url}"
+      )
       self.assertIn("test_suite", params)
       self.assertIn("master", params)
       self.assertEqual(params["master"], "ChromiumPerf")
@@ -43,11 +43,12 @@ class ListStoriesTest(MockHttpRequestsMixin):
     stories = fetch_stories("benchmark1")
     self.assertSequenceEqual(stories, ["story1", "story2"])
     self.mock_post.assert_called_once_with(
-        CHROMEPERF_DESCRIBE_API_URL,
-        params={
-            "test_suite": "benchmark1",
-            "master": "ChromiumPerf",
-        })
+      CHROMEPERF_DESCRIBE_API_URL,
+      params={
+        "test_suite": "benchmark1",
+        "master": "ChromiumPerf",
+      },
+    )
 
   def test_fetch_stories_no_stories(self):
     stories = fetch_stories("benchmark_no_stories")

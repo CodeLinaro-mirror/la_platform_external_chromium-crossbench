@@ -72,11 +72,13 @@ class TestJSFlags(TestFlags):
     self.assertNotIn("--no-bar", flags)
 
   def test_str_multiple(self):
-    flags = self.CLASS({
+    flags = self.CLASS(
+      {
         "--flag-a": "value1",
         "--flag-b": None,
         "--flag-c": "value3",
-    })
+      }
+    )
     self.assertEqual(str(flags), "--flag-a=value1,--flag-b,--flag-c=value3")
 
   def test_initial_data_empty(self):
@@ -88,11 +90,13 @@ class TestJSFlags(TestFlags):
     self.assertEqual(str(flags), str(flags_copy))
 
   def test_initial_data(self):
-    flags = self.CLASS({
+    flags = self.CLASS(
+      {
         "--flag-a": "value1",
         "--flag-b": None,
         "--flag-c": "value3",
-    })
+      }
+    )
     flags_copy = self.CLASS(flags)
     self.assertEqual(str(flags), str(flags_copy))
     flags_copy = self.CLASS()
@@ -104,11 +108,14 @@ class TestJSFlags(TestFlags):
 
   def test_known_flags(self):
     self.assertNotIn(
-        "--help", KNOWN_JS_FLAGS,
-        "--help is also present in chrome, this should be filtered out")
+      "--help",
+      KNOWN_JS_FLAGS,
+      "--help is also present in chrome, this should be filtered out",
+    )
     for flag in KNOWN_JS_FLAGS:
       self.assertFalse(
-          flag.startswith("--no"), "Strip --no prefix from all flags.")
+        flag.startswith("--no"), "Strip --no prefix from all flags."
+      )
       self.assertNotIn("=", flag, "Only allow names, no values")
 
   def test_known_flags_chrome_overlap(self):
@@ -117,17 +124,20 @@ class TestJSFlags(TestFlags):
 
   def test_parse_with_flag_value(self):
     self.assertEqual(
-        self.CLASS.parse("--foo=--other"), self.CLASS({"--foo": "--other"}))
+      self.CLASS.parse("--foo=--other"), self.CLASS({"--foo": "--other"})
+    )
     self.assertEqual(
-        self.CLASS.parse("--foo='--other'"), self.CLASS({"--foo": "--other"}))
+      self.CLASS.parse("--foo='--other'"), self.CLASS({"--foo": "--other"})
+    )
     self.assertEqual(
-        self.CLASS.parse('--foo="--other"'), self.CLASS({"--foo": "--other"}))
+      self.CLASS.parse('--foo="--other"'), self.CLASS({"--foo": "--other"})
+    )
     self.assertEqual(
-        self.CLASS.parse("--foo='--other=1'"),
-        self.CLASS({"--foo": "--other=1"}))
+      self.CLASS.parse("--foo='--other=1'"), self.CLASS({"--foo": "--other=1"})
+    )
     self.assertEqual(
-        self.CLASS.parse('--foo="--other=1"'),
-        self.CLASS({"--foo": "--other=1"}))
+      self.CLASS.parse('--foo="--other=1"'), self.CLASS({"--foo": "--other=1"})
+    )
 
 
 del TestFlags

@@ -14,7 +14,6 @@ if TYPE_CHECKING:
 
 
 class MotionMarkBenchmark(PressBenchmark):
-
   @classmethod
   @override
   def short_base_name(cls) -> str:
@@ -37,10 +36,11 @@ class MotionMarkBenchmark(PressBenchmark):
         platform.set_display_refresh_rate(60)
       except NotImplementedError:
         logging.warning(
-            "Failed to automatically apply 60Hz refresh rate on %s. "
-            "Setting the screen refresh rate manually to 60Hz is strongly "
-            "recommended for fair cross-platform and cross-browser comparison.",
-            platform)
+          "Failed to automatically apply 60Hz refresh rate on %s. "
+          "Setting the screen refresh rate manually to 60Hz is strongly "
+          "recommended for fair cross-platform and cross-browser comparison.",
+          platform,
+        )
 
   @override
   def teardown(self, runner: Runner) -> None:

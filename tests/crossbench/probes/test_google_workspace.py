@@ -13,14 +13,15 @@ from tests.crossbench.base import CrossbenchFakeFsTestCase
 
 
 class GoogleWorkspaceProbeTestCase(CrossbenchFakeFsTestCase):
-
   def test_parse_default(self):
     probe = GoogleWorkspaceProbe.config_parser().parse({})
     self.assertIsInstance(probe, GoogleWorkspaceProbe)
     self.assertEqual(probe.name, "google_workspace")
 
-  @mock.patch("crossbench.probes.google_workspace.service_account.Credentials"
-              ".from_service_account_info")
+  @mock.patch(
+    "crossbench.probes.google_workspace.service_account.Credentials"
+    ".from_service_account_info"
+  )
   @mock.patch("crossbench.probes.google_workspace.build")
   def test_copy_and_redirect(self, mock_build, mock_creds_info):
     # Mock drive service
@@ -32,8 +33,8 @@ class GoogleWorkspaceProbeTestCase(CrossbenchFakeFsTestCase):
     # Mock file copy response
     mock_copy = mock.MagicMock()
     mock_copy.execute.return_value = {
-        "id": "new_file_id",
-        "webViewLink": "https://docs.google.com/document/d/new_file_id/edit",
+      "id": "new_file_id",
+      "webViewLink": "https://docs.google.com/document/d/new_file_id/edit",
     }
     mock_files.copy.return_value = mock_copy
 
@@ -50,31 +51,34 @@ class GoogleWorkspaceProbeTestCase(CrossbenchFakeFsTestCase):
 
     context = probe.create_context(run)
     context.invoke(
-        info_stack=("step",),
-        timeout=dt.timedelta(seconds=1),
-        action="copy_and_redirect",
-        template_id="magic_template")
+      info_stack=("step",),
+      timeout=dt.timedelta(seconds=1),
+      action="copy_and_redirect",
+      template_id="magic_template",
+    )
 
     # Assert API interactions
     mock_build.assert_called_once_with("drive", "v3", credentials=mock.ANY)
     mock_files.copy.assert_called_once_with(
-        fileId="magic_template",
-        body={
-            "name": "Crossbench-Test-Copy-magic_template",
-            "parents": ["test_drive_id"],
-            "appProperties": {
-                "crossbench_test": "true",
-                "template_id": "magic_template",
-                "ttl": mock.ANY,
-            },
+      fileId="magic_template",
+      body={
+        "name": "Crossbench-Test-Copy-magic_template",
+        "parents": ["test_drive_id"],
+        "appProperties": {
+          "crossbench_test": "true",
+          "template_id": "magic_template",
+          "ttl": mock.ANY,
         },
-        supportsAllDrives=True,
-        fields="id, webViewLink")
+      },
+      supportsAllDrives=True,
+      fields="id, webViewLink",
+    )
 
     # Assert browser interaction
     # type: ignore[attr-defined]
     context.browser.show_url.assert_called_once_with(
-        "https://docs.google.com/document/d/new_file_id/edit")
+      "https://docs.google.com/document/d/new_file_id/edit"
+    )
 
 
 if __name__ == "__main__":

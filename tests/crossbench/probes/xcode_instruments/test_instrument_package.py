@@ -14,8 +14,9 @@ from unittest import mock
 from crossbench import path as pth
 from crossbench.plt.bin import Binaries
 from crossbench.probes.profiling.context.macos import MAC_INSTRUMENT_PATH
-from crossbench.probes.xcode_instruments.instrument_package import \
-    InstrumentPackage
+from crossbench.probes.xcode_instruments.instrument_package import (
+  InstrumentPackage,
+)
 from tests import test_helper
 from tests.crossbench.base import CrossbenchFakeFsTestCase
 
@@ -37,12 +38,12 @@ _SOURCE: Final[str] = """<?xml version="1.0" encoding="UTF-8" ?>
 
 _XCODE_CONTENTS: Final[str] = "/Applications/Xcode.app/Contents"
 _APPLE_PACKAGES: Final[str] = (
-    f"{_XCODE_CONTENTS}/Applications/Instruments.app/Contents/Packages")
+  f"{_XCODE_CONTENTS}/Applications/Instruments.app/Contents/Packages"
+)
 _CACHE_DIR: Final[str] = "/tmp/cache/instrument_packages"
 
 
 class InstrumentPackageTestCase(CrossbenchFakeFsTestCase):
-
   def setUp(self) -> None:
     super().setUp()
     self.source = pth.LocalPath("/tmp/example.instrpkg")
@@ -50,42 +51,61 @@ class InstrumentPackageTestCase(CrossbenchFakeFsTestCase):
 
   def test_parse_instrument_titles(self):
     self.assertEqual(
-        InstrumentPackage.parse_instrument_titles(self.source),
-        ("Counters", "Signposts"))
+      InstrumentPackage.parse_instrument_titles(self.source),
+      ("Counters", "Signposts"),
+    )
 
   def test_parse_instrument_titles_none(self):
     self.fs.create_file(
-        "/tmp/empty.instrpkg", contents="<package><id>org.x</id></package>")
+      "/tmp/empty.instrpkg", contents="<package><id>org.x</id></package>"
+    )
     with self.assertRaisesRegex(ValueError, "No instruments"):
       InstrumentPackage.parse_instrument_titles(
-          pth.LocalPath("/tmp/empty.instrpkg"))
+        pth.LocalPath("/tmp/empty.instrpkg")
+      )
 
   def test_parse_source(self):
     self.assertEqual(
-        InstrumentPackage.parse_source(str(self.source)), self.source)
+      InstrumentPackage.parse_source(str(self.source)), self.source
+    )
 
   def test_parse_source_invalid(self):
     self.fs.create_file("/tmp/broken.instrpkg", contents="<package>")
     self.fs.create_file("/tmp/empty.instrpkg", contents="<package/>")
-    for value in ("/tmp/broken.instrpkg", "/tmp/empty.instrpkg",
-                  "/tmp/missing.instrpkg"):
+    for value in (
+      "/tmp/broken.instrpkg",
+      "/tmp/empty.instrpkg",
+      "/tmp/missing.instrpkg",
+    ):
       with self.subTest(value=value):
         with self.assertRaises(argparse.ArgumentTypeError):
           InstrumentPackage.parse_source(value)
 
   def test_record_args(self):
     package = InstrumentPackage(
-        pth.LocalPath("/tmp/example.instrdst"), ("Counters", "Signposts"))
-    self.assertEqual(package.record_args,
-                     ("--package", pth.LocalPath("/tmp/example.instrdst"),
-                      "--instrument", "Counters", "--instrument", "Signposts"))
+      pth.LocalPath("/tmp/example.instrdst"), ("Counters", "Signposts")
+    )
+    self.assertEqual(
+      package.record_args,
+      (
+        "--package",
+        pth.LocalPath("/tmp/example.instrdst"),
+        "--instrument",
+        "Counters",
+        "--instrument",
+        "Signposts",
+      ),
+    )
 
   def _mock_host(self) -> mock.Mock:
     self.fs.create_file(
-        f"{_XCODE_CONTENTS}/version.plist",
-        contents=plistlib.dumps({
-            "ProductBuildVersion": "27A266a",
-        }).decode())
+      f"{_XCODE_CONTENTS}/version.plist",
+      contents=plistlib.dumps(
+        {
+          "ProductBuildVersion": "27A266a",
+        }
+      ).decode(),
+    )
     self.fs.create_dir(_CACHE_DIR)
     apple_packages = pth.LocalPath(_APPLE_PACKAGES)
     host = mock.Mock()
@@ -94,8 +114,8 @@ class InstrumentPackageTestCase(CrossbenchFakeFsTestCase):
     host.exists.side_effect = lambda path: pth.LocalPath(path).exists()
     host.read_bytes.side_effect = lambda path: pth.LocalPath(path).read_bytes()
     host.glob.return_value = [
-        apple_packages / "CPU Profiler.instrdst",
-        apple_packages / "CPU Counters.instrdst",
+      apple_packages / "CPU Profiler.instrdst",
+      apple_packages / "CPU Counters.instrdst",
     ]
 
     def fake_build(*args) -> None:
@@ -107,13 +127,18 @@ class InstrumentPackageTestCase(CrossbenchFakeFsTestCase):
 
   @contextlib.contextmanager
   def _mock_binaries(self) -> Iterator[None]:
-    with mock.patch.object(
+    with (
+      mock.patch.object(
         Binaries.XCRUN,
         "resolve_cached",
-        return_value=pth.LocalPath("/usr/bin/xcrun")), mock.patch.object(
-            Binaries.XCODE_SELECT,
-            "resolve_cached",
-            return_value=pth.LocalPath("/usr/bin/xcode-select")):
+        return_value=pth.LocalPath("/usr/bin/xcrun"),
+      ),
+      mock.patch.object(
+        Binaries.XCODE_SELECT,
+        "resolve_cached",
+        return_value=pth.LocalPath("/usr/bin/xcode-select"),
+      ),
+    ):
       yield
 
   def test_build_links_all_apple_packages(self):
@@ -122,18 +147,30 @@ class InstrumentPackageTestCase(CrossbenchFakeFsTestCase):
       package = InstrumentPackage.build(host, self.source)
     self.assertEqual(package.instruments, ("Counters", "Signposts"))
     self.assertEqual(package.path.parent, pth.LocalPath(_CACHE_DIR))
-    self.assertRegex(package.path.name,
-                     r"^example-27A266a-[0-9a-f]{16}\.instrdst$")
+    self.assertRegex(
+      package.path.name, r"^example-27A266a-[0-9a-f]{16}\.instrdst$"
+    )
     self.assertTrue(package.path.is_dir())
     host.sh_stdout.assert_called_once_with(
-        pth.LocalPath("/usr/bin/xcode-select"), "-p")
+      pth.LocalPath("/usr/bin/xcode-select"), "-p"
+    )
     host.glob.assert_called_once_with(
-        pth.LocalPath(_APPLE_PACKAGES), "*.instrdst")
+      pth.LocalPath(_APPLE_PACKAGES), "*.instrdst"
+    )
     host.sh.assert_called_once_with(
-        pth.LocalPath("/usr/bin/xcrun"), "instrumentbuilder", "-i", self.source,
-        "-o", package.path.with_name(f"tmp-{package.path.name}"), "-L",
-        pth.LocalPath(_APPLE_PACKAGES), "-l", "CPU Counters", "-l",
-        "CPU Profiler")
+      pth.LocalPath("/usr/bin/xcrun"),
+      "instrumentbuilder",
+      "-i",
+      self.source,
+      "-o",
+      package.path.with_name(f"tmp-{package.path.name}"),
+      "-L",
+      pth.LocalPath(_APPLE_PACKAGES),
+      "-l",
+      "CPU Counters",
+      "-l",
+      "CPU Profiler",
+    )
 
   def test_build_reuses_cached_package(self):
     host = self._mock_host()
@@ -155,10 +192,11 @@ class InstrumentPackageTestCase(CrossbenchFakeFsTestCase):
 
 
 class ShippedInstrumentPackagesTestCase(unittest.TestCase):
-
   def test_shipped_packages_declare_instruments(self):
-    for source in (MAC_INSTRUMENT_PATH, test_helper.config_dir() /
-                   "doc/probe/xcode_instruments.example.instrpkg"):
+    for source in (
+      MAC_INSTRUMENT_PATH,
+      test_helper.config_dir() / "doc/probe/xcode_instruments.example.instrpkg",
+    ):
       with self.subTest(source=source.name):
         self.assertTrue(InstrumentPackage.parse_instrument_titles(source))
 

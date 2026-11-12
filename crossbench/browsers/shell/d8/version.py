@@ -7,16 +7,21 @@ from __future__ import annotations
 import re
 from typing import Final, override
 
-from crossbench.browsers.version import BrowserVersion, \
-    BrowserVersionChannel, VersionParseResult
+from crossbench.browsers.version import (
+  BrowserVersion,
+  BrowserVersionChannel,
+  VersionParseResult,
+)
 
 
 class D8Version(BrowserVersion):
   _PARTS_LEN: Final[int] = 3
   _VERSION_RE: Final[re.Pattern] = re.compile(
-      r"(?P<prefix>V8\D+)"
-      r"(?P<parts>(?:\d+(\.\d+)+))"
-      r"(?:.*)", re.I)
+    r"(?P<prefix>V8\D+)"
+    r"(?P<parts>(?:\d+(\.\d+)+))"
+    r"(?:.*)",
+    re.I,
+  )
 
   @classmethod
   @override
@@ -36,8 +41,9 @@ class D8Version(BrowserVersion):
     assert version_parts, "Missing version parts"
     parts: tuple[int, ...] = tuple(map(int, version_parts.split(".")))
     if len(parts) != cls._PARTS_LEN:
-      raise cls.parse_error("Invalid number of version number parts",
-                            full_version)
+      raise cls.parse_error(
+        "Invalid number of version number parts", full_version
+      )
     version_str: str = f"{prefix} {parts}"
     return VersionParseResult(parts, BrowserVersionChannel.ALPHA, version_str)
 

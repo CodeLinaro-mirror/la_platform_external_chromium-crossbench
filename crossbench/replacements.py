@@ -20,22 +20,25 @@ if TYPE_CHECKING:
 @dataclasses.dataclass(frozen=True)
 class Replacements(ConfigObject):
   _replacements: ImmutableJsonDict = dataclasses.field(
-      default_factory=immutabledict)
+    default_factory=immutabledict
+  )
 
   @classmethod
   @override
   def create(
-      cls,
-      replacements: Mapping[str, object] | None = None,
+    cls,
+    replacements: Mapping[str, object] | None = None,
   ) -> Self:
     dict_value = ObjectParser.dict(replacements or {}, "replacements")
     validated_replacements: JsonDict = {}
     for replace_key, replace_value in dict_value.items():
       with exception.annotate_argparsing(
-          f"Parsing ...[{replace_key!r}] = {dict_value!r}"):
+        f"Parsing ...[{replace_key!r}] = {dict_value!r}"
+      ):
         key = ObjectParser.non_empty_str(replace_key, "replacement key")
-        val = cast("Json",
-                   ObjectParser.not_none(replace_value, "replacement value"))
+        val = cast(
+          "Json", ObjectParser.not_none(replace_value, "replacement value")
+        )
         validated_replacements[key] = val
     return cls(_replacements=immutabledict(validated_replacements))
 

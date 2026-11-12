@@ -25,15 +25,15 @@ class PortForwardException(Exception):
 
 
 class PortScope:
-  """ This class allows to forward ports in a local scope.
+  """This class allows to forward ports in a local scope.
   The main PortManager is responsible for handling all forwarded ports, while
   the PortScope only tracks forwarded ports while it's active, and then tears
   down those forwarded ports when the scope is closed.
   """
 
-  def __init__(self,
-               manager: PortManager,
-               parent_scope: Self | None = None) -> None:
+  def __init__(
+    self, manager: PortManager, parent_scope: Self | None = None
+  ) -> None:
     self._manager: Final[PortManager] = manager
     self._parent_scope: Final[Self | None] = parent_scope
     assert parent_scope is not self
@@ -107,8 +107,9 @@ class PortScope:
     local_port = NumberParser.port_number_zero(local_port, "local_port")
     if self.is_forwarded_port_used(local_port):
       raise PortForwardException(
-          f"Cannot forward local port {local_port} twice, "
-          "it is already forwarded.")
+        f"Cannot forward local port {local_port} twice, "
+        "it is already forwarded."
+      )
     local_port = self._manager.forward(local_port, remote_port)
     self._forwarded_ports[local_port] = remote_port
     return local_port
@@ -132,8 +133,9 @@ class PortScope:
     local_port = NumberParser.port_number_zero(local_port, "local_port")
     if self.is_forwarded_port_used(local_port):
       raise PortForwardException(
-          f"Cannot forward local port {local_port} twice, "
-          "it is already forwarded.")
+        f"Cannot forward local port {local_port} twice, "
+        "it is already forwarded."
+      )
     local_port = self._manager.forward_devtools(local_port, remote_identifier)
     self._forwarded_ports[local_port] = remote_identifier
     return local_port
@@ -141,8 +143,9 @@ class PortScope:
   def stop_forward(self, local_port: int) -> None:
     if local_port not in self._forwarded_ports:
       raise PortForwardException(
-          f"Cannot stop forwarding local port {local_port}, "
-          f"it was never forwarded.")
+        f"Cannot stop forwarding local port {local_port}, "
+        f"it was never forwarded."
+      )
     del self._forwarded_ports[local_port]
     self._manager.stop_forward(local_port)
 
@@ -150,8 +153,9 @@ class PortScope:
     remote_port = NumberParser.port_number_zero(remote_port, "remote_port")
     if self.is_reverse_forwarded_port_used(remote_port):
       raise PortForwardException(
-          f"Cannot reverse forward remote port {remote_port} twice, "
-          "it is already forwarded.")
+        f"Cannot reverse forward remote port {remote_port} twice, "
+        "it is already forwarded."
+      )
     remote_port = self._manager.reverse_forward(remote_port, local_port)
     self._reverse_forwarded_ports[remote_port] = local_port
     return remote_port
@@ -159,8 +163,9 @@ class PortScope:
   def stop_reverse_forward(self, remote_port: int) -> None:
     if remote_port not in self._reverse_forwarded_ports:
       raise PortForwardException(
-          f"Cannot stop reverse forwarding remote port {remote_port}, "
-          f"it was never forwarded.")
+        f"Cannot stop reverse forwarding remote port {remote_port}, "
+        f"it was never forwarded."
+      )
     del self._reverse_forwarded_ports[remote_port]
     self._manager.stop_reverse_forward(remote_port)
 
@@ -214,7 +219,7 @@ class PortManager(abc.ABC):
   @contextlib.contextmanager
   def nested(self) -> Iterator[PortScope]:
     """Open a nested port scope, all forwarded ports that were opened
-    during this scope will be closed when leaving the scope. """
+    during this scope will be closed when leaving the scope."""
     old_scope = self._port_scope
     self._port_scope = PortScope(self, self._port_scope)
     try:
@@ -258,8 +263,9 @@ class PortManager(abc.ABC):
     self._stop_scoped_ports(self._port_scope, exceptions)
     exceptions.assert_success("Could not stop all port forwarding")
 
-  def _stop_scoped_ports(self, port_scope: PortScope,
-                         exceptions: exception.Annotator) -> None:
+  def _stop_scoped_ports(
+    self, port_scope: PortScope, exceptions: exception.Annotator
+  ) -> None:
     for local_port in port_scope.forwarded_ports:
       with exceptions.capture(f"Stopping forwarding {local_port}"):
         port_scope.stop_forward(local_port)
@@ -277,7 +283,8 @@ class PortManager(abc.ABC):
   def forward_devtools(self, local_port: int, remote_identifier: str) -> int:
     del local_port, remote_identifier
     raise NotImplementedError(
-        f"forward_devtools_port not implemented for {self}")
+      f"forward_devtools_port not implemented for {self}"
+    )
 
   @abc.abstractmethod
   def stop_forward(self, local_port: int) -> None:
@@ -293,14 +300,13 @@ class PortManager(abc.ABC):
 
 
 class LocalPortManager(PortManager):
-
   def __init__(self, platform: Platform, throw: bool = False) -> None:
     super().__init__(platform, throw)
     self.platform.assert_is_local()
 
   @override
   def forward(self, local_port: int, remote_port: int) -> int:
-    """ Forwards a device remote_port to a local port."""
+    """Forwards a device remote_port to a local port."""
     if remote_port != local_port:
       raise ValueError("Cannot forward a remote port on a local platform.")
     local_port = NumberParser.port_number(local_port, "local_port")
@@ -344,12 +350,14 @@ class SubprocessPortManager(PortManager):
     return self._platform.host_platform
 
   @abc.abstractmethod
-  def _popen_forward(self, local_port: int,
-                     remote_port: int) -> subprocess.Popen:
+  def _popen_forward(
+    self, local_port: int, remote_port: int
+  ) -> subprocess.Popen:
     """Spawn the host process that forwards local_port to remote_port."""
 
-  def _popen_reverse_forward(self, remote_port: int,
-                             local_port: int) -> subprocess.Popen:
+  def _popen_reverse_forward(
+    self, remote_port: int, local_port: int
+  ) -> subprocess.Popen:
     """Spawn the host process that forwards remote_port to local_port."""
     del remote_port, local_port
     raise NotImplementedError(f"reverse_forward not implemented for {self}")
@@ -362,16 +370,23 @@ class SubprocessPortManager(PortManager):
       local_port = self.host_platform.get_free_port()
     if local_port in self._forward_popens:
       raise PortForwardException(
-          f"Cannot forward local port {local_port} twice.")
+        f"Cannot forward local port {local_port} twice."
+      )
     self._forward_popens[local_port] = self._popen_forward(
-        local_port, remote_port)
+      local_port, remote_port
+    )
     try:
       self.host_platform.wait_for_port(local_port, self.PORT_FORWARDING_TIMEOUT)
     except BaseException:
       self.stop_forward(local_port)
       raise
-    logging.debug("Forwarded Remote Port: %s:%s <= %s:%s", self.host_platform,
-                  local_port, self.platform, remote_port)
+    logging.debug(
+      "Forwarded Remote Port: %s:%s <= %s:%s",
+      self.host_platform,
+      local_port,
+      self.platform,
+      remote_port,
+    )
     return local_port
 
   @override
@@ -386,16 +401,23 @@ class SubprocessPortManager(PortManager):
       local_port = self.host_platform.get_free_port()
     if remote_port in self._reverse_forward_popens:
       raise PortForwardException(
-          f"Cannot forward remote port {remote_port} twice.")
+        f"Cannot forward remote port {remote_port} twice."
+      )
     self._reverse_forward_popens[remote_port] = self._popen_reverse_forward(
-        remote_port, local_port)
+      remote_port, local_port
+    )
     try:
       self.platform.wait_for_port(remote_port, self.PORT_FORWARDING_TIMEOUT)
     except BaseException:
       self.stop_reverse_forward(remote_port)
       raise
-    logging.debug("Forwarded Local Port: %s:%s => %s:%s", self.host_platform,
-                  local_port, self.platform, remote_port)
+    logging.debug(
+      "Forwarded Local Port: %s:%s => %s:%s",
+      self.host_platform,
+      local_port,
+      self.platform,
+      remote_port,
+    )
     return remote_port
 
   @override

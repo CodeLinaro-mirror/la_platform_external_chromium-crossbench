@@ -10,10 +10,16 @@ from typing import TYPE_CHECKING, ClassVar, Final, override
 
 from crossbench.action_runner.action.clear_cache import ClearCacheAction
 from crossbench.action_runner.action.enums import WindowTarget
-from crossbench.benchmarks.loading.playback_controller import \
-    PeriodicPlaybackController
-from crossbench.benchmarks.web_power.base import WebPowerBenchmarkBase, \
-    WebPowerSiteConfig, WebPowerStory, WebPowerStoryFilter, _value_or
+from crossbench.benchmarks.loading.playback_controller import (
+  PeriodicPlaybackController,
+)
+from crossbench.benchmarks.web_power.base import (
+  WebPowerBenchmarkBase,
+  WebPowerSiteConfig,
+  WebPowerStory,
+  WebPowerStoryFilter,
+  _value_or,
+)
 from crossbench.parse import DurationParser, NumberParser
 
 if TYPE_CHECKING:
@@ -35,33 +41,43 @@ class WebPowerPageLoadStory(WebPowerStory):
   def story_name_cls(cls) -> str:
     return "page-load"
 
-  def __init__(self,
-               name_suffix: str,
-               site_config: WebPowerSiteConfig,
-               page_load_count: int | None = None,
-               interval: dt.timedelta | None = None,
-               stabilization_time: dt.timedelta | None = None) -> None:
+  def __init__(
+    self,
+    name_suffix: str,
+    site_config: WebPowerSiteConfig,
+    page_load_count: int | None = None,
+    interval: dt.timedelta | None = None,
+    stabilization_time: dt.timedelta | None = None,
+  ) -> None:
     default_count = (
-        self.DEFAULT_CNN_PAGE_LOAD_COUNT
-        if name_suffix == "cnn" else self.DEFAULT_PAGE_LOAD_COUNT)
+      self.DEFAULT_CNN_PAGE_LOAD_COUNT
+      if name_suffix == "cnn"
+      else self.DEFAULT_PAGE_LOAD_COUNT
+    )
     self.page_load_count: Final[int] = _value_or(page_load_count, default_count)
-    self.interval: Final[dt.timedelta] = _value_or(interval,
-                                                   self.DEFAULT_INTERVAL)
-    stabilization_time = _value_or(stabilization_time,
-                                   site_config.default_stabilization_time)
+    self.interval: Final[dt.timedelta] = _value_or(
+      interval, self.DEFAULT_INTERVAL
+    )
+    stabilization_time = _value_or(
+      stabilization_time, site_config.default_stabilization_time
+    )
 
     total_duration = (
-        stabilization_time + self.page_load_count * self.interval +
-        WebPowerStory.DEFAULT_GRACE_PERIOD)
-    super().__init__(name_suffix, site_config, total_duration,
-                     stabilization_time)
+      stabilization_time
+      + self.page_load_count * self.interval
+      + WebPowerStory.DEFAULT_GRACE_PERIOD
+    )
+    super().__init__(
+      name_suffix, site_config, total_duration, stabilization_time
+    )
 
   @override
   def run(self, run: Run) -> None:
     logging.info("Starting page-load loop.")
     playback = PeriodicPlaybackController(self.page_load_count, self.interval)
     with run.actions(
-        "Run", verbose=True, performance_mark=WebPowerStory.MEASUREMENT_MARK):
+      "Run", verbose=True, performance_mark=WebPowerStory.MEASUREMENT_MARK
+    ):
       for i in playback:
         # Clearing the cache from inside of the power-measured window is the
         # lesser evil given current technical difficulties with:
@@ -87,8 +103,9 @@ class WebPowerPageLoadBenchmark(WebPowerBenchmarkBase):
 
   IS_SCENARIO_CLASS = True
   NAME: ClassVar = f"{WebPowerBenchmarkBase.NAME}-page-load"
-  DEFAULT_STORY_CLS: ClassVar[
-      type[WebPowerPageLoadStory]] = WebPowerPageLoadStory
+  DEFAULT_STORY_CLS: ClassVar[type[WebPowerPageLoadStory]] = (
+    WebPowerPageLoadStory
+  )
   STORY_FILTER_CLS: ClassVar = WebPowerPageLoadStoryFilter
 
   @classmethod
@@ -101,23 +118,26 @@ class WebPowerPageLoadBenchmark(WebPowerBenchmarkBase):
 
   @classmethod
   @override
-  def add_scenario_cli_arguments(cls,
-                                 parser: CBArgumentParser) -> CBArgumentParser:
+  def add_scenario_cli_arguments(
+    cls, parser: CBArgumentParser
+  ) -> CBArgumentParser:
     story_cls = cls.DEFAULT_STORY_CLS
     default_interval_s = story_cls.DEFAULT_INTERVAL.total_seconds()
     parser.add_argument(
-        "--page-loads",
-        "--page-load-count",
-        dest="page_load_count",
-        type=NumberParser.positive_int,
-        default=None,
-        help="Number of times to reload the page. "
-        f"(Default: {story_cls.DEFAULT_PAGE_LOAD_COUNT}, "
-        f"CNN default: {story_cls.DEFAULT_CNN_PAGE_LOAD_COUNT})")
+      "--page-loads",
+      "--page-load-count",
+      dest="page_load_count",
+      type=NumberParser.positive_int,
+      default=None,
+      help="Number of times to reload the page. "
+      f"(Default: {story_cls.DEFAULT_PAGE_LOAD_COUNT}, "
+      f"CNN default: {story_cls.DEFAULT_CNN_PAGE_LOAD_COUNT})",
+    )
     parser.add_argument(
-        "--interval",
-        type=DurationParser.positive_duration,
-        default=story_cls.DEFAULT_INTERVAL,
-        help="Wait time between page loads. "
-        f"(Default: {default_interval_s:.0f}s)")
+      "--interval",
+      type=DurationParser.positive_duration,
+      default=story_cls.DEFAULT_INTERVAL,
+      help="Wait time between page loads. "
+      f"(Default: {default_interval_s:.0f}s)",
+    )
     return parser

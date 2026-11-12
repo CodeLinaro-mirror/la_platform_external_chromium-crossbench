@@ -7,8 +7,10 @@ from __future__ import annotations
 import datetime as dt
 from typing import TYPE_CHECKING, ClassVar, Final, Self, Sequence, override
 
-from crossbench.action_runner.screenshot_annotation import \
-    ScreenshotAnnotation, annotate_screenshot_svg
+from crossbench.action_runner.screenshot_annotation import (
+  ScreenshotAnnotation,
+  annotate_screenshot_svg,
+)
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
 from crossbench.probes.probe_error import ProbeMissingDataError
 from crossbench.probes.result_location import ResultLocation
@@ -26,6 +28,7 @@ class ScreenshotProbe(Probe):
   """
   General-purpose Probe that collects screenshots.
   """
+
   NAME: ClassVar = "screenshot"
   RESULT_LOCATION: ClassVar = ResultLocation.BROWSER
   IMAGE_FORMAT: ClassVar = "png"
@@ -42,10 +45,12 @@ class ScreenshotProbe(Probe):
       viewport: Viewport = browser.viewport
       if viewport.is_headless:
         env.handle_warning(
-            f"Cannot take screenshots for headless browser: {browser}")
+          f"Cannot take screenshots for headless browser: {browser}"
+        )
       if viewport.x < 10 or viewport.y < 50:
         env.handle_warning(
-            f"Viewport for '{browser}' might include toolbar: {viewport}")
+          f"Viewport for '{browser}' might include toolbar: {viewport}"
+        )
 
   @override
   def get_context_cls(self) -> type[ScreenshotProbeContext]:
@@ -56,7 +61,6 @@ class ScreenshotProbe(Probe):
 
 
 class ScreenshotProbeContext(ProbeContext[ScreenshotProbe]):
-
   def __init__(self, probe: ScreenshotProbe, run: Run) -> None:
     super().__init__(probe, run)
     self._results: Final[list[pth.AnyPath]] = []
@@ -81,29 +85,37 @@ class ScreenshotProbeContext(ProbeContext[ScreenshotProbe]):
   def stop(self) -> None:
     self.screenshot("stop")
 
-  def _annotate_screenshot(self, screenshot_file_name: str, label: str,
-                           annotations: Sequence[ScreenshotAnnotation]) -> None:
+  def _annotate_screenshot(
+    self,
+    screenshot_file_name: str,
+    label: str,
+    annotations: Sequence[ScreenshotAnnotation],
+  ) -> None:
     resolution = self.browser_platform.display_resolution()
-    svg = annotate_screenshot_svg(resolution.width, resolution.height,
-                                  screenshot_file_name, annotations)
+    svg = annotate_screenshot_svg(
+      resolution.width, resolution.height, screenshot_file_name, annotations
+    )
     svg_path = self.result_path / f"{label}.svg"
     self.browser_platform.write_text(svg_path, svg)
     self._results.append(svg_path)
 
   @override
-  def invoke(self,
-             info_stack: exception.TInfoStack,
-             timeout: dt.timedelta,
-             label: str | None = None,
-             annotations: Sequence[ScreenshotAnnotation] | None = None,
-             **kwargs) -> None:
+  def invoke(
+    self,
+    info_stack: exception.TInfoStack,
+    timeout: dt.timedelta,
+    label: str | None = None,
+    annotations: Sequence[ScreenshotAnnotation] | None = None,
+    **kwargs,
+  ) -> None:
     self.expect_no_extra_kwargs(kwargs)
     self.screenshot(label, annotations)
 
   def screenshot(
-      self,
-      label: str | None = None,
-      annotations: Sequence[ScreenshotAnnotation] | None = None) -> None:
+    self,
+    label: str | None = None,
+    annotations: Sequence[ScreenshotAnnotation] | None = None,
+  ) -> None:
     # TODO: support screen coordinates
     if not label:
       label = str(dt.datetime.now().strftime("%Y-%m-%d_%H%M%S"))
@@ -120,5 +132,6 @@ class ScreenshotProbeContext(ProbeContext[ScreenshotProbe]):
   def teardown(self) -> ProbeResult:
     if not self.browser_platform.is_dir(self.result_path):
       raise ProbeMissingDataError(
-          f"No screen shot found at: {self.result_path}")
+        f"No screen shot found at: {self.result_path}"
+      )
     return self.browser_result(file=tuple(self._results))

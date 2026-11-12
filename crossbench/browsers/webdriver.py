@@ -95,8 +95,9 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     http_timeout_should_change = False
 
     if not self._timeout_set and self._http_timeout_cache:
-      http_timeout_should_change = new_timeout_seconds > \
-                                    self._http_timeout_cache
+      http_timeout_should_change = (
+        new_timeout_seconds > self._http_timeout_cache
+      )
     script_timeout_should_change = new_timeout_seconds > original_script_timeout
 
     try:
@@ -111,10 +112,12 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
       if script_timeout_should_change:
         self._private_driver.set_script_timeout(original_script_timeout)
 
-  def __init__(self,
-               label: str,
-               path: pth.AnyPath | None = None,
-               settings: Settings | None = None) -> None:
+  def __init__(
+    self,
+    label: str,
+    path: pth.AnyPath | None = None,
+    settings: Settings | None = None,
+  ) -> None:
     super().__init__(label, path, settings)
     self._driver_path: pth.AnyPath | None = self._settings.driver_path
     self._driver_log_file: pth.LocalPath | None = None
@@ -146,7 +149,8 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     self._driver_path = self.host_platform.absolute(self._find_driver())
     # TODO: support remote chromedriver as well
     assert self.host_platform.exists(self._driver_path), (
-        f"Webdriver path '{self._driver_path}' does not exist")
+      f"Webdriver path '{self._driver_path}' does not exist"
+    )
 
   @abc.abstractmethod
   def _find_driver(self) -> pth.AnyPath:
@@ -163,13 +167,14 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
       self._validate_driver_version()
 
   @override
-  def start(self,
-            session: BrowserSessionRunGroup,
-            startup_urls: Sequence[str] = ()) -> None:
+  def start(
+    self, session: BrowserSessionRunGroup, startup_urls: Sequence[str] = ()
+  ) -> None:
     super().start(session, startup_urls=startup_urls)
     try:
       self._private_driver = self._start_driver(
-          session, self.driver_path, startup_urls=startup_urls)
+        session, self.driver_path, startup_urls=startup_urls
+      )
     except selenium.common.exceptions.WebDriverException as e:
       self._handle_startup_error(e)
     self._is_running = True
@@ -179,10 +184,12 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     self._setup_window()
 
   def _handle_startup_error(
-      self, e: selenium.common.exceptions.WebDriverException) -> NoReturn:
+    self, e: selenium.common.exceptions.WebDriverException
+  ) -> NoReturn:
     msg: list[str] = [
-        f"Could not start WebDriver: {e.msg}"
-        if e.msg else "Could not create Webdriver session.",
+      f"Could not start WebDriver: {e.msg}"
+      if e.msg
+      else "Could not create Webdriver session.",
     ]
     msg.extend(self._startup_error_hints())
     msg_str = "\n".join(msg)
@@ -192,8 +199,8 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
   def _startup_error_hints(self) -> list[str]:
     if not self.platform.has_display and not self.viewport.is_headless:
       return [
-          f"No display is available on {self.platform}. "
-          "Try running with --headless.",
+        f"No display is available on {self.platform}. "
+        "Try running with --headless.",
       ]
     return []
 
@@ -219,7 +226,8 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     timeouts: Timeouts = self._private_driver.timeouts
     if implicit_wait := getattr(timeouts, "implicit_wait", None):
       timeouts.implicit_wait = timing.timeout_timedelta(
-          implicit_wait).total_seconds()
+        implicit_wait
+      ).total_seconds()
     if script := getattr(timeouts, "script", None):
       timeouts.script = timing.timeout_timedelta(script).total_seconds()
     if page_load := getattr(timeouts, "page_load", None):
@@ -231,14 +239,16 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     assert log_file, "Missing browser log file"
     self._driver_log_file = log_file.with_suffix(".driver.log")
     assert self._driver_log_file.name == BrowserDriverLogProbe.NAME, (
-        f"Expected driver log file name {BrowserDriverLogProbe.NAME}, "
-        f"but got: {self._driver_log_file}")
+      f"Expected driver log file name {BrowserDriverLogProbe.NAME}, "
+      f"but got: {self._driver_log_file}"
+    )
     return self._driver_log_file
 
   def _setup_window(self) -> None:
     # Force main window to foreground.
     self._private_driver.switch_to.window(
-        self._private_driver.current_window_handle)
+      self._private_driver.current_window_handle
+    )
     # In some cases, the current window is a special context with URL
     # chrome://newtab-footer/. Various errors can occur when the driver
     # is connected to this pseudo window, so we switch to the first normal
@@ -248,8 +258,10 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
       window_handles.remove(self._private_driver.current_window_handle)
       if window_handles:
         self._private_driver.switch_to.window(window_handles[0])
-    if (self.viewport.is_headless or
-        not self._private_driver.capabilities["setWindowRect"]):
+    if (
+      self.viewport.is_headless
+      or not self._private_driver.capabilities["setWindowRect"]
+    ):
       return
     if self.viewport.is_fullscreen:
       self._private_driver.fullscreen_window()
@@ -261,22 +273,32 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
   def _set_window_rect(self, attempts: int = 3) -> None:
     for attempt in range(1, attempts + 1):
       try:
-        self._private_driver.set_window_rect(self.viewport.x, self.viewport.y,
-                                             self.viewport.width,
-                                             self.viewport.height)
+        self._private_driver.set_window_rect(
+          self.viewport.x,
+          self.viewport.y,
+          self.viewport.width,
+          self.viewport.height,
+        )
         return
       except selenium.common.exceptions.WebDriverException as e:
         if attempt == attempts:
           raise
-        logging.warning("%s: Failed to set window rect (attempt %d/%d): %s",
-                        self, attempt, attempts, e.msg)
+        logging.warning(
+          "%s: Failed to set window rect (attempt %d/%d): %s",
+          self,
+          attempt,
+          attempts,
+          e.msg,
+        )
         time.sleep(1)
 
   @abc.abstractmethod
-  def _start_driver(self,
-                    session: BrowserSessionRunGroup,
-                    driver_path: pth.AnyPath,
-                    startup_urls: Sequence[str] = ()) -> webdriver.Remote:
+  def _start_driver(
+    self,
+    session: BrowserSessionRunGroup,
+    driver_path: pth.AnyPath,
+    startup_urls: Sequence[str] = (),
+  ) -> webdriver.Remote:
     pass
 
   @override
@@ -289,9 +311,9 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     return details
 
   @override
-  def show_url(self,
-               url: str,
-               target: WindowTarget = WindowTarget.SELF) -> None:
+  def show_url(
+    self, url: str, target: WindowTarget = WindowTarget.SELF
+  ) -> None:
     logging.debug("WebDriverBrowser.show_url(%s, %s)", url, target)
     try:
       if target == WindowTarget.SELF:
@@ -324,8 +346,9 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
       element = self._private_driver.find_element(By.CSS_SELECTOR, selector)
       element.click()
     except selenium.common.exceptions.WebDriverException as e:
-      raise DriverException(f"Failed to click element '{selector}': {e.msg}",
-                            self) from e
+      raise DriverException(
+        f"Failed to click element '{selector}': {e.msg}", self
+      ) from e
 
   @override
   def switch_frame(self, selector: str | None) -> None:
@@ -337,42 +360,51 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
       else:
         prefix = "xpath/"
         if selector.startswith(prefix):
-          selector = selector[len(prefix):]
+          selector = selector[len(prefix) :]
           element = self._private_driver.find_element(By.XPATH, selector)
         else:
           element = self._private_driver.find_element(By.CSS_SELECTOR, selector)
         self._private_driver.switch_to.frame(element)
     except selenium.common.exceptions.WebDriverException as e:
-      raise DriverException(f"Failed to switch to frame '{selector}' : {e.msg}",
-                            self) from e
+      raise DriverException(
+        f"Failed to switch to frame '{selector}' : {e.msg}", self
+      ) from e
 
   @override
   def screenshot(self, path: pth.LocalPath) -> None:
     if not self._private_driver.get_screenshot_as_file(path.as_posix()):
       raise DriverException(
-          f"Browser failed to get_screenshot_as_file to file '{path}'", self)
+        f"Browser failed to get_screenshot_as_file to file '{path}'", self
+      )
 
   def _wrap_webdriver_exception(
-      self, e: selenium.common.exceptions.WebDriverException, msg: str,
-      url: str) -> None:
+    self, e: selenium.common.exceptions.WebDriverException, msg: str, url: str
+  ) -> None:
     if "net::ERR_CONNECTION_REFUSED" in msg:
       raise DriverException(
-          f"Browser failed to load URL={url}. The URL is likely unreachable.",
-          self) from e
+        f"Browser failed to load URL={url}. The URL is likely unreachable.",
+        self,
+      ) from e
     if "net::ERR_INTERNET_DISCONNECTED" in msg:
       raise DriverException(
-          f"Browser failed to load URL={url}. "
-          f"The device is not connected to the internet.", self) from e
+        f"Browser failed to load URL={url}. "
+        f"The device is not connected to the internet.",
+        self,
+      ) from e
 
   @override
   def js(
-      self,
-      script: str,
-      timeout: dt.timedelta | None = None,
-      arguments: Sequence[object] = (),
+    self,
+    script: str,
+    timeout: dt.timedelta | None = None,
+    arguments: Sequence[object] = (),
   ) -> object:
-    logging.debug("WebDriverBrowser.js() timeout=%s, args: %s, script: %s",
-                  timeout, arguments, script)
+    logging.debug(
+      "WebDriverBrowser.js() timeout=%s, args: %s, script: %s",
+      timeout,
+      arguments,
+      script,
+    )
     assert self._is_running
     try:
       with self.js_timeout(timeout):
@@ -388,8 +420,10 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     driver = self._private_driver
     try:
       handles = driver.window_handles
-    except (selenium.common.exceptions.WebDriverException,
-            urllib3.exceptions.HTTPError) as e:
+    except (
+      selenium.common.exceptions.WebDriverException,
+      urllib3.exceptions.HTTPError,
+    ) as e:
       logging.warning("%s: Could not get window handles: %s", self, e)
       return
     if not handles:
@@ -397,8 +431,10 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
 
     try:
       current_handle: str | None = driver.current_window_handle
-    except (selenium.common.exceptions.WebDriverException,
-            urllib3.exceptions.HTTPError) as e:
+    except (
+      selenium.common.exceptions.WebDriverException,
+      urllib3.exceptions.HTTPError,
+    ) as e:
       logging.warning("%s: Could not get current window handle: %s", self, e)
       current_handle = None
 
@@ -412,21 +448,26 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
       try:
         driver.switch_to.window(handle)
         driver.close()
-      except (selenium.common.exceptions.WebDriverException,
-              urllib3.exceptions.HTTPError) as e:
-        logging.warning("%s: Got errors while closing tab %s: %s", self, handle,
-                        e)
+      except (
+        selenium.common.exceptions.WebDriverException,
+        urllib3.exceptions.HTTPError,
+      ) as e:
+        logging.warning(
+          "%s: Got errors while closing tab %s: %s", self, handle, e
+        )
 
     try:
       # Closing every tab ends the WebDriver session or exits the browser.
       # Keep one tab open and navigate it to about:blank instead.
       driver.switch_to.window(handle_to_keep)
       self.show_url("about:blank")
-    except (selenium.common.exceptions.WebDriverException,
-            urllib3.exceptions.HTTPError) as e:
+    except (
+      selenium.common.exceptions.WebDriverException,
+      urllib3.exceptions.HTTPError,
+    ) as e:
       logging.warning(
-          "%s: Got errors while navigating final tab to about:blank: %s", self,
-          e)
+        "%s: Got errors while navigating final tab to about:blank: %s", self, e
+      )
 
   @override
   def maximize_window(self) -> None:
@@ -440,9 +481,11 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
       self.close_all_tabs()
       try:
         self._close_browser_window(self._private_driver)
-      except (selenium.common.exceptions.NoSuchWindowException,
-              selenium.common.exceptions.WebDriverException,
-              urllib3.exceptions.HTTPError) as e:
+      except (
+        selenium.common.exceptions.NoSuchWindowException,
+        selenium.common.exceptions.WebDriverException,
+        urllib3.exceptions.HTTPError,
+      ) as e:
         logging.debug("Could not close browser window during quit: %s", e)
       if self.platform.is_macos:
         try:
@@ -473,25 +516,33 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
         # Close the current window.
         driver.close()
         time.sleep(0.1)
-      except (selenium.common.exceptions.NoSuchWindowException,
-              selenium.common.exceptions.WebDriverException,
-              urllib3.exceptions.HTTPError):
+      except (
+        selenium.common.exceptions.NoSuchWindowException,
+        selenium.common.exceptions.WebDriverException,
+        urllib3.exceptions.HTTPError,
+      ):
         # No window or unreachable driver is good.
         pass
     try:
       driver.quit()
-    except (selenium.common.exceptions.InvalidSessionIdException,
-            urllib3.exceptions.HTTPError):
+    except (
+      selenium.common.exceptions.InvalidSessionIdException,
+      urllib3.exceptions.HTTPError,
+    ):
       return
     # Sometimes a second quit is needed, ignore any warnings there
-    if (self._driver_pid and self.host_platform.is_local and
-        not self.host_platform.is_process_running(self._driver_pid)):
+    if (
+      self._driver_pid
+      and self.host_platform.is_local
+      and not self.host_platform.is_process_running(self._driver_pid)
+    ):
       return
     try:
       driver.quit()
     except Exception as e:  # noqa: BLE001
-      logging.debug("Driver raised exception on quit: %s\n%s", e,
-                    traceback.format_exc())
+      logging.debug(
+        "Driver raised exception on quit: %s\n%s", e, traceback.format_exc()
+      )
 
   def _close_browser_window(self, driver: webdriver.Remote) -> None:
     driver.close()
@@ -505,8 +556,9 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
           self._pid = 0
           return
     except TimeoutError:
-      logging.debug("Timed out waiting for browser process %s to exit.",
-                    self._pid)
+      logging.debug(
+        "Timed out waiting for browser process %s to exit.", self._pid
+      )
 
 
 class RemoteWebDriver(WebDriverBrowser):
@@ -541,10 +593,12 @@ class RemoteWebDriver(WebDriverBrowser):
     raise NotImplementedError
 
   @override
-  def _start_driver(self,
-                    session: BrowserSessionRunGroup,
-                    driver_path: pth.AnyPath,
-                    startup_urls: Sequence[str] = ()) -> webdriver.Remote:
+  def _start_driver(
+    self,
+    session: BrowserSessionRunGroup,
+    driver_path: pth.AnyPath,
+    startup_urls: Sequence[str] = (),
+  ) -> webdriver.Remote:
     raise NotImplementedError
 
   @override
@@ -559,9 +613,9 @@ class RemoteWebDriver(WebDriverBrowser):
     pass
 
   @override
-  def start(self,
-            session: BrowserSessionRunGroup,
-            startup_urls: Sequence[str] = ()) -> None:
+  def start(
+    self, session: BrowserSessionRunGroup, startup_urls: Sequence[str] = ()
+  ) -> None:
     del session
     self._validate_startup_urls(startup_urls)
     assert not startup_urls

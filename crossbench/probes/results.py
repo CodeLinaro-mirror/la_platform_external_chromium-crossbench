@@ -6,8 +6,15 @@ from __future__ import annotations
 
 import abc
 import logging
-from typing import TYPE_CHECKING, Final, Iterable, TypeVar, cast, overload, \
-    override
+from typing import (
+  TYPE_CHECKING,
+  Final,
+  Iterable,
+  TypeVar,
+  cast,
+  overload,
+  override,
+)
 
 from immutabledict import immutabledict
 from ordered_set import OrderedSet
@@ -35,19 +42,23 @@ class ProbeResult(abc.ABC):
   the trace_processor probe if present.
   """
 
-  def __init__(self,
-               url: Iterable[str] | None = None,
-               file: Iterable[pth.LocalPath] | None = None,
-               perfetto: Iterable[pth.LocalPath] | None = None,
-               **kwargs: Iterable[pth.LocalPath]) -> None:
+  def __init__(
+    self,
+    url: Iterable[str] | None = None,
+    file: Iterable[pth.LocalPath] | None = None,
+    perfetto: Iterable[pth.LocalPath] | None = None,
+    **kwargs: Iterable[pth.LocalPath],
+  ) -> None:
     self._url_list: tuple[str, ...] = ()
     if url:
       self._url_list = ObjectParser.unique_sequence(
-          tuple(url), "urls", DuplicateProbeResult)
+        tuple(url), "urls", DuplicateProbeResult
+      )
     self._perfetto_list: tuple[pth.LocalPath, ...] = ()
     if perfetto:
       self._perfetto_list = ObjectParser.unique_sequence(
-          tuple(perfetto), "traces", DuplicateProbeResult)
+        tuple(perfetto), "traces", DuplicateProbeResult
+      )
     tmp_files: dict[str, OrderedSet[pth.LocalPath]] = {}
     if file:
       self._extend(tmp_files, file, suffix=None, allow_duplicates=False)
@@ -56,49 +67,60 @@ class ProbeResult(abc.ABC):
 
     # Do last and allow duplicated
     self._extend(
-        tmp_files, self._perfetto_list, suffix=None, allow_duplicates=True)
-    self._files: Final[immutabledict[str, tuple[
-        pth.LocalPath, ...]]] = immutabledict({
-            suffix: tuple(files) for suffix, files in tmp_files.items()
-        })
+      tmp_files, self._perfetto_list, suffix=None, allow_duplicates=True
+    )
+    self._files: Final[immutabledict[str, tuple[pth.LocalPath, ...]]] = (
+      immutabledict(
+        {suffix: tuple(files) for suffix, files in tmp_files.items()}
+      )
+    )
     # TODO: Add Metric object for keeping metrics in-memory instead of reloading
     # them from serialized JSON files for merging.
     self._validate()
 
-  def _append(self,
-              tmp_files: dict[str, OrderedSet[pth.LocalPath]],
-              file: pth.LocalPath,
-              suffix: str | None = None,
-              allow_duplicates: bool = False) -> None:
+  def _append(
+    self,
+    tmp_files: dict[str, OrderedSet[pth.LocalPath]],
+    file: pth.LocalPath,
+    suffix: str | None = None,
+    allow_duplicates: bool = False,
+  ) -> None:
     file_suffix_name = file.suffix[1:]
     if not suffix:
       suffix = file_suffix_name
     elif file_suffix_name != suffix:
-      raise ValueError(f"Expected '.{suffix}' suffix, but got {file.suffix!r} "
-                       f"for {file}")
+      raise ValueError(
+        f"Expected '.{suffix}' suffix, but got {file.suffix!r} for {file}"
+      )
     if files_with_suffix := tmp_files.get(suffix):
       if file not in files_with_suffix:
         files_with_suffix.add(file)
       elif not allow_duplicates:
         raise DuplicateProbeResult(
-            f"Cannot append file twice to ProbeResult: {file}")
+          f"Cannot append file twice to ProbeResult: {file}"
+        )
     else:
       tmp_files[suffix] = OrderedSet((file,))
 
-  def _extend(self,
-              tmp_files: dict[str, OrderedSet[pth.LocalPath]],
-              files: Iterable[pth.LocalPath],
-              suffix: str | None = None,
-              allow_duplicates: bool = False) -> None:
+  def _extend(
+    self,
+    tmp_files: dict[str, OrderedSet[pth.LocalPath]],
+    files: Iterable[pth.LocalPath],
+    suffix: str | None = None,
+    allow_duplicates: bool = False,
+  ) -> None:
     for file in files:
       self._append(
-          tmp_files, file, suffix=suffix, allow_duplicates=allow_duplicates)
+        tmp_files, file, suffix=suffix, allow_duplicates=allow_duplicates
+      )
 
   def get(self, suffix: str) -> pth.LocalPath:
     if files_with_suffix := self._files.get(suffix):
       if len(files_with_suffix) != 1:
-        raise ValueError(f"Expected exactly one file with suffix {suffix}, "
-                         f"but got {files_with_suffix}")
+        raise ValueError(
+          f"Expected exactly one file with suffix {suffix}, "
+          f"but got {files_with_suffix}"
+        )
       return files_with_suffix[0]
     choices: str = f"Options are {tuple(self._files.keys())}."
     if self.is_empty:
@@ -146,9 +168,10 @@ class ProbeResult(abc.ABC):
     if other.is_empty:
       return self
     return LocalProbeResult(
-        url=self.url_list + other.url_list,
-        file=self.file_list + other.file_list,
-        perfetto=self.perfetto_list + other.perfetto_list)
+      url=self.url_list + other.url_list,
+      file=self.file_list + other.file_list,
+      perfetto=self.perfetto_list + other.perfetto_list,
+    )
 
   def _validate(self) -> None:
     for path in self.all_files():
@@ -221,7 +244,6 @@ class ProbeResult(abc.ABC):
 
 
 class EmptyProbeResult(ProbeResult):
-
   def __init__(self) -> None:
     super().__init__()
 
@@ -245,12 +267,14 @@ class BrowserProbeResult(ProbeResult):
   folder.
   """
 
-  def __init__(self,
-               result_origin: ProbeResultOrigin,
-               url: Iterable[str] | None = None,
-               file: Iterable[pth.AnyPath] | None = None,
-               perfetto: Iterable[pth.AnyPath] | None = None,
-               **kwargs: Iterable[pth.AnyPath]) -> None:
+  def __init__(
+    self,
+    result_origin: ProbeResultOrigin,
+    url: Iterable[str] | None = None,
+    file: Iterable[pth.AnyPath] | None = None,
+    perfetto: Iterable[pth.AnyPath] | None = None,
+    **kwargs: Iterable[pth.AnyPath],
+  ) -> None:
     self._browser_file: Final[Iterable[pth.AnyPath] | None] = file
     local_file: Iterable[pth.LocalPath] | None = None
     local_perfetto: Iterable[pth.LocalPath] | None = None
@@ -270,7 +294,8 @@ class BrowserProbeResult(ProbeResult):
       local_kwargs = cast(dict[str, Iterable[pth.LocalPath]], kwargs)
 
     super().__init__(
-        url=url, file=local_file, perfetto=local_perfetto, **local_kwargs)
+      url=url, file=local_file, perfetto=local_perfetto, **local_kwargs
+    )
 
   @override
   def __bool__(self) -> bool:
@@ -281,8 +306,9 @@ class BrowserProbeResult(ProbeResult):
   def is_remote(self) -> bool:
     return self._is_remote
 
-  def _copy_files(self, result_origin: ProbeResultOrigin,
-                  paths: Iterable[pth.AnyPath]) -> Iterable[pth.LocalPath]:
+  def _copy_files(
+    self, result_origin: ProbeResultOrigin, paths: Iterable[pth.AnyPath]
+  ) -> Iterable[pth.LocalPath]:
     assert paths, "Got no remote paths to copy."
     # Copy result files from remote tmp dir to local results dir
     browser_platform = result_origin.browser_platform
@@ -294,8 +320,10 @@ class BrowserProbeResult(ProbeResult):
         relative_path = remote_path.relative_to(remote_tmp_dir)
       except ValueError:
         logging.debug(
-            "Browser result is not in browser tmp dir: "
-            "only using the name of '%s'", remote_path)
+          "Browser result is not in browser tmp dir: "
+          "only using the name of '%s'",
+          remote_path,
+        )
         relative_path = result_origin.host_platform.local_path(remote_path.name)
       local_result_path = out_dir / relative_path
       browser_platform.pull(remote_path, local_result_path)
@@ -340,14 +368,14 @@ class ProbeResultDict:
     pass
 
   @overload
-  def get(self, probe: ProbeResultKey, default: DefaultT,
-          /) -> ProbeResult | DefaultT:
+  def get(
+    self, probe: ProbeResultKey, default: DefaultT, /
+  ) -> ProbeResult | DefaultT:
     pass
 
-  def get(self,
-          probe: ProbeResultKey,
-          default: DefaultT | None = None,
-          /) -> ProbeResult | DefaultT | None:
+  def get(
+    self, probe: ProbeResultKey, default: DefaultT | None = None, /
+  ) -> ProbeResult | DefaultT | None:
     return self._dict.get(probe.name, default)
 
   def get_by_name(self, name: str) -> ProbeResult | None:

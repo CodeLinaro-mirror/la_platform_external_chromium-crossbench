@@ -32,12 +32,12 @@ class CloseAppAction(Action):
   def config_parser(cls: type[Self]) -> ConfigParser[Self]:
     parser = super().config_parser()
     parser.add_default_argument(
-        "package",
-        aliases=("app", "package_name"),
-        type=ObjectParser.non_empty_str,
-        required=True,
-        help="Application package name to close "
-        "(e.g. 'com.android.settings').")
+      "package",
+      aliases=("app", "package_name"),
+      type=ObjectParser.non_empty_str,
+      required=True,
+      help="Application package name to close (e.g. 'com.android.settings').",
+    )
     return parser
 
   @override

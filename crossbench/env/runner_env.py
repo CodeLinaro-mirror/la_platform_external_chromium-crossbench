@@ -25,14 +25,14 @@ if TYPE_CHECKING:
   from crossbench.probes.probe import Probe
 
 STALE_RESULT_ICONS: Final = {
-    75: "👻",
-    100: "👾",
-    125: "🎃",
-    150: "👹",
-    200: "💀",
-    250: "😱",
-    500: "🤯",
-    1000: "🧙🏼‍♂️",
+  75: "👻",
+  100: "👾",
+  125: "🎃",
+  150: "👹",
+  200: "💀",
+  250: "😱",
+  500: "🤯",
+  1000: "🧙🏼‍♂️",
 }
 
 
@@ -43,8 +43,9 @@ def _is_local_or_private(hostname: str | None) -> bool:
     return True
   try:
     ip = ipaddress.ip_address(hostname)
-    return (ip.is_private or ip.is_loopback or ip.is_link_local or
-            ip.is_unspecified)
+    return (
+      ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_unspecified
+    )
   except ValueError:
     # `hostname` is actual host requiring DNS resolution instead of an IP.
     # In doubt, assume it's not local or private.
@@ -59,14 +60,16 @@ class RunnerEnv(BaseEnv):
   Use ValidationMode to change how warnings/errors are handled.
   """
 
-  def __init__(self,
-               platform: Platform,
-               out_dir: pth.LocalPath,
-               browsers: Iterable[Browser],
-               probes: Iterable[Probe],
-               repetitions: int,
-               config: EnvConfig | None = None,
-               validation_mode: ValidationMode = ValidationMode.THROW) -> None:
+  def __init__(
+    self,
+    platform: Platform,
+    out_dir: pth.LocalPath,
+    browsers: Iterable[Browser],
+    probes: Iterable[Probe],
+    repetitions: int,
+    config: EnvConfig | None = None,
+    validation_mode: ValidationMode = ValidationMode.THROW,
+  ) -> None:
     super().__init__(platform, config, validation_mode)
     self._wait_until: dt.datetime = dt.datetime.now()
     self._out_dir: Final[pth.LocalPath] = out_dir
@@ -94,9 +97,9 @@ class RunnerEnv(BaseEnv):
     if delta > dt.timedelta(0):
       self._platform.sleep(delta)
 
-  def validate_url(self,
-                   url: str,
-                   platform: plt.Platform | None = None) -> bool:
+  def validate_url(
+    self, url: str, platform: plt.Platform | None = None
+  ) -> bool:
     if self._validation_mode == ValidationMode.SKIP:
       return True
     platform = platform or plt.PLATFORM
@@ -122,14 +125,15 @@ class RunnerEnv(BaseEnv):
     # TODO(cbruni): refactor to use list_... and disable_system_monitoring api
     if self._platform.is_macos:
       any_browser_on_macos = any(
-          browser.platform.is_macos for browser in self.browsers)
+        browser.platform.is_macos for browser in self.browsers
+      )
       if any_browser_on_macos:
         self._check_crowdstrike()
 
   def _check_crowdstrike(self) -> None:
     """Crowdstrike security monitoring (for googlers go/crowdstrike-falcon) can
     have quite terrible overhead for each file-access. Disable it to reduce
-    flakiness. """
+    flakiness."""
     is_disabled = False
     force_disable = self._config.system_allow_monitoring is False
     try:
@@ -140,15 +144,17 @@ class RunnerEnv(BaseEnv):
         self._add_min_delay(5)
     except plt.SubprocessError as e:
       self.handle_validation_warning(
-          "Could not disable go/crowdstrike-falcon monitor which can cause"
-          f" high background CPU usage: {e}")
+        "Could not disable go/crowdstrike-falcon monitor which can cause"
+        f" high background CPU usage: {e}"
+      )
       return
     if not is_disabled:
       self.handle_validation_warning(
-          "Crowdstrike monitoring is running, "
-          "which can impact startup performance drastically.\n"
-          "Measuring on a device without crowdstrike improves your "
-          "signal-to-noise ratio.\n")
+        "Crowdstrike monitoring is running, "
+        "which can impact startup performance drastically.\n"
+        "Measuring on a device without crowdstrike improves your "
+        "signal-to-noise ratio.\n"
+      )
 
   def _check_disk_space(self) -> None:
     limit = self._config.disk_min_free_space_gib
@@ -159,7 +165,8 @@ class RunnerEnv(BaseEnv):
     free_gib = round(usage.free / 1024 / 1024 / 1024, 2)
     if free_gib < limit:
       self.handle_validation_warning(
-          f"Only {free_gib}GiB disk space left, expected at least {limit}GiB.")
+        f"Only {free_gib}GiB disk space left, expected at least {limit}GiB."
+      )
 
   def _check_power(self) -> None:
     use_battery = self._config.power_use_battery
@@ -173,13 +180,15 @@ class RunnerEnv(BaseEnv):
     if not use_battery and battery_probes:
       probes_str = ",".join(probe.name for probe in battery_probes)
       self.handle_validation_warning(
-          "Requested battery_power=False, "
-          f"but probes={probes_str} require battery power.")
+        "Requested battery_power=False, "
+        f"but probes={probes_str} require battery power."
+      )
     sys_use_battery = self._platform.is_battery_powered
     if sys_use_battery != use_battery:
       self.handle_validation_warning(
-          f"Expected battery_power={use_battery}, "
-          f"but the system reported battery_power={sys_use_battery}")
+        f"Expected battery_power={use_battery}, "
+        f"but the system reported battery_power={sys_use_battery}"
+      )
 
   def _check_cpu_usage(self) -> None:
     max_cpu_usage = self._config.cpu_max_usage_percent
@@ -188,8 +197,9 @@ class RunnerEnv(BaseEnv):
     cpu_usage_percent = round(100 * self._platform.cpu_usage(), 1)
     if cpu_usage_percent > max_cpu_usage:
       self.handle_validation_warning(
-          f"CPU usage={cpu_usage_percent}% is higher than "
-          f"requested max={max_cpu_usage}%.")
+        f"CPU usage={cpu_usage_percent}% is higher than "
+        f"requested max={max_cpu_usage}%."
+      )
 
   def _check_cpu_temperature(self) -> None:
     min_relative_speed = self._config.cpu_min_relative_speed
@@ -198,9 +208,10 @@ class RunnerEnv(BaseEnv):
     cpu_speed = self._platform.get_relative_cpu_speed()
     if cpu_speed < min_relative_speed:
       self.handle_validation_warning(
-          "CPU thermal throttling is active. "
-          f"Relative speed is {cpu_speed}, "
-          f"but expected at least {min_relative_speed}.")
+        "CPU thermal throttling is active. "
+        f"Relative speed is {cpu_speed}, "
+        f"but expected at least {min_relative_speed}."
+      )
 
   def _check_system_min_uptime(self) -> None:
     min_uptime = self._config.system_min_uptime
@@ -209,8 +220,9 @@ class RunnerEnv(BaseEnv):
     if uptime := self._platform.uptime():
       if uptime < min_uptime:
         self.handle_validation_warning(
-            f"Expected min system uptime {min_uptime} but got {uptime}. "
-            "The OS might not be ready for a clean measurement.")
+          f"Expected min system uptime {min_uptime} but got {uptime}. "
+          "The OS might not be ready for a clean measurement."
+        )
 
   def _check_forbidden_system_process(self) -> None:
     # Verify that no terminals are running.
@@ -219,11 +231,13 @@ class RunnerEnv(BaseEnv):
     if system_forbidden_process_names is EnvConfig.IGNORE:
       return
     process_found = self._platform.process_running(
-        system_forbidden_process_names)
+      system_forbidden_process_names
+    )
     if process_found:
       self.handle_validation_warning(
-          f"Process:{process_found} found. "
-          "Make sure not to have a terminal opened. Use SSH.")
+        f"Process:{process_found} found. "
+        "Make sure not to have a terminal opened. Use SSH."
+      )
 
   def _check_screen_autobrightness(self) -> None:
     auto_brightness = self._config.screen_allow_autobrightness
@@ -231,8 +245,9 @@ class RunnerEnv(BaseEnv):
       return
     if self._platform.check_autobrightness():
       self.handle_validation_warning(
-          "Auto-brightness was found to be ON. "
-          "Deactivate it in 'System Preferences/Displays'")
+        "Auto-brightness was found to be ON. "
+        "Deactivate it in 'System Preferences/Displays'"
+      )
 
   def _check_cpu_power_mode(self) -> None:
     cpu_power_mode = self._config.cpu_power_mode
@@ -247,37 +262,47 @@ class RunnerEnv(BaseEnv):
       existing = platform.get_all_cpus_power_modes()
       if {cpu_power_mode} == existing:
         logging.debug(
-            "All CPUs on platform %s already have desire power mode %s",
-            platform, cpu_power_mode)
+          "All CPUs on platform %s already have desire power mode %s",
+          platform,
+          cpu_power_mode,
+        )
         done.add(platform)
         continue
-      logging.info("Setting CPU power mode from %s to %s on platform %s",
-                   existing, cpu_power_mode, platform)
+      logging.info(
+        "Setting CPU power mode from %s to %s on platform %s",
+        existing,
+        cpu_power_mode,
+        platform,
+      )
       try:
         platform.set_all_cpus_power_mode(cpu_power_mode)
       except plt.SubprocessError as e:
         self.handle_validation_warning(
-            f"Could not set CPUs power mode on {platform}: {e}")
+          f"Could not set CPUs power mode on {platform}: {e}"
+        )
         continue
       current = platform.get_all_cpus_power_modes()
       if {cpu_power_mode} != current:
         self.handle_validation_warning(
-            f"Requested {platform} CPU power mode={cpu_power_mode}, "
-            f"but got {current}")
+          f"Requested {platform} CPU power mode={cpu_power_mode}, "
+          f"but got {current}"
+        )
       done.add(platform)
 
   def _check_running_binaries(self) -> None:
     if self._config.browser_allow_existing_process:
       return
-    grouped_browsers: dict[plt.Platform,
-                           list[Browser]] = collection_helper.group_by(
-                               self.browsers,
-                               key=lambda browser: browser.platform)
+    grouped_browsers: dict[plt.Platform, list[Browser]] = (
+      collection_helper.group_by(
+        self.browsers, key=lambda browser: browser.platform
+      )
+    )
     for platform, browsers in grouped_browsers.items():
       self._check_running_binaries_on_platform(platform, browsers)
 
   def _check_running_binaries_on_platform(
-      self, platform: plt.Platform, platform_browsers: list[Browser]) -> None:
+    self, platform: plt.Platform, platform_browsers: list[Browser]
+  ) -> None:
     # On mobile platforms, an app's process lifetime is not controlled by the
     # user or the app itself. OS can start/terminate processes in the
     # background, so we don't check for those.
@@ -285,13 +310,14 @@ class RunnerEnv(BaseEnv):
       return
 
     platform_browsers = [
-        b for b in platform_browsers if not b.allow_existing_process
+      b for b in platform_browsers if not b.allow_existing_process
     ]
     if not platform_browsers:
       return
 
     browser_binaries: dict[str, list[Browser]] = collection_helper.group_by(
-        platform_browsers, key=lambda browser: os.fspath(browser.path))
+      platform_browsers, key=lambda browser: os.fspath(browser.path)
+    )
     own_pid = os.getpid()
     for proc_info in platform.processes(["cmdline", "exe", "pid", "name"]):
       # Skip over this python script which might have the binary path as
@@ -304,8 +330,10 @@ class RunnerEnv(BaseEnv):
         continue
       # Windows uses some intermediate processes that contains the binary name
       # on the command line.
-      if (platform.is_win and
-          proc_info.get("name") in ("cmd.exe", "vpython3.exe")):
+      if platform.is_win and proc_info.get("name") in (
+        "cmd.exe",
+        "vpython3.exe",
+      ):
         continue
       for binary, browsers in list(browser_binaries.items()):
         # Add a white-space to get less false-positives
@@ -315,11 +343,16 @@ class RunnerEnv(BaseEnv):
         browser: Browser = browsers[0]
         logging.debug("Binary=%s Platform=%s", binary, platform)
         logging.debug("PS status output:")
-        logging.debug("proc(pid=%s, name=%s, cmd=%s)", proc_info["pid"],
-                      proc_info["name"], cmdline)
+        logging.debug(
+          "proc(pid=%s, name=%s, cmd=%s)",
+          proc_info["pid"],
+          proc_info["name"],
+          cmdline,
+        )
         self.handle_validation_warning(
-            f"{browser.app_name} {browser.version} "
-            f"seems to be already running on {platform}.")
+          f"{browser.app_name} {browser.version} "
+          f"seems to be already running on {platform}."
+        )
         # Avoid re-checking the same binary once we've allowed it to be running.
         del browser_binaries[binary]
 
@@ -332,8 +365,9 @@ class RunnerEnv(BaseEnv):
     current = self._platform.get_main_display_brightness()
     if current != brightness:
       self.handle_validation_warning(
-          f"Requested main display brightness={brightness}%, "
-          "but got {brightness}%")
+        f"Requested main display brightness={brightness}%, "
+        "but got {brightness}%"
+      )
 
   def _check_screen_refresh_rate(self) -> None:
     refresh_rate = self._config.screen_refresh_rate
@@ -357,13 +391,15 @@ class RunnerEnv(BaseEnv):
     for browser in self.browsers:
       if browser.viewport.is_headless != requested_headless:
         self.handle_validation_warning(
-            f"Requested browser_is_headless={requested_headless},"
-            f"but browser {browser.unique_name} has conflicting "
-            f"headless={browser.viewport.is_headless}.")
+          f"Requested browser_is_headless={requested_headless},"
+          f"but browser {browser.unique_name} has conflicting "
+          f"headless={browser.viewport.is_headless}."
+        )
       if browser.platform.is_headless != requested_headless:
         self.handle_validation_warning(
-            "Requested browser_is_headless=False, "
-            f"but no display is available to run with a UI for {browser}.")
+          "Requested browser_is_headless=False, "
+          f"but no display is available to run with a UI for {browser}."
+        )
 
   def _check_browser_headless(self) -> None:
     for browser in self.browsers:
@@ -372,9 +408,10 @@ class RunnerEnv(BaseEnv):
       if browser.platform.has_display:
         continue
       self.handle_validation_warning(
-          f"{browser} requires a {browser.viewport} "
-          f"but no display is available on {browser.platform}. "
-          "Use --headless to run chrome without a display.")
+        f"{browser} requires a {browser.viewport} "
+        f"but no display is available on {browser.platform}. "
+        "Use --headless to run chrome without a display."
+      )
 
   def _check_probes(self, exceptions: ExceptionAnnotator) -> None:
     with exceptions.annotate("Validating Probes"):
@@ -395,8 +432,10 @@ class RunnerEnv(BaseEnv):
     num_results = len(results)
     if num_results < 20:
       return
-    message = (f"Found {num_results} existing crossbench results. "
-               f"Consider cleaning stale results in '{results_dir}'")
+    message = (
+      f"Found {num_results} existing crossbench results. "
+      f"Consider cleaning stale results in '{results_dir}'"
+    )
     for count, icon in reversed(STALE_RESULT_ICONS.items()):
       if num_results > count:
         message = f"{icon} {message}"
@@ -408,14 +447,17 @@ class RunnerEnv(BaseEnv):
 
   def _check_macos_terminal(self) -> None:
     if not self._platform.is_macos or (
-        self._platform.environ.get("TERM_PROGRAM") != "Apple_Terminal"):
+      self._platform.environ.get("TERM_PROGRAM") != "Apple_Terminal"
+    ):
       return
     any_not_headless = any(
-        not browser.viewport.is_headless for browser in self.browsers)
+      not browser.viewport.is_headless for browser in self.browsers
+    )
     if any_not_headless:
       self.handle_validation_warning(
-          "Terminal.app does not launch apps in the foreground.\n"
-          "Please use iTerm.app for a better experience.")
+        "Terminal.app does not launch apps in the foreground.\n"
+        "Please use iTerm.app for a better experience."
+      )
 
   def _check_file_access(self) -> None:
     if self._platform.is_macos:
@@ -435,8 +477,9 @@ class RunnerEnv(BaseEnv):
         checked_dirs.add(cache_dir)
         self._check_safari_cache_dir_access(browser, cache_dir)
 
-  def _check_safari_cache_dir_access(self, browser: Browser,
-                                     cache_dir: pth.AnyPath) -> None:
+  def _check_safari_cache_dir_access(
+    self, browser: Browser, cache_dir: pth.AnyPath
+  ) -> None:
     if not self._has_read_write_access(cache_dir):
       self._file_access_access_warning(f"{browser.app_name}'s cache directory")
 
@@ -450,7 +493,8 @@ class RunnerEnv(BaseEnv):
     try:
       self.platform.mkdir(test_dir, exist_ok=True, parents=True)
       with self.platform.NamedTemporaryFile(
-          prefix="crossbench_file_access_test", dir=test_dir) as test_file:
+        prefix="crossbench_file_access_test", dir=test_dir
+      ) as test_file:
         self.platform.write_text(test_file, test_file.name)
         assert self.platform.read_text(test_file) == test_file.name
         self.platform.rm(test_file)
@@ -464,26 +508,32 @@ class RunnerEnv(BaseEnv):
       self.handle_validation_warning(f"Could not modify {dir_name}")
       return
 
-    term_program = self._platform.environ.get("TERM_PROGRAM",
-                                              "the current terminal App")
+    term_program = self._platform.environ.get(
+      "TERM_PROGRAM", "the current terminal App"
+    )
     self.handle_validation_warning(
-        f"Could not modify {dir_name}.\n"
-        "Likely missing 'Full Disk Access' macOS Privacy & Security "
-        f"permission for {term_program}.")
+      f"Could not modify {dir_name}.\n"
+      "Likely missing 'Full Disk Access' macOS Privacy & Security "
+      f"permission for {term_program}."
+    )
 
   def check_browser_focused(self, browser: Browser) -> None:
-    if (self._config.browser_allow_background or not browser.pid or
-        browser.viewport.is_headless):
+    if (
+      self._config.browser_allow_background
+      or not browser.pid
+      or browser.viewport.is_headless
+    ):
       return
     info = browser.platform.foreground_process()
     if not info:
       return
     if info["pid"] != browser.pid:
       self.handle_warning(
-          f"Browser(name={browser.unique_name} pid={browser.pid})) "
-          "was not in the foreground at the end of the benchmark. "
-          "Background apps and tabs can be heavily throttled.",
-          allow_interactive=False)
+        f"Browser(name={browser.unique_name} pid={browser.pid})) "
+        "was not in the foreground at the end of the benchmark. "
+        "Background apps and tabs can be heavily throttled.",
+        allow_interactive=False,
+      )
 
   def _check_dependencies(self) -> None:
     crossbench_dir = pth.ROOT_DIR
@@ -491,11 +541,13 @@ class RunnerEnv(BaseEnv):
       return
 
     output = self._platform.sh_stdout(
-        "git", "status", "--porcelain=v2", cwd=crossbench_dir, quiet=True)
+      "git", "status", "--porcelain=v2", cwd=crossbench_dir, quiet=True
+    )
 
     if re.search(r"^[12u] \S+ SC", output, re.MULTILINE):
       self.handle_validation_warning(
-          "Missing or outdated dependencies. Run `gclient sync`.")
+        "Missing or outdated dependencies. Run `gclient sync`."
+      )
 
   def validate(self) -> None:
     logging.info("-" * 80)
@@ -508,7 +560,8 @@ class RunnerEnv(BaseEnv):
     message += ": %s"
     logging.info(message, self._validation_mode.name)
     exceptions = ExceptionAnnotator(
-        throw=self.validation_mode == ValidationMode.THROW)
+      throw=self.validation_mode == ValidationMode.THROW
+    )
     with exceptions.annotate():
       self._check_dependencies()
       self._check_system_monitoring()

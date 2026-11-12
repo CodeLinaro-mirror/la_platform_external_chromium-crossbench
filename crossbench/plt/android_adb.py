@@ -18,8 +18,17 @@ import re
 import shlex
 import subprocess
 import time
-from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Iterator, \
-    Mapping, Sequence, cast, override
+from typing import (
+  TYPE_CHECKING,
+  ClassVar,
+  Final,
+  Iterable,
+  Iterator,
+  Mapping,
+  Sequence,
+  cast,
+  override,
+)
 from urllib import parse as urlparse
 
 from immutabledict import immutabledict
@@ -28,13 +37,22 @@ from snippet_uiautomator import uiautomator
 
 from crossbench import path as pth
 from crossbench.action_runner.display_rectangle import DisplayRectangle
-from crossbench.action_runner.element_not_found_error import \
-    ElementNotFoundError
-from crossbench.action_runner.input_events import DEFAULT_CLICK_DURATION, \
-    InputEvent, KeyEvent, MouseButtonEvent, MouseMoveEvent, TouchEvent, \
-    WaitEvent
-from crossbench.action_runner.keyboard_layout import \
-    REVERSE_US_KEYBOARD_LAYOUT, W3C_TO_ANDROID_KEYCODE
+from crossbench.action_runner.element_not_found_error import (
+  ElementNotFoundError,
+)
+from crossbench.action_runner.input_events import (
+  DEFAULT_CLICK_DURATION,
+  InputEvent,
+  KeyEvent,
+  MouseButtonEvent,
+  MouseMoveEvent,
+  TouchEvent,
+  WaitEvent,
+)
+from crossbench.action_runner.keyboard_layout import (
+  REVERSE_US_KEYBOARD_LAYOUT,
+  W3C_TO_ANDROID_KEYCODE,
+)
 from crossbench.benchmarks.loading.point import Point
 from crossbench.browsers.chromium.devtools import DevToolsRemoteClient
 from crossbench.config import ConfigEnum
@@ -48,28 +66,45 @@ from crossbench.plt.arch import MachineArch
 from crossbench.plt.base import SubprocessError
 from crossbench.plt.bin import Binaries
 from crossbench.plt.device_info import DeviceInfo
-from crossbench.plt.display_info import DisplayRefreshRateResult, \
-    DisplayResolution
-from crossbench.plt.evemu_platform_mixin import DEVICE_SETTLE_DELAY, \
-    W3C_TO_LINUX, EvemuPlatformMixin, VirtualDeviceState
+from crossbench.plt.display_info import (
+  DisplayRefreshRateResult,
+  DisplayResolution,
+)
+from crossbench.plt.evemu_platform_mixin import (
+  DEVICE_SETTLE_DELAY,
+  W3C_TO_LINUX,
+  EvemuPlatformMixin,
+  VirtualDeviceState,
+)
 from crossbench.plt.port_manager import PortManager
 from crossbench.plt.posix import PosixVersion, RemotePosixPlatform
 from crossbench.plt.process_meminfo import ProcessMeminfo
-from third_party.protoc import activitymanagerservice_pb2, battery_pb2, \
-    enums_pb2, windowmanagerservice_pb2
+from third_party.protoc import (
+  activitymanagerservice_pb2,
+  battery_pb2,
+  enums_pb2,
+  windowmanagerservice_pb2,
+)
 
 if TYPE_CHECKING:
   from crossbench.action_runner.action.position import UiSelectorConfig
-  from crossbench.action_runner.virtual_device.virtual_device_config import \
-      VirtualDeviceConfig
-  from crossbench.action_runner.virtual_device.virtual_device_type import \
-      VirtualDeviceType
+  from crossbench.action_runner.virtual_device.virtual_device_config import (
+    VirtualDeviceConfig,
+  )
+  from crossbench.action_runner.virtual_device.virtual_device_type import (
+    VirtualDeviceType,
+  )
   from crossbench.device_config import DeviceConfigKeyPath, DeviceConfigMap
   from crossbench.plt.base import Platform
   from crossbench.plt.details import CpuDetails, PythonDetails
   from crossbench.plt.display_info import DisplayInfo
-  from crossbench.plt.types import CmdArg, ListCmdArgs, PlatformKey, \
-      ProcessInfo, ProcessIo
+  from crossbench.plt.types import (
+    CmdArg,
+    ListCmdArgs,
+    PlatformKey,
+    ProcessInfo,
+    ProcessIo,
+  )
   from crossbench.types import JsonDict
 
 
@@ -109,7 +144,8 @@ ANDROID_PERMISSIONS: Final = ("POST_NOTIFICATIONS", "CAMERA", "RECORD_AUDIO")
 _AAPT_PACKAGE_NAME_RE = re.compile(r"^package: name='([^']+)'")
 _FULL_USER_ID_RE: Final[re.Pattern[str]] = re.compile(r"\bid=(\d+)\b")
 _FOUR_CORNER_EXIT_INTENT: Final[str] = (
-    "com.android.setupwizard.FOUR_CORNER_EXIT")
+  "com.android.setupwizard.FOUR_CORNER_EXIT"
+)
 _DEFAULT_FULL_USER_ID: Final[str] = "10"
 
 # Template for Perfetto config to capture Java heaps.
@@ -147,6 +183,7 @@ class AndroidBuildType(ConfigEnum):
   https://source.android.com/docs/setup/create/new-device#build-variants
   and INTERNAL_VALID_VARIANTS in build/make/core/main.mk.
   """
+
   USER = ("user", "Production build, as shipped to end users.")
   USERDEBUG = ("userdebug", "Like 'user', but with extra debugging features.")
   ENG = ("eng", "Development build with extra tools.")
@@ -163,7 +200,8 @@ class AndroidBuildType(ConfigEnum):
     build_types = ObjectParser.enum_list(cls.__name__, cls, value)
     if not build_types:
       raise argparse.ArgumentTypeError(
-          f"Expected '*' or at least one {cls.__name__}, got {value!r}.")
+        f"Expected '*' or at least one {cls.__name__}, got {value!r}."
+      )
     return frozenset(build_types)
 
 
@@ -178,20 +216,22 @@ class AndroidDeviceInfo(DeviceInfo):
     return self.device_id
 
 
-def _find_adb_bin(platform: Platform,
-                  adb_bin: pth.AnyPath | None = None) -> pth.AnyPath:
+def _find_adb_bin(
+  platform: Platform, adb_bin: pth.AnyPath | None = None
+) -> pth.AnyPath:
   if adb_bin:
     return platform.parse_binary_path(adb_bin)
   if adb_bin := Binaries.ADB.search(platform):
     return adb_bin
   raise ValueError(
-      "Could not find adb binary."
-      "See https://developer.android.com/tools/adb fore more details.")
+    "Could not find adb binary."
+    "See https://developer.android.com/tools/adb fore more details."
+  )
 
 
 def adb_devices(
-    platform: Platform,
-    adb_bin: pth.AnyPath | None = None) -> dict[str, AndroidDeviceInfo]:
+  platform: Platform, adb_bin: pth.AnyPath | None = None
+) -> dict[str, AndroidDeviceInfo]:
   adb_bin = adb_bin or _find_adb_bin(platform)
   output = platform.sh_stdout(adb_bin, "devices", "-l")
   raw_lines = output.strip().splitlines()[1:]
@@ -205,11 +245,12 @@ def adb_devices(
       continue
     details: dict[str, str] = _parse_adb_device_info(details_str)
     device = AndroidDeviceInfo(
-        device_id=serial_id.strip(),
-        name=details.get("device", ""),
-        model=details.get("model", ""),
-        product=details.get("product", ""),
-        transport_id=details.get("transport_id", ""))
+      device_id=serial_id.strip(),
+      name=details.get("device", ""),
+      model=details.get("model", ""),
+      product=details.get("product", ""),
+      transport_id=details.get("transport_id", ""),
+    )
     result[device.serial_id] = device
   return result
 
@@ -231,13 +272,15 @@ def _parse_adb_device_info(value: str) -> dict[str, str]:
 # `0a388e93 device usb:1-1 product:razor model:Nexus_7 device:flo
 # transport_id:3`), which DriverConfig also accepts as `<key>:<value>`
 # filters.
-_ADB_DEVICE_INFO_KEYS: Final[frozenset[str]] = frozenset({
+_ADB_DEVICE_INFO_KEYS: Final[frozenset[str]] = frozenset(
+  {
     "transport_id",
     "usb",
     "product",
     "model",
     "device",
-})
+  }
+)
 
 
 def is_adb_tcp_endpoint(identifier: str | None) -> bool:
@@ -262,14 +305,15 @@ def is_adb_tcp_endpoint(identifier: str | None) -> bool:
     return False
   if parsed.netloc != identifier or parsed.username is not None:
     return False
-  return bool(port and parsed.hostname and
-              parsed.hostname not in _ADB_DEVICE_INFO_KEYS)
+  return bool(
+    port and parsed.hostname and parsed.hostname not in _ADB_DEVICE_INFO_KEYS
+  )
 
 
 def adb_connect(
-    platform: Platform,
-    serial_id: str,
-    adb_bin: pth.AnyPath | None = None,
+  platform: Platform,
+  serial_id: str,
+  adb_bin: pth.AnyPath | None = None,
 ) -> dict[str, AndroidDeviceInfo]:
   if not serial_id:
     raise ValueError("serial_id must be a non-empty string")
@@ -286,24 +330,25 @@ def adb_connect(
 
 
 class Adb:
-
-  def __init__(self,
-               host_platform: Platform,
-               device_identifier: str | None = None,
-               adb_bin: pth.AnyPath | None = None,
-               bundletool: pth.AnyPath | None = None) -> None:
+  def __init__(
+    self,
+    host_platform: Platform,
+    device_identifier: str | None = None,
+    adb_bin: pth.AnyPath | None = None,
+    bundletool: pth.AnyPath | None = None,
+  ) -> None:
     self._host_platform: Final[Platform] = host_platform
     self._adb_bin: Final[pth.AnyPath] = _find_adb_bin(host_platform, adb_bin)
-    self._bundletool: Final[pth.AnyPath
-                            | None] = BundletoolFinder.find_binary(
-                                host_platform, bundletool)
+    self._bundletool: Final[pth.AnyPath | None] = BundletoolFinder.find_binary(
+      host_platform, bundletool
+    )
     serial_id, device_info = self._start(device_identifier)
     self._serial_id: Final[str] = serial_id
     self._device_info: Final[AndroidDeviceInfo] = device_info
 
   def _start(
-      self,
-      device_identifier: str | None = None) -> tuple[str, AndroidDeviceInfo]:
+    self, device_identifier: str | None = None
+  ) -> tuple[str, AndroidDeviceInfo]:
     self.start_server()
     serial_id, device_info = self._find_serial_id(device_identifier)
     logging.debug("ADB Selected device: %s %s", serial_id, device_info)
@@ -311,20 +356,27 @@ class Adb:
     return serial_id, device_info
 
   def _find_serial_id(
-      self,
-      device_identifier: str | None = None) -> tuple[str, AndroidDeviceInfo]:
+    self, device_identifier: str | None = None
+  ) -> tuple[str, AndroidDeviceInfo]:
     devices = self.devices()
-    if (device_identifier and device_identifier not in devices and
-        is_adb_tcp_endpoint(device_identifier)):
-      devices = adb_connect(self._host_platform, device_identifier,
-                            self._adb_bin)
+    if (
+      device_identifier
+      and device_identifier not in devices
+      and is_adb_tcp_endpoint(device_identifier)
+    ):
+      devices = adb_connect(
+        self._host_platform, device_identifier, self._adb_bin
+      )
     if not devices:
-      raise ValueError("adb could not find any attached devices."
-                       "Connect your device and use 'adb devices' to list all.")
+      raise ValueError(
+        "adb could not find any attached devices."
+        "Connect your device and use 'adb devices' to list all."
+      )
     if device_identifier is None:
       if len(devices) != 1:
         raise ValueError(
-            f"Too many adb devices attached, please specify one of: {devices}")
+          f"Too many adb devices attached, please specify one of: {devices}"
+        )
       device_identifier = next(iter(devices.keys()))
     if not device_identifier:
       raise ValueError(f"Invalid device identifier: {device_identifier!r}")
@@ -337,11 +389,13 @@ class Adb:
         matches.append(key)
     if not matches:
       raise ValueError(
-          f"Could not find adb device matching: '{device_identifier}'")
+        f"Could not find adb device matching: '{device_identifier}'"
+      )
     if len(matches) > 1:
       raise ValueError(
-          f"Found {len(matches)} adb devices matching: '{device_identifier}'.\n"
-          f"Choices: {matches}")
+        f"Found {len(matches)} adb devices matching: '{device_identifier}'.\n"
+        f"Choices: {matches}"
+      )
     return matches[0], devices[matches[0]]
 
   def __str__(self) -> str:
@@ -385,81 +439,93 @@ class Adb:
   def device_info(self) -> AndroidDeviceInfo:
     return self._device_info
 
-  def _build_adb_cmd(self,
-                     *args: CmdArg,
-                     use_serial_id: bool = True) -> ListCmdArgs:
+  def _build_adb_cmd(
+    self, *args: CmdArg, use_serial_id: bool = True
+  ) -> ListCmdArgs:
     adb_cmd: ListCmdArgs = [self._adb_bin]
     if use_serial_id:
       adb_cmd.extend(("-s", self._serial_id))
     adb_cmd.extend(args)
     return adb_cmd
 
-  def _adb(self,
-           *args: CmdArg,
-           shell: bool = False,
-           capture_output: bool = False,
-           stdout: ProcessIo = None,
-           stderr: ProcessIo = None,
-           stdin: ProcessIo = None,
-           input: bytes | None = None,
-           quiet: bool = False,
-           check: bool = True,
-           use_serial_id: bool = True) -> subprocess.CompletedProcess:
+  def _adb(
+    self,
+    *args: CmdArg,
+    shell: bool = False,
+    capture_output: bool = False,
+    stdout: ProcessIo = None,
+    stderr: ProcessIo = None,
+    stdin: ProcessIo = None,
+    input: bytes | None = None,
+    quiet: bool = False,
+    check: bool = True,
+    use_serial_id: bool = True,
+  ) -> subprocess.CompletedProcess:
     del shell
     adb_cmd = self._build_adb_cmd(*args, use_serial_id=use_serial_id)
     return self._host_platform.sh(
-        *adb_cmd,
-        capture_output=capture_output,
-        stdout=stdout,
-        stderr=stderr,
-        stdin=stdin,
-        input=input,
-        quiet=quiet,
-        check=check)
+      *adb_cmd,
+      capture_output=capture_output,
+      stdout=stdout,
+      stderr=stderr,
+      stdin=stdin,
+      input=input,
+      quiet=quiet,
+      check=check,
+    )
 
-  def _adb_stdout(self,
-                  *args: CmdArg,
-                  quiet: bool = False,
-                  stdin: ProcessIo = None,
-                  input: bytes | None = None,
-                  encoding: str = "utf-8",
-                  use_serial_id: bool = True,
-                  check: bool = True) -> str:
+  def _adb_stdout(
+    self,
+    *args: CmdArg,
+    quiet: bool = False,
+    stdin: ProcessIo = None,
+    input: bytes | None = None,
+    encoding: str = "utf-8",
+    use_serial_id: bool = True,
+    check: bool = True,
+  ) -> str:
     result = self._adb_stdout_bytes(
-        *args,
-        quiet=quiet,
-        stdin=stdin,
-        input=input,
-        use_serial_id=use_serial_id,
-        check=check)
+      *args,
+      quiet=quiet,
+      stdin=stdin,
+      input=input,
+      use_serial_id=use_serial_id,
+      check=check,
+    )
     return result.decode(encoding)
 
-  def _adb_stdout_bytes(self,
-                        *args: CmdArg,
-                        quiet: bool = False,
-                        stdin: ProcessIo = None,
-                        input: bytes | None = None,
-                        use_serial_id: bool = True,
-                        check: bool = True) -> bytes:
+  def _adb_stdout_bytes(
+    self,
+    *args: CmdArg,
+    quiet: bool = False,
+    stdin: ProcessIo = None,
+    input: bytes | None = None,
+    use_serial_id: bool = True,
+    check: bool = True,
+  ) -> bytes:
     adb_cmd = self._build_adb_cmd(*args, use_serial_id=use_serial_id)
     return self._host_platform.sh_stdout_bytes(
-        *adb_cmd, quiet=quiet, check=check, stdin=stdin, input=input)
+      *adb_cmd, quiet=quiet, check=check, stdin=stdin, input=input
+    )
 
   def current_user(self) -> str | None:
     try:
       return self.shell_stdout("am", "get-current-user").strip()
     except SubprocessError as e:
       logging.info(
-          "get-current-user failed, return code %d, stderr %s, stdout %s",
-          e.returncode, e.stderr, e.stdout)
+        "get-current-user failed, return code %d, stderr %s, stdout %s",
+        e.returncode,
+        e.stderr,
+        e.stdout,
+      )
       return None
 
   def build_shell_cmd(
-      self,
-      *args: CmdArg,
-      shell: bool = False,
-      env: Mapping[str, str] | None = None,
-      cwd: pth.AnyPath | None = None,
+    self,
+    *args: CmdArg,
+    shell: bool = False,
+    env: Mapping[str, str] | None = None,
+    cwd: pth.AnyPath | None = None,
   ) -> ListCmdArgs:
     if env:
       # TODO: support env with "export FOO=bar;" prefixes
@@ -474,41 +540,47 @@ class Adb:
     elif len(args) == 1:
       shell_cmd.append(args[0])
     else:
-      raise ValueError("Expected single sh arg with shell=True, "
-                       f"but got: {args}")
+      raise ValueError(
+        f"Expected single sh arg with shell=True, but got: {args}"
+      )
     adb_shell_cmd = self._build_adb_cmd(*shell_cmd)
     return adb_shell_cmd
 
-  def shell_stdout(self,
-                   *args: CmdArg,
-                   shell: bool = False,
-                   quiet: bool = False,
-                   encoding: str = "utf-8",
-                   stdin: ProcessIo = None,
-                   input: bytes | None = None,
-                   env: Mapping[str, str] | None = None,
-                   cwd: pth.AnyPath | None = None,
-                   check: bool = True) -> str:
+  def shell_stdout(
+    self,
+    *args: CmdArg,
+    shell: bool = False,
+    quiet: bool = False,
+    encoding: str = "utf-8",
+    stdin: ProcessIo = None,
+    input: bytes | None = None,
+    env: Mapping[str, str] | None = None,
+    cwd: pth.AnyPath | None = None,
+    check: bool = True,
+  ) -> str:
     result = self.shell_stdout_bytes(
-        *args,
-        shell=shell,
-        quiet=quiet,
-        stdin=stdin,
-        input=input,
-        env=env,
-        cwd=cwd,
-        check=check)
+      *args,
+      shell=shell,
+      quiet=quiet,
+      stdin=stdin,
+      input=input,
+      env=env,
+      cwd=cwd,
+      check=check,
+    )
     return result.decode(encoding)
 
-  def shell_stdout_bytes(self,
-                         *args: CmdArg,
-                         shell: bool = False,
-                         quiet: bool = False,
-                         stdin: ProcessIo = None,
-                         input: bytes | None = None,
-                         env: Mapping[str, str] | None = None,
-                         cwd: pth.AnyPath | None = None,
-                         check: bool = True) -> bytes:
+  def shell_stdout_bytes(
+    self,
+    *args: CmdArg,
+    shell: bool = False,
+    quiet: bool = False,
+    stdin: ProcessIo = None,
+    input: bytes | None = None,
+    env: Mapping[str, str] | None = None,
+    cwd: pth.AnyPath | None = None,
+    check: bool = True,
+  ) -> bytes:
     # -e: choose escape character, or "none"; default '~'
     # -n: don't read from stdin
     # -T: disable pty allocation
@@ -516,31 +588,35 @@ class Adb:
     # -x: disable remote exit codes and stdout/stderr separation
     shell_cmd = self.build_shell_cmd(*args, shell=shell, env=env, cwd=cwd)
     return self._host_platform.sh_stdout_bytes(
-        *shell_cmd, stdin=stdin, input=input, quiet=quiet, check=check)
+      *shell_cmd, stdin=stdin, input=input, quiet=quiet, check=check
+    )
 
-  def shell(self,
-            *args: CmdArg,
-            shell: bool = False,
-            capture_output: bool = False,
-            stdout: ProcessIo = None,
-            stderr: ProcessIo = None,
-            stdin: ProcessIo = None,
-            input: bytes | None = None,
-            env: Mapping[str, str] | None = None,
-            cwd: pth.AnyPath | None = None,
-            quiet: bool = False,
-            check: bool = True) -> subprocess.CompletedProcess:
+  def shell(
+    self,
+    *args: CmdArg,
+    shell: bool = False,
+    capture_output: bool = False,
+    stdout: ProcessIo = None,
+    stderr: ProcessIo = None,
+    stdin: ProcessIo = None,
+    input: bytes | None = None,
+    env: Mapping[str, str] | None = None,
+    cwd: pth.AnyPath | None = None,
+    quiet: bool = False,
+    check: bool = True,
+  ) -> subprocess.CompletedProcess:
     # See shell_stdout for more `adb shell` options.
     shell_cmd = self.build_shell_cmd(*args, shell=shell, env=env, cwd=cwd)
     return self._host_platform.sh(
-        *shell_cmd,
-        capture_output=capture_output,
-        stdout=stdout,
-        stderr=stderr,
-        stdin=stdin,
-        input=input,
-        quiet=quiet,
-        check=check)
+      *shell_cmd,
+      capture_output=capture_output,
+      stdout=stdout,
+      stderr=stderr,
+      stdin=stdin,
+      input=input,
+      quiet=quiet,
+      check=check,
+    )
 
   def start_server(self) -> None:
     self._adb_stdout("start-server", use_serial_id=False)
@@ -573,12 +649,14 @@ class Adb:
   def devices(self) -> dict[str, AndroidDeviceInfo]:
     return adb_devices(self._host_platform, self._adb_bin)
 
-  def forward(self,
-              local: int,
-              remote: int | str,
-              local_protocol: str = "tcp",
-              remote_protocol: str = "tcp",
-              flags_data: FlagsData = None) -> int:
+  def forward(
+    self,
+    local: int,
+    remote: int | str,
+    local_protocol: str = "tcp",
+    remote_protocol: str = "tcp",
+    flags_data: FlagsData = None,
+  ) -> int:
     cmd_args: ListCmdArgs = ["forward"]
     if flags_data:
       parsed_flags = Flags(flags_data)
@@ -589,7 +667,8 @@ class Adb:
     if not stdout:
       used_ports = self._adb_stdout("forward", "--list")
       raise ValueError(
-          f"Could not setup port-forwarding, ports in use:\n{used_ports}")
+        f"Could not setup port-forwarding, ports in use:\n{used_ports}"
+      )
     local_port = NumberParser.port_number(stdout, "local_port")
     return local_port
 
@@ -597,38 +676,43 @@ class Adb:
     self._adb("forward", "--remove", f"{protocol}:{local}")
 
   def reverse(self, remote: int, local: int, protocol: str = "tcp") -> int:
-    stdout = self._adb_stdout("reverse", f"{protocol}:{remote}",
-                              f"{protocol}:{local}").strip()
+    stdout = self._adb_stdout(
+      "reverse", f"{protocol}:{remote}", f"{protocol}:{local}"
+    ).strip()
     if not stdout:
       used_ports = self._adb_stdout("reverse", "--list")
-      raise ValueError("Could not setup reverse port-forwarding, "
-                       f"ports in use:\n{used_ports}")
+      raise ValueError(
+        f"Could not setup reverse port-forwarding, ports in use:\n{used_ports}"
+      )
     remote_port = NumberParser.port_number(stdout, "remote_port")
     return remote_port
 
   def reverse_remove(self, remote: int, protocol: str = "tcp") -> None:
     self._adb("reverse", "--remove", f"{protocol}:{remote}")
 
-  def pull(self, device_src_path: pth.AnyPath,
-           local_dest_path: pth.LocalPath) -> None:
+  def pull(
+    self, device_src_path: pth.AnyPath, local_dest_path: pth.LocalPath
+  ) -> None:
     self._adb("pull", self.path(device_src_path), local_dest_path)
 
-  def push(self, local_src_path: pth.LocalPath,
-           device_dest_path: pth.AnyPath) -> None:
+  def push(
+    self, local_src_path: pth.LocalPath, device_dest_path: pth.AnyPath
+  ) -> None:
     self._adb("push", local_src_path, self.path(device_dest_path))
 
-  def cmd(self,
-          *args: str,
-          quiet: bool = False,
-          encoding: str = "utf-8",
-          check: bool = True) -> str:
+  def cmd(
+    self,
+    *args: str,
+    quiet: bool = False,
+    encoding: str = "utf-8",
+    check: bool = True,
+  ) -> str:
     cmd: ListCmdArgs = ["cmd", *args]
     return self.shell_stdout(*cmd, quiet=quiet, encoding=encoding, check=check)
 
-  def dumpsys(self,
-              *args: str,
-              quiet: bool = False,
-              encoding: str = "utf-8") -> str:
+  def dumpsys(
+    self, *args: str, quiet: bool = False, encoding: str = "utf-8"
+  ) -> str:
     cmd: ListCmdArgs = ["dumpsys", *args]
     return self.shell_stdout(*cmd, quiet=quiet, encoding=encoding)
 
@@ -636,25 +720,27 @@ class Adb:
     cmd: ListCmdArgs = ["dumpsys", *args]
     return self.shell_stdout_bytes(*cmd, quiet=quiet)
 
-  def getprop(self,
-              *args: str,
-              quiet: bool = False,
-              encoding: str = "utf-8") -> str:
+  def getprop(
+    self, *args: str, quiet: bool = False, encoding: str = "utf-8"
+  ) -> str:
     cmd: ListCmdArgs = ["getprop", *args]
     return self.shell_stdout(*cmd, quiet=quiet, encoding=encoding).strip()
 
   def services(self, quiet: bool = False, encoding: str = "utf-8") -> list[str]:
     lines = list(
-        self.cmd("-l", quiet=quiet, encoding=encoding).strip().splitlines())
+      self.cmd("-l", quiet=quiet, encoding=encoding).strip().splitlines()
+    )
     lines = lines[1:]
     lines.sort()
     return [line.strip() for line in lines]
 
   def packages(self, quiet: bool = False, encoding: str = "utf-8") -> list[str]:
     # adb shell cmd package list packages
-    raw_list = self.cmd(
-        "package", "list", "packages", quiet=quiet,
-        encoding=encoding).strip().splitlines()
+    raw_list = (
+      self.cmd("package", "list", "packages", quiet=quiet, encoding=encoding)
+      .strip()
+      .splitlines()
+    )
     packages = [package.split(":", maxsplit=2)[1] for package in raw_list]
     packages.sort()
     return packages
@@ -680,8 +766,9 @@ class Adb:
         try:
           self.shell("am", "force-stop", "--user", user, package_name)
         except SubprocessError as e:
-          logging.warning("Could not force-stop %s for user %s: %s",
-                          package_name, user, e)
+          logging.warning(
+            "Could not force-stop %s for user %s: %s", package_name, user, e
+          )
     else:
       try:
         self.shell("am", "force-stop", package_name)
@@ -702,28 +789,32 @@ class Adb:
         try:
           self.shell("pm", "clear", "--user", user, package_name)
         except SubprocessError as e:
-          logging.warning("Could not clear %s for user %s: %s", package_name,
-                          user, e)
+          logging.warning(
+            "Could not clear %s for user %s: %s", package_name, user, e
+          )
 
   def is_installed(self, package_name: str) -> bool:
     if not package_name:
       raise ValueError("Got empty package name")
     package_path = self.shell_stdout(
-        "pm", "path", package_name, check=False).strip()
+      "pm", "path", package_name, check=False
+    ).strip()
     return package_path.startswith("package:")
 
-  def install(self,
-              bundle: pth.AnyPath,
-              allow_downgrade: bool = False,
-              modules: str | None = None) -> None:
+  def install(
+    self,
+    bundle: pth.AnyPath,
+    allow_downgrade: bool = False,
+    modules: str | None = None,
+  ) -> None:
     if bundle.suffix == ".apks":
       self.install_apks(bundle, allow_downgrade, modules)
     if bundle.suffix == ".apk":
       self.install_apk(bundle, allow_downgrade)
 
-  def install_apk(self,
-                  apk: pth.AnyPath,
-                  allow_downgrade: bool = False) -> None:
+  def install_apk(
+    self, apk: pth.AnyPath, allow_downgrade: bool = False
+  ) -> None:
     if not self._host_platform.exists(apk):
       raise ValueError(f"APK {apk} does not exist {self._host_platform}.")
     args = ["install"]
@@ -732,25 +823,28 @@ class Adb:
     args.append(str(apk))
     self._adb(*args)
 
-  def install_apks(self,
-                   apks: pth.AnyPath,
-                   allow_downgrade: bool = False,
-                   modules: str | None = None) -> None:
+  def install_apks(
+    self,
+    apks: pth.AnyPath,
+    allow_downgrade: bool = False,
+    modules: str | None = None,
+  ) -> None:
     if not self._host_platform.exists(apks):
       raise ValueError(f"APK {apks} does not exist on {self._host_platform}.")
     if self._bundletool is None:
       raise RuntimeError(
-          "Could not find bundletool binary required for install_apks")
+        "Could not find bundletool binary required for install_apks"
+      )
     if self._bundletool.suffix == ".jar":
       binary = ["java", "-jar", str(self._bundletool)]
     else:
       binary = [str(self._bundletool)]
     cmd = [
-        *binary,
-        "install-apks",
-        f"--apks={apks}",
-        f"--adb={self._adb_bin}",
-        f"--device-id={self._serial_id}",
+      *binary,
+      "install-apks",
+      f"--apks={apks}",
+      f"--adb={self._adb_bin}",
+      f"--device-id={self._serial_id}",
     ]
     if allow_downgrade:
       cmd.append("--allow-downgrade")
@@ -785,7 +879,8 @@ class Adb:
       self.shell(*cmd)
 
   FOCUSED_WINDOW_RE: Final[re.Pattern] = re.compile(
-      r"mCurrentFocus=(Window\{.*\})")
+    r"mCurrentFocus=(Window\{.*\})"
+  )
 
   def focused_window(self) -> str | None:
     activity_dump = self.dumpsys("activity", "activities")
@@ -796,7 +891,6 @@ class Adb:
 
 
 class AndroidAdbPortManager(PortManager):
-
   def __init__(self, platform: AndroidAdbPlatform, adb: Adb) -> None:
     super().__init__(platform)
     self._adb: Final[Adb] = adb
@@ -810,21 +904,33 @@ class AndroidAdbPortManager(PortManager):
     local_port = NumberParser.positive_zero_int(local_port, "local_port")
     remote_port = NumberParser.port_number(remote_port, "remote_port")
     local_port = self._adb.forward(
-        local_port, remote_port, local_protocol="tcp", remote_protocol="tcp")
-    logging.debug("Forwarded Remote Port: %s:%s <= %s:%s",
-                  self.host_platform.name, local_port, self, remote_port)
+      local_port, remote_port, local_protocol="tcp", remote_protocol="tcp"
+    )
+    logging.debug(
+      "Forwarded Remote Port: %s:%s <= %s:%s",
+      self.host_platform.name,
+      local_port,
+      self,
+      remote_port,
+    )
     return local_port
 
   @override
   def forward_devtools(self, local_port: int, remote_identifier: str) -> int:
     local_port = NumberParser.positive_zero_int(local_port, "local_port")
     local_port = self._adb.forward(
-        local=local_port,
-        remote=remote_identifier,
-        local_protocol="tcp",
-        remote_protocol="localabstract")
-    logging.debug("Forwarded DevTools Port: %s:%s <= %s:%s",
-                  self.host_platform.name, local_port, self, remote_identifier)
+      local=local_port,
+      remote=remote_identifier,
+      local_protocol="tcp",
+      remote_protocol="localabstract",
+    )
+    logging.debug(
+      "Forwarded DevTools Port: %s:%s <= %s:%s",
+      self.host_platform.name,
+      local_port,
+      self,
+      remote_identifier,
+    )
     return local_port
 
   @override
@@ -836,8 +942,13 @@ class AndroidAdbPortManager(PortManager):
     remote_port = NumberParser.positive_zero_int(remote_port, "remote_port")
     local_port = NumberParser.port_number(local_port, "local_port")
     remote_port = self._adb.reverse(remote_port, local_port, protocol="tcp")
-    logging.debug("Forwarded Local Port: %s:%s => %s:%s", self.host_platform,
-                  local_port, self, remote_port)
+    logging.debug(
+      "Forwarded Local Port: %s:%s => %s:%s",
+      self.host_platform,
+      local_port,
+      self,
+      remote_port,
+    )
     return remote_port
 
   @override
@@ -875,9 +986,9 @@ class _AndroidDeviceConfigReader:
     # Parsed into key-value pairs: {"ro.product.model": "Pixel 10"}.
     pattern = re.compile(r"^\[(?P<key>[^\]]+)\]: \[(?P<value>[^\]]*)\]$")
     return {
-        match.group("key"): match.group("value")
-        for line in output.splitlines()
-        if (match := pattern.fullmatch(line.strip()))
+      match.group("key"): match.group("value")
+      for line in output.splitlines()
+      if (match := pattern.fullmatch(line.strip()))
     }
 
   def settings(self) -> dict[str, dict[str, str]]:
@@ -901,21 +1012,22 @@ class _AndroidDeviceConfigReader:
 
 
 class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
-
   def __init__(
-      self,
-      host_platform: Platform,
-      device_identifier: str | None = None,
-      adb: Adb | None = None,
-      bypass_oobe: bool = True,
+    self,
+    host_platform: Platform,
+    device_identifier: str | None = None,
+    adb: Adb | None = None,
+    bypass_oobe: bool = True,
   ) -> None:
     assert not host_platform.is_remote, (
-        "adb on remote platform is not supported yet")
+      "adb on remote platform is not supported yet"
+    )
     self._adb: Final[Adb] = adb or Adb(host_platform, device_identifier)
     self._bypass_oobe: Final[bool] = bypass_oobe
     self._devtools_client: DevToolsRemoteClient | None = None
-    self._uiautomator_device_instance: (android_device.AndroidDevice
-                                        | None) = None
+    self._uiautomator_device_instance: android_device.AndroidDevice | None = (
+      None
+    )
     self._uiautomator_device_root: bool = False
     super().__init__(host_platform)
 
@@ -932,17 +1044,19 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
     if self._devtools_client:
       self._devtools_client.disconnect()
 
-  def send_cdp_command(self,
-                       method: str,
-                       params: JsonDict | None = None) -> JsonDict:
+  def send_cdp_command(
+    self, method: str, params: JsonDict | None = None
+  ) -> JsonDict:
     if not self._devtools_client:
       self.start_devtools()
     assert self._devtools_client is not None, "DevTools client not initialized"
-    success, res = self._devtools_client.send_command({
+    success, res = self._devtools_client.send_command(
+      {
         "id": self._devtools_client.get_next_id(),
         "method": method,
         "params": params or {},
-    })
+      }
+    )
     if not success:
       raise RuntimeError(f"CDP command '{method}' failed: {res}")
     return cast("JsonDict", res)
@@ -960,18 +1074,22 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
   MIN_DROP_CACHES_SDK_VERSION: Final[int] = 31
   # Android-specific KeyEvent names (KEYCODE_*) not present in W3C_TO_LINUX,
   # mapped to Linux EV_KEY codes matching Android's Generic.kl.
-  ANDROID_KEYCODE_TO_LINUX: Final[immutabledict[str, int]] = immutabledict({
+  ANDROID_KEYCODE_TO_LINUX: Final[immutabledict[str, int]] = immutabledict(
+    {
       "KEYCODE_VOLUME_MUTE": 113,
       "KEYCODE_VOLUME_DOWN": 114,
       "KEYCODE_VOLUME_UP": 115,
       "KEYCODE_BACK": 158,
       "KEYCODE_HOME": 172,
       "KEYCODE_APP_SWITCH": 580,
-  })
-  _SUPPORTED_KEY_CODES: ClassVar[immutabledict[str, int]] = immutabledict({
+    }
+  )
+  _SUPPORTED_KEY_CODES: ClassVar[immutabledict[str, int]] = immutabledict(
+    {
       **W3C_TO_LINUX,
       **ANDROID_KEYCODE_TO_LINUX,
-  })
+    }
+  )
   _SHIFT_KEYS: Final[frozenset[str]] = frozenset(("ShiftLeft", "ShiftRight"))
   # Android's uinput (EvemuParser) remains in its header parsing state and does
   # not register the virtual device with /dev/uinput until it receives the
@@ -980,30 +1098,35 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
   # Delay added by Android's EvemuParser (REGISTRATION_DELAY_NANOS = 500ms)
   # after registering a virtual device before the first E: event is injected.
   _DEVICE_REGISTRATION_DELAY: Final[dt.timedelta] = dt.timedelta(
-      milliseconds=500)
+    milliseconds=500
+  )
 
   def _uinput_unsupported_msg(self, context: str = "") -> str:
-    msg = (f"Virtual device uinput injection is only supported on Android SDK "
-           f"{self.MIN_UINPUT_SDK_VERSION}+ (got SDK {self.adb.sdk_version}).")
+    msg = (
+      f"Virtual device uinput injection is only supported on Android SDK "
+      f"{self.MIN_UINPUT_SDK_VERSION}+ (got SDK {self.adb.sdk_version})."
+    )
     if context:
       return f"{msg} {context}"
     return msg
 
   @override
   def setup_virtual_devices(
-      self, virtual_devices: tuple[VirtualDeviceConfig, ...]) -> None:
+    self, virtual_devices: tuple[VirtualDeviceConfig, ...]
+  ) -> None:
     if not virtual_devices:
       return
     if self.adb.sdk_version < self.MIN_UINPUT_SDK_VERSION:
       logging.warning(
-          self._uinput_unsupported_msg(
-              "Falling back to legacy input injection."))
+        self._uinput_unsupported_msg("Falling back to legacy input injection.")
+      )
       return
     super().setup_virtual_devices(virtual_devices)
 
   @override
-  def inject_input_events(self, device_name: str,
-                          events: Iterable[InputEvent]) -> None:
+  def inject_input_events(
+    self, device_name: str, events: Iterable[InputEvent]
+  ) -> None:
     if self.adb.sdk_version < self.MIN_UINPUT_SDK_VERSION:
       self._legacy_inject_input_events(events)
       return
@@ -1021,11 +1144,14 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
         touch_events.append(event)
       elif isinstance(event, (MouseButtonEvent, MouseMoveEvent)):
         raise NotImplementedError(
-            self._uinput_unsupported_msg(
-                "Mouse input injection is not supported."))
+          self._uinput_unsupported_msg(
+            "Mouse input injection is not supported."
+          )
+        )
       elif isinstance(event, KeyEvent):
         shift_down, total_wait = self._legacy_inject_key_event(
-            event, text_buffer, shift_down, total_wait)
+          event, text_buffer, shift_down, total_wait
+        )
       else:
         raise ValueError(f"Unsupported InputEvent type: {type(event)}")
     if touch_events:
@@ -1034,8 +1160,12 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
       self._legacy_type_text("".join(text_buffer), total_wait)
 
   def _legacy_inject_key_event(
-      self, event: KeyEvent, text_buffer: list[str], shift_down: bool,
-      total_wait: dt.timedelta) -> tuple[bool, dt.timedelta]:
+    self,
+    event: KeyEvent,
+    text_buffer: list[str],
+    shift_down: bool,
+    total_wait: dt.timedelta,
+  ) -> tuple[bool, dt.timedelta]:
     if event.key_code in self._SHIFT_KEYS:
       return event.is_down, total_wait
     if not event.is_down:
@@ -1051,21 +1181,31 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
     self.sh("input", "keyevent", keycode)
     return shift_down, total_wait
 
-  def _legacy_inject_touch_events(self, touch_events: Sequence[TouchEvent],
-                                  duration: dt.timedelta) -> None:
+  def _legacy_inject_touch_events(
+    self, touch_events: Sequence[TouchEvent], duration: dt.timedelta
+  ) -> None:
     start: Point = touch_events[0].position
     end: Point = touch_events[-1].position
     touch_down_count: int = sum(1 for e in touch_events if e.is_down)
     if touch_down_count == 1 and start == end:
       if duration > DEFAULT_CLICK_DURATION:
         raise NotImplementedError(
-            self._uinput_unsupported_msg(
-                "Non-zero click duration (long-press) is not supported."))
+          self._uinput_unsupported_msg(
+            "Non-zero click duration (long-press) is not supported."
+          )
+        )
       self.sh("input", "tap", str(start.x), str(start.y))
       return
     duration_millis: int = round(duration / dt.timedelta(milliseconds=1))
-    self.sh("input", "swipe", str(start.x), str(start.y), str(end.x),
-            str(end.y), str(duration_millis))
+    self.sh(
+      "input",
+      "swipe",
+      str(start.x),
+      str(start.y),
+      str(end.x),
+      str(end.y),
+      str(duration_millis),
+    )
 
   def _legacy_type_text(self, text: str, duration: dt.timedelta) -> None:
     if duration <= dt.timedelta():
@@ -1094,9 +1234,9 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
     return self.path("/data/local/tmp/")
 
   @override
-  def _start_virtual_device(self, device_name: str,
-                            device_type: VirtualDeviceType,
-                            header: bytes) -> None:
+  def _start_virtual_device(
+    self, device_name: str, device_type: VirtualDeviceType, header: bytes
+  ) -> None:
     proc = self.popen("uinput", "-", stdin=subprocess.PIPE)
     assert proc.stdin is not None
     try:
@@ -1104,19 +1244,23 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
       proc.stdin.flush()
     except (BrokenPipeError, OSError) as e:
       exit_code = proc.poll()
-      raise RuntimeError(f"Failed to initialize virtual {device_type.value} "
-                         f"'{device_name}' (exit code: {exit_code})") from e
+      raise RuntimeError(
+        f"Failed to initialize virtual {device_type.value} "
+        f"'{device_name}' (exit code: {exit_code})"
+      ) from e
     # Wait for Android's EvemuParser registration delay (500ms) and OS input
     # pipeline settle time so the device is ready and the playback clock epoch
     # aligns with the device's mStartTime.
     start_time = (
-        dt.timedelta(seconds=time.monotonic()) +
-        self._DEVICE_REGISTRATION_DELAY)
+      dt.timedelta(seconds=time.monotonic()) + self._DEVICE_REGISTRATION_DELAY
+    )
     self.sleep(self._DEVICE_REGISTRATION_DELAY + DEVICE_SETTLE_DELAY)
     assert device_name not in self._virtual_devices, (
-        f"Virtual device '{device_name}' already exists.")
+      f"Virtual device '{device_name}' already exists."
+    )
     self._virtual_devices[device_name] = VirtualDeviceState(
-        proc=proc, device_type=device_type, start_time=start_time)
+      proc=proc, device_type=device_type, start_time=start_time
+    )
 
   @property
   @override
@@ -1132,8 +1276,10 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
   def clear_memory_page_cache(self) -> None:
     if self.adb.sdk_version < self.MIN_DROP_CACHES_SDK_VERSION:
       logging.error(
-          "Cannot clear memory page cache on Android SDK < %d (got SDK %d).",
-          self.MIN_DROP_CACHES_SDK_VERSION, self.adb.sdk_version)
+        "Cannot clear memory page cache on Android SDK < %d (got SDK %d).",
+        self.MIN_DROP_CACHES_SDK_VERSION,
+        self.adb.sdk_version,
+      )
       return
     self.sh("sync")
     self.sh("setprop", "perf.drop_caches", "3")
@@ -1166,8 +1312,8 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
     return ("android", self.serial_id)
 
   def _uiautomator_device(
-      self,
-      root_device: bool = True,
+    self,
+    root_device: bool = True,
   ) -> android_device.AndroidDevice:
     if self._uiautomator_device_instance is not None:
       # We are reusing the device except if it's not rooted and root is
@@ -1182,16 +1328,17 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
 
     ad = _CrossbenchUiAutomatorDevice(self.serial_id, root_device=root_device)
     atexit.register(ad.services.unregister_all)
-    ad.services.register(uiautomator.ANDROID_SERVICE_NAME,
-                         uiautomator.UiAutomatorService)
+    ad.services.register(
+      uiautomator.ANDROID_SERVICE_NAME, uiautomator.UiAutomatorService
+    )
     self._uiautomator_device_instance = ad
     self._uiautomator_device_root = root_device
     return ad
 
   @contextlib.contextmanager
   def uiautomator_device(
-      self,
-      root_device: bool = True,
+    self,
+    root_device: bool = True,
   ) -> Iterator[android_device.AndroidDevice]:
     # uiautomator requires adb in PATH
     adb_dir = os.path.dirname(self.adb.adb_bin)  # noqa: PTH120
@@ -1237,24 +1384,25 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
     if not mode:
       return
     self.adb.shell(  # noqa: S604
-        f"for f in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; "
-        f"do echo {shlex.quote(mode)} > $f; done",
-        shell=True,
-        stderr=subprocess.DEVNULL)
+      f"for f in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; "
+      f"do echo {shlex.quote(mode)} > $f; done",
+      shell=True,
+      stderr=subprocess.DEVNULL,
+    )
 
   @override
   def get_all_cpus_power_modes(self) -> set[str]:
     # Needs shell=True since we're reading multiple files in one go.
     output = self.adb.shell_stdout(  # noqa: S604
-        "cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor",
-        shell=True)
+      "cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor", shell=True
+    )
     return set(output.strip().splitlines())
 
   _MACHINE_ARCH_LOOKUP: Final = {
-      "arm64-v8a": MachineArch.ARM_64,
-      "armeabi-v7a": MachineArch.ARM_32,
-      "x86": MachineArch.IA32,
-      "x86_64": MachineArch.X64,
+    "arm64-v8a": MachineArch.ARM_64,
+    "armeabi-v7a": MachineArch.ARM_32,
+    "x86": MachineArch.IA32,
+    "x86_64": MachineArch.X64,
   }
 
   @functools.cached_property
@@ -1290,8 +1438,9 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
     # Fallback to python-only code
     return axml.manifest_package_name(path)
 
-  def _get_package_name_with_aapt(self, aapt_bin: pth.AnyPath,
-                                  path: pth.AnyPath) -> str:
+  def _get_package_name_with_aapt(
+    self, aapt_bin: pth.AnyPath, path: pth.AnyPath
+  ) -> str:
     # aapt dump badging path/to/app.apk | grep package: name=
     output = self.host_platform.sh_stdout(aapt_bin, "dump", "badging", path)
     for line in output.splitlines():
@@ -1314,7 +1463,8 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
     raise RuntimeError("Cannot access home dir on (non-rooted) android device")
 
   _VERSION_NAME_RE: Final[re.Pattern] = re.compile(
-      r"versionName=(?P<version>.+)")
+    r"versionName=(?P<version>.+)"
+  )
 
   @override
   def app_version(self, app_or_bin: pth.AnyPathLike) -> str:
@@ -1324,14 +1474,17 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
     match_result = self._VERSION_NAME_RE.search(package_info)
     if match_result is None:
       raise ValueError(
-          f"Could not find version for '{package}': {package_info}")
+        f"Could not find version for '{package}': {package_info}"
+      )
     return match_result.group("version")
 
   @override
-  def process_children(self,
-                       parent_pid: int,
-                       recursive: bool = False,
-                       attrs: list[str] | None = None) -> list[ProcessInfo]:
+  def process_children(
+    self,
+    parent_pid: int,
+    recursive: bool = False,
+    attrs: list[str] | None = None,
+  ) -> list[ProcessInfo]:
     # TODO: implement
     return []
 
@@ -1348,7 +1501,8 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
     return True
 
   _BRIGHTNESS_RE: Final[re.Pattern] = re.compile(
-      r"mLatestFloatBrightness=(?P<brightness>[0-9]+\.[0-9]+)")
+    r"mLatestFloatBrightness=(?P<brightness>[0-9]+\.[0-9]+)"
+  )
 
   @override
   def get_main_display_brightness(self) -> int:
@@ -1360,63 +1514,70 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
 
   @override
   def build_shell_cmd(
-      self,
-      *args: CmdArg,
-      shell: bool = False,
-      env: Mapping[str, str] | None = None,
-      cwd: pth.AnyPath | None = None,
+    self,
+    *args: CmdArg,
+    shell: bool = False,
+    env: Mapping[str, str] | None = None,
+    cwd: pth.AnyPath | None = None,
   ) -> ListCmdArgs:
     return self.adb.build_shell_cmd(*args, shell=shell, env=env, cwd=cwd)
 
   @override
-  def sh(self,
-         *args: CmdArg,
-         shell: bool = False,
-         capture_output: bool = False,
-         stdout: ProcessIo = None,
-         stderr: ProcessIo = None,
-         stdin: ProcessIo = None,
-         input: bytes | None = None,
-         env: Mapping[str, str] | None = None,
-         cwd: pth.AnyPath | None = None,
-         quiet: bool = False,
-         check: bool = True) -> subprocess.CompletedProcess:
+  def sh(
+    self,
+    *args: CmdArg,
+    shell: bool = False,
+    capture_output: bool = False,
+    stdout: ProcessIo = None,
+    stderr: ProcessIo = None,
+    stdin: ProcessIo = None,
+    input: bytes | None = None,
+    env: Mapping[str, str] | None = None,
+    cwd: pth.AnyPath | None = None,
+    quiet: bool = False,
+    check: bool = True,
+  ) -> subprocess.CompletedProcess:
     return self.adb.shell(
-        *args,
-        shell=shell,
-        capture_output=capture_output,
-        stdout=stdout,
-        stderr=stderr,
-        stdin=stdin,
-        input=input,
-        env=env,
-        cwd=cwd,
-        quiet=quiet,
-        check=check)
+      *args,
+      shell=shell,
+      capture_output=capture_output,
+      stdout=stdout,
+      stderr=stderr,
+      stdin=stdin,
+      input=input,
+      env=env,
+      cwd=cwd,
+      quiet=quiet,
+      check=check,
+    )
 
   @override
-  def sh_stdout_bytes(self,
-                      *args: CmdArg,
-                      shell: bool = False,
-                      quiet: bool = False,
-                      stdin: ProcessIo = None,
-                      input: bytes | None = None,
-                      env: Mapping[str, str] | None = None,
-                      cwd: pth.AnyPath | None = None,
-                      check: bool = True) -> bytes:
+  def sh_stdout_bytes(
+    self,
+    *args: CmdArg,
+    shell: bool = False,
+    quiet: bool = False,
+    stdin: ProcessIo = None,
+    input: bytes | None = None,
+    env: Mapping[str, str] | None = None,
+    cwd: pth.AnyPath | None = None,
+    check: bool = True,
+  ) -> bytes:
     return self.adb.shell_stdout_bytes(
-        *args,
-        shell=shell,
-        stdin=stdin,
-        input=input,
-        env=env,
-        cwd=cwd,
-        quiet=quiet,
-        check=check)
+      *args,
+      shell=shell,
+      stdin=stdin,
+      input=input,
+      env=env,
+      cwd=cwd,
+      quiet=quiet,
+      check=check,
+    )
 
   @override
-  def pull(self, from_path: pth.AnyPath,
-           to_path: pth.LocalPath) -> pth.LocalPath:
+  def pull(
+    self, from_path: pth.AnyPath, to_path: pth.LocalPath
+  ) -> pth.LocalPath:
     device_path = self.path(from_path)
     if not self.exists(device_path):
       raise ValueError(f"Source file '{from_path}' does not exist on {self}")
@@ -1431,11 +1592,13 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
     self.adb.push(self.host_path(from_path), to_path)
     return to_path
 
-  def _mktemp_sh(self,
-                 is_dir: bool,
-                 suffix: str | None = None,
-                 prefix: str | None = None,
-                 dir: pth.AnyPathLike | None = None) -> pth.AnyPath:
+  def _mktemp_sh(
+    self,
+    is_dir: bool,
+    suffix: str | None = None,
+    prefix: str | None = None,
+    dir: pth.AnyPathLike | None = None,
+  ) -> pth.AnyPath:
     temp_path = super()._mktemp_sh(is_dir, prefix=prefix, dir=dir)
     if not suffix:
       return temp_path
@@ -1462,18 +1625,19 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
     return res
 
   _DUMPSYS_TIMEOUT_RE: Final[re.Pattern] = re.compile(
-      rb"\*\*\* SERVICE '[^']+' DUMP TIMEOUT \(\d+ms\) EXPIRED \*\*\*")
+    rb"\*\*\* SERVICE '[^']+' DUMP TIMEOUT \(\d+ms\) EXPIRED \*\*\*"
+  )
 
   @override
   def process_meminfo(
-      self,
-      process_name: str,
-      timeout: dt.timedelta = dt.timedelta(seconds=10),
+    self,
+    process_name: str,
+    timeout: dt.timedelta = dt.timedelta(seconds=10),
   ) -> list[ProcessMeminfo]:
     timeout_ms = int(timeout / dt.timedelta(milliseconds=1))
-    meminfo_output: bytes = self.adb.dumpsys_bytes("-T", str(timeout_ms),
-                                                   "meminfo", "--proto",
-                                                   "--package", process_name)
+    meminfo_output: bytes = self.adb.dumpsys_bytes(
+      "-T", str(timeout_ms), "meminfo", "--proto", "--package", process_name
+    )
     if self._DUMPSYS_TIMEOUT_RE.search(meminfo_output):
       raise TimeoutError("dumpsys meminfo timed out")
     proto_dump = activitymanagerservice_pb2.MemInfoDumpProto()
@@ -1482,35 +1646,40 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
     for app_process in proto_dump.app_processes:
       mem_info = app_process.process_memory.total_heap.mem_info
       meminfos.append(
-          ProcessMeminfo(
-              pid=app_process.process_memory.pid,
-              name=app_process.process_memory.process_name,
-              pss_total=mem_info.total_pss_kb,
-              rss_total=mem_info.total_rss_kb,
-              swap_total=mem_info.dirty_swap_pss_kb or mem_info.dirty_swap_kb))
+        ProcessMeminfo(
+          pid=app_process.process_memory.pid,
+          name=app_process.process_memory.process_name,
+          pss_total=mem_info.total_pss_kb,
+          rss_total=mem_info.total_rss_kb,
+          swap_total=mem_info.dirty_swap_pss_kb or mem_info.dirty_swap_kb,
+        )
+      )
     return meminfos
 
   _DUMPSYS_SYSTEM_TOTAL_FREE_RE: Final[re.Pattern] = re.compile(
-      br"Total RAM: (?P<total_ram_kb>[0-9][,0-9]*)K.*"
-      br"\n Free RAM: [0-9][,0-9]*K \( *"
-      br"(?P<cached_pss_kb>[0-9][,0-9]*)K cached pss \+ +"
-      br"(?P<cached_kernel_kb>[0-9][,0-9]*)K cached kernel \+ +"
-      br"(?P<free_kb>[0-9][,0-9]*)K free\)"
-      # Include other footer lines so we don't have to parse the whole output
-      # for optional fields.
-      br".*$",
-      re.DOTALL)
+    rb"Total RAM: (?P<total_ram_kb>[0-9][,0-9]*)K.*"
+    rb"\n Free RAM: [0-9][,0-9]*K \( *"
+    rb"(?P<cached_pss_kb>[0-9][,0-9]*)K cached pss \+ +"
+    rb"(?P<cached_kernel_kb>[0-9][,0-9]*)K cached kernel \+ +"
+    rb"(?P<free_kb>[0-9][,0-9]*)K free\)"
+    # Include other footer lines so we don't have to parse the whole output
+    # for optional fields.
+    rb".*$",
+    re.DOTALL,
+  )
 
   _DUMPSYS_SYSTEM_DMA_BUF_RE: Final[re.Pattern] = re.compile(
-      br"DMA-BUF: +(?P<dma_buf_kb>[0-9][,0-9]*)K \("
-      br" +(?P<dma_buf_mapped_kb>[0-9][,0-9]*)K mapped \+"
-      br" +(?P<dma_buf_unmapped_kb>[0-9][,0-9]*)K unmapped\)", re.DOTALL)
+    rb"DMA-BUF: +(?P<dma_buf_kb>[0-9][,0-9]*)K \("
+    rb" +(?P<dma_buf_mapped_kb>[0-9][,0-9]*)K mapped \+"
+    rb" +(?P<dma_buf_unmapped_kb>[0-9][,0-9]*)K unmapped\)",
+    re.DOTALL,
+  )
 
   def _groupdict_to_system_meminfo(
-      self, groupdict: dict[str, bytes]) -> dict[str, float]:
+    self, groupdict: dict[str, bytes]
+  ) -> dict[str, float]:
     return {
-        key: float(value.replace(b",", b""))
-        for [key, value] in groupdict.items()
+      key: float(value.replace(b",", b"")) for [key, value] in groupdict.items()
     }
 
   @property
@@ -1522,13 +1691,14 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
     raise RuntimeError("Total RAM not found in system_meminfo")
 
   def system_meminfo(
-      self,
-      timeout: dt.timedelta = dt.timedelta(seconds=10)) -> dict[str, float]:
+    self, timeout: dt.timedelta = dt.timedelta(seconds=10)
+  ) -> dict[str, float]:
     timeout_ms = int(timeout / dt.timedelta(milliseconds=1))
     # TODO: switch to proto parsing if/when DMA-BUF counters are in proto
     # output.
-    meminfo_output: bytes = self.adb.dumpsys_bytes("-T", str(timeout_ms),
-                                                   "meminfo")
+    meminfo_output: bytes = self.adb.dumpsys_bytes(
+      "-T", str(timeout_ms), "meminfo"
+    )
     if self._DUMPSYS_TIMEOUT_RE.search(meminfo_output):
       raise TimeoutError("dumpsys meminfo timed out")
 
@@ -1541,21 +1711,27 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
     dma_buf_match = self._DUMPSYS_SYSTEM_DMA_BUF_RE.search(footer_match[0])
     if dma_buf_match:
       meminfo.update(
-          self._groupdict_to_system_meminfo(dma_buf_match.groupdict()))
+        self._groupdict_to_system_meminfo(dma_buf_match.groupdict())
+      )
 
     return meminfo
 
-  def dump_java_heap(self, identifier: str, label: str,
-                     trace_buffer_size_kb: int,
-                     timeout: dt.timedelta) -> pth.AnyPath:
+  def dump_java_heap(
+    self,
+    identifier: str,
+    label: str,
+    trace_buffer_size_kb: int,
+    timeout: dt.timedelta,
+  ) -> pth.AnyPath:
 
     timeout_ms = timeout / dt.timedelta(milliseconds=1)
     cfg_path = self.path(f"/data/misc/perfetto-configs/{label}.txtpb")
     dump_path = self.path(f"/data/misc/perfetto-traces/{label}.trace.pb")
     cfg = ANDROID_JAVA_HPROF_PERFETTO_CFG.format(
-        size_kb=trace_buffer_size_kb,
-        process_cmdline=identifier,
-        data_source_stop_timeout_ms=timeout_ms)
+      size_kb=trace_buffer_size_kb,
+      process_cmdline=identifier,
+      data_source_stop_timeout_ms=timeout_ms,
+    )
     try:
       self.write_text(cfg_path, cfg)
       self.sh("perfetto", "--config", cfg_path, "--txt", "--out", dump_path)
@@ -1571,40 +1747,43 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
   def cpu_details(self) -> CpuDetails:
     # TODO: Implement properly (i.e. remove all n/a values)
     return {
-        "info": self.cpu,
-        "physical_cores": self.cpu_cores(logical=False),
-        "logical_cores": self.cpu_cores(logical=True),
-        "usage": "n/a",
-        "total_usage": "n/a",
-        "system_load": "n/a",
-        "min_frequency": "n/a",
-        "max_frequency": "n/a",
-        "current_frequency": "n/a",
+      "info": self.cpu,
+      "physical_cores": self.cpu_cores(logical=False),
+      "logical_cores": self.cpu_cores(logical=True),
+      "usage": "n/a",
+      "total_usage": "n/a",
+      "system_load": "n/a",
+      "min_frequency": "n/a",
+      "max_frequency": "n/a",
+      "current_frequency": "n/a",
     }
 
   @functools.lru_cache(maxsize=1)
   @override
   def system_details(self) -> JsonDict:
     system_details = super().system_details()
-    system_details.update({
+    system_details.update(
+      {
         "Android": _AndroidDeviceConfigReader(self.adb).getprop(),
-    })
+      }
+    )
     return system_details
 
   @override
   def device_config(self) -> dict[str, DeviceConfigMap]:
     reader = _AndroidDeviceConfigReader(self.adb)
     return {
-        "android": {
-            "device_config": reader.device_config(),
-            "getprop": reader.getprop(),
-            "settings": reader.settings(),
-        },
+      "android": {
+        "device_config": reader.device_config(),
+        "getprop": reader.getprop(),
+        "settings": reader.settings(),
+      },
     }
 
   @override
-  def set_device_config_value(self, key_path: DeviceConfigKeyPath,
-                              value: str | None) -> None:
+  def set_device_config_value(
+    self, key_path: DeviceConfigKeyPath, value: str | None
+  ) -> None:
     tool: tuple[str, ...] = ()
     namespace = key = ""
     match key_path:
@@ -1625,8 +1804,8 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
   def python_details(self) -> PythonDetails:
     # TODO: Implement properly (i.e. remove all n/a values)
     return {
-        "version": "n/a",
-        "bits": "n/a",
+      "version": "n/a",
+      "bits": "n/a",
     }
 
   @property
@@ -1635,15 +1814,18 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
     battery_info_bytes = self.adb.dumpsys_bytes("battery", "--proto")
     battery_info = battery_pb2.BatteryServiceDumpProto()
     battery_info.ParseFromString(battery_info_bytes)
-    return (battery_info.plugged ==
-            enums_pb2.BatteryPluggedStateEnum.BATTERY_PLUGGED_NONE)
+    return (
+      battery_info.plugged
+      == enums_pb2.BatteryPluggedStateEnum.BATTERY_PLUGGED_NONE
+    )
 
   @override
   def screenshot(self, result_path: pth.AnyPath) -> None:
     self.sh("screencap", "-p", result_path)
 
   _DUMPSYS_WINDOW_DISPLAYS_RE: Final[re.Pattern] = re.compile(
-      r" cur=(?P<x>\d+)x(?P<y>\d+) ")
+    r" cur=(?P<x>\d+)x(?P<y>\d+) "
+  )
 
   @functools.lru_cache(maxsize=1)
   def display_details(self) -> tuple[DisplayInfo, ...]:
@@ -1656,20 +1838,16 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
     displays = windowmanagerservice_pb2.WindowManagerServiceDumpProto()
     displays.ParseFromString(displays_bytes)
 
-    width = (
-        displays.root_window_container.window_container.configuration_container
-        .full_configuration.window_configuration.max_bounds.right)
-    height = (
-        displays.root_window_container.window_container.configuration_container
-        .full_configuration.window_configuration.max_bounds.bottom)
+    width = displays.root_window_container.window_container.configuration_container.full_configuration.window_configuration.max_bounds.right
+    height = displays.root_window_container.window_container.configuration_container.full_configuration.window_configuration.max_bounds.bottom
 
     return DisplayResolution(width, height)
 
   @override
   def get_ui_element_rect(
-      self,
-      ui_selector: UiSelectorConfig,
-      timeout: dt.timedelta = dt.timedelta(seconds=10),
+    self,
+    ui_selector: UiSelectorConfig,
+    timeout: dt.timedelta = dt.timedelta(seconds=10),
   ) -> DisplayRectangle:
     with self.uiautomator_device(root_device=False) as ad:
       selector_dict = ui_selector.to_json()
@@ -1678,13 +1856,15 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
         raise ElementNotFoundError(str(selector_dict))
       bounds = ui_object.visible_bounds
       return DisplayRectangle(
-          Point(bounds.left, bounds.top), bounds.right - bounds.left,
-          bounds.bottom - bounds.top)
+        Point(bounds.left, bounds.top),
+        bounds.right - bounds.left,
+        bounds.bottom - bounds.top,
+      )
 
   @override
-  def set_display_refresh_rate(self,
-                               refresh_rate: int,
-                               retry: int = 3) -> DisplayRefreshRateResult:
+  def set_display_refresh_rate(
+    self, refresh_rate: int, retry: int = 3
+  ) -> DisplayRefreshRateResult:
     rate_str = str(float(refresh_rate))
     for _ in range(retry):
       self.sh("settings", "put", "system", "min_refresh_rate", rate_str)
@@ -1697,11 +1877,13 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
           try:
             if round(float(val_str)) == refresh_rate:
               return DisplayRefreshRateResult(
-                  True, f"Refresh rate successfully set to {refresh_rate}Hz")
+                True, f"Refresh rate successfully set to {refresh_rate}Hz"
+              )
           except ValueError:
             pass
     return DisplayRefreshRateResult(
-        False, f"Failed to set display refresh rate to {refresh_rate}Hz")
+      False, f"Failed to set display refresh rate to {refresh_rate}Hz"
+    )
 
   @override
   def reset_display_refresh_rate(self) -> None:
@@ -1720,7 +1902,8 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
   def _is_headless_system_user_mode(self) -> bool:
     if self.adb.sdk_version >= 34:
       out = self.adb.cmd(
-          "user", "is-headless-system-user-mode", check=False).strip()
+        "user", "is-headless-system-user-mode", check=False
+      ).strip()
       if out in ("true", "false"):
         return out == "true"
     prop = self.adb.getprop("ro.fw.mu.headless_system_user").lower()
@@ -1742,8 +1925,9 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
     if not self._is_headless_system_user_mode():
       return
     target_user = self._find_full_user_id()
-    logging.info("Switching active HSUM user 0 -> %s on %s", target_user,
-                 self.adb)
+    logging.info(
+      "Switching active HSUM user 0 -> %s on %s", target_user, self.adb
+    )
     self.adb.shell("am", "switch-user", target_user, check=False)
     active: str | None = current_user
     try:
@@ -1753,8 +1937,9 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
           break
     except TimeoutError as e:
       raise TimeoutError(
-          f"Timed out waiting for foreground user {target_user} on {self.adb} "
-          f"(active={active!r})") from e
+        f"Timed out waiting for foreground user {target_user} on {self.adb} "
+        f"(active={active!r})"
+      ) from e
     self.sleep(2.0)
 
   def _ensure_adb_root_for_oobe(self) -> bool:
@@ -1762,35 +1947,40 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
       return True
     if self.adb.build_type == AndroidBuildType.USER.value:
       logging.warning(
-          "Cannot bypass Android SetupWizard OOBE on %s: production 'user' "
-          "build does not support 'adb root'.",
-          self.adb,
+        "Cannot bypass Android SetupWizard OOBE on %s: production 'user' "
+        "build does not support 'adb root'.",
+        self.adb,
       )
       return False
-    logging.info("Restarting adbd as root on %s to bypass SetupWizard OOBE",
-                 self.adb)
+    logging.info(
+      "Restarting adbd as root on %s to bypass SetupWizard OOBE", self.adb
+    )
     self.adb.root()
     if not self.adb.has_root():
       logging.warning(
-          "Cannot bypass Android SetupWizard OOBE on %s: 'adb root' did not "
-          "acquire root privileges.",
-          self.adb,
+        "Cannot bypass Android SetupWizard OOBE on %s: 'adb root' did not "
+        "acquire root privileges.",
+        self.adb,
       )
       return False
     return True
 
   def _is_device_provisioned(self) -> bool:
-    return self.adb.shell_stdout(
-        "settings", "get", "global", "device_provisioned",
-        check=False).strip() == "1"
+    return (
+      self.adb.shell_stdout(
+        "settings", "get", "global", "device_provisioned", check=False
+      ).strip()
+      == "1"
+    )
 
   def _dismiss_setup_wizard(self) -> None:
     if self._is_device_provisioned():
       return
     if not self._ensure_adb_root_for_oobe():
       return
-    logging.info("Bypassing Android OOBE on %s via %s", self.adb,
-                 _FOUR_CORNER_EXIT_INTENT)
+    logging.info(
+      "Bypassing Android OOBE on %s via %s", self.adb, _FOUR_CORNER_EXIT_INTENT
+    )
     self.adb.shell("am", "start", "-a", _FOUR_CORNER_EXIT_INTENT, check=False)
     try:
       for _ in WaitRange(timeout=20).wait_with_backoff():
@@ -1798,7 +1988,7 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
           break
     except TimeoutError as e:
       raise TimeoutError(
-          f"Timed out waiting for SetupWizard OOBE dismissal on {self.adb}",
+        f"Timed out waiting for SetupWizard OOBE dismissal on {self.adb}",
       ) from e
     self.sleep(2.0)
 
@@ -1815,13 +2005,15 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
   @override
   @contextlib.contextmanager
   def disable_secure_windows(self) -> Iterator[None]:
-    self.adb.shell("settings", "put", "--user", "0", "secure",
-                   "disable_secure_windows", "1")
+    self.adb.shell(
+      "settings", "put", "--user", "0", "secure", "disable_secure_windows", "1"
+    )
     try:
       yield
     finally:
-      self.adb.shell("settings", "delete", "--user", "0", "secure",
-                     "disable_secure_windows")
+      self.adb.shell(
+        "settings", "delete", "--user", "0", "secure", "disable_secure_windows"
+      )
 
   @override
   @contextlib.contextmanager
@@ -1853,13 +2045,14 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
   _ACTIVITY_TYPE_STANDARD: Final[int] = 1
 
   def _iter_tasks(
-      self,
-      wc: windowmanagerservice_pb2.WindowContainerProto,
+    self,
+    wc: windowmanagerservice_pb2.WindowContainerProto,
   ) -> Iterator[windowmanagerservice_pb2.TaskProto]:
     for child in wc.children:
       if child.HasField("display_content"):
         yield from self._iter_tasks(
-            child.display_content.root_display_area.window_container)
+          child.display_content.root_display_area.window_container
+        )
         yield from self._iter_tasks(child.display_content.window_container)
       elif child.HasField("display_area"):
         yield from self._iter_tasks(child.display_area.window_container)
@@ -1876,7 +2069,8 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
     """Lists (task_id, package) for all running standard app tasks."""
     raw = self.adb.dumpsys_bytes("activity", "--proto", "activities")
     dump = (
-        activitymanagerservice_pb2.ActivityManagerServiceDumpActivitiesProto())
+      activitymanagerservice_pb2.ActivityManagerServiceDumpActivitiesProto()
+    )
     dump.ParseFromString(raw)
     tasks: list[tuple[str, str]] = []
     for task in self._iter_tasks(dump.root_window_container.window_container):

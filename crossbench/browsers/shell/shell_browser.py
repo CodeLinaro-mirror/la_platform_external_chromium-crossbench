@@ -14,14 +14,14 @@ if TYPE_CHECKING:
 
 
 class ShellBrowser(Browser):
-
   @property
   @override
   def allow_existing_process(self) -> bool:
     return True
 
   @override
-  def _resolve_binary(self,
-                      path: pth.AnyPath) -> tuple[pth.AnyPath, pth.AnyPath]:
+  def _resolve_binary(
+    self, path: pth.AnyPath
+  ) -> tuple[pth.AnyPath, pth.AnyPath]:
     path = PathParser.non_empty_file_path(path, "shell binary")
     return path, path

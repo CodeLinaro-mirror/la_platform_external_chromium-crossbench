@@ -18,7 +18,6 @@ if TYPE_CHECKING:
 
 
 class Story(abc.ABC):
-
   @classmethod
   @abc.abstractmethod
   def all_story_names(cls) -> tuple[str, ...]:
@@ -47,14 +46,15 @@ class Story(abc.ABC):
       raise ValueError("Invalid story name: story name cannot be empty.")
     if name.startswith(("-", "#")):
       raise ValueError(
-          f"Invalid story name: cannot start with '-' or '#': {name!r}")
+        f"Invalid story name: cannot start with '-' or '#': {name!r}"
+      )
 
   def __init__(
-      self,
-      name: str,
-      duration: dt.timedelta = dt.timedelta(seconds=15),
-      secrets: Secrets | None = None,
-      tags: Iterable[str] = (),
+    self,
+    name: str,
+    duration: dt.timedelta = dt.timedelta(seconds=15),
+    secrets: Secrets | None = None,
+    tags: Iterable[str] = (),
   ) -> None:
     self.verify_story_name(name)
     self._name: str = pth.safe_filename(name)
@@ -63,7 +63,8 @@ class Story(abc.ABC):
     self._tags: Final[frozenset[str]] = frozenset(tags)
     if self._duration:
       assert self._duration.total_seconds() > 0, (
-          f"Duration must be non-empty, but got: {duration}")
+        f"Duration must be non-empty, but got: {duration}"
+      )
 
   @property
   def name(self) -> str:
@@ -87,17 +88,19 @@ class Story(abc.ABC):
 
   def details_json(self) -> JsonDict:
     return {
-        "name": self.name,
-        "tags": tuple(self.tags),
-        "duration": self.duration.total_seconds(),
+      "name": self.name,
+      "tags": tuple(self.tags),
+      "duration": self.duration.total_seconds(),
     }
 
   def log_run_details(self, run: Run) -> None:
     logging.info("📚 STORY:                    %s", self)
     timing = run.timing
-    logging.info("⏳ STORY DURATION:           expected=%s timeout=%s",
-                 timing.timedelta(self.duration),
-                 timing.timeout_timedelta(self.duration))
+    logging.info(
+      "⏳ STORY DURATION:           expected=%s timeout=%s",
+      timing.timedelta(self.duration),
+      timing.timeout_timedelta(self.duration),
+    )
 
   def setup(self, run: Run) -> None:
     """Setup work for a story that is not part of the main workload should
@@ -107,8 +110,7 @@ class Story(abc.ABC):
 
   @abc.abstractmethod
   def run(self, run: Run) -> None:
-    """The main workload of a story that is measured by all Probes.
-    """
+    """The main workload of a story that is measured by all Probes."""
 
   def teardown(self, run: Run) -> None:
     """Cleanup work for a story that is not part of the main workload should

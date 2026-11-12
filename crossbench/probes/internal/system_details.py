@@ -6,8 +6,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, ClassVar, override
 
-from crossbench.probes.internal.base import InternalJsonResultProbe, \
-    InternalJsonResultProbeContext
+from crossbench.probes.internal.base import (
+  InternalJsonResultProbe,
+  InternalJsonResultProbeContext,
+)
 
 if TYPE_CHECKING:
   from crossbench.runner.actions import Actions
@@ -18,6 +20,7 @@ class SystemDetailsProbe(InternalJsonResultProbe):
   """
   Runner-internal meta-probe: Collects the browser's system/platform details.
   """
+
   NAME: ClassVar = "cb.system.details"
   AUTO_MERGE_REPETITIONS: ClassVar = False
 
@@ -27,7 +30,6 @@ class SystemDetailsProbe(InternalJsonResultProbe):
 
 
 class SystemDetailsProbeContext(InternalJsonResultProbeContext):
-
   @override
   def to_json(self, actions: Actions) -> Json:
     return self.run.browser_platform.system_details()

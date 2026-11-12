@@ -11,7 +11,6 @@ from tests import test_helper
 
 
 class TestExampleProbeListConfig(unittest.TestCase):
-
   def test_team_configs(self):
     teams_dir = test_helper.config_dir() / "team"
     self._load_probe_config_glob(teams_dir.glob("**/*.probe.config.hjson"))

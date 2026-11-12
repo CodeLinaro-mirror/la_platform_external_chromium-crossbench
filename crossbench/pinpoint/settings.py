@@ -88,17 +88,18 @@ class _SettingsConfig(ConfigObject):
   def config_parser(cls) -> ConfigParser[Self]:
     parser = ConfigParser(cls)
     parser.add_argument(
-        "user_id",
-        type=str,
-        required=False,
-        help="Random user ID used to collect metrics.")
+      "user_id",
+      type=str,
+      required=False,
+      help="Random user ID used to collect metrics.",
+    )
     parser.add_argument(
-        "collect_metrics",
-        type=ObjectParser.bool,
-        required=False,
-        help=(
-            "Boolean flag indicating whether user metrics should be collected."
-        ),
+      "collect_metrics",
+      type=ObjectParser.bool,
+      required=False,
+      help=(
+        "Boolean flag indicating whether user metrics should be collected."
+      ),
     )
     return parser
 

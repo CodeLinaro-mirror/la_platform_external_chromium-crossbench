@@ -16,7 +16,6 @@ from tests.crossbench.mock_helper import LinuxMockPlatform, MacOsMockPlatform
 
 
 class PlatformEqualityTestCase(unittest.TestCase):
-
   def test_local_platform_equality(self) -> None:
     platform_1 = LinuxMockPlatform()
     platform_2 = LinuxMockPlatform()
@@ -52,18 +51,22 @@ class PlatformEqualityTestCase(unittest.TestCase):
 
     # Patch _create_default_tmp_dir to avoid running remote command on init
     with mock.patch.object(
-        LinuxSshPlatform,
-        "_create_default_tmp_dir",
-        return_value=pth.AnyPath("/tmp"),
+      LinuxSshPlatform,
+      "_create_default_tmp_dir",
+      return_value=pth.AnyPath("/tmp"),
     ):
       platform_1 = LinuxSshPlatform(
-          host_platform, host="host1", port=22, ssh_port=22, ssh_user="user")
+        host_platform, host="host1", port=22, ssh_port=22, ssh_user="user"
+      )
       platform_2 = LinuxSshPlatform(
-          host_platform, host="host1", port=22, ssh_port=22, ssh_user="user")
+        host_platform, host="host1", port=22, ssh_port=22, ssh_user="user"
+      )
       platform_3 = LinuxSshPlatform(
-          host_platform, host="host2", port=22, ssh_port=22, ssh_user="user")
+        host_platform, host="host2", port=22, ssh_port=22, ssh_user="user"
+      )
       platform_4 = LinuxSshPlatform(
-          host_platform, host="host1", port=2222, ssh_port=22, ssh_user="user")
+        host_platform, host="host1", port=2222, ssh_port=22, ssh_user="user"
+      )
 
     self.assertNotEqual(platform_1, platform_2)
     self.assertEqual(platform_1.key, platform_2.key)
@@ -82,12 +85,13 @@ class PlatformEqualityTestCase(unittest.TestCase):
     android_platform = AndroidAdbPlatform(host_platform, adb=adb)
 
     with mock.patch.object(
-        LinuxSshPlatform,
-        "_create_default_tmp_dir",
-        return_value=pth.AnyPath("/tmp"),
+      LinuxSshPlatform,
+      "_create_default_tmp_dir",
+      return_value=pth.AnyPath("/tmp"),
     ):
       ssh_platform = LinuxSshPlatform(
-          host_platform, host="host1", port=22, ssh_port=22, ssh_user="user")
+        host_platform, host="host1", port=22, ssh_port=22, ssh_user="user"
+      )
 
     self.assertNotEqual(local_platform.key, android_platform.key)
     self.assertNotEqual(local_platform.key, ssh_platform.key)

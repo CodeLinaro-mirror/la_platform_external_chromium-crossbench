@@ -32,7 +32,8 @@ from typing import Final
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
-KNOWN_CHROME_FLAGS: Final[frozenset[str]] = frozenset({
+KNOWN_CHROME_FLAGS: Final[frozenset[str]] = frozenset(
+  {
     "--accept-empty-variations-seed-signature",
     "--accept-lang",
     "--accept-resource-provider",
@@ -1595,4 +1596,5 @@ KNOWN_CHROME_FLAGS: Final[frozenset[str]] = frozenset({
     "--xsession_chooser",
     "--yuy2",
     "--zygote",
-})
+  }
+)

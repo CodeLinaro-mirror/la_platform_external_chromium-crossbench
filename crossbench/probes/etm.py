@@ -15,8 +15,10 @@ from crossbench.helper import wait
 from crossbench.parse import NumberParser, ObjectParser
 from crossbench.probes.chromium_probe import ChromiumProbe
 from crossbench.probes.probe_context import ProbeContext
-from crossbench.probes.probe_error import ProbeIncompatibleBrowser, \
-    ProbeValidationError
+from crossbench.probes.probe_error import (
+  ProbeIncompatibleBrowser,
+  ProbeValidationError,
+)
 from crossbench.probes.result_location import ResultLocation
 from crossbench.probes.results import EmptyProbeResult, ProbeResult
 
@@ -48,56 +50,61 @@ class EtmProbe(ChromiumProbe):
   def config_parser(cls) -> ProbeConfigParser[Self]:
     parser = super().config_parser()
     parser.add_argument(
-        "cpu",
-        type=NumberParser.positive_zero_int,
-        required=True,
-        help=("The cpu that RendererMain will be pinned "
-              "to along and sampled from."),
+      "cpu",
+      type=NumberParser.positive_zero_int,
+      required=True,
+      help=(
+        "The cpu that RendererMain will be pinned to along and sampled from."
+      ),
     )
     parser.add_argument(
-        "aux_buffer_size",
-        type=NumberParser.power_of_two_with_unit,
-        default="4M",
-        help=("Set aux buffer size."
-              "Need to be power of 2 and page size aligned."
-              "Used memory size is (buffer_size * (cpu_count + 1))."
-              "Default is 4M."),
+      "aux_buffer_size",
+      type=NumberParser.power_of_two_with_unit,
+      default="4M",
+      help=(
+        "Set aux buffer size."
+        "Need to be power of 2 and page size aligned."
+        "Used memory size is (buffer_size * (cpu_count + 1))."
+        "Default is 4M."
+      ),
     )
     parser.add_argument(
-        "record_timestamp",
-        type=ObjectParser.bool,
-        default=False,
-        help=("Generate timestamp packets in ETM stream."),
+      "record_timestamp",
+      type=ObjectParser.bool,
+      default=False,
+      help=("Generate timestamp packets in ETM stream."),
     )
     parser.add_argument(
-        "record_cycles",
-        type=ObjectParser.bool,
-        default=False,
-        help=("Generate cycle count packets in ETM stream."),
+      "record_cycles",
+      type=ObjectParser.bool,
+      default=False,
+      help=("Generate cycle count packets in ETM stream."),
     )
     parser.add_argument(
-        "cycle_threshold",
-        type=NumberParser.positive_int,
-        default=None,
-        help=("Set cycle count counter threshold for ETM cycle count packets."),
+      "cycle_threshold",
+      type=NumberParser.positive_int,
+      default=None,
+      help=("Set cycle count counter threshold for ETM cycle count packets."),
     )
     parser.add_argument(
-        "flush_interval",
-        type=NumberParser.positive_int,
-        default=None,
-        help=("Set the interval between ETM data flushes from the ETR buffer"
-              "to the perf event buffer (in milliseconds). Default is 100 ms."),
+      "flush_interval",
+      type=NumberParser.positive_int,
+      default=None,
+      help=(
+        "Set the interval between ETM data flushes from the ETR buffer"
+        "to the perf event buffer (in milliseconds). Default is 100 ms."
+      ),
     )
     return parser
 
   def __init__(
-      self,
-      cpu: int,
-      aux_buffer_size: str | None = None,
-      record_timestamp: bool = False,
-      record_cycles: bool = False,
-      cycle_threshold: int | None = None,
-      flush_interval: int | None = None,
+    self,
+    cpu: int,
+    aux_buffer_size: str | None = None,
+    record_timestamp: bool = False,
+    record_cycles: bool = False,
+    cycle_threshold: int | None = None,
+    flush_interval: int | None = None,
   ) -> None:
     super().__init__()
     self._cpu: Final[int] = cpu
@@ -109,12 +116,15 @@ class EtmProbe(ChromiumProbe):
 
   @property
   def key(self) -> ProbeKeyT:
-    return (*super().key, ("cpu", self._cpu), ("aux_buffer_size",
-                                               self._aux_buffer_size),
-            ("record_timestamp", self._record_timestamp), ("record_cycles",
-                                                           self._record_cycles),
-            ("cycle_threshold", self._cycle_threshold), ("flush_interval",
-                                                         self._flush_interval))
+    return (
+      *super().key,
+      ("cpu", self._cpu),
+      ("aux_buffer_size", self._aux_buffer_size),
+      ("record_timestamp", self._record_timestamp),
+      ("record_cycles", self._record_cycles),
+      ("cycle_threshold", self._cycle_threshold),
+      ("flush_interval", self._flush_interval),
+    )
 
   @property
   def cpu(self) -> int:
@@ -150,8 +160,9 @@ class EtmProbe(ChromiumProbe):
       if "unknown event" in result or not result:
         raise ProbeValidationError(self, "cs_etm event not found")
     except subprocess.CalledProcessError as exc:
-      raise ProbeValidationError(self,
-                                 "Failed to query for ETM support.") from exc
+      raise ProbeValidationError(
+        self, "Failed to query for ETM support."
+      ) from exc
 
   @override
   def validate_browser(self, env: RunnerEnv, browser: Browser) -> None:
@@ -171,7 +182,6 @@ class EtmProbe(ChromiumProbe):
 
 
 class EtmProbeContext(ProbeContext[EtmProbe]):
-
   def __init__(self, probe: EtmProbe, run: Run) -> None:
     super().__init__(probe, run)
     self._etm_process: subprocess.Popen | None = None
@@ -179,8 +189,9 @@ class EtmProbeContext(ProbeContext[EtmProbe]):
   @cached_property
   def _renderer_tid(self) -> int:
     assert self._story_ready, (
-        "Fetching renderer PID/TID before the story is loaded could lead to "
-        "the wrong PID/TID being used. This should never happen TM!")
+      "Fetching renderer PID/TID before the story is loaded could lead to "
+      "the wrong PID/TID being used. This should never happen TM!"
+    )
     renderer_main_tid = self.browser.get_renderer_main_tid()
     if not renderer_main_tid:
       raise ValueError("Could not get Renderer Main TID from browser.")
@@ -188,16 +199,16 @@ class EtmProbeContext(ProbeContext[EtmProbe]):
 
   def _start_etm(self) -> None:
     command_line: ListCmdArgs = [
-        "simpleperf",
-        "record",
-        "--clockid",
-        "monotonic",
-        "-e",
-        "cs-etm",
-        "-t",
-        str(self._renderer_tid),
-        "--cpu",
-        str(self.probe.cpu),
+      "simpleperf",
+      "record",
+      "--clockid",
+      "monotonic",
+      "-e",
+      "cs-etm",
+      "-t",
+      str(self._renderer_tid),
+      "--cpu",
+      str(self.probe.cpu),
     ]
 
     if self.probe.aux_buffer_size:
@@ -208,8 +219,8 @@ class EtmProbeContext(ProbeContext[EtmProbe]):
       command_line.append("--record-cycles")
     if self.probe.cycle_threshold is not None:
       command_line.extend(
-          ["--cycle-threshold",
-           str(self.probe.cycle_threshold)])
+        ["--cycle-threshold", str(self.probe.cycle_threshold)]
+      )
     if flush_interval := self.probe.flush_interval:
       command_line.extend(["--etm-flush-interval", str(flush_interval)])
 
@@ -217,7 +228,8 @@ class EtmProbeContext(ProbeContext[EtmProbe]):
 
     logging.info("Starting etm with command line: %s.", command_line)
     self._etm_process = self.browser_platform.popen(
-        *command_line, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+      *command_line, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+    )
 
     wait.sleep(1)
     if self._etm_process.poll():
@@ -248,8 +260,9 @@ class EtmProbeContext(ProbeContext[EtmProbe]):
     return f"{mask:x}"
 
   def _pin_renderer_main_core(self, cpu: int) -> None:
-    self.browser_platform.sh("taskset", "-p", self._cpu_mask([cpu]),
-                             str(self._renderer_tid))
+    self.browser_platform.sh(
+      "taskset", "-p", self._cpu_mask([cpu]), str(self._renderer_tid)
+    )
 
   def get_default_result_path(self) -> pth.AnyPath:
     result_dir = super().get_default_result_path()
@@ -257,10 +270,12 @@ class EtmProbeContext(ProbeContext[EtmProbe]):
     return result_dir / "etm.perf.data"
 
   def setup(self) -> None:
-    assert (self.browser.platform.is_android
-           ), f"Expected Android platform, found {type(self.browser.platform)}."
-    assert (self.browser.attributes().is_chromium_based
-           ), f"Expected Chromium-based browser, found {type(self.browser)}."
+    assert self.browser.platform.is_android, (
+      f"Expected Android platform, found {type(self.browser.platform)}."
+    )
+    assert self.browser.attributes().is_chromium_based, (
+      f"Expected Chromium-based browser, found {type(self.browser)}."
+    )
     self._stop_existing_etm()
 
   @override
@@ -280,9 +295,9 @@ class EtmProbeContext(ProbeContext[EtmProbe]):
   def stop_process(self) -> None:
     if self._etm_process:
       self.browser_platform.terminate_gracefully(
-          self._etm_process,
-          timeout=60,
-          signal=self.browser_platform.signals.SIGINT,
+        self._etm_process,
+        timeout=60,
+        signal=self.browser_platform.signals.SIGINT,
       )
     self._etm_process = None
 

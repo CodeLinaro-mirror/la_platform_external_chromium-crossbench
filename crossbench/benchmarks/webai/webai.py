@@ -10,8 +10,7 @@ import json
 import logging
 from typing import TYPE_CHECKING, ClassVar, Sequence, override
 
-from crossbench.benchmarks.base import PressBenchmark, \
-    PressBenchmarkStoryFilter
+from crossbench.benchmarks.base import PressBenchmark, PressBenchmarkStoryFilter
 from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.parse import ObjectParser
 from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
@@ -34,6 +33,7 @@ class WebAIProbe(BenchmarkProbeMixin, JsonResultProbe, metaclass=abc.ABCMeta):
   WebAI-specific probe.
   Extracts all WebAI times and scores.
   """
+
   NAME: ClassVar[str] = "webai"
 
   @override
@@ -49,14 +49,16 @@ class WebAIProbe(BenchmarkProbeMixin, JsonResultProbe, metaclass=abc.ABCMeta):
   @override
   def merge_stories(self, group: StoriesRunGroup) -> ProbeResult:
     merged = MetricsMerger.merge_json_list(
-        repetitions_group.results[self].json
-        for repetitions_group in group.repetitions_groups)
+      repetitions_group.results[self].json
+      for repetitions_group in group.repetitions_groups
+    )
     return self.write_group_result(group, merged)
 
   @override
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
     return self.merge_browsers_json_list(group).merge(
-        self.merge_browsers_csv_list(group))
+      self.merge_browsers_csv_list(group)
+    )
 
   @override
   def log_run_result(self, run: Run) -> None:
@@ -66,8 +68,9 @@ class WebAIProbe(BenchmarkProbeMixin, JsonResultProbe, metaclass=abc.ABCMeta):
   def log_browsers_result(self, group: BrowsersRunGroup) -> None:
     self._log_result(group.results, single_result=False)
 
-  def _log_result(self, result_dict: ProbeResultDict,
-                  single_result: bool) -> None:
+  def _log_result(
+    self, result_dict: ProbeResultDict, single_result: bool
+  ) -> None:
     if self not in result_dict:
       return
     results_json: pth.LocalPath = result_dict[self].json
@@ -92,13 +95,16 @@ class WebAIProbe(BenchmarkProbeMixin, JsonResultProbe, metaclass=abc.ABCMeta):
         self._log_result_metrics(data)
 
   @override
-  def _extract_result_metrics_table(self, metrics: JsonDict,
-                                    table: dict[str, list[str]]) -> None:
+  def _extract_result_metrics_table(
+    self, metrics: JsonDict, table: dict[str, list[str]]
+  ) -> None:
     for metric_key, metric in metrics.items():
-      if isinstance(metric,
-                    dict) and "average" in metric and "stddev" in metric:
+      if (
+        isinstance(metric, dict) and "average" in metric and "stddev" in metric
+      ):
         table[metric_key].append(
-            Metric.format(metric["average"], metric["stddev"]))
+          Metric.format(metric["average"], metric["stddev"])
+        )
       elif isinstance(metric, (int, float)):
         table[metric_key].append(str(metric))
 
@@ -116,11 +122,14 @@ class WebAIProbeContext(JsonResultProbeContext):
   def flatten_json_data(self, json_data: Json) -> Json:
     if isinstance(json_data, list):
       metrics_data = [
-          ObjectParser.dict(item) for item in ObjectParser.non_empty_sequence(
-              json_data, f"{self.probe.name} metrics")
+        ObjectParser.dict(item)
+        for item in ObjectParser.non_empty_sequence(
+          json_data, f"{self.probe.name} metrics"
+        )
       ]
       return MetricsMerger(metrics_data).to_json(
-          value_fn=lambda values: values.average)
+        value_fn=lambda values: values.average
+      )
     if isinstance(json_data, dict):
       result: JsonDict = {}
       for name, metric in json_data.items():
@@ -138,14 +147,15 @@ class WebAIProbeContext(JsonResultProbeContext):
 class WebAIStory(PressBenchmarkStory):
   NAME: ClassVar[str] = "webai"
   URL: ClassVar[str] = "https://browserben.ch/webai-compute-benchmark/main/"
-  URL_OFFICIAL: ClassVar[
-      str] = "https://browserben.ch/webai-compute-benchmark/main/"
+  URL_OFFICIAL: ClassVar[str] = (
+    "https://browserben.ch/webai-compute-benchmark/main/"
+  )
   URL_LOCAL: ClassVar[str] = "http://localhost:8000/"
   SUBSTORIES: ClassVar[tuple[str, ...]] = (
-      "webai_default",
-      "webgpu",
-      "webnn",
-      "wasm",
+    "webai_default",
+    "webgpu",
+    "webnn",
+    "wasm",
   )
 
   @classmethod
@@ -153,9 +163,9 @@ class WebAIStory(PressBenchmarkStory):
   def default_story_names(cls) -> tuple[str, ...]:
     return ("webai_default",)
 
-  def __init__(self,
-               substories: Sequence[str] = (),
-               url: str | None = None) -> None:
+  def __init__(
+    self, substories: Sequence[str] = (), url: str | None = None
+  ) -> None:
     if not substories:
       substories = self.SUBSTORIES
     super().__init__(substories=substories, url=url or self.URL)
@@ -175,7 +185,8 @@ class WebAIStory(PressBenchmarkStory):
     with run.actions("Setup") as actions:
       actions.show_url(self.url)
       actions.wait_js_condition(
-          "return !!window.benchmarkClient", 0.5, timeout=10)
+        "return !!window.benchmarkClient", 0.5, timeout=10
+      )
       # Similar to Speedometer 3, WebAI might need some client setup
       actions.js("""
         window.testDone = false;
@@ -201,13 +212,15 @@ class WebAIStory(PressBenchmarkStory):
       """)
     with run.actions("Waiting for completion") as actions:
       actions.wait_js_condition(
-          "return window.testDone", 0.5, timeout=self.slow_duration)
+        "return window.testDone", 0.5, timeout=self.slow_duration
+      )
 
 
 class WebAIBenchmark(PressBenchmark):
   """
   Benchmark runner for WebAI.
   """
+
   NAME: ClassVar[str] = "webai"
   DEFAULT_STORY_CLS = WebAIStory
   PROBES: ClassVar[tuple[type[WebAIProbe], ...]] = (WebAIProbe,)

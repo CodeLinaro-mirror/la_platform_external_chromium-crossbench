@@ -8,27 +8,32 @@ from typing import Final, override
 
 from crossbench import path as pth
 from crossbench.plt.android_adb import AndroidAdbPlatform
-from crossbench.probes.cb_perfetto.constants import PERFETTO_CONFIG_NAME, \
-    PERFETTO_TRACE_NAME
+from crossbench.probes.cb_perfetto.constants import (
+  PERFETTO_CONFIG_NAME,
+  PERFETTO_TRACE_NAME,
+)
 from crossbench.probes.cb_perfetto.context.base import PerfettoProbeContext
 
 PERFETTO_CONFIG_REMOTE_DIR_ANDROID: Final = pth.AnyPath(
-    "/data/misc/perfetto-configs/")
+  "/data/misc/perfetto-configs/"
+)
 PERFETTO_TRACE_REMOTE_DIR_ANDROID: Final = pth.AnyPath(
-    "/data/misc/perfetto-traces/")
+  "/data/misc/perfetto-traces/"
+)
 
 
 class AndroidPerfettoProbeContext(PerfettoProbeContext):
-
   @override
   def get_browser_config_path(self) -> pth.AnyPath:
     return PERFETTO_CONFIG_REMOTE_DIR_ANDROID / (
-        f"{self._file_prefix}_{PERFETTO_CONFIG_NAME}")
+      f"{self._file_prefix}_{PERFETTO_CONFIG_NAME}"
+    )
 
   @override
   def get_default_result_path(self) -> pth.AnyPath:
     return PERFETTO_TRACE_REMOTE_DIR_ANDROID / (
-        f"{self._file_prefix}_{PERFETTO_TRACE_NAME}")
+      f"{self._file_prefix}_{PERFETTO_TRACE_NAME}"
+    )
 
   @property
   @override

@@ -7,8 +7,16 @@ from __future__ import annotations
 import dataclasses
 import datetime as dt
 import functools
-from typing import TYPE_CHECKING, Final, Iterable, Iterator, Mapping, Self, \
-    Sequence, override
+from typing import (
+  TYPE_CHECKING,
+  Final,
+  Iterable,
+  Iterator,
+  Mapping,
+  Self,
+  Sequence,
+  override,
+)
 
 from crossbench import exception
 from crossbench.action_runner.action.action import Action
@@ -16,8 +24,9 @@ from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.all import ACTIONS_TUPLE
 from crossbench.action_runner.action.get import GetAction
 from crossbench.action_runner.action.start_browser import StartBrowserAction
-from crossbench.action_runner.action.wait_for_ready_state import \
-    WaitForReadyStateAction
+from crossbench.action_runner.action.wait_for_ready_state import (
+  WaitForReadyStateAction,
+)
 from crossbench.config import ConfigError, ConfigObject, ConfigParser
 from crossbench.parse import NumberParser, ObjectParser
 
@@ -49,11 +58,13 @@ class ActionBlock(ConfigObject):
 
   @classmethod
   @override
-  def parse_dict(cls,
-                 config: dict[str, object],
-                 label: str | None = None,
-                 index: int | None = None,
-                 **kwargs) -> Self:
+  def parse_dict(
+    cls,
+    config: dict[str, object],
+    label: str | None = None,
+    index: int | None = None,
+    **kwargs,
+  ) -> Self:
     return cls.config_parser().parse(config, label=label, index=index, **kwargs)
 
   @classmethod
@@ -63,18 +74,22 @@ class ActionBlock(ConfigObject):
     parser = ConfigParser(cls)
     parser.add_argument("label", type=cls._parse_block_label, default="default")
     parser.add_argument(
-        "index", type=NumberParser.positive_zero_int, default=0, required=False)
+      "index", type=NumberParser.positive_zero_int, default=0, required=False
+    )
     # TODO: enable passing index
     parser.add_argument("actions", type=Action, required=True, is_list=True)
     return parser
 
   @classmethod
-  def parse_sequence(cls,
-                     config: Sequence[object],
-                     label: str | None = None,
-                     index: int | None = None) -> Self:
+  def parse_sequence(
+    cls,
+    config: Sequence[object],
+    label: str | None = None,
+    index: int | None = None,
+  ) -> Self:
     with exception.annotate_argparsing(
-        "Parsing default block action sequence:"):
+      "Parsing default block action sequence:"
+    ):
       return cls.parse_dict({"actions": config}, label=label, index=index)
     raise exception.UnreachableError
 
@@ -119,15 +134,17 @@ class ActionBlock(ConfigObject):
         case ActionType.START_BROWSER:
           if is_browser_running is True:
             raise ConfigError(
-                "Cannot have two 'start_browser' actions in a row without "
-                "'stop_browser' in between.")
+              "Cannot have two 'start_browser' actions in a row without "
+              "'stop_browser' in between."
+            )
           is_browser_running = True
           num_starts += 1
         case ActionType.STOP_BROWSER:
           if is_browser_running is False:
             raise ConfigError(
-                "Cannot have two 'stop_browser' actions in a row without "
-                "'start_browser' in between.")
+              "Cannot have two 'stop_browser' actions in a row without "
+              "'start_browser' in between."
+            )
           is_browser_running = False
           num_stops += 1
         case ActionType.CLOSE_ALL_APPS:
@@ -136,16 +153,17 @@ class ActionBlock(ConfigObject):
           is_browser_running = False
     if num_starts > num_stops + 1:
       raise ConfigError(
-          f"Number of 'start_browser' actions ({num_starts}) cannot exceed "
-          f"number of 'stop_browser' actions ({num_stops}) + 1.")
+        f"Number of 'start_browser' actions ({num_starts}) cannot exceed "
+        f"number of 'stop_browser' actions ({num_stops}) + 1."
+      )
 
   def run_with(self, runner: ActionRunner) -> None:
     runner.run_block(self)
 
   def to_json(self) -> JsonDict:
     return {
-        "label": self.label,
-        "actions": [action.to_json() for action in self.actions],
+      "label": self.label,
+      "actions": [action.to_json() for action in self.actions],
     }
 
   @property
@@ -218,7 +236,8 @@ class ActionBlockListConfig(ConfigObject):
       config = [{"actions": config}]
     if not cls._is_block_sequence_config(config):
       raise ValueError(
-          "Invalid data: Expected a list of either blocks or actions.")
+        "Invalid data: Expected a list of either blocks or actions."
+      )
 
     def block_config_data_gen() -> Iterator[tuple[int, str | None, dict]]:
       for index, block_config in enumerate(config):
@@ -232,14 +251,16 @@ class ActionBlockListConfig(ConfigObject):
   @classmethod
   def _is_block_sequence_config(cls, config: Sequence[object]) -> bool:
     sample = config[0]
-    return isinstance(sample, Mapping) and ("label" in sample or
-                                            "actions" in sample)
+    return isinstance(sample, Mapping) and (
+      "label" in sample or "actions" in sample
+    )
 
   @classmethod
   def _is_default_block_actions(cls, config: Sequence[object]) -> bool:
     sample = config[0]
-    return isinstance(sample, str) or (isinstance(sample, Mapping) and
-                                       "action" in sample)
+    return isinstance(sample, str) or (
+      isinstance(sample, Mapping) and "action" in sample
+    )
 
   @classmethod
   @override
@@ -249,15 +270,16 @@ class ActionBlockListConfig(ConfigObject):
     def block_config_data_gen() -> Iterator[tuple[int, str | None, object]]:
       for index, (label, block_data) in enumerate(config.items()):
         with exception.annotate_argparsing(
-            f"Parsing action block  ...[{label}]"):
+          f"Parsing action block  ...[{label}]"
+        ):
           yield index, label, block_data
 
     return cls._parse_blocks(block_config_data_gen())
 
   @classmethod
   def _parse_blocks(
-      cls, block_config_data_gen: Iterator[tuple[int, str | None,
-                                                 object]]) -> Self:
+    cls, block_config_data_gen: Iterator[tuple[int, str | None, object]]
+  ) -> Self:
     blocks: list[ActionBlock] = []
     for index, label, block_data in block_config_data_gen:
       block = cls._parse_block(index, label, block_data)
@@ -265,15 +287,17 @@ class ActionBlockListConfig(ConfigObject):
     return cls(tuple(blocks))
 
   @classmethod
-  def _parse_block(cls, index: int, label: str | None,
-                   block_data: object) -> ActionBlock:
+  def _parse_block(
+    cls, index: int, label: str | None, block_data: object
+  ) -> ActionBlock:
     if isinstance(block_data, dict):
       # Early warning for better usability.
       if inner_label := block_data.get("label"):
         if inner_label != label:
           raise ConfigError(
-              "ActionBlock inside a dict cannot have a 'label' property, "
-              f"but got label={inner_label!r}")
+            "ActionBlock inside a dict cannot have a 'label' property, "
+            f"but got label={inner_label!r}"
+          )
     return ActionBlock.parse(block_data, label=label, index=index)
 
   @classmethod
@@ -290,6 +314,8 @@ class ActionBlockListConfig(ConfigObject):
     for index, block in enumerate(self.blocks):
       if index != block.index:
         raise ValueError(
-            f"blocks[{index}].index should be {index}, but got {block.index}")
+          f"blocks[{index}].index should be {index}, but got {block.index}"
+        )
     ActionBlock.validate_browser_start_stop(
-        action for block in self.blocks for action in block)
+      action for block in self.blocks for action in block
+    )

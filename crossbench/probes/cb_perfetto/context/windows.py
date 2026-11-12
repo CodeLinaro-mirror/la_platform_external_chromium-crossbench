@@ -17,7 +17,6 @@ if TYPE_CHECKING:
 
 
 class WindowsPerfettoProbeContext(PerfettoProbeContext):
-
   def __init__(self, probe: PerfettoProbe, run: Run) -> None:
     super().__init__(probe, run)
 
@@ -33,16 +32,19 @@ class WindowsPerfettoProbeContext(PerfettoProbeContext):
   def setup(self) -> None:
     self._setup_push_perfetto_config()
     flags = self.session.extra_flags
-    flags.set("--trace-perfetto-config-file",
-              str(self.get_browser_config_path()))
+    flags.set(
+      "--trace-perfetto-config-file", str(self.get_browser_config_path())
+    )
     flags.set("--trace-startup-file", str(self.result_path))
 
   @override
   def _setup_push_perfetto_config(self) -> None:
     super()._setup_push_perfetto_config()
     # --trace-perfetto-config-file only supports the binary format.
-    self.host_platform.write_bytes(self.get_browser_config_path(),
-                                   self.probe.trace_config.SerializeToString())
+    self.host_platform.write_bytes(
+      self.get_browser_config_path(),
+      self.probe.trace_config.SerializeToString(),
+    )
 
   @override
   def start(self) -> None:

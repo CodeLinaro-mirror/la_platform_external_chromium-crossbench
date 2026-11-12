@@ -17,8 +17,10 @@ if TYPE_CHECKING:
   from crossbench import path as pth
   from crossbench.browsers.browser import Browser
   from crossbench.runner.groups.browsers import BrowsersRunGroup
-  from crossbench.runner.groups.repetitions import \
-      CacheTemperatureRepetitionsRunGroup, RepetitionsRunGroup
+  from crossbench.runner.groups.repetitions import (
+    CacheTemperatureRepetitionsRunGroup,
+    RepetitionsRunGroup,
+  )
   from crossbench.runner.groups.stories import StoriesRunGroup
 
 
@@ -33,6 +35,7 @@ class V8RCSProbe(ChromiumProbe):
   production builds (e.g., `chrome-stable`). For JS performance analysis on
   production Chrome, use the `v8.log` or `profiling` probe instead.
   """
+
   NAME: ClassVar = "v8.rcs"
 
   @override
@@ -44,15 +47,18 @@ class V8RCSProbe(ChromiumProbe):
   def get_context_cls(self) -> type[V8RCSProbeContext]:
     return V8RCSProbeContext
 
-  def concat_group_files(self, group: RepetitionsRunGroup
-                         | CacheTemperatureRepetitionsRunGroup,
-                         file_name: str) -> pth.LocalPath:
+  def concat_group_files(
+    self,
+    group: RepetitionsRunGroup | CacheTemperatureRepetitionsRunGroup,
+    file_name: str,
+  ) -> pth.LocalPath:
     result_dir = group.get_local_probe_result_dir(self)
     result_files = (run.results[self].file for run in group.runs)
     result_file = self.host_platform.concat_files(
-        inputs=result_files,
-        output=result_dir / file_name,
-        prefix=f"\n== Page: {group.story.name}\n")
+      inputs=result_files,
+      output=result_dir / file_name,
+      prefix=f"\n== Page: {group.story.name}\n",
+    )
     return result_file
 
   @override
@@ -61,12 +67,14 @@ class V8RCSProbe(ChromiumProbe):
     result_files = [all_file]
     for temperature_group in group.cache_temperature_repetitions_groups:
       temperature_file_name = f"{temperature_group.cache_temperature}.rcs.txt"
-      group_file = self.concat_group_files(temperature_group,
-                                           temperature_file_name)
+      group_file = self.concat_group_files(
+        temperature_group, temperature_file_name
+      )
       result_files.append(group_file)
     result_dir = group.get_local_probe_result_dir(self)
-    self.host_platform.symlink_or_copy(all_file,
-                                       result_dir.with_suffix(".rcs.txt"))
+    self.host_platform.symlink_or_copy(
+      all_file, result_dir.with_suffix(".rcs.txt")
+    )
     return LocalProbeResult(file=tuple(result_files))
 
   @override
@@ -80,11 +88,12 @@ class V8RCSProbe(ChromiumProbe):
     result_files = []
     for name, files in name_groups.items():
       result_files.append(
-          self.host_platform.concat_files(
-              inputs=files, output=result_dir / name))
+        self.host_platform.concat_files(inputs=files, output=result_dir / name)
+      )
     src_file = result_dir / "all.rcs.txt"
-    self.host_platform.symlink_or_copy(src_file,
-                                       result_dir.with_suffix(".rcs.txt"))
+    self.host_platform.symlink_or_copy(
+      src_file, result_dir.with_suffix(".rcs.txt")
+    )
     return LocalProbeResult(file=(src_file,))
 
   @override
@@ -96,8 +105,11 @@ class V8RCSProbe(ChromiumProbe):
       story_group_file = story_group.results[self].file
       # Be permissive and skip failed probes
       if not story_group_file.exists():
-        logging.info("Probe %s: skipping non-existing results file: %s",
-                     self.NAME, story_group_file)
+        logging.info(
+          "Probe %s: skipping non-existing results file: %s",
+          self.NAME,
+          story_group_file,
+        )
         continue
       dest_file = result_dir / f"{story_group.browser.unique_name}.rcs.txt"
       self.host_platform.symlink_or_copy(story_group_file, dest_file)
@@ -110,7 +122,8 @@ class V8RCSProbe(ChromiumProbe):
       return
     logging.info("-" * 80)
     logging.critical(
-        "V8 RCS results: open on  http://v8.dev/tools/head/callstats.html")
+      "V8 RCS results: open on  http://v8.dev/tools/head/callstats.html"
+    )
     for file in group.results[self].get_all("txt"):
       logging.critical("    %s", file)
     logging.info("- " * 40)
@@ -135,9 +148,10 @@ class V8RCSProbeContext(ProbeContext[V8RCSProbe]):
   def teardown(self) -> ProbeResult:
     if not self._rcs_table:
       raise ProbeMissingDataError(
-          "Chrome didn't produce any RCS data. "
-          "Use Chrome Canary or make sure to enable the "
-          "v8_enable_runtime_call_stats compile-time flag.")
+        "Chrome didn't produce any RCS data. "
+        "Use Chrome Canary or make sure to enable the "
+        "v8_enable_runtime_call_stats compile-time flag."
+      )
     rcs_file = self.local_result_path.with_suffix(".rcs.txt")
     with rcs_file.open("a") as f:
       f.write(self._rcs_table)

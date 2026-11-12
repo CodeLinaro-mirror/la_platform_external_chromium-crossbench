@@ -8,7 +8,6 @@ import typing
 
 
 class ProbeResultKey(typing.Protocol):
-
   @property
   def name(self) -> str:
     raise NotImplementedError
