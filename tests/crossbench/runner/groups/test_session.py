@@ -7,10 +7,14 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from unittest import mock
 
+from crossbench import path as pth
+from crossbench.browsers.firefox.webdriver import FirefoxWebDriver
+from crossbench.browsers.safari.webdriver import SafariWebDriver
 from crossbench.browsers.settings import Settings
+from crossbench.browsers.webdriver import RemoteWebDriver
 from crossbench.helper.state import UnexpectedStateError
 from tests import test_helper
-from tests.crossbench import mock_browser
+from tests.crossbench import mock_browser, mock_helper
 from tests.crossbench.runner.groups.base import BaseRunGroupTestCase
 from tests.crossbench.runner.helper import MockProbe, MockRun
 
@@ -401,6 +405,21 @@ class BrowserSessionRunGroupTestCase(BaseRunGroupTestCase):
         session.start_browser()
         mock_close_all_tabs.assert_called_once_with()
 
+  def test_first_browser_launch_with_startup_urls_skips_close_all_tabs(
+      self) -> None:
+    browser = mock_browser.MockChromeDev(
+        "dev", settings=Settings(platform=self.platform, start_browser=False))
+    session = self.default_session(browser=browser)
+    run = MockRun(self.runner, session, "story 0")
+    session.append(run)
+    session.set_ready()
+    with mock.patch.object(session.browser,
+                           "close_all_tabs") as mock_close_all_tabs:
+      with session.open() as startup_is_success:
+        self.assertTrue(startup_is_success)
+        session.start_browser(startup_urls=("chrome://newtab/",))
+        mock_close_all_tabs.assert_not_called()
+
   def test_first_browser_launch_skips_unsupported_close_all_tabs(self) -> None:
     session = self.default_session()
     run = MockRun(self.runner, session, "story 0")
@@ -412,6 +431,60 @@ class BrowserSessionRunGroupTestCase(BaseRunGroupTestCase):
       with session.open() as startup_is_success:
         self.assertTrue(startup_is_success)
       mock_close_all_tabs.assert_called_once_with()
+
+  def test_start_browser_startup_urls_unsupported_browser(self) -> None:
+    browser = mock_browser.MockFirefox(
+        "firefox",
+        settings=Settings(platform=self.platform, start_browser=False))
+    session = self.default_session(browser=browser)
+    run = MockRun(self.runner, session, "story 0")
+    session.append(run)
+    session.set_ready()
+    with session.open():
+      with self.assertRaisesRegex(NotImplementedError, "startup_urls"):
+        session.start_browser(startup_urls=("https://www.google.com/",))
+
+  def test_firefox_webdriver_start_startup_urls_unsupported(self) -> None:
+    linux_platform = mock_helper.LinuxMockPlatform()
+    path = pth.LocalPath("/fake/firefox")
+    with (
+        mock.patch.object(linux_platform, "exists", return_value=True),
+        mock.patch.object(linux_platform, "is_file", return_value=True),
+        mock.patch.object(
+            linux_platform, "app_version", return_value="120.0.0"),
+    ):
+      browser = FirefoxWebDriver(
+          "firefox", path, settings=Settings(platform=linux_platform))
+      session = mock.MagicMock()
+      with self.assertRaisesRegex(NotImplementedError, "FirefoxWebDriver"):
+        browser.start(session, startup_urls=("https://google.com/",))
+
+  def test_safari_webdriver_start_startup_urls_unsupported(self) -> None:
+    mac_platform = mock_helper.MacOsMockPlatform()
+    safari_path = pth.LocalPath("/Applications/Safari.app")
+    with (
+        mock.patch.object(mac_platform, "exists", return_value=True),
+        mock.patch.object(mac_platform, "is_file", return_value=True),
+        mock.patch.object(mac_platform, "is_dir", return_value=True),
+        mock.patch.object(
+            mac_platform,
+            "app_version",
+            side_effect=["16.6", "Included with Safari 16.6 (18615.3.12.11.2)"],
+        ),
+    ):
+      safari_browser = SafariWebDriver(
+          "safari", safari_path, settings=Settings(platform=mac_platform))
+      session = mock.MagicMock()
+      with self.assertRaisesRegex(NotImplementedError, "SafariWebDriver"):
+        safari_browser.start(session, startup_urls=("https://google.com/",))
+
+  def test_remote_webdriver_start_startup_urls_unsupported(self) -> None:
+    driver = mock.MagicMock()
+    driver.capabilities = {"browserName": "chrome", "browserVersion": "120.0"}
+    browser = RemoteWebDriver("remote", driver)
+    session = mock.MagicMock()
+    with self.assertRaisesRegex(NotImplementedError, "RemoteWebDriver"):
+      browser.start(session, startup_urls=("https://google.com/",))
 
 
 if __name__ == "__main__":

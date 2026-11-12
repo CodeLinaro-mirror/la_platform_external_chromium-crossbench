@@ -104,8 +104,12 @@ class D8(ShellBrowser):
     assert isinstance(self._flags, ChromeFlags)
     return self._flags.js_flags
 
-  def start(self, session: BrowserSessionRunGroup) -> None:
-    super().start(session)
+  @override
+  def start(self,
+            session: BrowserSessionRunGroup,
+            startup_urls: Sequence[str] = ()) -> None:
+    super().start(session, startup_urls=startup_urls)
+    assert not startup_urls
     js_flags_copy = self.js_flags.copy()
     js_flags_copy.update(session.extra_js_flags)
     self._log_browser_start(tuple(js_flags_copy))

@@ -456,6 +456,20 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
           },
       })
 
+  def test_page_config_first_url_from_start_browser(self) -> None:
+    pages_config = PagesConfig.parse_dict({
+        "pages": {
+            "google_startup": [{
+                "action": "start_browser",
+                "startup_urls": ["https://www.google.com/"],
+            }],
+        },
+    })
+    self.assertEqual(len(pages_config.pages), 1)
+    page = pages_config.pages[0]
+    self.assertEqual(page.first_url, "https://www.google.com/")
+    self.assertEqual(page.url_label, "google.com")
+
 
 DEVTOOLS_RECORDER_EXAMPLE = {
     "title":

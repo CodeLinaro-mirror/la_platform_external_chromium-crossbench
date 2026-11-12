@@ -8,7 +8,7 @@ import datetime as dt
 import pathlib
 import re
 import unittest
-from typing import override
+from typing import TYPE_CHECKING, override
 from unittest import mock
 
 import selenium.common.exceptions
@@ -29,6 +29,9 @@ from crossbench.plt.base import Platform
 from tests import test_helper
 from tests.crossbench import mock_browser
 from tests.crossbench.base import BaseCrossbenchTestCase
+
+if TYPE_CHECKING:
+  from selenium.webdriver.chromium.options import ChromiumOptions
 from tests.crossbench.mock_helper import AndroidAdbMockPlatform, \
     LinuxMockPlatform, MacOsMockPlatform, MockPlatform
 
@@ -734,6 +737,41 @@ class ChromiumPathAndroidTest(BaseCrossbenchTestCase):
       browser.teardown()
       self.assertEqual(mock_restore_flags.call_count, 2)
       self.assertFalse(browser._has_started_in_session)
+
+  def test_create_options_with_startup_urls_desktop(self) -> None:
+    build_dir = pathlib.Path("/home/testuser/chrome/src/out/release")
+    path = build_dir / mock_browser.MockChromium.mock_app_binary()
+    self.fs.create_file(path, st_size=1000)
+    self.fs.create_file(build_dir / "args.gn")
+    version_str = mock_browser.MockChromium.VERSION
+    with mock.patch.object(
+        self.platform, "app_version", return_value=version_str):
+      browser = ChromiumWebDriver(
+          "local", path=path, settings=Settings(platform=self.platform))
+      mock_session = mock.MagicMock()
+
+      def add_existing_pref(options: ChromiumOptions) -> None:
+        options.add_experimental_option("prefs", {"existing.pref": True})
+
+      mock_session.setup_selenium_options.side_effect = add_existing_pref
+      options = browser._create_options(
+          mock_session,
+          args=(),
+          startup_urls=("https://www.google.com/", "about:blank"))
+      prefs = options.experimental_options["prefs"]
+      self.assertTrue(prefs["existing.pref"])
+      self.assertEqual(prefs["session.restore_on_startup"], 4)
+      self.assertEqual(
+          prefs["session.startup_urls"],
+          ["https://www.google.com/", "about:blank"])
+
+  def test_create_options_with_startup_urls_android_unsupported(self) -> None:
+    browser = self._create_android_browser("153.0.7994.0")
+    mock_session = mock.MagicMock()
+    with self.assertRaisesRegex(
+        NotImplementedError, "only supported on desktop Chromium"):
+      browser._create_options(
+          mock_session, args=(), startup_urls=("https://www.google.com/",))
 
 
 if __name__ == "__main__":

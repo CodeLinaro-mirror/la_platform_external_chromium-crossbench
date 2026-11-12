@@ -178,8 +178,11 @@ class CdpAndroidBrowser(ChromiumBased):
                      self.android_package)
 
   @override
-  def start(self, session: BrowserSessionRunGroup) -> None:
-    super().start(session)
+  def start(self,
+            session: BrowserSessionRunGroup,
+            startup_urls: Sequence[str] = ()) -> None:
+    super().start(session, startup_urls=startup_urls)
+    assert not startup_urls
     self.adb_force_stop()
     if not self._has_started_in_session:
       if (session and

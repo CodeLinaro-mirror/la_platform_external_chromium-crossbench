@@ -67,8 +67,11 @@ class SafariWebDriver(WebDriverBrowser, Safari):
     raise NotImplementedError("Cannot use custom driver log path for Safari")
 
   @override
-  def _start_driver(self, session: BrowserSessionRunGroup,
-                    driver_path: pth.AnyPath) -> webdriver.Remote:
+  def _start_driver(self,
+                    session: BrowserSessionRunGroup,
+                    driver_path: pth.AnyPath,
+                    startup_urls: Sequence[str] = ()) -> webdriver.Remote:
+    assert not startup_urls
     return self._start_safari_driver(session, driver_path)
 
   def _start_safari_driver(self, session: BrowserSessionRunGroup,
@@ -267,10 +270,14 @@ class SafariWebdriverIOS(SafariWebDriver):
     return self.platform
 
   @override
-  def _start_driver(self, session: BrowserSessionRunGroup,
-                    driver_path: pth.AnyPath) -> webdriver.Remote:
+  def _start_driver(self,
+                    session: BrowserSessionRunGroup,
+                    driver_path: pth.AnyPath,
+                    startup_urls: Sequence[str] = ()) -> webdriver.Remote:
+    assert not startup_urls
     self._launch_with_env_vars()
-    return super()._start_driver(session, driver_path)
+    return super()._start_driver(
+        session, driver_path, startup_urls=startup_urls)
 
   def _launch_with_env_vars(self) -> None:
     if env_vars := self._get_env_vars():
@@ -384,8 +391,11 @@ class SafariWdaIOS(Safari):
     return None
 
   @override
-  def start(self, session: BrowserSessionRunGroup) -> None:
-    super().start(session)
+  def start(self,
+            session: BrowserSessionRunGroup,
+            startup_urls: Sequence[str] = ()) -> None:
+    super().start(session, startup_urls=startup_urls)
+    assert not startup_urls
     self._log_browser_start(self._get_browser_flags_for_session(session))
     if self._manual:
       self.ios_platform.wda.stop_device_runner()

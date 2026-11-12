@@ -9,8 +9,8 @@ import base64
 import datetime as dt
 import logging
 import os
-from typing import TYPE_CHECKING, Final, Iterable, Sequence, TextIO, \
-    TypeAlias, override
+from typing import TYPE_CHECKING, ClassVar, Final, Iterable, Sequence, \
+    TextIO, TypeAlias, override
 
 import requests
 import selenium.common.exceptions
@@ -160,17 +160,36 @@ class ChromiumBasedWebDriver(
         logging.debug("Could not find fallback chromedriver: %s", e)
         raise original_download_error from e
 
-  @override
-  def _start_driver(self, session: BrowserSessionRunGroup,
-                    driver_path: pth.AnyPath) -> webdriver.Remote:
-    return self._start_chromedriver(session, driver_path)
+  # Matches Chromium's SessionStartupPref::kPrefValueURLs (open
+  # session.startup_urls on launch).
+  SESSION_RESTORE_URLS_PREF: ClassVar[int] = 4
 
-  def _start_chromedriver(self, session: BrowserSessionRunGroup,
-                          driver_path: pth.AnyPath) -> ChromiumDriver:
+  @override
+  def _validate_startup_urls(self, startup_urls: Sequence[str]) -> None:
+    if not startup_urls:
+      return
+    if self.attributes().is_desktop and not self.platform.is_chromeos:
+      return
+    raise NotImplementedError(
+        "startup_urls is only supported on desktop Chromium, not "
+        f"{type(self).__name__} ({self.platform}): {startup_urls}")
+
+  @override
+  def _start_driver(self,
+                    session: BrowserSessionRunGroup,
+                    driver_path: pth.AnyPath,
+                    startup_urls: Sequence[str] = ()) -> webdriver.Remote:
+    return self._start_chromedriver(
+        session, driver_path, startup_urls=startup_urls)
+
+  def _start_chromedriver(self,
+                          session: BrowserSessionRunGroup,
+                          driver_path: pth.AnyPath,
+                          startup_urls: Sequence[str] = ()) -> ChromiumDriver:
     assert not self._is_running
     assert self.log_file, "Missing log file"
     args = self._get_browser_flags_for_session(session)
-    options = self._create_options(session, args)
+    options = self._create_options(session, args, startup_urls=startup_urls)
 
     self._log_browser_start(args, driver_path)
     service_args: list[str] = []
@@ -206,9 +225,12 @@ class ChromiumBasedWebDriver(
                           {"size": 0})
     return driver
 
-  def _create_options(self, session: BrowserSessionRunGroup,
-                      args: Sequence[str]) -> ChromiumOptions:
+  def _create_options(self,
+                      session: BrowserSessionRunGroup,
+                      args: Sequence[str],
+                      startup_urls: Sequence[str] = ()) -> ChromiumOptions:
     assert not self._is_running
+    self._validate_startup_urls(startup_urls)
     options: ChromiumOptions = self.WEB_DRIVER_OPTIONS()
     options.set_capability("browserVersion", str(self.version.major))
     # Don't wait for document-ready.
@@ -226,6 +248,12 @@ class ChromiumBasedWebDriver(
       options.add_argument(arg)
     options.binary_location = os.fspath(self.path)
     session.setup_selenium_options(options)
+    if startup_urls:
+      prefs: dict[str, object] = dict(
+          options.experimental_options.get("prefs", {}))
+      prefs["session.restore_on_startup"] = self.SESSION_RESTORE_URLS_PREF
+      prefs["session.startup_urls"] = list(startup_urls)
+      options.add_experimental_option("prefs", prefs)
     return options
 
   @abc.abstractmethod

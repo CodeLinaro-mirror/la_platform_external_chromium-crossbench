@@ -201,9 +201,11 @@ class StubWebDriverBrowser(WebDriverBrowser):
     return pth.AnyPath("/usr/bin/fakedriver")
 
   @override
-  def _start_driver(self, session: BrowserSessionRunGroup,
-                    driver_path: pth.AnyPath) -> webdriver.Remote:
-    del session, driver_path
+  def _start_driver(self,
+                    session: BrowserSessionRunGroup,
+                    driver_path: pth.AnyPath,
+                    startup_urls: Sequence[str] = ()) -> webdriver.Remote:
+    del session, driver_path, startup_urls
     return self._private_driver
 
   @override

@@ -163,10 +163,13 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
       self._validate_driver_version()
 
   @override
-  def start(self, session: BrowserSessionRunGroup) -> None:
-    super().start(session)
+  def start(self,
+            session: BrowserSessionRunGroup,
+            startup_urls: Sequence[str] = ()) -> None:
+    super().start(session, startup_urls=startup_urls)
     try:
-      self._private_driver = self._start_driver(session, self.driver_path)
+      self._private_driver = self._start_driver(
+          session, self.driver_path, startup_urls=startup_urls)
     except selenium.common.exceptions.WebDriverException as e:
       self._handle_startup_error(e)
     self._is_running = True
@@ -270,8 +273,10 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
         time.sleep(1)
 
   @abc.abstractmethod
-  def _start_driver(self, session: BrowserSessionRunGroup,
-                    driver_path: pth.AnyPath) -> webdriver.Remote:
+  def _start_driver(self,
+                    session: BrowserSessionRunGroup,
+                    driver_path: pth.AnyPath,
+                    startup_urls: Sequence[str] = ()) -> webdriver.Remote:
     pass
 
   @override
@@ -536,8 +541,10 @@ class RemoteWebDriver(WebDriverBrowser):
     raise NotImplementedError
 
   @override
-  def _start_driver(self, session: BrowserSessionRunGroup,
-                    driver_path: pth.AnyPath) -> webdriver.Remote:
+  def _start_driver(self,
+                    session: BrowserSessionRunGroup,
+                    driver_path: pth.AnyPath,
+                    startup_urls: Sequence[str] = ()) -> webdriver.Remote:
     raise NotImplementedError
 
   @override
@@ -552,7 +559,12 @@ class RemoteWebDriver(WebDriverBrowser):
     pass
 
   @override
-  def start(self, session: BrowserSessionRunGroup) -> None:
+  def start(self,
+            session: BrowserSessionRunGroup,
+            startup_urls: Sequence[str] = ()) -> None:
+    del session
+    self._validate_startup_urls(startup_urls)
+    assert not startup_urls
     # Driver has already been started. We just need to mark it as running.
     self._is_running = True
     self._setup_window()

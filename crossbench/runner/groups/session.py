@@ -7,7 +7,7 @@ from __future__ import annotations
 import contextlib
 import enum
 import logging
-from typing import TYPE_CHECKING, Final, Iterable, Iterator, override
+from typing import TYPE_CHECKING, Final, Iterable, Iterator, Sequence, override
 
 from crossbench.flags.js_flags import JSFlags
 from crossbench.helper.cwd import change_cwd
@@ -358,7 +358,7 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     if self._browser.settings.start_browser:
       self.start_browser()
 
-  def start_browser(self) -> None:
+  def start_browser(self, startup_urls: Sequence[str] = ()) -> None:
     self._state.expect(State.STARTING, State.RUNNING)
     assert self.network.is_running, "Network isn't running yet"
     assert self._probe_session_context_manager.is_running
@@ -370,9 +370,9 @@ class BrowserSessionRunGroup(RunGroup, ResultOrigin):
     self._browser_start_count += 1
     with self.measure(measure_name):
       try:
-        self._browser.start(self)
+        self._browser.start(self, startup_urls=startup_urls)
         assert self._browser.is_running, "Browser did not start up correctly"
-        if self._browser_start_count == 1:
+        if self._browser_start_count == 1 and not startup_urls:
           try:
             self._browser.close_all_tabs()
           except NotImplementedError:

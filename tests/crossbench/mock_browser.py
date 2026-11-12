@@ -142,10 +142,17 @@ class MockBrowser(Browser, metaclass=abc.ABCMeta):
     self._cache_dir = None
 
   @override
-  def start(self, session: BrowserSessionRunGroup) -> None:
+  def start(self,
+            session: BrowserSessionRunGroup,
+            startup_urls: Sequence[str] = ()) -> None:
+    del session
     assert not self._is_running
+    self._validate_startup_urls(startup_urls)
     self._is_running = True
     self.did_run = True
+    self.url_list.extend(startup_urls)
+    if startup_urls:
+      self._current_url = startup_urls[0]
 
   @override
   def force_quit(self) -> None:
@@ -320,6 +327,16 @@ class MockChromiumBasedBrowser(
   @override
   def features(self) -> ChromeFeatures:
     return self.chrome_flags.features
+
+  @override
+  def _validate_startup_urls(self, startup_urls: Sequence[str]) -> None:
+    if not startup_urls:
+      return
+    if self.attributes().is_desktop and not self.platform.is_chromeos:
+      return
+    raise NotImplementedError(
+        "startup_urls is only supported on desktop Chromium, not "
+        f"{type(self).__name__} ({self.platform}): {startup_urls}")
 
   @classmethod
   @override

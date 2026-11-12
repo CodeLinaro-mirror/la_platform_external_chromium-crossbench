@@ -194,11 +194,21 @@ class ActionBlockTestCase(unittest.TestCase):
 
   def test_first_url_missing(self) -> None:
     wait = WaitAction.create(duration=dt.timedelta(seconds=1))
-    for block in (ActionBlock(), ActionBlock(actions=(wait,))):
+    for block in (
+        ActionBlock(),
+        ActionBlock(actions=(wait,)),
+        ActionBlock(actions=(StartBrowserAction(),)),
+    ):
       with self.subTest(actions=tuple(str(a.TYPE) for a in block)):
         with self.assertRaisesRegex(RuntimeError,
                                     "No GET action with an URL found."):
           _ = block.first_url
+
+  def test_first_url_from_start_browser_action(self) -> None:
+    start_with_url = StartBrowserAction(
+        startup_urls=("https://www.google.com/",))
+    block = ActionBlock(actions=(start_with_url,))
+    self.assertEqual(block.first_url, "https://www.google.com/")
 
 
 class LoginBlockTestCase(unittest.TestCase):

@@ -15,6 +15,7 @@ from crossbench.action_runner.action.action import Action
 from crossbench.action_runner.action.action_type import ActionType
 from crossbench.action_runner.action.all import ACTIONS_TUPLE
 from crossbench.action_runner.action.get import GetAction
+from crossbench.action_runner.action.start_browser import StartBrowserAction
 from crossbench.action_runner.action.wait_for_ready_state import \
     WaitForReadyStateAction
 from crossbench.config import ConfigError, ConfigObject, ConfigParser
@@ -172,6 +173,10 @@ class ActionBlock(ConfigObject):
         if action.TYPE == ActionType.GET:
           assert isinstance(action, GetAction)
           return action.url
+        if action.TYPE == ActionType.START_BROWSER:
+          assert isinstance(action, StartBrowserAction)
+          if startup_urls := action.startup_urls:
+            return startup_urls[0]
     return None
 
   @property

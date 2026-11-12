@@ -17,6 +17,7 @@ from crossbench.benchmarks.benchmark_probe import BenchmarkProbeMixin
 from crossbench.benchmarks.loading.config.pages import PagesConfig
 from crossbench.benchmarks.loading.loading_benchmark import LoadingBenchmark, \
     LoadingPageFilter
+from crossbench.browsers.splash_screen import SplashScreen
 from crossbench.parse import ObjectParser
 from crossbench.probes.probe import Probe, ProbePriority
 from crossbench.probes.probe_context import EmptyProbeContext
@@ -159,22 +160,22 @@ class BrowserStartupPageFilter(LoadingPageFilter):
   @override
   def _add_story_grouping_arguments(
       cls, group: argparse._MutuallyExclusiveGroup) -> None:
-    group.add_argument(
-        "--combined",
-        dest="separate",
-        action="store_false",
-        help="Run each story in the same session.")
+    # Browser startup stories each launch a fresh browser and cannot be
+    # combined.
     group.add_argument(
         "--separate",
-        action="store_true",
-        help="Run each story in a fresh browser. (default)")
-    group.set_defaults(separate=True)
+        action="store_const",
+        const=True,
+        default=True,
+        help="Run each story in a fresh browser (enabled by default).")
 
 
 class BrowserStartupBenchmark(LoadingBenchmark):
   """Benchmark for measuring browser startup performance."""
 
   NAME = "browser-startup"
+  DEFAULT_SPLASH_SCREEN: ClassVar[SplashScreen] = SplashScreen.NONE
+  DEFAULT_START_BROWSER: ClassVar[bool] = False
   PROBES: ClassVar = (BrowserStartupProbe,)
   STORY_FILTER_CLS: ClassVar = BrowserStartupPageFilter
 

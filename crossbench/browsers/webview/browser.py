@@ -48,9 +48,12 @@ class WebviewBrowser(Webview):
     pass
 
   @override
-  def _create_options(self, session: BrowserSessionRunGroup,
-                      args: Sequence[str]) -> ChromiumOptions:
-    options = super()._create_options(session, args)
+  def _create_options(self,
+                      session: BrowserSessionRunGroup,
+                      args: Sequence[str],
+                      startup_urls: Sequence[str] = ()) -> ChromiumOptions:
+    options = super()._create_options(
+        session, args, startup_urls=startup_urls)
     # Needed because WebView/WebLayer apps require activity name.
     options.add_experimental_option("androidActivity", self._android_activity)
     return options

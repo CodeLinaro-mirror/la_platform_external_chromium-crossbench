@@ -17,6 +17,7 @@ from ordered_set import OrderedSet
 
 from crossbench import path as pth
 from crossbench.action_runner.config import ActionRunnerConfig
+from crossbench.browsers.splash_screen import SplashScreen
 from crossbench.cli.config.network import NetworkConfig
 from crossbench.flags.base import Flags
 from crossbench.helper import txt_helper
@@ -62,6 +63,8 @@ class Benchmark(abc.ABC):
   PROBES: ClassVar[tuple[type[BenchmarkProbeMixin], ...]] = ()
   DEFAULT_REPETITIONS: ClassVar[int] = 1
   DEFAULT_COOL_DOWN: ClassVar[dt.timedelta] = dt.timedelta(seconds=2)
+  DEFAULT_SPLASH_SCREEN: ClassVar[SplashScreen] = SplashScreen.DEFAULT
+  DEFAULT_START_BROWSER: ClassVar[bool] = True
 
   @classmethod
   def cli_help(cls) -> str:

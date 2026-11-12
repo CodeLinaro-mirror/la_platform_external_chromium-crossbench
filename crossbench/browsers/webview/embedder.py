@@ -61,7 +61,11 @@ class WebviewEmbedder(Webview):
     self._session: BrowserSessionRunGroup | None = None
 
   @override
-  def start(self, session: BrowserSessionRunGroup) -> None:
+  def start(self,
+            session: BrowserSessionRunGroup,
+            startup_urls: Sequence[str] = ()) -> None:
+    self._validate_startup_urls(startup_urls)
+    assert not startup_urls
     # Start is a no-op. Embedder activity will be started by the Benchmark.
     # Webview will be started by the Embedder. Driver will be started
     # by the ProbeContext. We do, however, need to run custom setup commands,
@@ -105,8 +109,11 @@ class WebviewEmbedder(Webview):
       self._session = None
 
   @override
-  def _start_driver(self, session: BrowserSessionRunGroup,
-                    driver_path: pth.AnyPath) -> ChromiumDriver:
+  def _start_driver(self,
+                    session: BrowserSessionRunGroup,
+                    driver_path: pth.AnyPath,
+                    startup_urls: Sequence[str] = ()) -> ChromiumDriver:
+    assert not startup_urls
     options = self._create_options(session, [])
     service = webdriver.ChromeService(executable_path=os.fspath(driver_path))
     driver = webdriver.Chrome(options=options, service=service)
@@ -138,8 +145,12 @@ class WebviewEmbedder(Webview):
     raise RuntimeError("Failed to attach driver")
 
   @override
-  def _create_options(self, session: BrowserSessionRunGroup,
-                      args: Sequence[str]) -> ChromeOptions:
+  def _create_options(self,
+                      session: BrowserSessionRunGroup,
+                      args: Sequence[str],
+                      startup_urls: Sequence[str] = ()) -> ChromeOptions:
+    del args
+    assert not startup_urls
     options = ChromeOptions()
     options.add_experimental_option("androidPackage", self.android_package)
     session_benchmark = cast("EmbedderBenchmark", session.benchmark)

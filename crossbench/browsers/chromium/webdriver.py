@@ -183,8 +183,10 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
   )
 
   @override
-  def _start_driver(self, session: BrowserSessionRunGroup,
-                    driver_path: pth.AnyPath) -> webdriver.Remote:
+  def _start_driver(self,
+                    session: BrowserSessionRunGroup,
+                    driver_path: pth.AnyPath,
+                    startup_urls: Sequence[str] = ()) -> webdriver.Remote:
     self.adb_force_stop()
     if not self._has_started_in_session:
       if session.browser.wipe_system_user_data or self.clear_cache_dir:
@@ -192,7 +194,8 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
         self._setup_binary_permissions()
       self._has_started_in_session = True
     self._backup_chrome_flags()
-    driver = self._start_chromedriver(session, driver_path)
+    driver = self._start_chromedriver(
+        session, driver_path, startup_urls=startup_urls)
     self._dismiss_any_os_permission_prompts()
     return driver
 
@@ -292,9 +295,12 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
     self._previous_command_line_contents = None
 
   @override
-  def _create_options(self, session: BrowserSessionRunGroup,
-                      args: Sequence[str]) -> ChromiumOptions:
-    options: ChromiumOptions = super()._create_options(session, args)
+  def _create_options(self,
+                      session: BrowserSessionRunGroup,
+                      args: Sequence[str],
+                      startup_urls: Sequence[str] = ()) -> ChromiumOptions:
+    options: ChromiumOptions = super()._create_options(
+        session, args, startup_urls=startup_urls)
     options.binary_location = ""
     options.add_experimental_option("androidPackage", self.android_package)
     options.add_experimental_option("androidDeviceSerial",
@@ -532,11 +538,13 @@ class ChromiumWebDriverSsh(ChromiumBasedWebDriver):
     return self._platform
 
   @override
-  def _start_driver(self, session: BrowserSessionRunGroup,
-                    driver_path: pth.AnyPath) -> RemoteWebDriver:
+  def _start_driver(self,
+                    session: BrowserSessionRunGroup,
+                    driver_path: pth.AnyPath,
+                    startup_urls: Sequence[str] = ()) -> RemoteWebDriver:
     del driver_path
     args = self._get_browser_flags_for_session(session)
-    options = self._create_options(session, args)
+    options = self._create_options(session, args, startup_urls=startup_urls)
     platform = self.platform
     host = platform.host
     port = platform.port
@@ -569,9 +577,12 @@ class ChromiumWebDriverChromeOsSsh(ChromiumBasedWebDriver):
   )
 
   @override
-  def _start_driver(self, session: BrowserSessionRunGroup,
-                    driver_path: pth.AnyPath) -> RemoteWebDriver:
+  def _start_driver(self,
+                    session: BrowserSessionRunGroup,
+                    driver_path: pth.AnyPath,
+                    startup_urls: Sequence[str] = ()) -> RemoteWebDriver:
     del driver_path
+    assert not startup_urls
     platform = self.platform
     host = platform.host
     port = platform.port

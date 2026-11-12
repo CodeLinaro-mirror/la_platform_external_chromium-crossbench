@@ -293,6 +293,15 @@
       {
         "action": "start_browser"
       }
+      {
+        "action": "stop_browser"
+      }
+      {
+        "action": "start_browser"
+        "startup_urls": [
+          "http://crossben.ch"
+        ]
+      }
     ]
     "stop_browser": [
       {

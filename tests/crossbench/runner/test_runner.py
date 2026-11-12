@@ -9,7 +9,7 @@ import json
 import logging
 import pathlib
 import unittest
-from typing import TYPE_CHECKING, Any, Iterator, override
+from typing import TYPE_CHECKING, Any, Iterator, Sequence, override
 from unittest import mock
 
 from crossbench.browsers.settings import Settings
@@ -274,12 +274,13 @@ class RunnerTestCase(BaseRunnerTestCase):
     original_start = browser.start
     start_count = 0
 
-    def mock_start_fail_once(session: BrowserSessionRunGroup) -> None:
+    def mock_start_fail_once(session: BrowserSessionRunGroup,
+                             startup_urls: Sequence[str] = ()) -> None:
       nonlocal start_count
       start_count += 1
       if start_count == 2:
         raise CustomException("failed to change window state to 'normal'")
-      original_start(session)
+      original_start(session, startup_urls=startup_urls)
 
     browser.start = mock_start_fail_once
     with self.assertRaises(RunnerException):
@@ -844,8 +845,9 @@ class RunThreadGroupTestCase(BaseRunnerTestCase):
 
     setup_fail_count = 0
 
-    def mock_start_fail(session: BrowserSessionRunGroup) -> None:
-      del session
+    def mock_start_fail(session: BrowserSessionRunGroup,
+                        startup_urls: Sequence[str] = ()) -> None:
+      del session, startup_urls
       nonlocal setup_fail_count
       setup_fail_count += 1
       raise CustomException

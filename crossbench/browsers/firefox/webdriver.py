@@ -9,7 +9,7 @@ import os
 import shutil
 import stat
 import tempfile
-from typing import TYPE_CHECKING, Final, override
+from typing import TYPE_CHECKING, Final, Sequence, override
 
 from selenium import webdriver
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
@@ -34,8 +34,11 @@ class FirefoxWebDriver(WebDriverBrowser, Firefox):
     return finder.download()
 
   @override
-  def _start_driver(self, session: BrowserSessionRunGroup,
-                    driver_path: pth.AnyPath) -> webdriver.Remote:
+  def _start_driver(self,
+                    session: BrowserSessionRunGroup,
+                    driver_path: pth.AnyPath,
+                    startup_urls: Sequence[str] = ()) -> webdriver.Remote:
+    assert not startup_urls
     return self._start_firefox_driver(session, driver_path)
 
   def _start_firefox_driver(self, session: BrowserSessionRunGroup,

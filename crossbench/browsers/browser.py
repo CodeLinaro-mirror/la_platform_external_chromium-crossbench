@@ -414,10 +414,19 @@ class Browser(abc.ABC):
     finally:
       self._cache_dir = None
 
-  def start(self, session: BrowserSessionRunGroup) -> None:
+  def start(self,
+            session: BrowserSessionRunGroup,
+            startup_urls: Sequence[str] = ()) -> None:
     del session
     assert not self._is_running, (
         "Previously used browser was not correctly stopped.")
+    self._validate_startup_urls(startup_urls)
+
+  def _validate_startup_urls(self, startup_urls: Sequence[str]) -> None:
+    if startup_urls:
+      raise NotImplementedError(
+          f"startup_urls is not supported on {type(self).__name__}: "
+          f"{startup_urls}")
 
   def _log_browser_start(self,
                          args: tuple[str, ...],

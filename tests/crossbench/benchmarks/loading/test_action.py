@@ -1436,9 +1436,40 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(action.TYPE, ActionType.CLOSE_ALL_TABS)
 
   def test_parse_start_browser(self) -> None:
-    config_dict = {"action": "start_browser"}
+    config_dict: dict[str, object] = {"action": "start_browser"}
     action = StartBrowserAction.parse(config_dict)
     self.assertEqual(action.TYPE, ActionType.START_BROWSER)
+    self.assertEqual(action.startup_urls, ())
+    action.validate()
+
+    action_single_url = StartBrowserAction.parse({
+        "action": "start_browser",
+        "startup_urls": ["https://www.google.com/"],
+    })
+    self.assertEqual(action_single_url.startup_urls,
+                     ("https://www.google.com/",))
+    action_single_url.validate()
+
+    action_roundtrip = StartBrowserAction.parse_dict(
+        dict(action_single_url.to_json()))
+    self.assertEqual(action_single_url, action_roundtrip)
+
+    action_multi_urls = StartBrowserAction.parse({
+        "action": "start_browser",
+        "startup_urls": ["https://www.google.com/", "about:blank"],
+    })
+    self.assertEqual(action_multi_urls.startup_urls,
+                     ("https://www.google.com/", "about:blank"))
+    action_multi_urls.validate()
+
+    action_str_url = StartBrowserAction.parse({
+        "action": "start_browser",
+        "startup_urls": "https://www.google.com/",
+    })
+    self.assertEqual(action_str_url.startup_urls, ("https://www.google.com/",))
+
+    with self.assertRaisesRegex(ValueError, "empty URL"):
+      StartBrowserAction(startup_urls=("",))
 
   def test_parse_stop_browser(self) -> None:
     config_dict = {"action": "stop_browser"}

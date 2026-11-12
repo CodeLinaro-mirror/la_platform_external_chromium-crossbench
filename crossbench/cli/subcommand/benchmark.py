@@ -342,7 +342,7 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
         "--splashscreen",
         "--splash",
         type=SplashScreen.parse,
-        default=SplashScreen.DETAILED,
+        default=self._benchmark_cls.DEFAULT_SPLASH_SCREEN,
         help=("Set the splashscreen shown before each run. "
               "Choices: 'default', 'none', 'minimal', 'detailed,' or "
               "a path or a URL."))
@@ -358,7 +358,9 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
     start_browser_group.add_argument(
         "--no-start-browser",
         dest="start_browser",
-        action="store_false",
+        const=False,
+        action="store_const",
+        default=self._benchmark_cls.DEFAULT_START_BROWSER,
         help="Do not start the browser at the beginning of a session.")
     start_browser_group.add_argument(
         "--start-browser",
@@ -368,7 +370,8 @@ class BenchmarkSubcommand(CrossbenchSubcommand):
         default=None,
         type=ObjectParser.bool,
         help=("Whether to start the browser at the beginning of a session. "
-              "Defaults to true."))
+              "Defaults to "
+              f"{str(self._benchmark_cls.DEFAULT_START_BROWSER).lower()}."))
 
     viewport_group = browser_group.add_mutually_exclusive_group()
 

@@ -132,8 +132,11 @@ class AppleScriptBrowser(Browser, metaclass=abc.ABCMeta):
     self._check_system_events_allowed(env)
 
   @override
-  def start(self, session: BrowserSessionRunGroup) -> None:
-    super().start(session)
+  def start(self,
+            session: BrowserSessionRunGroup,
+            startup_urls: Sequence[str] = ()) -> None:
+    super().start(session, startup_urls=startup_urls)
+    assert not startup_urls
     # Start process directly
     startup_flags = self._get_browser_flags_for_session(session)
     self._log_browser_start(startup_flags)

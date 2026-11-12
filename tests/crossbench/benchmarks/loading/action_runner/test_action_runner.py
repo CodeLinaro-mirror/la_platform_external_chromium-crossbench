@@ -22,6 +22,7 @@ from crossbench.action_runner.action.position import PositionConfig
 from crossbench.action_runner.action.probe import ProbeAction
 from crossbench.action_runner.action.raw_input import RawInputAction
 from crossbench.action_runner.action.scroll import ScrollAction
+from crossbench.action_runner.action.start_browser import StartBrowserAction
 from crossbench.action_runner.action.swipe import SwipeAction
 from crossbench.action_runner.action.text_input import TextInputAction
 from crossbench.action_runner.action_runner import SCRIPTS_DIR, ActionRunner, \
@@ -1187,6 +1188,25 @@ class ActionRunnerInputTestCase(ActionRunnerTestCase):
     with self.assertRaisesRegex(NotImplementedError,
                                 "'close_all_apps' is not supported"):
       self.run_action(action)
+
+  def test_start_browser_default(self) -> None:
+    action = StartBrowserAction()
+    with mock.patch.object(
+        self.action_runner.run.browser_session,
+        "start_browser",
+    ) as mock_start_browser:
+      self.run_action(action)
+    mock_start_browser.assert_called_once_with(())
+
+  def test_start_browser_with_startup_urls(self) -> None:
+    startup_urls = ("https://www.google.com/", "about:blank")
+    action = StartBrowserAction(startup_urls=startup_urls)
+    with mock.patch.object(
+        self.action_runner.run.browser_session,
+        "start_browser",
+    ) as mock_start_browser:
+      self.run_action(action)
+    mock_start_browser.assert_called_once_with(startup_urls)
 
 
 

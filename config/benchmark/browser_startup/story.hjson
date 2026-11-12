@@ -2,23 +2,91 @@
   "pages": {
     "newtab_startup": [
       {
-        "action": "get"
-        "url": "chrome://newtab/"
+        "action": "start_browser"
+        "startup_urls": [
+          "chrome://newtab/"
+        ]
+      }
+      {
+        "action": "wait_for_url_matches"
+        "url_pattern": "^chrome://"
+      }
+      {
+        "action": "wait_for_ready_state"
         "ready_state": "complete"
       }
-    ],
+      {
+        "action": "wait_for_condition"
+        "condition":
+          '''
+          if (!window.__cb_startup_raf_started) {
+            window.__cb_startup_raf_started = true;
+            requestAnimationFrame(() => {
+              requestAnimationFrame(() => {
+                window.__cb_startup_raf_done = true;
+              });
+            });
+          }
+          return Boolean(window.__cb_startup_raf_done);
+          '''
+      }
+    ]
     "blank_startup": [
       {
-        "action": "get"
-        "url": "about:blank"
+        "action": "start_browser"
+        "startup_urls": [
+          "about:blank"
+        ]
+      }
+      {
+        "action": "wait_for_ready_state"
         "ready_state": "complete"
       }
-    ],
+      {
+        "action": "wait_for_condition"
+        "condition":
+          '''
+          if (!window.__cb_startup_raf_started) {
+            window.__cb_startup_raf_started = true;
+            requestAnimationFrame(() => {
+              requestAnimationFrame(() => {
+                window.__cb_startup_raf_done = true;
+              });
+            });
+          }
+          return Boolean(window.__cb_startup_raf_done);
+          '''
+      }
+    ]
     "google_startup": [
       {
-        "action": "get"
-        "url": "https://www.google.com/"
+        "action": "start_browser"
+        "startup_urls": [
+          "https://www.google.com/"
+        ]
+      }
+      {
+        "action": "wait_for_url_matches"
+        "url_pattern": "^https://"
+      }
+      {
+        "action": "wait_for_ready_state"
         "ready_state": "complete"
+      }
+      {
+        "action": "wait_for_condition"
+        "condition":
+          '''
+          if (!window.__cb_startup_raf_started) {
+            window.__cb_startup_raf_started = true;
+            requestAnimationFrame(() => {
+              requestAnimationFrame(() => {
+                window.__cb_startup_raf_done = true;
+              });
+            });
+          }
+          return Boolean(window.__cb_startup_raf_done);
+          '''
       }
     ]
   }
