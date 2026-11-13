@@ -244,10 +244,6 @@ Adding `run_on_device: false,` to the corresponding network config file
 `config/benchmark/loadline/network_config_phone.hjson` or
 `config/benchmark/loadline/network_config_tablet.hjson`.
 
-Note golang must be available on the host machine. Check
-[go.mod](https://chromium.googlesource.com/webpagereplay/+/HEAD/go.mod)
-for the minimum version.
-
 ### Run the benchmark with full set of experimental metrics
 
 Sometimes to investigate a source of a regression, or get deeper insights,

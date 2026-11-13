@@ -54,7 +54,7 @@ use Ethernet connection.
 
 * Install required packages on the host and add `dnsmasq` to PATH
   * E.g. on Mac:
-    `brew install go dnsmasq && export PATH=$PATH:/opt/homebrew/opt/dnsmasq/sbin`
+    `brew install dnsmasq && export PATH=$PATH:/opt/homebrew/opt/dnsmasq/sbin`
 
 ## Running the benchmark
 
