@@ -10,6 +10,14 @@
         // activity and polling. Values:
         // 0 = OFF, 1 = SENSORS_ONLY, 2 = BATTERY_SAVING, 3 = HIGH_ACCURACY.
         "location_mode": 0
+
+        // Disables Night Light (amber display tint) to keep panel color
+        // temperature and OLED subpixel power draw consistent. Default / unset
+        // is "null" (or 0 once toggled OFF; 1 = ON).
+        "night_display_activated": [
+          "null"
+          0
+        ]
       }
       "global": {
         // Keeps the display awake whenever the device is plugged in.
