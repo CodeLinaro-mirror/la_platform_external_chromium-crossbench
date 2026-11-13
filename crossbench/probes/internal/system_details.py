@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar, override
+from typing import TYPE_CHECKING, ClassVar, cast, override
 
 from crossbench.probes.internal.base import (
   InternalJsonResultProbe,
@@ -32,4 +32,10 @@ class SystemDetailsProbe(InternalJsonResultProbe):
 class SystemDetailsProbeContext(InternalJsonResultProbeContext):
   @override
   def to_json(self, actions: Actions) -> Json:
-    return self.run.browser_platform.system_details()
+    details = dict(self.browser_platform.system_details())
+    # The Crossbench checkout lives on the platform that runs Crossbench,
+    # which is not necessarily the browser platform (e.g. mobile platforms).
+    details["crossbench"] = cast(
+      "Json", self.runner.platform.crossbench_details()
+    )
+    return details
