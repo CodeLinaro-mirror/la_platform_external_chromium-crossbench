@@ -112,7 +112,15 @@ class GpuCounterDescriptor(_message.Message):
     PERCENT: GpuCounterDescriptor.MeasureUnit
     INSTRUCTION: GpuCounterDescriptor.MeasureUnit
     class GpuCounterSpec(_message.Message):
-        __slots__ = ("counter_id", "name", "description", "int_peak_value", "double_peak_value", "numerator_units", "denominator_units", "select_by_default", "groups")
+        __slots__ = ("counter_id", "name", "description", "int_peak_value", "double_peak_value", "numerator_units", "denominator_units", "select_by_default", "groups", "value_direction")
+        class ValueDirection(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
+            __slots__ = ()
+            VALUE_DIRECTION_UNSPECIFIED: _ClassVar[GpuCounterDescriptor.GpuCounterSpec.ValueDirection]
+            VALUE_DIRECTION_BACKWARDS_LOOKING: _ClassVar[GpuCounterDescriptor.GpuCounterSpec.ValueDirection]
+            VALUE_DIRECTION_FORWARDS_LOOKING: _ClassVar[GpuCounterDescriptor.GpuCounterSpec.ValueDirection]
+        VALUE_DIRECTION_UNSPECIFIED: GpuCounterDescriptor.GpuCounterSpec.ValueDirection
+        VALUE_DIRECTION_BACKWARDS_LOOKING: GpuCounterDescriptor.GpuCounterSpec.ValueDirection
+        VALUE_DIRECTION_FORWARDS_LOOKING: GpuCounterDescriptor.GpuCounterSpec.ValueDirection
         COUNTER_ID_FIELD_NUMBER: _ClassVar[int]
         NAME_FIELD_NUMBER: _ClassVar[int]
         DESCRIPTION_FIELD_NUMBER: _ClassVar[int]
@@ -122,6 +130,7 @@ class GpuCounterDescriptor(_message.Message):
         DENOMINATOR_UNITS_FIELD_NUMBER: _ClassVar[int]
         SELECT_BY_DEFAULT_FIELD_NUMBER: _ClassVar[int]
         GROUPS_FIELD_NUMBER: _ClassVar[int]
+        VALUE_DIRECTION_FIELD_NUMBER: _ClassVar[int]
         counter_id: int
         name: str
         description: str
@@ -131,7 +140,8 @@ class GpuCounterDescriptor(_message.Message):
         denominator_units: _containers.RepeatedScalarFieldContainer[GpuCounterDescriptor.MeasureUnit]
         select_by_default: bool
         groups: _containers.RepeatedScalarFieldContainer[GpuCounterDescriptor.GpuCounterGroup]
-        def __init__(self, counter_id: _Optional[int] = ..., name: _Optional[str] = ..., description: _Optional[str] = ..., int_peak_value: _Optional[int] = ..., double_peak_value: _Optional[float] = ..., numerator_units: _Optional[_Iterable[_Union[GpuCounterDescriptor.MeasureUnit, str]]] = ..., denominator_units: _Optional[_Iterable[_Union[GpuCounterDescriptor.MeasureUnit, str]]] = ..., select_by_default: _Optional[bool] = ..., groups: _Optional[_Iterable[_Union[GpuCounterDescriptor.GpuCounterGroup, str]]] = ...) -> None: ...
+        value_direction: GpuCounterDescriptor.GpuCounterSpec.ValueDirection
+        def __init__(self, counter_id: _Optional[int] = ..., name: _Optional[str] = ..., description: _Optional[str] = ..., int_peak_value: _Optional[int] = ..., double_peak_value: _Optional[float] = ..., numerator_units: _Optional[_Iterable[_Union[GpuCounterDescriptor.MeasureUnit, str]]] = ..., denominator_units: _Optional[_Iterable[_Union[GpuCounterDescriptor.MeasureUnit, str]]] = ..., select_by_default: _Optional[bool] = ..., groups: _Optional[_Iterable[_Union[GpuCounterDescriptor.GpuCounterGroup, str]]] = ..., value_direction: _Optional[_Union[GpuCounterDescriptor.GpuCounterSpec.ValueDirection, str]] = ...) -> None: ...
     class GpuCounterBlock(_message.Message):
         __slots__ = ("block_id", "block_capacity", "name", "description", "counter_ids")
         BLOCK_ID_FIELD_NUMBER: _ClassVar[int]

@@ -8,7 +8,7 @@ from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class AndroidInputEventConfig(_message.Message):
-    __slots__ = ("mode", "rules", "trace_dispatcher_input_events", "trace_dispatcher_window_dispatch")
+    __slots__ = ("mode", "rules", "trace_dispatcher_input_events", "trace_dispatcher_window_dispatch", "trace_evdev_events")
     class TraceMode(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
         __slots__ = ()
         TRACE_MODE_TRACE_ALL: _ClassVar[AndroidInputEventConfig.TraceMode]
@@ -40,8 +40,10 @@ class AndroidInputEventConfig(_message.Message):
     RULES_FIELD_NUMBER: _ClassVar[int]
     TRACE_DISPATCHER_INPUT_EVENTS_FIELD_NUMBER: _ClassVar[int]
     TRACE_DISPATCHER_WINDOW_DISPATCH_FIELD_NUMBER: _ClassVar[int]
+    TRACE_EVDEV_EVENTS_FIELD_NUMBER: _ClassVar[int]
     mode: AndroidInputEventConfig.TraceMode
     rules: _containers.RepeatedCompositeFieldContainer[AndroidInputEventConfig.TraceRule]
     trace_dispatcher_input_events: bool
     trace_dispatcher_window_dispatch: bool
-    def __init__(self, mode: _Optional[_Union[AndroidInputEventConfig.TraceMode, str]] = ..., rules: _Optional[_Iterable[_Union[AndroidInputEventConfig.TraceRule, _Mapping]]] = ..., trace_dispatcher_input_events: _Optional[bool] = ..., trace_dispatcher_window_dispatch: _Optional[bool] = ...) -> None: ...
+    trace_evdev_events: bool
+    def __init__(self, mode: _Optional[_Union[AndroidInputEventConfig.TraceMode, str]] = ..., rules: _Optional[_Iterable[_Union[AndroidInputEventConfig.TraceRule, _Mapping]]] = ..., trace_dispatcher_input_events: _Optional[bool] = ..., trace_dispatcher_window_dispatch: _Optional[bool] = ..., trace_evdev_events: _Optional[bool] = ...) -> None: ...

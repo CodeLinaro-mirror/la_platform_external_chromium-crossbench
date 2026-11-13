@@ -3,6 +3,7 @@ from protos.perfetto.config.android import android_game_intervention_list_config
 from protos.perfetto.config.android import android_input_event_config_pb2 as _android_input_event_config_pb2
 from protos.perfetto.config.android import android_log_config_pb2 as _android_log_config_pb2
 from protos.perfetto.config.android import android_polled_state_config_pb2 as _android_polled_state_config_pb2
+from protos.perfetto.config.android import android_process_state_config_pb2 as _android_process_state_config_pb2
 from protos.perfetto.config.android import android_system_property_config_pb2 as _android_system_property_config_pb2
 from protos.perfetto.config.android import android_sdk_sysprop_guard_config_pb2 as _android_sdk_sysprop_guard_config_pb2
 from protos.perfetto.config.android import app_wakelock_config_pb2 as _app_wakelock_config_pb2
@@ -13,6 +14,7 @@ from protos.perfetto.config.android import network_trace_config_pb2 as _network_
 from protos.perfetto.config.android import packages_list_config_pb2 as _packages_list_config_pb2
 from protos.perfetto.config.android import pixel_modem_config_pb2 as _pixel_modem_config_pb2
 from protos.perfetto.config.android import protolog_config_pb2 as _protolog_config_pb2
+from protos.perfetto.config.android import display_video_config_pb2 as _display_video_config_pb2
 from protos.perfetto.config.android import surfaceflinger_layers_config_pb2 as _surfaceflinger_layers_config_pb2
 from protos.perfetto.config.android import surfaceflinger_transactions_config_pb2 as _surfaceflinger_transactions_config_pb2
 from protos.perfetto.config.android import user_list_config_pb2 as _user_list_config_pb2
@@ -36,22 +38,28 @@ from protos.perfetto.config.process_stats import process_stats_config_pb2 as _pr
 from protos.perfetto.config.profiling import heapprofd_config_pb2 as _heapprofd_config_pb2
 from protos.perfetto.config.profiling import java_hprof_config_pb2 as _java_hprof_config_pb2
 from protos.perfetto.config.profiling import perf_event_config_pb2 as _perf_event_config_pb2
+from protos.perfetto.config.profiling import smaps_config_pb2 as _smaps_config_pb2
 from protos.perfetto.config.sys_stats import sys_stats_config_pb2 as _sys_stats_config_pb2
 from protos.perfetto.config import test_config_pb2 as _test_config_pb2
 from protos.perfetto.config.track_event import track_event_config_pb2 as _track_event_config_pb2
 from protos.perfetto.config.system_info import system_info_config_pb2 as _system_info_config_pb2
 from protos.perfetto.config.chrome import histogram_samples_pb2 as _histogram_samples_pb2
+from protos.perfetto.config.chrome import sampling_heap_profiler_pb2 as _sampling_heap_profiler_pb2
+from protos.perfetto.config.chrome import stack_sampling_profiler_pb2 as _stack_sampling_profiler_pb2
+from protos.perfetto.config.linux import cgroup_config_pb2 as _cgroup_config_pb2
+from protos.perfetto.config.linux import journald_config_pb2 as _journald_config_pb2
 from protos.perfetto.config.qnx import qnx_config_pb2 as _qnx_config_pb2
+from google.protobuf.internal import containers as _containers
 from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
-from collections.abc import Mapping as _Mapping
+from collections.abc import Iterable as _Iterable, Mapping as _Mapping
 from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class DataSourceConfig(_message.Message):
-    __slots__ = ("name", "target_buffer", "target_buffer_name", "trace_duration_ms", "prefer_suspend_clock_for_duration", "stop_timeout_ms", "enable_extra_guardrails", "session_initiator", "tracing_session_id", "buffer_exhausted_policy", "priority_boost", "protovm_config", "ftrace_config", "inode_file_config", "process_stats_config", "sys_stats_config", "heapprofd_config", "java_hprof_config", "android_power_config", "android_log_config", "gpu_counter_config", "android_game_intervention_list_config", "packages_list_config", "perf_event_config", "vulkan_memory_config", "track_event_config", "android_polled_state_config", "android_system_property_config", "statsd_tracing_config", "system_info_config", "frozen_ftrace_config", "chrome_config", "v8_config", "interceptor_config", "network_packet_trace_config", "surfaceflinger_layers_config", "surfaceflinger_transactions_config", "android_sdk_sysprop_guard_config", "etw_config", "protolog_config", "android_input_event_config", "pixel_modem_config", "windowmanager_config", "chromium_system_metrics", "kernel_wakelocks_config", "gpu_renderstages_config", "chromium_histogram_samples", "app_wakelocks_config", "cpu_per_uid_config", "user_list_config", "inputmethod_config", "android_aflags_config", "qnx_config", "legacy_config", "for_testing")
+    __slots__ = ("name", "target_buffer", "target_buffer_name", "trace_duration_ms", "prefer_suspend_clock_for_duration", "stop_timeout_ms", "enable_extra_guardrails", "session_initiator", "tracing_session_id", "buffer_exhausted_policy", "priority_boost", "protovm_config", "supports_tracing_v2", "experimental_tracing_v2", "ftrace_config", "inode_file_config", "process_stats_config", "sys_stats_config", "heapprofd_config", "java_hprof_config", "android_power_config", "android_log_config", "gpu_counter_config", "android_game_intervention_list_config", "packages_list_config", "perf_event_config", "vulkan_memory_config", "track_event_config", "android_polled_state_config", "android_system_property_config", "statsd_tracing_config", "system_info_config", "frozen_ftrace_config", "chrome_config", "v8_config", "interceptor_config", "network_packet_trace_config", "surfaceflinger_layers_config", "surfaceflinger_transactions_config", "android_sdk_sysprop_guard_config", "etw_config", "protolog_config", "android_input_event_config", "pixel_modem_config", "windowmanager_config", "chromium_system_metrics", "kernel_wakelocks_config", "gpu_renderstages_config", "chromium_histogram_samples", "app_wakelocks_config", "cpu_per_uid_config", "user_list_config", "inputmethod_config", "android_aflags_config", "journald_config", "display_video_config", "chromium_stack_sampling_profiler", "chromium_sampling_heap_profiler", "android_process_state_config", "process_smaps_config", "qnx_config", "cgroup_config", "legacy_config", "for_testing")
     class SessionInitiator(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
         __slots__ = ()
         SESSION_INITIATOR_UNSPECIFIED: _ClassVar[DataSourceConfig.SessionInitiator]
@@ -68,6 +76,22 @@ class DataSourceConfig(_message.Message):
     BUFFER_EXHAUSTED_DROP: DataSourceConfig.BufferExhaustedPolicy
     BUFFER_EXHAUSTED_STALL_THEN_ABORT: DataSourceConfig.BufferExhaustedPolicy
     BUFFER_EXHAUSTED_STALL_THEN_DROP: DataSourceConfig.BufferExhaustedPolicy
+    class ExperimentalTracingV2Config(_message.Message):
+        __slots__ = ("use_v2_probability_percent", "chunk_size_options", "drain_occupancy_percent")
+        class ChunkSizeOption(_message.Message):
+            __slots__ = ("size_bytes", "weight")
+            SIZE_BYTES_FIELD_NUMBER: _ClassVar[int]
+            WEIGHT_FIELD_NUMBER: _ClassVar[int]
+            size_bytes: int
+            weight: int
+            def __init__(self, size_bytes: _Optional[int] = ..., weight: _Optional[int] = ...) -> None: ...
+        USE_V2_PROBABILITY_PERCENT_FIELD_NUMBER: _ClassVar[int]
+        CHUNK_SIZE_OPTIONS_FIELD_NUMBER: _ClassVar[int]
+        DRAIN_OCCUPANCY_PERCENT_FIELD_NUMBER: _ClassVar[int]
+        use_v2_probability_percent: int
+        chunk_size_options: _containers.RepeatedCompositeFieldContainer[DataSourceConfig.ExperimentalTracingV2Config.ChunkSizeOption]
+        drain_occupancy_percent: int
+        def __init__(self, use_v2_probability_percent: _Optional[int] = ..., chunk_size_options: _Optional[_Iterable[_Union[DataSourceConfig.ExperimentalTracingV2Config.ChunkSizeOption, _Mapping]]] = ..., drain_occupancy_percent: _Optional[int] = ...) -> None: ...
     NAME_FIELD_NUMBER: _ClassVar[int]
     TARGET_BUFFER_FIELD_NUMBER: _ClassVar[int]
     TARGET_BUFFER_NAME_FIELD_NUMBER: _ClassVar[int]
@@ -80,6 +104,8 @@ class DataSourceConfig(_message.Message):
     BUFFER_EXHAUSTED_POLICY_FIELD_NUMBER: _ClassVar[int]
     PRIORITY_BOOST_FIELD_NUMBER: _ClassVar[int]
     PROTOVM_CONFIG_FIELD_NUMBER: _ClassVar[int]
+    SUPPORTS_TRACING_V2_FIELD_NUMBER: _ClassVar[int]
+    EXPERIMENTAL_TRACING_V2_FIELD_NUMBER: _ClassVar[int]
     FTRACE_CONFIG_FIELD_NUMBER: _ClassVar[int]
     INODE_FILE_CONFIG_FIELD_NUMBER: _ClassVar[int]
     PROCESS_STATS_CONFIG_FIELD_NUMBER: _ClassVar[int]
@@ -120,7 +146,14 @@ class DataSourceConfig(_message.Message):
     USER_LIST_CONFIG_FIELD_NUMBER: _ClassVar[int]
     INPUTMETHOD_CONFIG_FIELD_NUMBER: _ClassVar[int]
     ANDROID_AFLAGS_CONFIG_FIELD_NUMBER: _ClassVar[int]
+    JOURNALD_CONFIG_FIELD_NUMBER: _ClassVar[int]
+    DISPLAY_VIDEO_CONFIG_FIELD_NUMBER: _ClassVar[int]
+    CHROMIUM_STACK_SAMPLING_PROFILER_FIELD_NUMBER: _ClassVar[int]
+    CHROMIUM_SAMPLING_HEAP_PROFILER_FIELD_NUMBER: _ClassVar[int]
+    ANDROID_PROCESS_STATE_CONFIG_FIELD_NUMBER: _ClassVar[int]
+    PROCESS_SMAPS_CONFIG_FIELD_NUMBER: _ClassVar[int]
     QNX_CONFIG_FIELD_NUMBER: _ClassVar[int]
+    CGROUP_CONFIG_FIELD_NUMBER: _ClassVar[int]
     LEGACY_CONFIG_FIELD_NUMBER: _ClassVar[int]
     FOR_TESTING_FIELD_NUMBER: _ClassVar[int]
     name: str
@@ -135,6 +168,8 @@ class DataSourceConfig(_message.Message):
     buffer_exhausted_policy: DataSourceConfig.BufferExhaustedPolicy
     priority_boost: _priority_boost_config_pb2.PriorityBoostConfig
     protovm_config: _protovm_config_pb2.ProtoVmConfig
+    supports_tracing_v2: bool
+    experimental_tracing_v2: DataSourceConfig.ExperimentalTracingV2Config
     ftrace_config: _ftrace_config_pb2.FtraceConfig
     inode_file_config: _inode_file_config_pb2.InodeFileConfig
     process_stats_config: _process_stats_config_pb2.ProcessStatsConfig
@@ -175,7 +210,14 @@ class DataSourceConfig(_message.Message):
     user_list_config: _user_list_config_pb2.AndroidUserListConfig
     inputmethod_config: _inputmethod_config_pb2.InputMethodConfig
     android_aflags_config: _android_aflags_config_pb2.AndroidAflagsConfig
+    journald_config: _journald_config_pb2.SystemdJournaldConfig
+    display_video_config: _display_video_config_pb2.DisplayVideoConfig
+    chromium_stack_sampling_profiler: _stack_sampling_profiler_pb2.ChromiumStackSamplingProfilerConfig
+    chromium_sampling_heap_profiler: _sampling_heap_profiler_pb2.ChromiumSamplingHeapProfilerConfig
+    android_process_state_config: _android_process_state_config_pb2.AndroidProcessStateConfig
+    process_smaps_config: _smaps_config_pb2.ProcessSmapsConfig
     qnx_config: _qnx_config_pb2.QnxConfig
+    cgroup_config: _cgroup_config_pb2.CgroupConfig
     legacy_config: str
     for_testing: _test_config_pb2.TestConfig
-    def __init__(self, name: _Optional[str] = ..., target_buffer: _Optional[int] = ..., target_buffer_name: _Optional[str] = ..., trace_duration_ms: _Optional[int] = ..., prefer_suspend_clock_for_duration: _Optional[bool] = ..., stop_timeout_ms: _Optional[int] = ..., enable_extra_guardrails: _Optional[bool] = ..., session_initiator: _Optional[_Union[DataSourceConfig.SessionInitiator, str]] = ..., tracing_session_id: _Optional[int] = ..., buffer_exhausted_policy: _Optional[_Union[DataSourceConfig.BufferExhaustedPolicy, str]] = ..., priority_boost: _Optional[_Union[_priority_boost_config_pb2.PriorityBoostConfig, _Mapping]] = ..., protovm_config: _Optional[_Union[_protovm_config_pb2.ProtoVmConfig, _Mapping]] = ..., ftrace_config: _Optional[_Union[_ftrace_config_pb2.FtraceConfig, _Mapping]] = ..., inode_file_config: _Optional[_Union[_inode_file_config_pb2.InodeFileConfig, _Mapping]] = ..., process_stats_config: _Optional[_Union[_process_stats_config_pb2.ProcessStatsConfig, _Mapping]] = ..., sys_stats_config: _Optional[_Union[_sys_stats_config_pb2.SysStatsConfig, _Mapping]] = ..., heapprofd_config: _Optional[_Union[_heapprofd_config_pb2.HeapprofdConfig, _Mapping]] = ..., java_hprof_config: _Optional[_Union[_java_hprof_config_pb2.JavaHprofConfig, _Mapping]] = ..., android_power_config: _Optional[_Union[_android_power_config_pb2.AndroidPowerConfig, _Mapping]] = ..., android_log_config: _Optional[_Union[_android_log_config_pb2.AndroidLogConfig, _Mapping]] = ..., gpu_counter_config: _Optional[_Union[_gpu_counter_config_pb2.GpuCounterConfig, _Mapping]] = ..., android_game_intervention_list_config: _Optional[_Union[_android_game_intervention_list_config_pb2.AndroidGameInterventionListConfig, _Mapping]] = ..., packages_list_config: _Optional[_Union[_packages_list_config_pb2.PackagesListConfig, _Mapping]] = ..., perf_event_config: _Optional[_Union[_perf_event_config_pb2.PerfEventConfig, _Mapping]] = ..., vulkan_memory_config: _Optional[_Union[_vulkan_memory_config_pb2.VulkanMemoryConfig, _Mapping]] = ..., track_event_config: _Optional[_Union[_track_event_config_pb2.TrackEventConfig, _Mapping]] = ..., android_polled_state_config: _Optional[_Union[_android_polled_state_config_pb2.AndroidPolledStateConfig, _Mapping]] = ..., android_system_property_config: _Optional[_Union[_android_system_property_config_pb2.AndroidSystemPropertyConfig, _Mapping]] = ..., statsd_tracing_config: _Optional[_Union[_statsd_tracing_config_pb2.StatsdTracingConfig, _Mapping]] = ..., system_info_config: _Optional[_Union[_system_info_config_pb2.SystemInfoConfig, _Mapping]] = ..., frozen_ftrace_config: _Optional[_Union[_frozen_ftrace_config_pb2.FrozenFtraceConfig, _Mapping]] = ..., chrome_config: _Optional[_Union[_chrome_config_pb2.ChromeConfig, _Mapping]] = ..., v8_config: _Optional[_Union[_v8_config_pb2.V8Config, _Mapping]] = ..., interceptor_config: _Optional[_Union[_interceptor_config_pb2.InterceptorConfig, _Mapping]] = ..., network_packet_trace_config: _Optional[_Union[_network_trace_config_pb2.NetworkPacketTraceConfig, _Mapping]] = ..., surfaceflinger_layers_config: _Optional[_Union[_surfaceflinger_layers_config_pb2.SurfaceFlingerLayersConfig, _Mapping]] = ..., surfaceflinger_transactions_config: _Optional[_Union[_surfaceflinger_transactions_config_pb2.SurfaceFlingerTransactionsConfig, _Mapping]] = ..., android_sdk_sysprop_guard_config: _Optional[_Union[_android_sdk_sysprop_guard_config_pb2.AndroidSdkSyspropGuardConfig, _Mapping]] = ..., etw_config: _Optional[_Union[_etw_config_pb2.EtwConfig, _Mapping]] = ..., protolog_config: _Optional[_Union[_protolog_config_pb2.ProtoLogConfig, _Mapping]] = ..., android_input_event_config: _Optional[_Union[_android_input_event_config_pb2.AndroidInputEventConfig, _Mapping]] = ..., pixel_modem_config: _Optional[_Union[_pixel_modem_config_pb2.PixelModemConfig, _Mapping]] = ..., windowmanager_config: _Optional[_Union[_windowmanager_config_pb2.WindowManagerConfig, _Mapping]] = ..., chromium_system_metrics: _Optional[_Union[_system_metrics_pb2.ChromiumSystemMetricsConfig, _Mapping]] = ..., kernel_wakelocks_config: _Optional[_Union[_kernel_wakelocks_config_pb2.KernelWakelocksConfig, _Mapping]] = ..., gpu_renderstages_config: _Optional[_Union[_gpu_renderstages_config_pb2.GpuRenderStagesConfig, _Mapping]] = ..., chromium_histogram_samples: _Optional[_Union[_histogram_samples_pb2.ChromiumHistogramSamplesConfig, _Mapping]] = ..., app_wakelocks_config: _Optional[_Union[_app_wakelock_config_pb2.AppWakelocksConfig, _Mapping]] = ..., cpu_per_uid_config: _Optional[_Union[_cpu_per_uid_config_pb2.CpuPerUidConfig, _Mapping]] = ..., user_list_config: _Optional[_Union[_user_list_config_pb2.AndroidUserListConfig, _Mapping]] = ..., inputmethod_config: _Optional[_Union[_inputmethod_config_pb2.InputMethodConfig, _Mapping]] = ..., android_aflags_config: _Optional[_Union[_android_aflags_config_pb2.AndroidAflagsConfig, _Mapping]] = ..., qnx_config: _Optional[_Union[_qnx_config_pb2.QnxConfig, _Mapping]] = ..., legacy_config: _Optional[str] = ..., for_testing: _Optional[_Union[_test_config_pb2.TestConfig, _Mapping]] = ...) -> None: ...
+    def __init__(self, name: _Optional[str] = ..., target_buffer: _Optional[int] = ..., target_buffer_name: _Optional[str] = ..., trace_duration_ms: _Optional[int] = ..., prefer_suspend_clock_for_duration: _Optional[bool] = ..., stop_timeout_ms: _Optional[int] = ..., enable_extra_guardrails: _Optional[bool] = ..., session_initiator: _Optional[_Union[DataSourceConfig.SessionInitiator, str]] = ..., tracing_session_id: _Optional[int] = ..., buffer_exhausted_policy: _Optional[_Union[DataSourceConfig.BufferExhaustedPolicy, str]] = ..., priority_boost: _Optional[_Union[_priority_boost_config_pb2.PriorityBoostConfig, _Mapping]] = ..., protovm_config: _Optional[_Union[_protovm_config_pb2.ProtoVmConfig, _Mapping]] = ..., supports_tracing_v2: _Optional[bool] = ..., experimental_tracing_v2: _Optional[_Union[DataSourceConfig.ExperimentalTracingV2Config, _Mapping]] = ..., ftrace_config: _Optional[_Union[_ftrace_config_pb2.FtraceConfig, _Mapping]] = ..., inode_file_config: _Optional[_Union[_inode_file_config_pb2.InodeFileConfig, _Mapping]] = ..., process_stats_config: _Optional[_Union[_process_stats_config_pb2.ProcessStatsConfig, _Mapping]] = ..., sys_stats_config: _Optional[_Union[_sys_stats_config_pb2.SysStatsConfig, _Mapping]] = ..., heapprofd_config: _Optional[_Union[_heapprofd_config_pb2.HeapprofdConfig, _Mapping]] = ..., java_hprof_config: _Optional[_Union[_java_hprof_config_pb2.JavaHprofConfig, _Mapping]] = ..., android_power_config: _Optional[_Union[_android_power_config_pb2.AndroidPowerConfig, _Mapping]] = ..., android_log_config: _Optional[_Union[_android_log_config_pb2.AndroidLogConfig, _Mapping]] = ..., gpu_counter_config: _Optional[_Union[_gpu_counter_config_pb2.GpuCounterConfig, _Mapping]] = ..., android_game_intervention_list_config: _Optional[_Union[_android_game_intervention_list_config_pb2.AndroidGameInterventionListConfig, _Mapping]] = ..., packages_list_config: _Optional[_Union[_packages_list_config_pb2.PackagesListConfig, _Mapping]] = ..., perf_event_config: _Optional[_Union[_perf_event_config_pb2.PerfEventConfig, _Mapping]] = ..., vulkan_memory_config: _Optional[_Union[_vulkan_memory_config_pb2.VulkanMemoryConfig, _Mapping]] = ..., track_event_config: _Optional[_Union[_track_event_config_pb2.TrackEventConfig, _Mapping]] = ..., android_polled_state_config: _Optional[_Union[_android_polled_state_config_pb2.AndroidPolledStateConfig, _Mapping]] = ..., android_system_property_config: _Optional[_Union[_android_system_property_config_pb2.AndroidSystemPropertyConfig, _Mapping]] = ..., statsd_tracing_config: _Optional[_Union[_statsd_tracing_config_pb2.StatsdTracingConfig, _Mapping]] = ..., system_info_config: _Optional[_Union[_system_info_config_pb2.SystemInfoConfig, _Mapping]] = ..., frozen_ftrace_config: _Optional[_Union[_frozen_ftrace_config_pb2.FrozenFtraceConfig, _Mapping]] = ..., chrome_config: _Optional[_Union[_chrome_config_pb2.ChromeConfig, _Mapping]] = ..., v8_config: _Optional[_Union[_v8_config_pb2.V8Config, _Mapping]] = ..., interceptor_config: _Optional[_Union[_interceptor_config_pb2.InterceptorConfig, _Mapping]] = ..., network_packet_trace_config: _Optional[_Union[_network_trace_config_pb2.NetworkPacketTraceConfig, _Mapping]] = ..., surfaceflinger_layers_config: _Optional[_Union[_surfaceflinger_layers_config_pb2.SurfaceFlingerLayersConfig, _Mapping]] = ..., surfaceflinger_transactions_config: _Optional[_Union[_surfaceflinger_transactions_config_pb2.SurfaceFlingerTransactionsConfig, _Mapping]] = ..., android_sdk_sysprop_guard_config: _Optional[_Union[_android_sdk_sysprop_guard_config_pb2.AndroidSdkSyspropGuardConfig, _Mapping]] = ..., etw_config: _Optional[_Union[_etw_config_pb2.EtwConfig, _Mapping]] = ..., protolog_config: _Optional[_Union[_protolog_config_pb2.ProtoLogConfig, _Mapping]] = ..., android_input_event_config: _Optional[_Union[_android_input_event_config_pb2.AndroidInputEventConfig, _Mapping]] = ..., pixel_modem_config: _Optional[_Union[_pixel_modem_config_pb2.PixelModemConfig, _Mapping]] = ..., windowmanager_config: _Optional[_Union[_windowmanager_config_pb2.WindowManagerConfig, _Mapping]] = ..., chromium_system_metrics: _Optional[_Union[_system_metrics_pb2.ChromiumSystemMetricsConfig, _Mapping]] = ..., kernel_wakelocks_config: _Optional[_Union[_kernel_wakelocks_config_pb2.KernelWakelocksConfig, _Mapping]] = ..., gpu_renderstages_config: _Optional[_Union[_gpu_renderstages_config_pb2.GpuRenderStagesConfig, _Mapping]] = ..., chromium_histogram_samples: _Optional[_Union[_histogram_samples_pb2.ChromiumHistogramSamplesConfig, _Mapping]] = ..., app_wakelocks_config: _Optional[_Union[_app_wakelock_config_pb2.AppWakelocksConfig, _Mapping]] = ..., cpu_per_uid_config: _Optional[_Union[_cpu_per_uid_config_pb2.CpuPerUidConfig, _Mapping]] = ..., user_list_config: _Optional[_Union[_user_list_config_pb2.AndroidUserListConfig, _Mapping]] = ..., inputmethod_config: _Optional[_Union[_inputmethod_config_pb2.InputMethodConfig, _Mapping]] = ..., android_aflags_config: _Optional[_Union[_android_aflags_config_pb2.AndroidAflagsConfig, _Mapping]] = ..., journald_config: _Optional[_Union[_journald_config_pb2.SystemdJournaldConfig, _Mapping]] = ..., display_video_config: _Optional[_Union[_display_video_config_pb2.DisplayVideoConfig, _Mapping]] = ..., chromium_stack_sampling_profiler: _Optional[_Union[_stack_sampling_profiler_pb2.ChromiumStackSamplingProfilerConfig, _Mapping]] = ..., chromium_sampling_heap_profiler: _Optional[_Union[_sampling_heap_profiler_pb2.ChromiumSamplingHeapProfilerConfig, _Mapping]] = ..., android_process_state_config: _Optional[_Union[_android_process_state_config_pb2.AndroidProcessStateConfig, _Mapping]] = ..., process_smaps_config: _Optional[_Union[_smaps_config_pb2.ProcessSmapsConfig, _Mapping]] = ..., qnx_config: _Optional[_Union[_qnx_config_pb2.QnxConfig, _Mapping]] = ..., cgroup_config: _Optional[_Union[_cgroup_config_pb2.CgroupConfig, _Mapping]] = ..., legacy_config: _Optional[str] = ..., for_testing: _Optional[_Union[_test_config_pb2.TestConfig, _Mapping]] = ...) -> None: ...

@@ -282,17 +282,17 @@ class PerfettoToolDownloaderTestCase(CrossbenchFakeFsTestCase):
   def _download_perfetto_tool(self, platform, key):
     platform.use_mock_name = False
     tool = "traceconv.exe" if platform.is_win else "traceconv"
-    download_path = platform.cache_dir("perfetto") / f"v53.0/{tool}"
+    download_path = platform.cache_dir("perfetto") / f"v59.1/{tool}"
     platform.expect_download(
       "https://commondatastorage.googleapis.com/perfetto-luci-artifacts/"
-      f"v53.0/{key}/{tool}",
+      f"v59.1/{key}/{tool}",
       download_path,
     )
     platform.expect_sh(
       download_path,
       "--version",
       result=(
-        "Perfetto v53.0-7a9a6a0 (7a9a6a0587348bffd1796b66a1da33cc1ea421d8)"
+        "Perfetto v59.1-f5cb507 (f5cb5074e597348bffd1796b66a1da33cc1ea421d8)"
       ),
     )
     result = PerfettoToolDownloader("traceconv", platform=platform).download()
@@ -567,6 +567,38 @@ class PerfettoProbeContextTestCase(
     self.assertEqual(len(result.perfetto_list), 1)
     mock_run = mock.Mock(results={probe: result})
     probe.log_run_result(mock_run)
+
+  def test_desktop_context_sampling_heap_profiler_config(self) -> None:
+    textproto = """
+      buffers { size_kb: 1024 }
+      data_sources {
+        config {
+          name: "org.chromium.native_heap_profiler"
+          chromium_sampling_heap_profiler {
+            sampling_interval_bytes: 4096
+            sampling_interval_ms: 2000
+          }
+        }
+      }
+    """
+    probe = PerfettoProbe.parse_dict({"textproto": textproto})
+    ds_config = probe.trace_config.data_sources[0].config
+    self.assertEqual(ds_config.name, "org.chromium.native_heap_profiler")
+    heap_config = ds_config.chromium_sampling_heap_profiler
+    self.assertEqual(heap_config.sampling_interval_bytes, 4096)
+    self.assertEqual(heap_config.sampling_interval_ms, 2000)
+
+    context, platform, _ = self._create_desktop_context(probe)
+    platform.expect_sh("tracebox", "traced", "traced_probes", result="")
+    context.setup()
+
+    written = platform.cat(context.run.out_dir / "perfetto_config.textproto")
+    roundtrip = TraceConfig.parse_textproto(written).trace_config
+    rt_heap_config = roundtrip.data_sources[
+      0
+    ].config.chromium_sampling_heap_profiler
+    self.assertEqual(rt_heap_config.sampling_interval_bytes, 4096)
+    self.assertEqual(rt_heap_config.sampling_interval_ms, 2000)
 
 
 if __name__ == "__main__":

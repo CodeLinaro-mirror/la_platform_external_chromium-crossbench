@@ -110,18 +110,20 @@ class TraceMetricV2Spec(_message.Message):
     LOWER_IS_BETTER: TraceMetricV2Spec.MetricPolarity
     NOT_APPLICABLE: TraceMetricV2Spec.MetricPolarity
     class DimensionSpec(_message.Message):
-        __slots__ = ("name", "type", "display_name", "display_help", "doc_link")
+        __slots__ = ("name", "type", "display_name", "display_help", "doc_link", "is_aggregatable")
         NAME_FIELD_NUMBER: _ClassVar[int]
         TYPE_FIELD_NUMBER: _ClassVar[int]
         DISPLAY_NAME_FIELD_NUMBER: _ClassVar[int]
         DISPLAY_HELP_FIELD_NUMBER: _ClassVar[int]
         DOC_LINK_FIELD_NUMBER: _ClassVar[int]
+        IS_AGGREGATABLE_FIELD_NUMBER: _ClassVar[int]
         name: str
         type: TraceMetricV2Spec.DimensionType
         display_name: str
         display_help: str
         doc_link: str
-        def __init__(self, name: _Optional[str] = ..., type: _Optional[_Union[TraceMetricV2Spec.DimensionType, str]] = ..., display_name: _Optional[str] = ..., display_help: _Optional[str] = ..., doc_link: _Optional[str] = ...) -> None: ...
+        is_aggregatable: bool
+        def __init__(self, name: _Optional[str] = ..., type: _Optional[_Union[TraceMetricV2Spec.DimensionType, str]] = ..., display_name: _Optional[str] = ..., display_help: _Optional[str] = ..., doc_link: _Optional[str] = ..., is_aggregatable: _Optional[bool] = ...) -> None: ...
     class InternedDimensionSpec(_message.Message):
         __slots__ = ("key_column_spec", "data_column_specs", "query")
         class ColumnSpec(_message.Message):

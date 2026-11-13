@@ -1,4 +1,3 @@
-from protos.perfetto.common import protolog_common_pb2 as _protolog_common_pb2
 from google.protobuf.internal import containers as _containers
 from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
@@ -7,6 +6,23 @@ from collections.abc import Iterable as _Iterable, Mapping as _Mapping
 from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
 
 DESCRIPTOR: _descriptor.FileDescriptor
+
+class ProtoLogLevel(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
+    __slots__ = ()
+    PROTOLOG_LEVEL_UNDEFINED: _ClassVar[ProtoLogLevel]
+    PROTOLOG_LEVEL_DEBUG: _ClassVar[ProtoLogLevel]
+    PROTOLOG_LEVEL_VERBOSE: _ClassVar[ProtoLogLevel]
+    PROTOLOG_LEVEL_INFO: _ClassVar[ProtoLogLevel]
+    PROTOLOG_LEVEL_WARN: _ClassVar[ProtoLogLevel]
+    PROTOLOG_LEVEL_ERROR: _ClassVar[ProtoLogLevel]
+    PROTOLOG_LEVEL_WTF: _ClassVar[ProtoLogLevel]
+PROTOLOG_LEVEL_UNDEFINED: ProtoLogLevel
+PROTOLOG_LEVEL_DEBUG: ProtoLogLevel
+PROTOLOG_LEVEL_VERBOSE: ProtoLogLevel
+PROTOLOG_LEVEL_INFO: ProtoLogLevel
+PROTOLOG_LEVEL_WARN: ProtoLogLevel
+PROTOLOG_LEVEL_ERROR: ProtoLogLevel
+PROTOLOG_LEVEL_WTF: ProtoLogLevel
 
 class ProtoLogConfig(_message.Message):
     __slots__ = ("group_overrides", "tracing_mode", "default_log_from_level")
@@ -21,8 +37,8 @@ class ProtoLogConfig(_message.Message):
     DEFAULT_LOG_FROM_LEVEL_FIELD_NUMBER: _ClassVar[int]
     group_overrides: _containers.RepeatedCompositeFieldContainer[ProtoLogGroup]
     tracing_mode: ProtoLogConfig.TracingMode
-    default_log_from_level: _protolog_common_pb2.ProtoLogLevel
-    def __init__(self, group_overrides: _Optional[_Iterable[_Union[ProtoLogGroup, _Mapping]]] = ..., tracing_mode: _Optional[_Union[ProtoLogConfig.TracingMode, str]] = ..., default_log_from_level: _Optional[_Union[_protolog_common_pb2.ProtoLogLevel, str]] = ...) -> None: ...
+    default_log_from_level: ProtoLogLevel
+    def __init__(self, group_overrides: _Optional[_Iterable[_Union[ProtoLogGroup, _Mapping]]] = ..., tracing_mode: _Optional[_Union[ProtoLogConfig.TracingMode, str]] = ..., default_log_from_level: _Optional[_Union[ProtoLogLevel, str]] = ...) -> None: ...
 
 class ProtoLogGroup(_message.Message):
     __slots__ = ("group_name", "log_from", "collect_stacktrace")
@@ -30,6 +46,6 @@ class ProtoLogGroup(_message.Message):
     LOG_FROM_FIELD_NUMBER: _ClassVar[int]
     COLLECT_STACKTRACE_FIELD_NUMBER: _ClassVar[int]
     group_name: str
-    log_from: _protolog_common_pb2.ProtoLogLevel
+    log_from: ProtoLogLevel
     collect_stacktrace: bool
-    def __init__(self, group_name: _Optional[str] = ..., log_from: _Optional[_Union[_protolog_common_pb2.ProtoLogLevel, str]] = ..., collect_stacktrace: _Optional[bool] = ...) -> None: ...
+    def __init__(self, group_name: _Optional[str] = ..., log_from: _Optional[_Union[ProtoLogLevel, str]] = ..., collect_stacktrace: _Optional[bool] = ...) -> None: ...

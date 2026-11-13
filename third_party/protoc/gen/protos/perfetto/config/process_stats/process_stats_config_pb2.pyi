@@ -8,7 +8,7 @@ from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class ProcessStatsConfig(_message.Message):
-    __slots__ = ("quirks", "scan_all_processes_on_start", "record_thread_names", "proc_stats_poll_ms", "proc_stats_cache_ttl_ms", "scan_smaps_rollup", "record_process_age", "record_process_runtime", "record_process_dmabuf_rss", "resolve_process_fds")
+    __slots__ = ("quirks", "scan_all_processes_on_start", "record_thread_names", "proc_stats_poll_ms", "proc_stats_cache_ttl_ms", "scan_smaps_rollup", "record_process_age", "record_process_runtime", "record_process_dmabuf_rss", "resolve_process_fds", "skip_main_thread_message")
     class Quirks(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
         __slots__ = ()
         QUIRKS_UNSPECIFIED: _ClassVar[ProcessStatsConfig.Quirks]
@@ -27,6 +27,7 @@ class ProcessStatsConfig(_message.Message):
     RECORD_PROCESS_RUNTIME_FIELD_NUMBER: _ClassVar[int]
     RECORD_PROCESS_DMABUF_RSS_FIELD_NUMBER: _ClassVar[int]
     RESOLVE_PROCESS_FDS_FIELD_NUMBER: _ClassVar[int]
+    SKIP_MAIN_THREAD_MESSAGE_FIELD_NUMBER: _ClassVar[int]
     quirks: _containers.RepeatedScalarFieldContainer[ProcessStatsConfig.Quirks]
     scan_all_processes_on_start: bool
     record_thread_names: bool
@@ -37,4 +38,5 @@ class ProcessStatsConfig(_message.Message):
     record_process_runtime: bool
     record_process_dmabuf_rss: bool
     resolve_process_fds: bool
-    def __init__(self, quirks: _Optional[_Iterable[_Union[ProcessStatsConfig.Quirks, str]]] = ..., scan_all_processes_on_start: _Optional[bool] = ..., record_thread_names: _Optional[bool] = ..., proc_stats_poll_ms: _Optional[int] = ..., proc_stats_cache_ttl_ms: _Optional[int] = ..., scan_smaps_rollup: _Optional[bool] = ..., record_process_age: _Optional[bool] = ..., record_process_runtime: _Optional[bool] = ..., record_process_dmabuf_rss: _Optional[bool] = ..., resolve_process_fds: _Optional[bool] = ...) -> None: ...
+    skip_main_thread_message: bool
+    def __init__(self, quirks: _Optional[_Iterable[_Union[ProcessStatsConfig.Quirks, str]]] = ..., scan_all_processes_on_start: _Optional[bool] = ..., record_thread_names: _Optional[bool] = ..., proc_stats_poll_ms: _Optional[int] = ..., proc_stats_cache_ttl_ms: _Optional[int] = ..., scan_smaps_rollup: _Optional[bool] = ..., record_process_age: _Optional[bool] = ..., record_process_runtime: _Optional[bool] = ..., record_process_dmabuf_rss: _Optional[bool] = ..., resolve_process_fds: _Optional[bool] = ..., skip_main_thread_message: _Optional[bool] = ...) -> None: ...

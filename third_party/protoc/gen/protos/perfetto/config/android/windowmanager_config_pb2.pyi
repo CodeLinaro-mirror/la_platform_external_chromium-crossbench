@@ -6,7 +6,7 @@ from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class WindowManagerConfig(_message.Message):
-    __slots__ = ("log_frequency", "log_level")
+    __slots__ = ("log_frequency", "log_level", "log_mode")
     class LogFrequency(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
         __slots__ = ()
         LOG_FREQUENCY_UNSPECIFIED: _ClassVar[WindowManagerConfig.LogFrequency]
@@ -27,8 +27,18 @@ class WindowManagerConfig(_message.Message):
     LOG_LEVEL_VERBOSE: WindowManagerConfig.LogLevel
     LOG_LEVEL_DEBUG: WindowManagerConfig.LogLevel
     LOG_LEVEL_CRITICAL: WindowManagerConfig.LogLevel
+    class LogMode(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
+        __slots__ = ()
+        LOG_MODE_UNSPECIFIED: _ClassVar[WindowManagerConfig.LogMode]
+        LOG_MODE_FULL_STATE: _ClassVar[WindowManagerConfig.LogMode]
+        LOG_MODE_INCREMENTAL: _ClassVar[WindowManagerConfig.LogMode]
+    LOG_MODE_UNSPECIFIED: WindowManagerConfig.LogMode
+    LOG_MODE_FULL_STATE: WindowManagerConfig.LogMode
+    LOG_MODE_INCREMENTAL: WindowManagerConfig.LogMode
     LOG_FREQUENCY_FIELD_NUMBER: _ClassVar[int]
     LOG_LEVEL_FIELD_NUMBER: _ClassVar[int]
+    LOG_MODE_FIELD_NUMBER: _ClassVar[int]
     log_frequency: WindowManagerConfig.LogFrequency
     log_level: WindowManagerConfig.LogLevel
-    def __init__(self, log_frequency: _Optional[_Union[WindowManagerConfig.LogFrequency, str]] = ..., log_level: _Optional[_Union[WindowManagerConfig.LogLevel, str]] = ...) -> None: ...
+    log_mode: WindowManagerConfig.LogMode
+    def __init__(self, log_frequency: _Optional[_Union[WindowManagerConfig.LogFrequency, str]] = ..., log_level: _Optional[_Union[WindowManagerConfig.LogLevel, str]] = ..., log_mode: _Optional[_Union[WindowManagerConfig.LogMode, str]] = ...) -> None: ...

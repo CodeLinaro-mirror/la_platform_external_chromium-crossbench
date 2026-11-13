@@ -85,10 +85,12 @@ class VmOpRegLoad(_message.Message):
     def __init__(self, cursor: _Optional[_Union[VmCursorEnum, str]] = ..., dst_register: _Optional[int] = ...) -> None: ...
 
 class VmOpMerge(_message.Message):
-    __slots__ = ("skip_submessages",)
+    __slots__ = ("skip_submessages", "del_if_src_empty")
     SKIP_SUBMESSAGES_FIELD_NUMBER: _ClassVar[int]
+    DEL_IF_SRC_EMPTY_FIELD_NUMBER: _ClassVar[int]
     skip_submessages: bool
-    def __init__(self, skip_submessages: _Optional[bool] = ...) -> None: ...
+    del_if_src_empty: bool
+    def __init__(self, skip_submessages: _Optional[bool] = ..., del_if_src_empty: _Optional[bool] = ...) -> None: ...
 
 class VmOpSet(_message.Message):
     __slots__ = ()

@@ -38,7 +38,7 @@ class PerfettoToolDownloader:
   def __init__(
     self,
     tool: str,
-    version: str = "v53.0",
+    version: str = "v59.1",
     platform: plt.Platform | None = None,
   ) -> None:
     self._version: Final[str] = version

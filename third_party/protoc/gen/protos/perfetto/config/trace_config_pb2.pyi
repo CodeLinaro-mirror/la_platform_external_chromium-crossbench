@@ -1,9 +1,11 @@
 from protos.perfetto.common import builtin_clock_pb2 as _builtin_clock_pb2
 from protos.perfetto.common import semantic_type_pb2 as _semantic_type_pb2
+from protos.perfetto.common import trace_attributes_pb2 as _trace_attributes_pb2
 from protos.perfetto.config import data_source_config_pb2 as _data_source_config_pb2
 from protos.perfetto.config.priority_boost import priority_boost_config_pb2 as _priority_boost_config_pb2
 from google.protobuf.internal import containers as _containers
 from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
+from google.protobuf.internal import python_message as _python_message
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
 from collections.abc import Iterable as _Iterable, Mapping as _Mapping
@@ -12,7 +14,7 @@ from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class TraceConfig(_message.Message):
-    __slots__ = ("buffers", "data_sources", "builtin_data_sources", "duration_ms", "prefer_suspend_clock_for_duration", "enable_extra_guardrails", "lockdown_mode", "producers", "statsd_metadata", "write_into_file", "output_path", "file_write_period_ms", "max_file_size_bytes", "guardrail_overrides", "deferred_start", "flush_period_ms", "flush_timeout_ms", "data_source_stop_timeout_ms", "notify_traceur", "bugreport_score", "bugreport_filename", "trigger_config", "activate_triggers", "incremental_state_config", "allow_user_build_tracing", "unique_session_name", "compression_type", "incident_report_config", "statsd_logging", "trace_uuid_msb", "trace_uuid_lsb", "trace_filter", "android_report_config", "cmd_trace_start_delay", "session_semaphores", "priority_boost", "exclusive_prio", "write_flush_mode", "fflush_post_write", "trace_all_machines", "notes")
+    __slots__ = ("buffers", "experimental_trace_buffer_v2_compaction", "data_sources", "builtin_data_sources", "duration_ms", "prefer_suspend_clock_for_duration", "enable_extra_guardrails", "lockdown_mode", "producers", "statsd_metadata", "write_into_file", "output_path", "file_write_period_ms", "max_file_size_bytes", "guardrail_overrides", "deferred_start", "flush_period_ms", "flush_timeout_ms", "data_source_stop_timeout_ms", "notify_traceur", "bugreport_score", "bugreport_filename", "trigger_config", "activate_triggers", "incremental_state_config", "allow_user_build_tracing", "unique_session_name", "compression_type", "compression", "incident_report_config", "statsd_logging", "trace_uuid_msb", "trace_uuid_lsb", "trace_filter", "android_report_config", "cmd_trace_start_delay", "session_semaphores", "priority_boost", "exclusive_prio", "write_flush_mode", "fflush_post_write", "trace_all_machines", "trace_attributes", "persist_trace_across_reboots")
     class LockdownModeOperation(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
         __slots__ = ()
         LOCKDOWN_UNCHANGED: _ClassVar[TraceConfig.LockdownModeOperation]
@@ -54,7 +56,7 @@ class TraceConfig(_message.Message):
     FFLUSH_DISABLED: TraceConfig.FFlushMode
     FFLUSH_ENABLED: TraceConfig.FFlushMode
     class BufferConfig(_message.Message):
-        __slots__ = ("size_kb", "fill_policy", "transfer_on_clone", "clear_before_clone", "name", "experimental_mode")
+        __slots__ = ("size_kb", "fill_policy", "transfer_on_clone", "clear_before_clone", "name", "experimental_mode", "buffer_type")
         class FillPolicy(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
             __slots__ = ()
             UNSPECIFIED: _ClassVar[TraceConfig.BufferConfig.FillPolicy]
@@ -67,23 +69,41 @@ class TraceConfig(_message.Message):
             __slots__ = ()
             MODE_UNSPECIFIED: _ClassVar[TraceConfig.BufferConfig.ExperimentalMode]
             TRACE_BUFFER_V2: _ClassVar[TraceConfig.BufferConfig.ExperimentalMode]
-            TRACE_BUFFER_V2_SHADOW_MODE: _ClassVar[TraceConfig.BufferConfig.ExperimentalMode]
         MODE_UNSPECIFIED: TraceConfig.BufferConfig.ExperimentalMode
         TRACE_BUFFER_V2: TraceConfig.BufferConfig.ExperimentalMode
-        TRACE_BUFFER_V2_SHADOW_MODE: TraceConfig.BufferConfig.ExperimentalMode
+        class BufferTypeConfig(_message.Message):
+            __slots__ = ("v1", "v2", "v3")
+            class V1(_message.Message):
+                __slots__ = ()
+                def __init__(self) -> None: ...
+            class V2(_message.Message):
+                __slots__ = ()
+                def __init__(self) -> None: ...
+            class V3(_message.Message):
+                __slots__ = ()
+                def __init__(self) -> None: ...
+            V1_FIELD_NUMBER: _ClassVar[int]
+            V2_FIELD_NUMBER: _ClassVar[int]
+            V3_FIELD_NUMBER: _ClassVar[int]
+            v1: TraceConfig.BufferConfig.BufferTypeConfig.V1
+            v2: TraceConfig.BufferConfig.BufferTypeConfig.V2
+            v3: TraceConfig.BufferConfig.BufferTypeConfig.V3
+            def __init__(self, v1: _Optional[_Union[TraceConfig.BufferConfig.BufferTypeConfig.V1, _Mapping]] = ..., v2: _Optional[_Union[TraceConfig.BufferConfig.BufferTypeConfig.V2, _Mapping]] = ..., v3: _Optional[_Union[TraceConfig.BufferConfig.BufferTypeConfig.V3, _Mapping]] = ...) -> None: ...
         SIZE_KB_FIELD_NUMBER: _ClassVar[int]
         FILL_POLICY_FIELD_NUMBER: _ClassVar[int]
         TRANSFER_ON_CLONE_FIELD_NUMBER: _ClassVar[int]
         CLEAR_BEFORE_CLONE_FIELD_NUMBER: _ClassVar[int]
         NAME_FIELD_NUMBER: _ClassVar[int]
         EXPERIMENTAL_MODE_FIELD_NUMBER: _ClassVar[int]
+        BUFFER_TYPE_FIELD_NUMBER: _ClassVar[int]
         size_kb: int
         fill_policy: TraceConfig.BufferConfig.FillPolicy
         transfer_on_clone: bool
         clear_before_clone: bool
         name: str
         experimental_mode: TraceConfig.BufferConfig.ExperimentalMode
-        def __init__(self, size_kb: _Optional[int] = ..., fill_policy: _Optional[_Union[TraceConfig.BufferConfig.FillPolicy, str]] = ..., transfer_on_clone: _Optional[bool] = ..., clear_before_clone: _Optional[bool] = ..., name: _Optional[str] = ..., experimental_mode: _Optional[_Union[TraceConfig.BufferConfig.ExperimentalMode, str]] = ...) -> None: ...
+        buffer_type: TraceConfig.BufferConfig.BufferTypeConfig
+        def __init__(self, size_kb: _Optional[int] = ..., fill_policy: _Optional[_Union[TraceConfig.BufferConfig.FillPolicy, str]] = ..., transfer_on_clone: _Optional[bool] = ..., clear_before_clone: _Optional[bool] = ..., name: _Optional[str] = ..., experimental_mode: _Optional[_Union[TraceConfig.BufferConfig.ExperimentalMode, str]] = ..., buffer_type: _Optional[_Union[TraceConfig.BufferConfig.BufferTypeConfig, _Mapping]] = ...) -> None: ...
     class DataSource(_message.Message):
         __slots__ = ("config", "producer_name_filter", "producer_name_regex_filter", "machine_name_filter")
         CONFIG_FIELD_NUMBER: _ClassVar[int]
@@ -96,7 +116,7 @@ class TraceConfig(_message.Message):
         machine_name_filter: _containers.RepeatedScalarFieldContainer[str]
         def __init__(self, config: _Optional[_Union[_data_source_config_pb2.DataSourceConfig, _Mapping]] = ..., producer_name_filter: _Optional[_Iterable[str]] = ..., producer_name_regex_filter: _Optional[_Iterable[str]] = ..., machine_name_filter: _Optional[_Iterable[str]] = ...) -> None: ...
     class BuiltinDataSource(_message.Message):
-        __slots__ = ("disable_clock_snapshotting", "disable_trace_config", "disable_system_info", "disable_service_events", "primary_trace_clock", "snapshot_interval_ms", "prefer_suspend_clock_for_snapshot", "disable_chunk_usage_histograms", "disable_extension_descriptors")
+        __slots__ = ("disable_clock_snapshotting", "disable_trace_config", "disable_system_info", "disable_service_events", "primary_trace_clock", "snapshot_interval_ms", "prefer_suspend_clock_for_snapshot", "disable_chunk_usage_histograms", "disable_extension_descriptors", "enable_concurrent_session_events")
         DISABLE_CLOCK_SNAPSHOTTING_FIELD_NUMBER: _ClassVar[int]
         DISABLE_TRACE_CONFIG_FIELD_NUMBER: _ClassVar[int]
         DISABLE_SYSTEM_INFO_FIELD_NUMBER: _ClassVar[int]
@@ -106,6 +126,7 @@ class TraceConfig(_message.Message):
         PREFER_SUSPEND_CLOCK_FOR_SNAPSHOT_FIELD_NUMBER: _ClassVar[int]
         DISABLE_CHUNK_USAGE_HISTOGRAMS_FIELD_NUMBER: _ClassVar[int]
         DISABLE_EXTENSION_DESCRIPTORS_FIELD_NUMBER: _ClassVar[int]
+        ENABLE_CONCURRENT_SESSION_EVENTS_FIELD_NUMBER: _ClassVar[int]
         disable_clock_snapshotting: bool
         disable_trace_config: bool
         disable_system_info: bool
@@ -115,7 +136,8 @@ class TraceConfig(_message.Message):
         prefer_suspend_clock_for_snapshot: bool
         disable_chunk_usage_histograms: bool
         disable_extension_descriptors: bool
-        def __init__(self, disable_clock_snapshotting: _Optional[bool] = ..., disable_trace_config: _Optional[bool] = ..., disable_system_info: _Optional[bool] = ..., disable_service_events: _Optional[bool] = ..., primary_trace_clock: _Optional[_Union[_builtin_clock_pb2.BuiltinClock, str]] = ..., snapshot_interval_ms: _Optional[int] = ..., prefer_suspend_clock_for_snapshot: _Optional[bool] = ..., disable_chunk_usage_histograms: _Optional[bool] = ..., disable_extension_descriptors: _Optional[bool] = ...) -> None: ...
+        enable_concurrent_session_events: bool
+        def __init__(self, disable_clock_snapshotting: _Optional[bool] = ..., disable_trace_config: _Optional[bool] = ..., disable_system_info: _Optional[bool] = ..., disable_service_events: _Optional[bool] = ..., primary_trace_clock: _Optional[_Union[_builtin_clock_pb2.BuiltinClock, str]] = ..., snapshot_interval_ms: _Optional[int] = ..., prefer_suspend_clock_for_snapshot: _Optional[bool] = ..., disable_chunk_usage_histograms: _Optional[bool] = ..., disable_extension_descriptors: _Optional[bool] = ..., enable_concurrent_session_events: _Optional[bool] = ...) -> None: ...
     class ProducerConfig(_message.Message):
         __slots__ = ("producer_name", "shm_size_kb", "page_size_kb")
         PRODUCER_NAME_FIELD_NUMBER: _ClassVar[int]
@@ -182,6 +204,21 @@ class TraceConfig(_message.Message):
         CLEAR_PERIOD_MS_FIELD_NUMBER: _ClassVar[int]
         clear_period_ms: int
         def __init__(self, clear_period_ms: _Optional[int] = ...) -> None: ...
+    class CompressionConfig(_message.Message):
+        __slots__ = ("deflate", "zstd")
+        class Deflate(_message.Message):
+            __slots__ = ()
+            def __init__(self) -> None: ...
+        class Zstd(_message.Message):
+            __slots__ = ("level",)
+            LEVEL_FIELD_NUMBER: _ClassVar[int]
+            level: int
+            def __init__(self, level: _Optional[int] = ...) -> None: ...
+        DEFLATE_FIELD_NUMBER: _ClassVar[int]
+        ZSTD_FIELD_NUMBER: _ClassVar[int]
+        deflate: TraceConfig.CompressionConfig.Deflate
+        zstd: TraceConfig.CompressionConfig.Zstd
+        def __init__(self, deflate: _Optional[_Union[TraceConfig.CompressionConfig.Deflate, _Mapping]] = ..., zstd: _Optional[_Union[TraceConfig.CompressionConfig.Zstd, _Mapping]] = ...) -> None: ...
     class IncidentReportConfig(_message.Message):
         __slots__ = ("destination_package", "destination_class", "privacy_level", "skip_incidentd", "skip_dropbox")
         DESTINATION_PACKAGE_FIELD_NUMBER: _ClassVar[int]
@@ -242,6 +279,7 @@ class TraceConfig(_message.Message):
         def __init__(self, bytecode: _Optional[bytes] = ..., bytecode_v2: _Optional[bytes] = ..., string_filter_chain: _Optional[_Union[TraceConfig.TraceFilter.StringFilterChain, _Mapping]] = ..., bytecode_overlay_v54: _Optional[bytes] = ..., string_filter_chain_v54: _Optional[_Union[TraceConfig.TraceFilter.StringFilterChain, _Mapping]] = ...) -> None: ...
     class AndroidReportConfig(_message.Message):
         __slots__ = ("reporter_service_package", "reporter_service_class", "skip_report", "use_pipe_in_framework_for_testing")
+        Extensions: _python_message._ExtensionDict
         REPORTER_SERVICE_PACKAGE_FIELD_NUMBER: _ClassVar[int]
         REPORTER_SERVICE_CLASS_FIELD_NUMBER: _ClassVar[int]
         SKIP_REPORT_FIELD_NUMBER: _ClassVar[int]
@@ -265,14 +303,8 @@ class TraceConfig(_message.Message):
         name: str
         max_other_session_count: int
         def __init__(self, name: _Optional[str] = ..., max_other_session_count: _Optional[int] = ...) -> None: ...
-    class Note(_message.Message):
-        __slots__ = ("key", "value")
-        KEY_FIELD_NUMBER: _ClassVar[int]
-        VALUE_FIELD_NUMBER: _ClassVar[int]
-        key: str
-        value: str
-        def __init__(self, key: _Optional[str] = ..., value: _Optional[str] = ...) -> None: ...
     BUFFERS_FIELD_NUMBER: _ClassVar[int]
+    EXPERIMENTAL_TRACE_BUFFER_V2_COMPACTION_FIELD_NUMBER: _ClassVar[int]
     DATA_SOURCES_FIELD_NUMBER: _ClassVar[int]
     BUILTIN_DATA_SOURCES_FIELD_NUMBER: _ClassVar[int]
     DURATION_MS_FIELD_NUMBER: _ClassVar[int]
@@ -299,6 +331,7 @@ class TraceConfig(_message.Message):
     ALLOW_USER_BUILD_TRACING_FIELD_NUMBER: _ClassVar[int]
     UNIQUE_SESSION_NAME_FIELD_NUMBER: _ClassVar[int]
     COMPRESSION_TYPE_FIELD_NUMBER: _ClassVar[int]
+    COMPRESSION_FIELD_NUMBER: _ClassVar[int]
     INCIDENT_REPORT_CONFIG_FIELD_NUMBER: _ClassVar[int]
     STATSD_LOGGING_FIELD_NUMBER: _ClassVar[int]
     TRACE_UUID_MSB_FIELD_NUMBER: _ClassVar[int]
@@ -312,8 +345,10 @@ class TraceConfig(_message.Message):
     WRITE_FLUSH_MODE_FIELD_NUMBER: _ClassVar[int]
     FFLUSH_POST_WRITE_FIELD_NUMBER: _ClassVar[int]
     TRACE_ALL_MACHINES_FIELD_NUMBER: _ClassVar[int]
-    NOTES_FIELD_NUMBER: _ClassVar[int]
+    TRACE_ATTRIBUTES_FIELD_NUMBER: _ClassVar[int]
+    PERSIST_TRACE_ACROSS_REBOOTS_FIELD_NUMBER: _ClassVar[int]
     buffers: _containers.RepeatedCompositeFieldContainer[TraceConfig.BufferConfig]
+    experimental_trace_buffer_v2_compaction: bool
     data_sources: _containers.RepeatedCompositeFieldContainer[TraceConfig.DataSource]
     builtin_data_sources: TraceConfig.BuiltinDataSource
     duration_ms: int
@@ -340,6 +375,7 @@ class TraceConfig(_message.Message):
     allow_user_build_tracing: bool
     unique_session_name: str
     compression_type: TraceConfig.CompressionType
+    compression: TraceConfig.CompressionConfig
     incident_report_config: TraceConfig.IncidentReportConfig
     statsd_logging: TraceConfig.StatsdLogging
     trace_uuid_msb: int
@@ -353,5 +389,6 @@ class TraceConfig(_message.Message):
     write_flush_mode: TraceConfig.WriteFlushMode
     fflush_post_write: TraceConfig.FFlushMode
     trace_all_machines: bool
-    notes: _containers.RepeatedCompositeFieldContainer[TraceConfig.Note]
-    def __init__(self, buffers: _Optional[_Iterable[_Union[TraceConfig.BufferConfig, _Mapping]]] = ..., data_sources: _Optional[_Iterable[_Union[TraceConfig.DataSource, _Mapping]]] = ..., builtin_data_sources: _Optional[_Union[TraceConfig.BuiltinDataSource, _Mapping]] = ..., duration_ms: _Optional[int] = ..., prefer_suspend_clock_for_duration: _Optional[bool] = ..., enable_extra_guardrails: _Optional[bool] = ..., lockdown_mode: _Optional[_Union[TraceConfig.LockdownModeOperation, str]] = ..., producers: _Optional[_Iterable[_Union[TraceConfig.ProducerConfig, _Mapping]]] = ..., statsd_metadata: _Optional[_Union[TraceConfig.StatsdMetadata, _Mapping]] = ..., write_into_file: _Optional[bool] = ..., output_path: _Optional[str] = ..., file_write_period_ms: _Optional[int] = ..., max_file_size_bytes: _Optional[int] = ..., guardrail_overrides: _Optional[_Union[TraceConfig.GuardrailOverrides, _Mapping]] = ..., deferred_start: _Optional[bool] = ..., flush_period_ms: _Optional[int] = ..., flush_timeout_ms: _Optional[int] = ..., data_source_stop_timeout_ms: _Optional[int] = ..., notify_traceur: _Optional[bool] = ..., bugreport_score: _Optional[int] = ..., bugreport_filename: _Optional[str] = ..., trigger_config: _Optional[_Union[TraceConfig.TriggerConfig, _Mapping]] = ..., activate_triggers: _Optional[_Iterable[str]] = ..., incremental_state_config: _Optional[_Union[TraceConfig.IncrementalStateConfig, _Mapping]] = ..., allow_user_build_tracing: _Optional[bool] = ..., unique_session_name: _Optional[str] = ..., compression_type: _Optional[_Union[TraceConfig.CompressionType, str]] = ..., incident_report_config: _Optional[_Union[TraceConfig.IncidentReportConfig, _Mapping]] = ..., statsd_logging: _Optional[_Union[TraceConfig.StatsdLogging, str]] = ..., trace_uuid_msb: _Optional[int] = ..., trace_uuid_lsb: _Optional[int] = ..., trace_filter: _Optional[_Union[TraceConfig.TraceFilter, _Mapping]] = ..., android_report_config: _Optional[_Union[TraceConfig.AndroidReportConfig, _Mapping]] = ..., cmd_trace_start_delay: _Optional[_Union[TraceConfig.CmdTraceStartDelay, _Mapping]] = ..., session_semaphores: _Optional[_Iterable[_Union[TraceConfig.SessionSemaphore, _Mapping]]] = ..., priority_boost: _Optional[_Union[_priority_boost_config_pb2.PriorityBoostConfig, _Mapping]] = ..., exclusive_prio: _Optional[int] = ..., write_flush_mode: _Optional[_Union[TraceConfig.WriteFlushMode, str]] = ..., fflush_post_write: _Optional[_Union[TraceConfig.FFlushMode, str]] = ..., trace_all_machines: _Optional[bool] = ..., notes: _Optional[_Iterable[_Union[TraceConfig.Note, _Mapping]]] = ...) -> None: ...
+    trace_attributes: _trace_attributes_pb2.TraceAttributes
+    persist_trace_across_reboots: bool
+    def __init__(self, buffers: _Optional[_Iterable[_Union[TraceConfig.BufferConfig, _Mapping]]] = ..., experimental_trace_buffer_v2_compaction: _Optional[bool] = ..., data_sources: _Optional[_Iterable[_Union[TraceConfig.DataSource, _Mapping]]] = ..., builtin_data_sources: _Optional[_Union[TraceConfig.BuiltinDataSource, _Mapping]] = ..., duration_ms: _Optional[int] = ..., prefer_suspend_clock_for_duration: _Optional[bool] = ..., enable_extra_guardrails: _Optional[bool] = ..., lockdown_mode: _Optional[_Union[TraceConfig.LockdownModeOperation, str]] = ..., producers: _Optional[_Iterable[_Union[TraceConfig.ProducerConfig, _Mapping]]] = ..., statsd_metadata: _Optional[_Union[TraceConfig.StatsdMetadata, _Mapping]] = ..., write_into_file: _Optional[bool] = ..., output_path: _Optional[str] = ..., file_write_period_ms: _Optional[int] = ..., max_file_size_bytes: _Optional[int] = ..., guardrail_overrides: _Optional[_Union[TraceConfig.GuardrailOverrides, _Mapping]] = ..., deferred_start: _Optional[bool] = ..., flush_period_ms: _Optional[int] = ..., flush_timeout_ms: _Optional[int] = ..., data_source_stop_timeout_ms: _Optional[int] = ..., notify_traceur: _Optional[bool] = ..., bugreport_score: _Optional[int] = ..., bugreport_filename: _Optional[str] = ..., trigger_config: _Optional[_Union[TraceConfig.TriggerConfig, _Mapping]] = ..., activate_triggers: _Optional[_Iterable[str]] = ..., incremental_state_config: _Optional[_Union[TraceConfig.IncrementalStateConfig, _Mapping]] = ..., allow_user_build_tracing: _Optional[bool] = ..., unique_session_name: _Optional[str] = ..., compression_type: _Optional[_Union[TraceConfig.CompressionType, str]] = ..., compression: _Optional[_Union[TraceConfig.CompressionConfig, _Mapping]] = ..., incident_report_config: _Optional[_Union[TraceConfig.IncidentReportConfig, _Mapping]] = ..., statsd_logging: _Optional[_Union[TraceConfig.StatsdLogging, str]] = ..., trace_uuid_msb: _Optional[int] = ..., trace_uuid_lsb: _Optional[int] = ..., trace_filter: _Optional[_Union[TraceConfig.TraceFilter, _Mapping]] = ..., android_report_config: _Optional[_Union[TraceConfig.AndroidReportConfig, _Mapping]] = ..., cmd_trace_start_delay: _Optional[_Union[TraceConfig.CmdTraceStartDelay, _Mapping]] = ..., session_semaphores: _Optional[_Iterable[_Union[TraceConfig.SessionSemaphore, _Mapping]]] = ..., priority_boost: _Optional[_Union[_priority_boost_config_pb2.PriorityBoostConfig, _Mapping]] = ..., exclusive_prio: _Optional[int] = ..., write_flush_mode: _Optional[_Union[TraceConfig.WriteFlushMode, str]] = ..., fflush_post_write: _Optional[_Union[TraceConfig.FFlushMode, str]] = ..., trace_all_machines: _Optional[bool] = ..., trace_attributes: _Optional[_Union[_trace_attributes_pb2.TraceAttributes, _Mapping]] = ..., persist_trace_across_reboots: _Optional[bool] = ...) -> None: ...

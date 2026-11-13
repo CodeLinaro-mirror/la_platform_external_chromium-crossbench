@@ -16,10 +16,12 @@ class PerfEventConfig(_message.Message):
         UNWIND_SKIP: _ClassVar[PerfEventConfig.UnwindMode]
         UNWIND_DWARF: _ClassVar[PerfEventConfig.UnwindMode]
         UNWIND_FRAME_POINTER: _ClassVar[PerfEventConfig.UnwindMode]
+        UNWIND_KERNEL_FRAME_POINTER: _ClassVar[PerfEventConfig.UnwindMode]
     UNWIND_UNKNOWN: PerfEventConfig.UnwindMode
     UNWIND_SKIP: PerfEventConfig.UnwindMode
     UNWIND_DWARF: PerfEventConfig.UnwindMode
     UNWIND_FRAME_POINTER: PerfEventConfig.UnwindMode
+    UNWIND_KERNEL_FRAME_POINTER: PerfEventConfig.UnwindMode
     class CallstackSampling(_message.Message):
         __slots__ = ("scope", "kernel_frames", "user_frames")
         SCOPE_FIELD_NUMBER: _ClassVar[int]
