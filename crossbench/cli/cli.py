@@ -42,8 +42,8 @@ from crossbench.cli.subcommand.mcp import McpSubcommand
 from crossbench.cli.subcommand.perfetto import PerfettoCrossbenchSubcommand
 from crossbench.cli.subcommand.pinpoint import PinpointSubcommand
 from crossbench.cli.subcommand.reprocess import ReprocessSubcommand
-from crossbench.cli.subcommand.setup_cross_platform_mode import (
-  SetupCrossPlatformModeSubcommand,
+from crossbench.cli.subcommand.setup_wpr_ethernet import (
+  SetupWprEthernetSubcommand,
 )
 from crossbench.cli.subcommand.upload_results import UploadResultsSubcommand
 from crossbench.cli.subcommand.version import VersionSubcommand
@@ -266,7 +266,7 @@ class CrossBenchCLI:
     self._add_subcommand(PerfettoCrossbenchSubcommand)
     self._add_subcommand(PinpointSubcommand)
     self._add_subcommand(ReprocessSubcommand)
-    self._add_subcommand(SetupCrossPlatformModeSubcommand)
+    self._add_subcommand(SetupWprEthernetSubcommand)
     self._add_subcommand(UploadResultsSubcommand)
 
   def _setup_benchmark_subcommands(

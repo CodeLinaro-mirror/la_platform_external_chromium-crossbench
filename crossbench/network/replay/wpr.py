@@ -86,7 +86,7 @@ class WprReplayNetwork(ReplayNetwork):
       raise ValueError(
         f"Non chromium-based browser {browser.unique_name} only supports "
         "wpr replay in cross-platform mode. See ./cb.py "
-        "setup-cross-platform-mode"
+        "setup_wpr_ethernet"
       )
 
   @override

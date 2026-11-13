@@ -26,7 +26,7 @@ if TYPE_CHECKING:
   from crossbench.cli.types import Subparsers
   from crossbench.plt.types import CmdArg
 
-WARNING_MESSAGE = """
+WARNING_MESSAGE: Final[str] = """
 WARNING: In order to establish an Ethernet connection to the tested device,
 crossbench will attempt to reconfigure the '{interface}' network interface on
 your workstation. This will require running commands with root privileges.
@@ -38,32 +38,34 @@ network interfaces, e.g. on Ubuntu:
 $ sudo systemctl stop NetworkManager
 """
 
-CONNECT_DEVICE_MESSAGE = """
+CONNECT_DEVICE_MESSAGE: Final[str] = """
 Please disable WiFi on your device and connect it via an Ethernet cable.
 Press Enter when ready.
 """
 
-KEEP_RUNNING_MESSAGE = """
-Network setup complete. You can now run the loadline2 webapi benchmark.
-Keep this script running until the bencmark finishes executing. Then you can
+KEEP_RUNNING_MESSAGE: Final[str] = """
+Network setup complete. You can now run your benchmark.
+Keep this script running until the benchmark finishes executing. Then you can
 terminate it via Ctrl+C.
 """
 
-DEVICE_IP = "192.168.1.100"
-ADB_PORT = "5555"
-SETUP_TIMEOUT = datetime.timedelta(seconds=20)
+DEVICE_IP: Final[str] = "192.168.1.100"
+ADB_PORT: Final[str] = "5555"
+SETUP_TIMEOUT: Final[datetime.timedelta] = datetime.timedelta(seconds=20)
 
 
-class SetupCrossPlatformModeSubcommand(CrossbenchSubcommand):
+class SetupWprEthernetSubcommand(CrossbenchSubcommand):
   @override
   def register_subcommand(
     self, subparsers: Subparsers
   ) -> argparse.ArgumentParser:
     self._parser = subparsers.add_parser(
-      "setup_cross_platform_mode",
+      "setup_wpr_ethernet",
+      aliases=("setup-wpr-ethernet",),
       help=(
-        "Sets up Ethernet connection to your device in a way "
-        "required by the loadline2-webapi benchmark."
+        "Sets up an Ethernet connection to your device so it routes "
+        "HTTP/HTTPS traffic through WPR on the host for "
+        "loadline2-webapi or web-power on iOS."
       ),
     )
     self._parser.set_defaults(crossbench_subcommand=self)
@@ -130,7 +132,7 @@ class SetupNetwork:
     devices = adb_devices + ios_devices
     if len(devices) > 1:
       self._fail(
-        "LoadLine 2 WebAPI only supports running on 1 device at a "
+        "setup_wpr_ethernet only supports running on 1 device at a "
         "time. The following devices are connected:\n%s",
         "\n".join(devices),
       )

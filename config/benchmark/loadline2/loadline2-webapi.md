@@ -63,7 +63,7 @@ use Ethernet connection.
   * If you are using a USBC<->Ethernet adaptor, a simple way to determine the
     interface name is to disconnect/reconnect the adaptor and run `ifconfig`
     to see which interface disappears.
-* Run `./cb.py setup_cross_platform_mode --interface <interface>`, it will guide
+* Run `./cb.py setup_wpr_ethernet --interface <interface>`, it will guide
   you through the network setup process (requires root on the host). Keep it
   running in a separate terminal window for the entire benchmark run.
 * Run `./cb.py loadline2-webapi-phone --browser <browser>`, where browser can
