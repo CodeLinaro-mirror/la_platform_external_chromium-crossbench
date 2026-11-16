@@ -97,10 +97,10 @@ class PinpointBaseSubcommand(abc.ABC):
       "--url-source",
       type=UrlSource,
       choices=UrlSource.all(),
-      default=UrlSource.LESZEK_PERF,
+      default=UrlSource.VIPERF,
       help=(
         "The URL source for shortened Pinpoint job links. "
-        f"(default: {UrlSource.LESZEK_PERF})"
+        f"(default: {UrlSource.VIPERF})"
       ),
     )
 

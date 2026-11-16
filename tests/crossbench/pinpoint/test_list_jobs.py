@@ -99,7 +99,7 @@ class ListJobsTest(MockHttpRequestsMixin):
     self.assertIn("Benchmark,Config,Type,Start Time,Job URL,Status", output)
     self.assertIn(
       "speedometer,config,performance,2024-01-01 00:00:00,"
-      "http://go/l_/r/123,completed",
+      "http://go/v_/r/123,completed",
       output,
     )
 
@@ -124,7 +124,7 @@ class ListJobsTest(MockHttpRequestsMixin):
     self.assertIn("Benchmark", output)
     self.assertIn("speedometer", output)
     self.assertIn("✅", output)  # Completed status emoji
-    self.assertIn("http://go/l_/r/123", output)
+    self.assertIn("http://go/v_/r/123", output)
     self.assertIn("2024-Jan-01 00:00", output)
 
   def test_list_jobs_url_source_pinpoint_classic(self):
@@ -151,9 +151,9 @@ class ListJobsTest(MockHttpRequestsMixin):
 
     output = self.stdout_mock.getvalue()
     self.assertIn("http://go/j_/123", output)
-    self.assertNotIn("http://go/l_/r/123", output)
+    self.assertNotIn("http://go/v_/r/123", output)
 
-  def test_list_jobs_url_source_leszek_perf(self):
+  def test_list_jobs_url_source_viperf(self):
     job_data = {
       "job_id": "123",
       "configuration": "config",
@@ -172,14 +172,14 @@ class ListJobsTest(MockHttpRequestsMixin):
       1,
       None,
       OutputFormat.TABLE,
-      url_source=UrlSource.LESZEK_PERF,
+      url_source=UrlSource.VIPERF,
     )
 
     output = self.stdout_mock.getvalue()
-    self.assertIn("http://go/l_/r/123", output)
+    self.assertIn("http://go/v_/r/123", output)
     self.assertNotIn("http://go/j_/123", output)
 
-  def test_list_jobs_url_source_leszek_perf_dev(self):
+  def test_list_jobs_url_source_viperf_dev(self):
     job_data = {
       "job_id": "123",
       "configuration": "config",
@@ -198,11 +198,11 @@ class ListJobsTest(MockHttpRequestsMixin):
       1,
       None,
       OutputFormat.TABLE,
-      url_source=UrlSource.LESZEK_PERF_DEV,
+      url_source=UrlSource.VIPERF_DEV,
     )
 
     output = self.stdout_mock.getvalue()
-    self.assertIn("https://leszek-perf-dev.corp.goog/r/123", output)
+    self.assertIn("https://viperf-dev.corp.goog/r/123", output)
     self.assertNotIn("http://go/j_/123", output)
 
   def test_list_jobs_pagination(self):
@@ -258,7 +258,7 @@ class ListJobsTest(MockHttpRequestsMixin):
       "User", output
     )  # "User" column should be present for ALL users
     self.assertIn("other@example.com", output)
-    self.assertIn("http://go/l_/r/123", output)
+    self.assertIn("http://go/v_/r/123", output)
     self.assertIn("2024-01-01 00:00:00", output)
 
   def test_list_jobs_truncate(self):

@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 def _print_started_job(
   data: JsonDict,
-  url_source: UrlSource = UrlSource.LESZEK_PERF,
+  url_source: UrlSource = UrlSource.VIPERF,
 ) -> None:
   if job_id := data.get("jobId"):
     data = dict(data)
@@ -32,7 +32,7 @@ def _print_started_job(
 
 def start_job(
   config: PinpointTryJobConfig,
-  url_source: UrlSource = UrlSource.LESZEK_PERF,
+  url_source: UrlSource = UrlSource.VIPERF,
 ) -> None:
   """Starts a new Pinpoint job."""
   with annotate("Starting Pinpoint job"):
@@ -45,7 +45,7 @@ def start_job(
 
 def bisect_job(
   config: PinpointBisectJobConfig,
-  url_source: UrlSource = UrlSource.LESZEK_PERF,
+  url_source: UrlSource = UrlSource.VIPERF,
 ) -> None:
   """Starts a new Pinpoint bisect job."""
   with annotate("Starting Pinpoint bisect job"):

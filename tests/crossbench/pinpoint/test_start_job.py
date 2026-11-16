@@ -91,7 +91,7 @@ class StartJobTest(MockHttpRequestsMixin):
       {
         "jobId": "123",
         "jobUrl": "https://example.com/123",
-        "shortJobUrl": "http://go/l_/r/123",
+        "shortJobUrl": "http://go/v_/r/123",
       },
     )
 
@@ -114,13 +114,13 @@ class StartJobTest(MockHttpRequestsMixin):
       },
     )
 
-  def test_start_job_url_source_leszek_perf(self):
+  def test_start_job_url_source_viperf(self):
     start_job(
       config=PinpointTryJobConfig(
         benchmark="test_benchmark",
         bot="test_bot",
       ),
-      url_source=UrlSource.LESZEK_PERF,
+      url_source=UrlSource.VIPERF,
     )
     self.assertEqual(self.mock_print.call_count, 2)
     output_data = json.loads(self.mock_print.call_args[0][0])
@@ -129,17 +129,17 @@ class StartJobTest(MockHttpRequestsMixin):
       {
         "jobId": "123",
         "jobUrl": "https://example.com/123",
-        "shortJobUrl": "http://go/l_/r/123",
+        "shortJobUrl": "http://go/v_/r/123",
       },
     )
 
-  def test_start_job_url_source_leszek_perf_dev(self):
+  def test_start_job_url_source_viperf_dev(self):
     start_job(
       config=PinpointTryJobConfig(
         benchmark="test_benchmark",
         bot="test_bot",
       ),
-      url_source=UrlSource.LESZEK_PERF_DEV,
+      url_source=UrlSource.VIPERF_DEV,
     )
     self.assertEqual(self.mock_print.call_count, 2)
     output_data = json.loads(self.mock_print.call_args[0][0])
@@ -148,7 +148,7 @@ class StartJobTest(MockHttpRequestsMixin):
       {
         "jobId": "123",
         "jobUrl": "https://example.com/123",
-        "shortJobUrl": "https://leszek-perf-dev.corp.goog/r/123",
+        "shortJobUrl": "https://viperf-dev.corp.goog/r/123",
       },
     )
 
@@ -177,7 +177,7 @@ class StartJobTest(MockHttpRequestsMixin):
       {
         "jobId": "123",
         "jobUrl": "https://example.com/123",
-        "shortJobUrl": "http://go/l_/r/123",
+        "shortJobUrl": "http://go/v_/r/123",
       },
     )
 
@@ -201,14 +201,14 @@ class StartJobTest(MockHttpRequestsMixin):
       },
     )
 
-  def test_bisect_job_url_source_leszek_perf(self):
+  def test_bisect_job_url_source_viperf(self):
     bisect_job(
       config=PinpointBisectJobConfig(
         benchmark="test_benchmark",
         bot="test_bot",
         chart="test_chart",
       ),
-      url_source=UrlSource.LESZEK_PERF,
+      url_source=UrlSource.VIPERF,
     )
     self.assertEqual(self.mock_print.call_count, 2)
     output_data = json.loads(self.mock_print.call_args[0][0])
@@ -217,18 +217,18 @@ class StartJobTest(MockHttpRequestsMixin):
       {
         "jobId": "123",
         "jobUrl": "https://example.com/123",
-        "shortJobUrl": "http://go/l_/r/123",
+        "shortJobUrl": "http://go/v_/r/123",
       },
     )
 
-  def test_bisect_job_url_source_leszek_perf_dev(self):
+  def test_bisect_job_url_source_viperf_dev(self):
     bisect_job(
       config=PinpointBisectJobConfig(
         benchmark="test_benchmark",
         bot="test_bot",
         chart="test_chart",
       ),
-      url_source=UrlSource.LESZEK_PERF_DEV,
+      url_source=UrlSource.VIPERF_DEV,
     )
     self.assertEqual(self.mock_print.call_count, 2)
     output_data = json.loads(self.mock_print.call_args[0][0])
@@ -237,7 +237,7 @@ class StartJobTest(MockHttpRequestsMixin):
       {
         "jobId": "123",
         "jobUrl": "https://example.com/123",
-        "shortJobUrl": "https://leszek-perf-dev.corp.goog/r/123",
+        "shortJobUrl": "https://viperf-dev.corp.goog/r/123",
       },
     )
 

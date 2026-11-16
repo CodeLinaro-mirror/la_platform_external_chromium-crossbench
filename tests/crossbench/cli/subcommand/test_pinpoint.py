@@ -152,7 +152,7 @@ class PinpointSubcommandTest(unittest.TestCase):
       truncate=50,
       output_format="csv",
       extra_columns=["bug", "story"],
-      url_source=UrlSource.LESZEK_PERF,
+      url_source=UrlSource.VIPERF,
     )
 
   @mock.patch("crossbench.cli.subcommand.pinpoint.fetch_bots")
@@ -262,9 +262,7 @@ class PinpointSubcommandTest(unittest.TestCase):
       base_disable_blink_features=None,
       exp_disable_blink_features=None,
     )
-    mock_start_job.assert_called_with(
-      test_config, url_source=UrlSource.LESZEK_PERF
-    )
+    mock_start_job.assert_called_with(test_config, url_source=UrlSource.VIPERF)
 
   @mock.patch("crossbench.cli.subcommand.pinpoint.bisect_job")
   @mock.patch(
@@ -320,9 +318,7 @@ class PinpointSubcommandTest(unittest.TestCase):
       enable_blink_features=None,
       disable_blink_features=None,
     )
-    mock_bisect_job.assert_called_with(
-      test_config, url_source=UrlSource.LESZEK_PERF
-    )
+    mock_bisect_job.assert_called_with(test_config, url_source=UrlSource.VIPERF)
 
     mock_parse_and_override.reset_mock()
     self.cli.run(
@@ -575,9 +571,7 @@ class PinpointSubcommandTest(unittest.TestCase):
       base_disable_blink_features=None,
       exp_disable_blink_features=None,
     )
-    mock_start_job.assert_called_with(
-      test_config, url_source=UrlSource.LESZEK_PERF
-    )
+    mock_start_job.assert_called_with(test_config, url_source=UrlSource.VIPERF)
 
   @mock.patch("crossbench.cli.subcommand.pinpoint.start_job")
   @mock.patch(
@@ -1449,17 +1443,31 @@ class PinpointSubcommandTest(unittest.TestCase):
 
   @mock.patch("crossbench.cli.subcommand.pinpoint.list_jobs")
   def test_pinpoint_list_url_source(self, mock_list_job):
+    self.cli.run(["pinpoint", "list", "--url-source=viperf"])
+    mock_list_job.assert_called_once()
+    self.assertEqual(
+      mock_list_job.call_args.kwargs["url_source"], UrlSource.VIPERF
+    )
+
+    mock_list_job.reset_mock()
+    self.cli.run(["pinpoint", "list", "--url-source=viperf-dev"])
+    mock_list_job.assert_called_once()
+    self.assertEqual(
+      mock_list_job.call_args.kwargs["url_source"], UrlSource.VIPERF_DEV
+    )
+
+    mock_list_job.reset_mock()
     self.cli.run(["pinpoint", "list", "--url-source=leszek-perf"])
     mock_list_job.assert_called_once()
     self.assertEqual(
-      mock_list_job.call_args.kwargs["url_source"], UrlSource.LESZEK_PERF
+      mock_list_job.call_args.kwargs["url_source"], UrlSource.VIPERF
     )
 
     mock_list_job.reset_mock()
     self.cli.run(["pinpoint", "list", "--url-source=leszek-perf-dev"])
     mock_list_job.assert_called_once()
     self.assertEqual(
-      mock_list_job.call_args.kwargs["url_source"], UrlSource.LESZEK_PERF_DEV
+      mock_list_job.call_args.kwargs["url_source"], UrlSource.VIPERF_DEV
     )
 
     mock_list_job.reset_mock()
@@ -1485,11 +1493,11 @@ class PinpointSubcommandTest(unittest.TestCase):
         "pinpoint",
         "start",
         "--benchmark=speedometer3",
-        "--url-source=leszek-perf",
+        "--url-source=viperf",
       ]
     )
     mock_start_job.assert_called_once_with(
-      test_config, url_source=UrlSource.LESZEK_PERF
+      test_config, url_source=UrlSource.VIPERF
     )
 
     mock_start_job.reset_mock()
@@ -1498,11 +1506,11 @@ class PinpointSubcommandTest(unittest.TestCase):
         "pinpoint",
         "start",
         "--benchmark=speedometer3",
-        "--url-source=leszek-perf-dev",
+        "--url-source=viperf-dev",
       ]
     )
     mock_start_job.assert_called_once_with(
-      test_config, url_source=UrlSource.LESZEK_PERF_DEV
+      test_config, url_source=UrlSource.VIPERF_DEV
     )
 
     mock_start_job.reset_mock()
@@ -1535,11 +1543,11 @@ class PinpointSubcommandTest(unittest.TestCase):
         "bisect",
         "--benchmark=speedometer3",
         "--chart=my_chart",
-        "--url-source=leszek-perf",
+        "--url-source=viperf",
       ]
     )
     mock_bisect_job.assert_called_once_with(
-      test_config, url_source=UrlSource.LESZEK_PERF
+      test_config, url_source=UrlSource.VIPERF
     )
 
     mock_bisect_job.reset_mock()
@@ -1549,11 +1557,11 @@ class PinpointSubcommandTest(unittest.TestCase):
         "bisect",
         "--benchmark=speedometer3",
         "--chart=my_chart",
-        "--url-source=leszek-perf-dev",
+        "--url-source=viperf-dev",
       ]
     )
     mock_bisect_job.assert_called_once_with(
-      test_config, url_source=UrlSource.LESZEK_PERF_DEV
+      test_config, url_source=UrlSource.VIPERF_DEV
     )
 
     mock_bisect_job.reset_mock()

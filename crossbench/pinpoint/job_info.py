@@ -18,9 +18,9 @@ from crossbench.helper import txt_helper, wait
 from crossbench.parse import NumberParser, ObjectParser
 from crossbench.pinpoint.api import (
   JOB_SHORTEN_URL_TEMPLATE,
-  LESZEK_PERF_DEV_JOB_URL_TEMPLATE,
-  LESZEK_PERF_JOB_SHORT_URL_TEMPLATE,
   PINPOINT_JOB_URL_TEMPLATE,
+  VIPERF_DEV_JOB_URL_TEMPLATE,
+  VIPERF_JOB_SHORT_URL_TEMPLATE,
 )
 from crossbench.pinpoint.format_time import format_datetime
 from crossbench.pinpoint.job_config import fetch_job_config
@@ -123,9 +123,17 @@ class ComparisonMode(enum.StrEnum):
 
 
 class UrlSource(enum.StrEnum):
-  LESZEK_PERF = "leszek-perf"
+  VIPERF = "viperf"
   PINPOINT_CLASSIC = "pinpoint-classic"
-  LESZEK_PERF_DEV = "leszek-perf-dev"
+  VIPERF_DEV = "viperf-dev"
+
+  @classmethod
+  def _missing_(cls, value: object) -> UrlSource | None:
+    if value == "leszek-perf":
+      return cls.VIPERF
+    if value == "leszek-perf-dev":
+      return cls.VIPERF_DEV
+    return None
 
   @classmethod
   def all(cls) -> tuple[UrlSource, ...]:
@@ -134,9 +142,9 @@ class UrlSource(enum.StrEnum):
   def format_short_job_url(self, job_id: str) -> str:
     if self == UrlSource.PINPOINT_CLASSIC:
       return JOB_SHORTEN_URL_TEMPLATE.format(job_id=job_id)
-    if self == UrlSource.LESZEK_PERF_DEV:
-      return LESZEK_PERF_DEV_JOB_URL_TEMPLATE.format(job_id=job_id)
-    return LESZEK_PERF_JOB_SHORT_URL_TEMPLATE.format(job_id=job_id)
+    if self == UrlSource.VIPERF_DEV:
+      return VIPERF_DEV_JOB_URL_TEMPLATE.format(job_id=job_id)
+    return VIPERF_JOB_SHORT_URL_TEMPLATE.format(job_id=job_id)
 
 
 _DefaultT = TypeVar("_DefaultT")
@@ -366,7 +374,7 @@ class PinpointJobInfo:
 
   @property
   def short_url(self) -> str:
-    return UrlSource.LESZEK_PERF.format_short_job_url(self.job_id)
+    return UrlSource.VIPERF.format_short_job_url(self.job_id)
 
   @property
   def short_url_link(self) -> str:

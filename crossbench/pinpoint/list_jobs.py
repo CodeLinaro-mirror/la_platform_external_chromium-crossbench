@@ -87,7 +87,7 @@ def list_jobs(
   truncate: int | None,
   output_format: OutputFormat,
   extra_columns: list[str] | None = None,
-  url_source: UrlSource = UrlSource.LESZEK_PERF,
+  url_source: UrlSource = UrlSource.VIPERF,
 ) -> None:
   extra_columns = extra_columns or []
   emails_to_query = _fetch_user_emails(user)
@@ -161,7 +161,7 @@ def _prepare_job_list_data(
   jobs: Sequence[JsonDict],
   all_users: bool,
   extra_columns: OrderedSet[str],
-  url_source: UrlSource = UrlSource.LESZEK_PERF,
+  url_source: UrlSource = UrlSource.VIPERF,
 ) -> tuple[list[str], TableData, list[PinpointJobInfo]]:
   if all_users and "user" not in extra_columns:
     extra_columns = OrderedSet(["user", *extra_columns])
@@ -213,7 +213,7 @@ def _display_jobs(
   all_users: bool,
   truncate: int | None,
   extra_columns: OrderedSet[str],
-  url_source: UrlSource = UrlSource.LESZEK_PERF,
+  url_source: UrlSource = UrlSource.VIPERF,
 ) -> None:
   match output_format:
     case OutputFormat.JSON:
