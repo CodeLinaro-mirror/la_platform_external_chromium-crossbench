@@ -1,6 +1,6 @@
 # Browser Startup Benchmark
 
-This benchmark measures browser startup paint latencies (`Startup.BrowserWindow.FirstPaint`, `InitialWebUI.Startup.BrowserWindow.FirstPaint`, `Startup.FirstWebContents.NonEmptyPaint3`, and `InitialWebUI.Startup.ReloadButton.FirstContentfulPaint`), New Tab Page load latencies (`NewTabPage.LoadTime.FirstContentfulPaint2`, `NewTabPage.MainUi.ShownTime`, `NewTabPage.LoadTime.Startup`, `NewTabPage.LoadTime.NewTab`, and `NewTabPage.OneGoogleBar.ShownTime`), and frame smoothness metrics (`Graphics.Smoothness.PercentDroppedFrames3.*`) across startup stories (`newtab_startup`, `blank_startup`, and `google_startup`). It compares a **baseline** configuration against one with the **InitialWebUI** feature enabled.
+This benchmark measures browser startup paint latencies (`Startup.BrowserWindow.FirstPaint`, `InitialWebUI.Startup.BrowserWindow.FirstPaint`, `Startup.FirstWebContents.NonEmptyPaint3`, and `InitialWebUI.Startup.ReloadButton.FirstContentfulPaint`), New Tab Page load latencies (`NewTabPage.LoadTime.FirstContentfulPaint2`, `NewTabPage.MainUi.ShownTime`, `NewTabPage.LoadTime.Startup`, `NewTabPage.LoadTime.NewTab`, and `NewTabPage.OneGoogleBar.ShownTime`), and frame smoothness metrics (`Graphics.Smoothness.PercentDroppedFrames3.*`) across startup and new-window stories (`newtab_startup`, `blank_startup`, `google_startup`, and `new_window`). It compares a **baseline** configuration against one with the **InitialWebUI** feature enabled.
 
 ## Running the Benchmark
 
@@ -20,9 +20,9 @@ poetry run cb browser-startup \
   --repeat=30
 ```
 
-### Benchmarking Post-Startup Interactive Stories (`newtab_interactive` and `new_window`)
+### Benchmarking Post-Startup New Tab (`NewTabPage.LoadTime.NewTab`) and Smoothness (`Graphics.Smoothness.*`)
 
-Because `cc::FrameSequenceMetrics` only emits `Graphics.Smoothness.PercentDroppedFrames3.*` after an active animation or scroll sequence reaches `kMinFramesForThroughputMetric = 100` frames (~1.67s at 60Hz) and `NewTabPage.LoadTime.NewTab` / `InitialWebUI.NewWindow.*` are only recorded after startup completes, use `story_interactive.hjson` when benchmarking post-startup New Tab opening, animation smoothness, or New Window opening (optionally filter with `--stories=new_window` or `--stories=newtab_interactive`):
+Because `cc::FrameSequenceMetrics` only emits `Graphics.Smoothness.PercentDroppedFrames3.*` after an active animation or scroll sequence reaches `kMinFramesForThroughputMetric = 100` frames (~1.67s at 60Hz) and `NewTabPage.LoadTime.NewTab` is only recorded for tabs opened after `AfterStartupTaskUtils::IsBrowserStartupComplete()`, use `story_interactive.hjson` when benchmarking post-startup New Tab opening and animation smoothness:
 
 ```bash
 poetry run cb browser-startup \

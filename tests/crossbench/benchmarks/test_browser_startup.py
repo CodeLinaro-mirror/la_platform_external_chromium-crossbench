@@ -13,8 +13,10 @@ from unittest import mock
 import pandas as pd
 
 from crossbench import path as pth
-from crossbench.action_runner.action.enums import ReadyState
+from crossbench.action_runner.action.enums import ReadyState, WindowTarget
+from crossbench.action_runner.action.get import GetAction
 from crossbench.action_runner.action.start_browser import StartBrowserAction
+from crossbench.action_runner.action.wait import WaitAction
 from crossbench.action_runner.action.wait_for_condition import (
   WaitForConditionAction,
 )
@@ -70,6 +72,7 @@ class TestBrowserStartupBenchmark(BaseCrossbenchTestCase):
         "newtab_startup": "chrome://newtab/",
         "blank_startup": "about:blank",
         "google_startup": "https://www.google.com/",
+        "new_window": "chrome://newtab/",
       },
     )
     probes_default = desc.get("probes_default") or desc.get("probes-default")
@@ -79,7 +82,7 @@ class TestBrowserStartupBenchmark(BaseCrossbenchTestCase):
   def test_all_story_names(self) -> None:
     self.assertSequenceEqual(
       BrowserStartupBenchmark.all_story_names(),
-      ("newtab_startup", "blank_startup", "google_startup"),
+      ("newtab_startup", "blank_startup", "google_startup", "new_window"),
     )
 
   def test_properties(self) -> None:
@@ -102,10 +105,11 @@ class TestBrowserStartupBenchmark(BaseCrossbenchTestCase):
   def test_get_pages_config(self) -> None:
     config = BrowserStartupBenchmark.get_pages_config()
     self.assertIsInstance(config, PagesConfig)
-    self.assertEqual(len(config.pages), 3)
+    self.assertEqual(len(config.pages), 4)
     page_labels = [page.label for page in config.pages]
     self.assertSequenceEqual(
-      page_labels, ["newtab_startup", "blank_startup", "google_startup"]
+      page_labels,
+      ["newtab_startup", "blank_startup", "google_startup", "new_window"],
     )
     expected_stories = (
       ("chrome://newtab/", "^chrome://"),
@@ -113,7 +117,7 @@ class TestBrowserStartupBenchmark(BaseCrossbenchTestCase):
       ("https://www.google.com/", "^https://"),
     )
     for page, (expected_url, expected_pattern) in zip(
-      config.pages, expected_stories, strict=True
+      config.pages[:3], expected_stories, strict=True
     ):
       actions = tuple(page.actions())
       start_action = actions[0]
@@ -132,16 +136,35 @@ class TestBrowserStartupBenchmark(BaseCrossbenchTestCase):
       assert isinstance(paint_wait_action, WaitForConditionAction)
       self.assertIn("requestAnimationFrame", paint_wait_action.condition)
 
+    new_window_actions = tuple(config.pages[3].actions())
+    self.assertEqual(len(new_window_actions), 4)
+    start_action, wait_action, get_action, paint_wait_action = (
+      new_window_actions
+    )
+    self.assertIsInstance(start_action, StartBrowserAction)
+    assert isinstance(start_action, StartBrowserAction)
+    self.assertEqual(start_action.startup_urls, ())
+    self.assertIsInstance(wait_action, WaitAction)
+    self.assertIsInstance(get_action, GetAction)
+    assert isinstance(get_action, GetAction)
+    self.assertEqual(get_action.url, "chrome://newtab/")
+    self.assertEqual(get_action.target, WindowTarget.NEW_WINDOW)
+    self.assertEqual(get_action.ready_state, ReadyState.COMPLETE)
+    self.assertIsInstance(paint_wait_action, WaitForConditionAction)
+    assert isinstance(paint_wait_action, WaitForConditionAction)
+    self.assertIn("requestAnimationFrame", paint_wait_action.condition)
+
   def test_separate_stories_by_default(self) -> None:
     args = self.parse_args()
     self.assertTrue(args.separate)
     benchmark = BrowserStartupBenchmark.from_cli_args(args)
-    self.assertEqual(len(benchmark.stories), 3)
+    self.assertEqual(len(benchmark.stories), 4)
     for story in benchmark.stories:
       self.assertIsInstance(story, InteractivePage)
     story_names = [story.name for story in benchmark.stories]
     self.assertSequenceEqual(
-      story_names, ["newtab_startup", "blank_startup", "google_startup"]
+      story_names,
+      ["newtab_startup", "blank_startup", "google_startup", "new_window"],
     )
 
   def test_combined_stories_rejected(self) -> None:
@@ -158,7 +181,9 @@ class TestBrowserStartupBenchmark(BaseCrossbenchTestCase):
     args = self.parse_args("--stories=.*,-google_startup")
     benchmark = BrowserStartupBenchmark.from_cli_args(args)
     story_names = [story.name for story in benchmark.stories]
-    self.assertSequenceEqual(story_names, ["newtab_startup", "blank_startup"])
+    self.assertSequenceEqual(
+      story_names, ["newtab_startup", "blank_startup", "new_window"]
+    )
 
   def test_custom_page_config(self) -> None:
     config_file = pathlib.Path("custom_startup_pages.json")
