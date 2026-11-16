@@ -1,0 +1,81 @@
+{
+  "cujs": {
+    "js-bridge-memory": [
+      {
+        "action": "wait"
+        "duration": "2s"
+      }
+      {
+        "action": "click"
+        "source": "touch"
+        "position": {
+          "clazz": "android.widget.Button"
+          "text": "STARTUP WEBVIEW"
+        }
+      }
+      {
+        "action": "wait"
+        "duration": "5s"
+      }
+      {
+        "action": "click"
+        "source": "touch"
+        "position": {
+          "clazz": "android.widget.Button"
+          "text": "CREATE WEBVIEW INSTANCE"
+        }
+      }
+      {
+        "action": "wait"
+        "duration": "5s"
+      }
+      {
+        "action": "click"
+        "source": "touch"
+        "position": {
+          "res": "org.chromium.webview_shell:id/url_field"
+        }
+      }
+      {
+        "action": "wait"
+        "duration": "2s"
+      }
+      {
+        "action": "text_input"
+        "duration": "1s"
+        "text": "https://origina.webviewshell.test/start"
+        "source": "keyboard"
+      }
+      {
+        "action": "text_input"
+        "keyevent": "Enter"
+        "source": "keyboard"
+      }
+      {
+        "action": "wait"
+        "duration": "35s"
+      }
+      {
+        // Click on the kebab menu
+        "action": "click"
+        "source": "touch"
+        "position": {
+          "x": 1027
+          "y": 205
+        }
+      }
+      {
+        "action": "click"
+        "source": "touch"
+        "position": {
+          "clazz": "android.widget.TextView"
+          "text": "Destroy WebView"
+        }
+      }
+      {
+        "action": "wait"
+        "duration": "20s"
+      }
+    ]
+  }
+}
