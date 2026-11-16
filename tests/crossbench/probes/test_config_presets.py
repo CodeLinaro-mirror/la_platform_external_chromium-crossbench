@@ -119,8 +119,10 @@ class ProbeConfigTestCase(fake_filesystem_unittest.TestCase):
     self.assertTrue(probes)
     interactive_story_path = config_path.parent / "story_interactive.hjson"
     pages_config = PagesConfig.parse(str(interactive_story_path))
-    self.assertEqual(len(pages_config.pages), 1)
-    self.assertEqual(pages_config.pages[0].label, "newtab_interactive")
+    self.assertEqual(
+      [page.label for page in pages_config.pages],
+      ["newtab_interactive", "new_window"],
+    )
 
 
 if __name__ == "__main__":

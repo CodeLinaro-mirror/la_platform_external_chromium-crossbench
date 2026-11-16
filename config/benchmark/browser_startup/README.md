@@ -20,9 +20,9 @@ poetry run cb browser-startup \
   --repeat=30
 ```
 
-### Benchmarking Post-Startup New Tab (`NewTabPage.LoadTime.NewTab`) and Smoothness (`Graphics.Smoothness.*`)
+### Benchmarking Post-Startup Interactive Stories (`newtab_interactive` and `new_window`)
 
-Because `cc::FrameSequenceMetrics` only emits `Graphics.Smoothness.PercentDroppedFrames3.*` after an active animation or scroll sequence reaches `kMinFramesForThroughputMetric = 100` frames (~1.67s at 60Hz) and `NewTabPage.LoadTime.NewTab` is only recorded for tabs opened after `AfterStartupTaskUtils::IsBrowserStartupComplete()`, use `story_interactive.hjson` when benchmarking post-startup New Tab opening and animation smoothness:
+Because `cc::FrameSequenceMetrics` only emits `Graphics.Smoothness.PercentDroppedFrames3.*` after an active animation or scroll sequence reaches `kMinFramesForThroughputMetric = 100` frames (~1.67s at 60Hz) and `NewTabPage.LoadTime.NewTab` / `InitialWebUI.NewWindow.*` are only recorded after startup completes, use `story_interactive.hjson` when benchmarking post-startup New Tab opening, animation smoothness, or New Window opening (optionally filter with `--stories=new_window` or `--stories=newtab_interactive`):
 
 ```bash
 poetry run cb browser-startup \
@@ -46,6 +46,11 @@ Within the `trace_processor/` sub-directory, look for the following CSV (or `.js
 - `initial_webui_browser_window_first_paint.csv` (`InitialWebUI.Startup.BrowserWindow.FirstPaint`): Contains `initial_webui_browser_window_first_paint_ms` (actual window presentation on screen via `BrowserView::OnFirstPresentation`) for each run and story.
 - `first_web_contents_non_empty_paint.csv` (`Startup.FirstWebContents.NonEmptyPaint3`): Contains `first_web_contents_non_empty_paint_ms` for each run and story.
 - `reload_button_fcp.csv` (`InitialWebUI.Startup.ReloadButton.FirstContentfulPaint`): Contains `reload_button_fcp_ms` for each run and story (emitted only when `InitialWebUI` + `WebUIReloadButton` are enabled).
+- `new_window_browser_window_first_paint.csv` (`InitialWebUI.NewWindow.AllSources.WithExistingWindow.BrowserWindow.FirstPaint.FromConstructor2`): Contains `new_window_browser_window_first_paint_ms` for the `new_window` story.
+- `new_window_browser_window_show_requested_to_first_paint.csv` (`InitialWebUI.NewWindow.AllSources.WithExistingWindow.BrowserWindow.ShowRequestedToFirstPaint2`): Contains `new_window_browser_window_show_requested_to_first_paint_ms` for the `new_window` story.
+- `new_window_reload_button_first_paint.csv` (`InitialWebUI.NewWindow.AllSources.WithExistingWindow.ReloadButton.FirstPaint.FromConstructor2`): Contains `new_window_reload_button_first_paint_ms` for the `new_window` story.
+- `new_window_reload_button_fcp.csv` (`InitialWebUI.NewWindow.AllSources.WithExistingWindow.ReloadButton.FirstContentfulPaint.FromConstructor2`): Contains `new_window_reload_button_fcp_ms` for the `new_window` story.
+- `new_window_browser_window_to_reload_button_first_paint_gap.csv` (`InitialWebUI.NewWindow.AllSources.WithExistingWindow.BrowserWindowToReloadButton.FirstPaintGap2`): Contains `new_window_browser_window_to_reload_button_first_paint_gap_ms` for the `new_window` story.
 - `ntp_fcp.csv` (`NewTabPage.LoadTime.FirstContentfulPaint2`): Contains `ntp_fcp_ms` for New Tab Page stories.
 - `ntp_main_ui_shown_time.csv` (`NewTabPage.MainUi.ShownTime`): Contains `ntp_main_ui_shown_time_ms` for New Tab Page stories.
 - `ntp_load_time_startup.csv` (`NewTabPage.LoadTime.Startup`): Contains `ntp_load_time_startup_ms` for the initial startup New Tab Page (`newtab_startup`).

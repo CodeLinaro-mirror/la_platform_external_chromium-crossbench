@@ -42,5 +42,35 @@
         "duration": "2400ms"
       }
     ]
+    "new_window": [
+      {
+        "action": "start_browser"
+      }
+      {
+        "action": "wait"
+        "duration": "1200ms"
+      }
+      {
+        "action": "get"
+        "url": "chrome://newtab/"
+        "target": "_new_window"
+        "ready_state": "complete"
+      }
+      {
+        "action": "wait_for_condition"
+        "condition":
+          '''
+          if (!window.__cb_startup_raf_started) {
+            window.__cb_startup_raf_started = true;
+            requestAnimationFrame(() => {
+              requestAnimationFrame(() => {
+                window.__cb_startup_raf_done = true;
+              });
+            });
+          }
+          return Boolean(window.__cb_startup_raf_done);
+          '''
+      }
+    ]
   }
 }

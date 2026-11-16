@@ -42,6 +42,21 @@
                 histogram_name: "InitialWebUI.Startup.ReloadButton.FirstContentfulPaint"
               }
               histograms {
+                histogram_name: "InitialWebUI.NewWindow.AllSources.WithExistingWindow.BrowserWindow.FirstPaint.FromConstructor2"
+              }
+              histograms {
+                histogram_name: "InitialWebUI.NewWindow.AllSources.WithExistingWindow.BrowserWindow.ShowRequestedToFirstPaint2"
+              }
+              histograms {
+                histogram_name: "InitialWebUI.NewWindow.AllSources.WithExistingWindow.ReloadButton.FirstPaint.FromConstructor2"
+              }
+              histograms {
+                histogram_name: "InitialWebUI.NewWindow.AllSources.WithExistingWindow.ReloadButton.FirstContentfulPaint.FromConstructor2"
+              }
+              histograms {
+                histogram_name: "InitialWebUI.NewWindow.AllSources.WithExistingWindow.BrowserWindowToReloadButton.FirstPaintGap2"
+              }
+              histograms {
                 histogram_name: "NewTabPage.LoadTime.FirstContentfulPaint2"
               }
               histograms {
@@ -290,6 +305,91 @@
             WHERE s.name = 'HistogramSample'
               AND a_name.key = 'chrome_histogram_sample.name'
               AND a_name.string_value = 'Webium.Graphics.Smoothness.PercentDroppedFrames3.AllSequences'
+              AND a_sample.key = 'chrome_histogram_sample.sample'
+            ORDER BY s.ts
+            LIMIT 1
+            '''
+        }
+        {
+          "name": "new_window_browser_window_first_paint"
+          "sql":
+            '''
+            SELECT
+              a_sample.int_value AS new_window_browser_window_first_paint_ms
+            FROM slice s
+            JOIN args a_name ON s.arg_set_id = a_name.arg_set_id
+            JOIN args a_sample ON s.arg_set_id = a_sample.arg_set_id
+            WHERE s.name = 'HistogramSample'
+              AND a_name.key = 'chrome_histogram_sample.name'
+              AND a_name.string_value = 'InitialWebUI.NewWindow.AllSources.WithExistingWindow.BrowserWindow.FirstPaint.FromConstructor2'
+              AND a_sample.key = 'chrome_histogram_sample.sample'
+            ORDER BY s.ts
+            LIMIT 1
+            '''
+        }
+        {
+          "name": "new_window_browser_window_show_requested_to_first_paint"
+          "sql":
+            '''
+            SELECT
+              a_sample.int_value AS new_window_browser_window_show_requested_to_first_paint_ms
+            FROM slice s
+            JOIN args a_name ON s.arg_set_id = a_name.arg_set_id
+            JOIN args a_sample ON s.arg_set_id = a_sample.arg_set_id
+            WHERE s.name = 'HistogramSample'
+              AND a_name.key = 'chrome_histogram_sample.name'
+              AND a_name.string_value = 'InitialWebUI.NewWindow.AllSources.WithExistingWindow.BrowserWindow.ShowRequestedToFirstPaint2'
+              AND a_sample.key = 'chrome_histogram_sample.sample'
+            ORDER BY s.ts
+            LIMIT 1
+            '''
+        }
+        {
+          "name": "new_window_reload_button_first_paint"
+          "sql":
+            '''
+            SELECT
+              a_sample.int_value AS new_window_reload_button_first_paint_ms
+            FROM slice s
+            JOIN args a_name ON s.arg_set_id = a_name.arg_set_id
+            JOIN args a_sample ON s.arg_set_id = a_sample.arg_set_id
+            WHERE s.name = 'HistogramSample'
+              AND a_name.key = 'chrome_histogram_sample.name'
+              AND a_name.string_value = 'InitialWebUI.NewWindow.AllSources.WithExistingWindow.ReloadButton.FirstPaint.FromConstructor2'
+              AND a_sample.key = 'chrome_histogram_sample.sample'
+            ORDER BY s.ts
+            LIMIT 1
+            '''
+        }
+        {
+          "name": "new_window_reload_button_fcp"
+          "sql":
+            '''
+            SELECT
+              a_sample.int_value AS new_window_reload_button_fcp_ms
+            FROM slice s
+            JOIN args a_name ON s.arg_set_id = a_name.arg_set_id
+            JOIN args a_sample ON s.arg_set_id = a_sample.arg_set_id
+            WHERE s.name = 'HistogramSample'
+              AND a_name.key = 'chrome_histogram_sample.name'
+              AND a_name.string_value = 'InitialWebUI.NewWindow.AllSources.WithExistingWindow.ReloadButton.FirstContentfulPaint.FromConstructor2'
+              AND a_sample.key = 'chrome_histogram_sample.sample'
+            ORDER BY s.ts
+            LIMIT 1
+            '''
+        }
+        {
+          "name": "new_window_browser_window_to_reload_button_first_paint_gap"
+          "sql":
+            '''
+            SELECT
+              a_sample.int_value AS new_window_browser_window_to_reload_button_first_paint_gap_ms
+            FROM slice s
+            JOIN args a_name ON s.arg_set_id = a_name.arg_set_id
+            JOIN args a_sample ON s.arg_set_id = a_sample.arg_set_id
+            WHERE s.name = 'HistogramSample'
+              AND a_name.key = 'chrome_histogram_sample.name'
+              AND a_name.string_value = 'InitialWebUI.NewWindow.AllSources.WithExistingWindow.BrowserWindowToReloadButton.FirstPaintGap2'
               AND a_sample.key = 'chrome_histogram_sample.sample'
             ORDER BY s.ts
             LIMIT 1
