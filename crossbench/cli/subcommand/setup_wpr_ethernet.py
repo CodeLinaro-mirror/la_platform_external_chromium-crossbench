@@ -202,8 +202,7 @@ class SetupNetwork:
       if result.stderr:
         self._fail("adb connect failed:\n%s", result.stderr.decode("utf-8"))
     else:
-      result = self._sh("idevice_id", "-n")
-      devices = result.stdout.decode("utf-8").strip().splitlines()
+      devices = self._list_ios_devices()
       if len(devices) == 0:
         self._fail("Failed to connect to iOS device")
       elif len(devices) > 1:
