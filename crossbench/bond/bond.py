@@ -8,7 +8,7 @@ import dataclasses
 import datetime as dt
 import enum
 import logging
-from typing import TYPE_CHECKING, Mapping, Self, Sequence, override
+from typing import TYPE_CHECKING, Final, Mapping, Self, Sequence, override
 
 import google.auth.transport.requests
 from google.auth.credentials import TokenState
@@ -129,10 +129,10 @@ class AddBotsConfig(ConfigObject):
     return body_json
 
 
-ENDPOINT = "https://bond-pa.sandbox.googleapis.com"
-MESI_APIARY_URL = "https://hangouts.googleapis.com/hangouts/v1_meetings/"
-MAS_ONEPLATFORM_URL = "https://preprod-meetings.googleapis.com"
-SCOPE = "https://www.googleapis.com/auth/meetings"
+ENDPOINT: Final = "https://bond-pa.sandbox.googleapis.com"
+MESI_APIARY_URL: Final = "https://hangouts.googleapis.com/hangouts/v1_meetings/"
+MAS_ONEPLATFORM_URL: Final = "https://preprod-meetings.googleapis.com"
+SCOPE: Final = "https://www.googleapis.com/auth/meetings"
 
 
 class BondClient:

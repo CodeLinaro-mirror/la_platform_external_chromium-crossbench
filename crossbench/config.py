@@ -500,7 +500,7 @@ class ConfigEnum(StrEnumWithHelp):
     return ObjectParser.enum(cls.__name__, cls, value, cls)
 
 
-HAS_PATH_SEPARATORS_RE: re.Pattern = re.compile(r"\/|\\")
+HAS_PATH_SEPARATORS_RE: Final[re.Pattern] = re.compile(r"\/|\\")
 
 
 class ConfigObject(abc.ABC):
@@ -858,7 +858,7 @@ class TemplateArg:
     self.used = True
 
 
-ARG_NAME_PATTERN: re.Pattern = re.compile(r"^[A-Z\d_]+$")
+ARG_NAME_PATTERN: Final[re.Pattern] = re.compile(r"^[A-Z\d_]+$")
 
 
 def template_args(value: object) -> dict[str, TemplateArg]:

@@ -8,7 +8,15 @@ import argparse
 import dataclasses
 import datetime as dt
 import enum
-from typing import TYPE_CHECKING, ClassVar, Mapping, Self, TypeVar, override
+from typing import (
+  TYPE_CHECKING,
+  ClassVar,
+  Final,
+  Mapping,
+  Self,
+  TypeVar,
+  override,
+)
 
 from immutabledict import immutabledict
 
@@ -119,7 +127,7 @@ def merge_str_dict(
   return immutabledict(merged)
 
 
-ENV_CONFIG_PRESETS: dict[str, EnvConfig] = {}
+ENV_CONFIG_PRESETS: Final[dict[str, EnvConfig]] = {}
 
 
 @dataclasses.dataclass(frozen=True)

@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from crossbench.benchmarks.loading.config.login.google import GoogleLogin
 from crossbench.config import ConfigEnum
@@ -19,6 +19,6 @@ class LoginType(ConfigEnum):
   GOOGLE = ("google", "Login for google properties")
 
 
-LOGIN_LOOKUP: dict[LoginType, type[BaseLoginBlock]] = {
+LOGIN_LOOKUP: Final[dict[LoginType, type[BaseLoginBlock]]] = {
   LoginType.GOOGLE: GoogleLogin,
 }

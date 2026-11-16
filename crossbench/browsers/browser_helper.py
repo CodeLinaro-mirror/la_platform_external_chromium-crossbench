@@ -5,8 +5,9 @@
 from __future__ import annotations
 
 import re
+from typing import Final
 
-_FLAG_TO_PATH_RE: re.Pattern[str] = re.compile(r"[-/\\:.]")
+_FLAG_TO_PATH_RE: Final[re.Pattern[str]] = re.compile(r"[-/\\:.]")
 
 
 def convert_flags_to_label(*flags: str, index: int | None = None) -> str:

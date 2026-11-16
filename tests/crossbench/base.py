@@ -111,7 +111,7 @@ class CrossbenchFakeFsTestCase(
     patcher.start()
 
 
-TEST_WARNING = "Test Warning"
+TEST_WARNING: Final = "Test Warning"
 
 
 class CrossbenchMockArgsMixin:
@@ -189,7 +189,7 @@ class CrossbenchPlatformMockMixin:
 
   def setup_platform_mock(self) -> None:
     platform_id_patcher = mock.patch(
-      "crossbench.plt.base._NEXT_PLATFORM_ID", 777
+      "crossbench.plt.base._next_platform_id", 777
     )
     platform_id_patcher.start()
     self.addCleanup(platform_id_patcher.stop)

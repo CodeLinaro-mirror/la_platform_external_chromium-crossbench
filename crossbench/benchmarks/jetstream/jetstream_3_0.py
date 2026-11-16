@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar, override
+from typing import TYPE_CHECKING, ClassVar, Final, override
 
 from crossbench.benchmarks.jetstream.jetstream_3 import (
   JetStream3Benchmark,
@@ -40,7 +40,7 @@ class JetStream30ProbeContext(JetStream3ProbeContext):
      return data}, {}),
   undefined, "  ").replaceAll("[", "(").replaceAll("]", ")");
 """
-JETSTREAM_3_0_STORY_DATA = {
+JETSTREAM_3_0_STORY_DATA: Final = {
   "zlib-wasm": ("all", "default", "wasm"),
   "WSL": ("all", "default", "js", "wsl"),
   "web-ssr": ("all", "default", "js", "ssr", "web"),

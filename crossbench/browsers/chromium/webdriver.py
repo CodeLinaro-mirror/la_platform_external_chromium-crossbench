@@ -52,13 +52,13 @@ if TYPE_CHECKING:
 
 # Android is high-tech and reads chrome flags from an app-specific file.
 # TODO: extend support to more than just chrome.
-_FLAG_ROOT: pth.AnyPosixPath = pth.AnyPosixPath("/data/local/tmp/")
-FLAGS_WEBLAYER: pth.AnyPosixPath = _FLAG_ROOT / "weblayer-command-line"
-FLAGS_WEBVIEW: pth.AnyPosixPath = _FLAG_ROOT / "webview-command-line"
-FLAGS_CONTENT_SHELL: pth.AnyPosixPath = (
+_FLAG_ROOT: Final[pth.AnyPosixPath] = pth.AnyPosixPath("/data/local/tmp/")
+FLAGS_WEBLAYER: Final[pth.AnyPosixPath] = _FLAG_ROOT / "weblayer-command-line"
+FLAGS_WEBVIEW: Final[pth.AnyPosixPath] = _FLAG_ROOT / "webview-command-line"
+FLAGS_CONTENT_SHELL: Final[pth.AnyPosixPath] = (
   _FLAG_ROOT / "content-shell-command-line"
 )
-FLAGS_CHROME: pth.AnyPosixPath = _FLAG_ROOT / "chrome-command-line"
+FLAGS_CHROME: Final[pth.AnyPosixPath] = _FLAG_ROOT / "chrome-command-line"
 
 
 class ChromiumWebDriver(ChromiumBaseMixin, ChromiumBasedWebDriver):

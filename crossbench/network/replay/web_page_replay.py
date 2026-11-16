@@ -24,7 +24,7 @@ from crossbench.plt import PLATFORM, Platform
 if TYPE_CHECKING:
   from crossbench.plt.types import TupleCmdArgs
 
-_WPR_PORT_RE: re.Pattern[str] = re.compile(
+_WPR_PORT_RE: Final[re.Pattern[str]] = re.compile(
   r".*Starting server on "
   r"(?P<protocol>http|https)://"
   r"(?P<host>[^:]+|\[.+\]):"

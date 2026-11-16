@@ -8,10 +8,11 @@ import atexit
 import json
 import re
 import tempfile
+from typing import Final
 
 from crossbench import path as pth
 
-_ENCODING = "utf-8"
+_ENCODING: Final = "utf-8"
 
 
 class WprBannerDismisser:

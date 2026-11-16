@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import override
+from typing import Final, override
 
 from crossbench import path as pth
 from crossbench.browsers.chromium_based.crash import helper
@@ -18,8 +18,8 @@ from crossbench.browsers.chromium_based.crash.minidump_symbolizer import (
 from crossbench.helper import path_finder
 from crossbench.plt.base import SubprocessError
 
-_MINIDUMP_BINARY_RE = re.compile(r'\(code_file\)\s+=\s+\"(?P<path>.*)\"')
-_BUNDLED_DYLIB_RE = re.compile(
+_MINIDUMP_BINARY_RE: Final = re.compile(r'\(code_file\)\s+=\s+\"(?P<path>.*)\"')
+_BUNDLED_DYLIB_RE: Final = re.compile(
   r"Framework\.framework/Versions/\d+.\d+.\d+.\d+/Libraries/.*\.dylib"
 )
 

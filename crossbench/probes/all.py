@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from crossbench.probes.android_logcat import LogcatAndroidProbe
 from crossbench.probes.bits import BitsProbe
@@ -69,7 +69,7 @@ if TYPE_CHECKING:
 
   InternalProbeTuple = tuple[type[InternalProbe], ...]
 
-ABSTRACT_PROBES: tuple[type[Probe], ...] = (Probe, JsonResultProbe)
+ABSTRACT_PROBES: Final[tuple[type[Probe], ...]] = (Probe, JsonResultProbe)
 
 # Probes that are not user-configurable
 # Order matters, not alpha-sorted:
@@ -79,7 +79,7 @@ ABSTRACT_PROBES: tuple[type[Probe], ...] = (Probe, JsonResultProbe)
 # result of all the other probes.
 
 # Internal probes that are always installed and are non configurable.
-NON_CONFIGURABLE_INTERNAL_PROBES: InternalProbeTuple = (
+NON_CONFIGURABLE_INTERNAL_PROBES: Final[InternalProbeTuple] = (
   ResultsSummaryProbe,
   DurationsProbe,
   ErrorsProbe,
@@ -90,15 +90,15 @@ NON_CONFIGURABLE_INTERNAL_PROBES: InternalProbeTuple = (
 )
 # Internal probes that are configurable by command line flags but always
 # installed.
-CONFIGURABLE_INTERNAL_PROBES: InternalProbeTuple = (ThermalMonitorProbe,)
-DEFAULT_INTERNAL_PROBES: InternalProbeTuple = (
+CONFIGURABLE_INTERNAL_PROBES: Final[InternalProbeTuple] = (ThermalMonitorProbe,)
+DEFAULT_INTERNAL_PROBES: Final[InternalProbeTuple] = (
   NON_CONFIGURABLE_INTERNAL_PROBES + CONFIGURABLE_INTERNAL_PROBES
 )
 
 # Internal probes that are configurable and only optionally installed.
-OPTIONAL_INTERNAL_PROBES: InternalProbeTuple = (BrowserDriverLogProbe,)
+OPTIONAL_INTERNAL_PROBES: Final[InternalProbeTuple] = (BrowserDriverLogProbe,)
 
-INTERNAL_PROBES: InternalProbeTuple = (
+INTERNAL_PROBES: Final[InternalProbeTuple] = (
   DEFAULT_INTERNAL_PROBES + OPTIONAL_INTERNAL_PROBES
 )
 
@@ -108,7 +108,7 @@ assert DEFAULT_INTERNAL_PROBES[0] == ResultsSummaryProbe
 assert DEFAULT_INTERNAL_PROBES[1] == DurationsProbe
 
 # Probes that can be used on arbitrary stories and may be user configurable.
-GENERAL_PURPOSE_PROBES: tuple[type[Probe], ...] = (
+GENERAL_PURPOSE_PROBES: Final[tuple[type[Probe], ...]] = (
   BitsProbe,
   BrowserProfilingProbe,
   CDPEndpointProbe,
@@ -171,6 +171,6 @@ for probe_cls in DEFAULT_INTERNAL_PROBES:
     f"Internal {probe_cls}.NAME must start with 'cb.'"
   )
 
-PROBE_LOOKUP: dict[str, type[Probe]] = {
+PROBE_LOOKUP: Final[dict[str, type[Probe]]] = {
   cls.NAME: cls for cls in GENERAL_PURPOSE_PROBES
 }

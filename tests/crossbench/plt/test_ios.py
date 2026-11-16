@@ -16,7 +16,7 @@ import unittest.mock as mock
 import urllib.error
 import urllib.parse
 import urllib.request
-from typing import override
+from typing import Final, override
 
 from pyfakefs.fake_filesystem import OSType
 
@@ -41,7 +41,7 @@ from tests import test_helper
 from tests.crossbench.mock_helper import MacOsMockPlatform
 from tests.crossbench.plt.helper import BaseMockPlatformTestCase
 
-DEVICES_SINGLE = {
+DEVICES_SINGLE: Final = {
   "result": {
     "devices": [
       {
@@ -72,7 +72,7 @@ DEVICES_SINGLE = {
   },
 }
 
-DEVICES_MULTIPLE = {
+DEVICES_MULTIPLE: Final = {
   "result": {
     "devices": [
       {
@@ -115,7 +115,7 @@ DEVICES_MULTIPLE = {
   },
 }
 
-DEVICES_NONE = {
+DEVICES_NONE: Final = {
   "result": {
     "devices": [
       {
@@ -134,19 +134,19 @@ DEVICES_NONE = {
   },
 }
 
-IPHONE_SIMULATOR = {
+IPHONE_SIMULATOR: Final = {
   "udid": "SIM-UDID-1111",
   "name": "iPhone 15 Simulator",
   "state": "Booted",
 }
 
-WATCH_SIMULATOR = {
+WATCH_SIMULATOR: Final = {
   "udid": "SIM-UDID-2222",
   "name": "Apple Watch Simulator",
   "state": "Booted",
 }
 
-SIMULATORS_SAMPLE = {
+SIMULATORS_SAMPLE: Final = {
   "devices": {
     "com.apple.CoreSimulator.SimRuntime.iOS-17-5": [IPHONE_SIMULATOR],
     "com.apple.CoreSimulator.SimRuntime.watchOS-10-0": [WATCH_SIMULATOR],

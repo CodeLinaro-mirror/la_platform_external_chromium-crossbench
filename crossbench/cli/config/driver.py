@@ -8,7 +8,7 @@ import argparse
 import dataclasses
 import logging
 import re
-from typing import TYPE_CHECKING, Self, override
+from typing import TYPE_CHECKING, Final, Self, override
 
 from immutabledict import immutabledict
 
@@ -35,7 +35,7 @@ class AmbiguousDriverIdentifier(argparse.ArgumentTypeError):
   pass
 
 
-IOS_UUID_RE: re.Pattern[str] = re.compile(r"[0-9A-Z]+-[0-9A-Z-]+")
+IOS_UUID_RE: Final[re.Pattern[str]] = re.compile(r"[0-9A-Z]+-[0-9A-Z-]+")
 
 
 def driver_path(

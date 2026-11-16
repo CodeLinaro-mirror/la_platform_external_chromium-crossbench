@@ -45,7 +45,7 @@ class VirtualDeviceTypeConfigParser(ConfigParser[VirtualDeviceType]):
 _DEVICE_TYPE_CONFIG_PARSER: Final = VirtualDeviceTypeConfigParser()
 
 # Lazily initialized VirtualDeviceConfig class lookup.
-VIRTUAL_DEVICES: dict[VirtualDeviceType, type[VirtualDeviceConfig]] = {}
+VIRTUAL_DEVICES: Final[dict[VirtualDeviceType, type[VirtualDeviceConfig]]] = {}
 
 
 @dataclasses.dataclass(frozen=True)

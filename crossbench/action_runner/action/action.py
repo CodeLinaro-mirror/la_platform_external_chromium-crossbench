@@ -47,7 +47,7 @@ _ACTION_TYPE_CONFIG_PARSER: Final = ActionTypeConfigParser()
 ACTION_TIMEOUT: Final = dt.timedelta(seconds=20)
 
 # Lazily initialized Action class lookup.
-ACTIONS: dict[ActionType, type[Action]] = {}
+ACTIONS: Final[dict[ActionType, type[Action]]] = {}
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True, eq=False)

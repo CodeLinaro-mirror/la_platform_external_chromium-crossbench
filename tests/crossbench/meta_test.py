@@ -25,13 +25,13 @@ if TYPE_CHECKING:
 
 MAIN_SNIPPET: Final[str] = 'if __name__ == "__main__":'
 RUN_SNIPPET: Final[str] = f"{MAIN_SNIPPET}\n  test_helper.run_pytest(__file__)"
-FUTURE_ANNOTATIONS_SNIPPET = "from __future__ import annotations"
+FUTURE_ANNOTATIONS_SNIPPET: Final = "from __future__ import annotations"
 
-COMMENTS_ONLY_RE = re.compile(r"^(?:#.*|\s*)*$", re.MULTILINE)
+COMMENTS_ONLY_RE: Final = re.compile(r"^(?:#.*|\s*)*$", re.MULTILINE)
 
-UNITTEST_DIR = pathlib.Path(__file__).parent
-ROOT_DIR = UNITTEST_DIR.parents[1]
-CROSSBENCH_DIR = ROOT_DIR / "crossbench"
+UNITTEST_DIR: Final = pathlib.Path(__file__).parent
+ROOT_DIR: Final = UNITTEST_DIR.parents[1]
+CROSSBENCH_DIR: Final = ROOT_DIR / "crossbench"
 
 
 class MetaTestCase(unittest.TestCase):

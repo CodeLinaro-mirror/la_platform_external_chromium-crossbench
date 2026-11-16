@@ -4,7 +4,9 @@
 
 from __future__ import annotations
 
-AUTH_ERROR_MESSAGE = (
+from typing import Final
+
+AUTH_ERROR_MESSAGE: Final = (
   "Authentication failed or expired. Please run:\n"
   "  gcloud auth application-default login\n"
   "to configure your credentials."

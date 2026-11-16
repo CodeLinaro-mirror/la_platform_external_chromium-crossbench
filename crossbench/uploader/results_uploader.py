@@ -11,7 +11,7 @@ import os
 import tarfile
 import tempfile
 import uuid
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from crossbench import path as pth
 from crossbench.parse import ObjectParser, PathParser
@@ -21,7 +21,7 @@ from crossbench.uploader.gcs import GoogleCloudStorageUploader
 if TYPE_CHECKING:
   from crossbench.uploader.base import BaseUploader
 
-_SCHEME_TO_UPLOADER: dict[str, type[BaseUploader]] = {
+_SCHEME_TO_UPLOADER: Final[dict[str, type[BaseUploader]]] = {
   "gs": GoogleCloudStorageUploader,
 }
 

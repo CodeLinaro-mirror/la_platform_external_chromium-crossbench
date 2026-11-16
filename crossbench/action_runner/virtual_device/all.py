@@ -35,7 +35,7 @@ DEFAULT_VIRTUAL_DEVICES: Final[
   }
 )
 
-VIRTUAL_DEVICES_TUPLE: tuple[type[VirtualDeviceConfig], ...] = (
+VIRTUAL_DEVICES_TUPLE: Final[tuple[type[VirtualDeviceConfig], ...]] = (
   KeyboardVirtualDeviceConfig,
   TouchscreenVirtualDeviceConfig,
   MouseVirtualDeviceConfig,

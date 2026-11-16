@@ -101,7 +101,7 @@ class ChromeHistogramPercentileMetric(ChromeHistogramMetric):
     return delta.diff_percentile(baseline, self._percentile)
 
 
-PERCENTILE_METRIC_RE: re.Pattern[str] = re.compile(r"^p(\d+)$")
+PERCENTILE_METRIC_RE: Final[re.Pattern[str]] = re.compile(r"^p(\d+)$")
 
 
 def parse_histogram_metrics(

@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import enum
+from typing import Final
 
 from sqlalchemy import types as orm_types
 
@@ -18,7 +19,7 @@ class ImprovementDirection(enum.IntEnum):
   DOWN = -1
 
 
-_UNIT_PRESETS = (
+_UNIT_PRESETS: Final = (
   # (NAME, UNIT, DIRECTION, HELP)
   ("ms", "ms", ImprovementDirection.DOWN, "Duration in milliseconds."),
   ("ms+", "ms", ImprovementDirection.UP, "Duration in milliseconds."),

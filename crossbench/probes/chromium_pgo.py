@@ -28,7 +28,7 @@ if TYPE_CHECKING:
   from crossbench.env.runner_env import RunnerEnv
   from crossbench.runner.run import Run
 
-DEFAULT_REMOTE_PGO_ROOT_PATH: pth.AnyPath = pth.AnyPosixPath(
+DEFAULT_REMOTE_PGO_ROOT_PATH: Final[pth.AnyPath] = pth.AnyPosixPath(
   "/data_mirror/data_ce/null/0/"
 )
 

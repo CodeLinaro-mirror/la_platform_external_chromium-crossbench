@@ -9,7 +9,7 @@ import json
 import pathlib
 import shlex
 import subprocess
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING, Final, override
 from unittest import mock
 
 from crossbench.action_runner.input_events import TouchEvent
@@ -44,7 +44,7 @@ if TYPE_CHECKING:
   from crossbench import path as pth
   from crossbench.plt.types import CmdArg
 
-MOCK_GCS_FILE_SIZE: int = 45678
+MOCK_GCS_FILE_SIZE: Final[int] = 45678
 
 
 class MockJsBuffer:

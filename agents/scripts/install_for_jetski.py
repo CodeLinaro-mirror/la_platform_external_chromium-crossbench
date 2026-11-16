@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import os.path
 from pathlib import Path
+from typing import Final
 
 
 def create_symlink(src: Path, dest: Path) -> None:
@@ -17,7 +18,7 @@ def create_symlink(src: Path, dest: Path) -> None:
     print(f"Failed to create symlink for {src.name}: {e}")
 
 
-FILE_PATH = Path(__file__).resolve()
+FILE_PATH: Final = Path(__file__).resolve()
 repo_root = FILE_PATH.parents[2]
 agents_src = repo_root / "agents"
 agents_dest = repo_root / ".agents"

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import abc
 import re
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING, Final, override
 
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.chrome.webdriver import ChromeWebDriverAndroid
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
   from crossbench.browsers.settings import Settings
   from crossbench.browsers.version import BrowserVersion
 
-_WEBVIEW_SYSUPDATE_CURRENT_PKG_RE = re.compile(
+_WEBVIEW_SYSUPDATE_CURRENT_PKG_RE: Final = re.compile(
   r"Current WebView package.*:.*\(([a-z.]*),\s+(\d+\.\d+\.\d+\.\d+)\)"
 )
 

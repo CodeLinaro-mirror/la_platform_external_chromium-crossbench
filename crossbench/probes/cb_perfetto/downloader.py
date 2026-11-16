@@ -11,7 +11,7 @@ from crossbench import exception, plt
 if TYPE_CHECKING:
   import crossbench.path as pth
 
-_BASE_STORAGE_URL = (
+_BASE_STORAGE_URL: Final = (
   "https://commondatastorage.googleapis.com/perfetto-luci-artifacts"
 )
 

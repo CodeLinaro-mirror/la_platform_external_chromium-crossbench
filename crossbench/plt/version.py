@@ -6,11 +6,11 @@ from __future__ import annotations
 
 import abc
 import re
-from typing import Self, override
+from typing import Final, Self, override
 
 from crossbench.helper.version import Version, VersionPartsData
 
-VERSION_PART_RE = re.compile(r"[^0-9]*(?P<parts>[\d+.]+)")
+VERSION_PART_RE: Final = re.compile(r"[^0-9]*(?P<parts>[\d+.]+)")
 
 
 class PlatformVersion(Version, metaclass=abc.ABCMeta):

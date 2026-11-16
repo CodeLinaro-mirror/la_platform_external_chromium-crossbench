@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 
 # Directories relative to the build directory that may contain symbol binaries
 # that can be dumped to symbolize a minidump.
-_POSSIBLE_SYMBOL_BINARY_DIRECTORIES: tuple[pth.LocalPath, ...] = (
+_POSSIBLE_SYMBOL_BINARY_DIRECTORIES: Final[tuple[pth.LocalPath, ...]] = (
   pth.LocalPath("lib.unstripped"),
   pth.LocalPath("android_clang_arm") / "lib.unstripped",
   pth.LocalPath("android_clang_arm64") / "lib.unstripped",
@@ -37,7 +37,7 @@ _POSSIBLE_SYMBOL_BINARY_DIRECTORIES: tuple[pth.LocalPath, ...] = (
 # for that architecture.
 # The Breakpad processor architecture values are hex representations of the
 # values in MDCPUArchitecture from Breakpad's minidump_format.h.
-_BREAKPAD_ARCH_TO_FILE_RE: dict[str, re.Pattern] = {
+_BREAKPAD_ARCH_TO_FILE_RE: Final[dict[str, re.Pattern]] = {
   # 32-bit x86 (emulators).
   "0x0": re.compile(r"32-bit.*Intel"),
   # 64-bit x86 (Android desktop).
@@ -49,11 +49,11 @@ _BREAKPAD_ARCH_TO_FILE_RE: dict[str, re.Pattern] = {
 }
 
 # Line looks like " processor_architecture = 0xc ".
-_PROCESSOR_ARCH_RE = re.compile(
+_PROCESSOR_ARCH_RE: Final = re.compile(
   r"\s*processor_architecture\s*\=\s*(?P<arch>\w*)\s*"
 )
 
-_MODULE_LIBRARY_LINE_RE = re.compile(
+_MODULE_LIBRARY_LINE_RE: Final = re.compile(
   r"\((code_file\))\s+= \"(?P<library_name>lib[^. ]+\.so)\""
 )
 

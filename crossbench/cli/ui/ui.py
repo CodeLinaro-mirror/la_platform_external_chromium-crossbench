@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 colorama.init()
 
 IS_ATTY: Final[bool] = hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
-COLOR_LOGGING: bool = True
+COLOR_LOGGING: Final[bool] = True
 
 
 class ColoredLogFormatter(logging.Formatter):

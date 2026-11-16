@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import datetime as dt
+from typing import Final
 from unittest.mock import MagicMock, patch
 
 from crossbench.action_runner.action.enums import ReadyState
@@ -17,7 +18,7 @@ from crossbench.cli.config.secrets import ServiceAccount
 from tests import test_helper
 from tests.crossbench.base import BaseCrossbenchTestCase
 
-NOW_EPOCH = dt.datetime.now()
+NOW_EPOCH: Final = dt.datetime.now()
 
 
 class BondActionRunnerTestCase(BaseCrossbenchTestCase):

@@ -9,7 +9,7 @@ import datetime as dt
 import json
 import pathlib
 import unittest
-from typing import Any, Sequence
+from typing import Any, Final, Sequence
 
 import hjson
 
@@ -513,7 +513,7 @@ class PagesConfigTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(page.url_label, "google.com")
 
 
-DEVTOOLS_RECORDER_EXAMPLE = {
+DEVTOOLS_RECORDER_EXAMPLE: Final = {
   "title": "cnn load",
   "steps": [
     {

@@ -326,7 +326,7 @@ def prepare_linux_perf_env(
   return env
 
 
-KB = 1024
+KB: Final = 1024
 
 
 def linux_perf_probe_inject_v8_symbols(

@@ -51,7 +51,7 @@ class TsProxyServerError(Exception):
   """Catch-all exception for tsProxy Server."""
 
 
-_PORT_RE: re.Pattern[str] = re.compile(
+_PORT_RE: Final[re.Pattern[str]] = re.compile(
   r"Started Socks5 proxy server on "
   r"(?P<host>[^:]*):"
   r"(?P<port>\d+)"

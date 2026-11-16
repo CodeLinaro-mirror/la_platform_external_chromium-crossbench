@@ -29,7 +29,9 @@ TExceptionTypes = tuple[type[BaseException], ...]
 
 TExceptionId = int
 
-_TRACEBACK_SOURCE_POSITION_RE = re.compile(r'  File "([^"]+)", line (\d+)')
+_TRACEBACK_SOURCE_POSITION_RE: Final = re.compile(
+  r'  File "([^"]+)", line (\d+)'
+)
 
 
 @dataclass

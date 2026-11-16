@@ -4,6 +4,8 @@
 
 from __future__ import annotations
 
+from typing import Final
+
 from crossbench.action_runner.action.action import ACTIONS, Action
 from crossbench.action_runner.action.agent import AgentAction
 from crossbench.action_runner.action.clear_cache import ClearCacheAction
@@ -51,7 +53,7 @@ from crossbench.action_runner.action.wait_for_url_matches import (
   WaitForUrlMatchesAction,
 )
 
-ACTIONS_TUPLE: tuple[type[Action], ...] = (
+ACTIONS_TUPLE: Final[tuple[type[Action], ...]] = (
   AgentAction,
   ClearCacheAction,
   ClickAction,

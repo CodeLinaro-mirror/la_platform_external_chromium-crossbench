@@ -796,7 +796,7 @@ class ObjectParser(BaseParser):
     )
 
 
-_MAX_LEN = 70
+_MAX_LEN: Final = 70
 
 
 def _extract_decoding_error(

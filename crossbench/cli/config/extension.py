@@ -9,7 +9,7 @@ import dataclasses
 import logging
 import re
 import zipfile
-from typing import TYPE_CHECKING, Self, override
+from typing import TYPE_CHECKING, Final, Self, override
 
 from crossbench.config import ConfigObject
 from crossbench.helper import url_helper
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
   from crossbench import path as pth
   from crossbench.plt.base import Platform
 
-EXTENSION_ID_PATTERN: re.Pattern = re.compile(r"^[a-p]{32}$")
+EXTENSION_ID_PATTERN: Final[re.Pattern] = re.compile(r"^[a-p]{32}$")
 
 
 @dataclasses.dataclass(frozen=True)

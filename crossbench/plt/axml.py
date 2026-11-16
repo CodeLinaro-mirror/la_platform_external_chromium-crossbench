@@ -7,7 +7,7 @@ from __future__ import annotations
 import io
 import struct
 import zipfile
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 if TYPE_CHECKING:
   from zipfile import ZipFile
@@ -16,12 +16,12 @@ if TYPE_CHECKING:
 
 # Android Binary XML (AXML) Constants
 # See https://android.googlesource.com/platform/frameworks/base/+/master/libs/androidfw/include/androidfw/ResourceTypes.h
-RES_XML_TYPE = 0x0003
-RES_STRING_POOL_TYPE = 0x0001
-RES_XML_START_ELEMENT_TYPE = 0x0102
-RES_STRING_POOL_UTF8_FLAG = 1 << 8
-RES_CHUNK_HEADER_SIZE = 8
-RES_STRING_POOL_HEADER_SIZE = 28
+RES_XML_TYPE: Final = 0x0003
+RES_STRING_POOL_TYPE: Final = 0x0001
+RES_XML_START_ELEMENT_TYPE: Final = 0x0102
+RES_STRING_POOL_UTF8_FLAG: Final = 1 << 8
+RES_CHUNK_HEADER_SIZE: Final = 8
+RES_STRING_POOL_HEADER_SIZE: Final = 28
 
 
 def manifest_package_name(path: pth.LocalPath) -> str:

@@ -34,10 +34,10 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
   from crossbench.types import Json
 
-THERMAL_STATUS_RE: re.Pattern[str] = re.compile(
+THERMAL_STATUS_RE: Final[re.Pattern[str]] = re.compile(
   r"Thermal Status: (?P<status>\d+)"
 )
-COOLDOWN_WAIT_RANGE = WaitRange(
+COOLDOWN_WAIT_RANGE: Final = WaitRange(
   min=dt.timedelta(seconds=1), timeout=dt.timedelta(minutes=5)
 )
 

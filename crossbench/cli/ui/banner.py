@@ -7,7 +7,7 @@ from __future__ import annotations
 import colorsys
 import logging
 import random
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING, Final, Sequence
 
 from crossbench import plt
 from crossbench.cli.ui import ui
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
   from crossbench.cli.config.browser_variants import BrowserVariantConfig
   from crossbench.cli.subcommand.benchmark import BenchmarkSubcommand
 
-BANNER = r"""
+BANNER: Final = r"""
                    ▌           ▌    │  Browser Benchmark Runner
     ▞▀▖▙▀▖▞▀▖▞▀▘▞▀▘▛▀▖▞▀▖▛▀▖▞▀▖▛▀▖  │  v{version}
     ▌ ▖▌  ▌ ▌▝▀▖▝▀▖▌ ▌▛▀ ▌ ▌▌ ▖▌ ▌  │  {extra_info}

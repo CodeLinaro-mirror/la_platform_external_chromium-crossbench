@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+from typing import Final
 from unittest import mock
 
 from crossbench.cli.cli import CrossBenchCLI
@@ -12,8 +13,8 @@ from crossbench.probes.internal.summary import ResultsSummaryProbe
 from tests import test_helper
 from tests.crossbench.base import BaseCliTestCase, SysExitTestException
 
-_UPLOAD_PATCH_TARGET = "crossbench.uploader.results_uploader.upload"
-_UPLOAD_RETURN_VALUE = "gs://test-bucket/results/archive.tar.gz"
+_UPLOAD_PATCH_TARGET: Final = "crossbench.uploader.results_uploader.upload"
+_UPLOAD_RETURN_VALUE: Final = "gs://test-bucket/results/archive.tar.gz"
 
 
 class UploadResultsSubcommandTest(BaseCliTestCase):

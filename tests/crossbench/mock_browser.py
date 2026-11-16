@@ -9,7 +9,7 @@ import contextlib
 import copy
 import dataclasses
 import datetime as dt
-from typing import TYPE_CHECKING, Any, Iterator, Sequence, cast, override
+from typing import TYPE_CHECKING, Any, Final, Iterator, Sequence, cast, override
 
 from crossbench import path as pth
 from crossbench import plt
@@ -638,7 +638,7 @@ class MockFirefoxNightly(MockFirefoxBrowser):
     return app_root(platform) / "firefox-trunk"
 
 
-ALL: tuple[type[MockBrowser], ...] = (
+ALL: Final[tuple[type[MockBrowser], ...]] = (
   MockChromeCanary,
   MockChromeDev,
   MockChromeBeta,

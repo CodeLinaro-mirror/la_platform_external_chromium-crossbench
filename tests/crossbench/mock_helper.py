@@ -18,6 +18,7 @@ from typing import (
   TYPE_CHECKING,
   Any,
   ClassVar,
+  Final,
   Iterable,
   Iterator,
   Mapping,
@@ -74,7 +75,7 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner
 
-GIB = 1014**3
+GIB: Final = 1014**3
 
 
 @dataclasses.dataclass(frozen=True)

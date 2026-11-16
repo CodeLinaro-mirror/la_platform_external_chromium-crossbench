@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import datetime as dt
 import unittest
+from typing import Final
 from unittest.mock import Mock, call, patch
 
 from requests import RequestException
@@ -13,7 +14,7 @@ from requests import RequestException
 from crossbench.helper import url_helper
 from tests import test_helper
 
-NOW_EPOCH = dt.datetime.now()
+NOW_EPOCH: Final = dt.datetime.now()
 
 
 class MockRequestException(RequestException):

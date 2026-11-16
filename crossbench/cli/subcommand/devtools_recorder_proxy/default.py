@@ -31,7 +31,7 @@ if TYPE_CHECKING:
   from crossbench.plt.types import ListCmdArgs
   from crossbench.types import Json, JsonDict
 
-CROSSBENCH_ROOT: pth.LocalPath = pth.LocalPath(__file__).parents[4]
+CROSSBENCH_ROOT: Final[pth.LocalPath] = pth.LocalPath(__file__).parents[4]
 
 
 @enum.unique

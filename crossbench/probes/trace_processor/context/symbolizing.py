@@ -33,7 +33,7 @@ if TYPE_CHECKING:
   )
   from crossbench.runner.run import Run
 
-KB = 1024
+KB: Final = 1024
 
 
 class ChromiumSymbolPathFinder(BasePathFinder):
@@ -233,7 +233,7 @@ class TraceProcessorSymbolizingProbeContext(TraceProcessorProbeContext):
     return self.local_result(perfetto=(self.merged_trace_path,))
 
 
-_MACOS_SYMBOL_ARCH_LOOKUP = {
+_MACOS_SYMBOL_ARCH_LOOKUP: Final = {
   MachineArch.ARM_64: "arm64",
   MachineArch.X64: "x86_64",
 }

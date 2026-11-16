@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import re
-from typing import override
+from typing import Final, override
 
 from crossbench.browsers.version import (
   BrowserVersion,
@@ -13,7 +13,7 @@ from crossbench.browsers.version import (
   VersionParseResult,
 )
 
-_SIMPLE_VERSION_RE = re.compile(
+_SIMPLE_VERSION_RE: Final = re.compile(
   r"webkit(?:[ -]nightly)?[ -]?"
   r"(?P<parts>\d+)(?:@main)?",
   re.I,

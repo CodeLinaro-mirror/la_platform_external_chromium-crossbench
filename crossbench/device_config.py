@@ -37,11 +37,11 @@ _PredicateAndTarget: TypeAlias = tuple["_Predicate", str | None]
 
 # Operator keys, such as "$regex", start with this prefix. Device
 # configuration keys never do, so the two cannot collide.
-_OPERATOR_PREFIX = "$"
+_OPERATOR_PREFIX: Final = "$"
 
 # Names the value to write when a requirement is not met. It may accompany
 # any operator form, rather than being one of them.
-_TARGET_KEY = "$target"
+_TARGET_KEY: Final = "$target"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -590,14 +590,14 @@ class _AnyOfPredicate(_Predicate):
     return f"any of ({options})"
 
 
-_MAPPING_PREDICATES: tuple[type[_MappingPredicate], ...] = (
+_MAPPING_PREDICATES: Final[tuple[type[_MappingPredicate], ...]] = (
   _RegexPredicate,
   _NumericRangePredicate,
 )
 assert set(_MAPPING_PREDICATES) == get_all_subclasses(_MappingPredicate), (
   "Every mapping predicate must be listed."
 )
-_MAPPING_KEYS = [key for p in _MAPPING_PREDICATES for key in p.KEYS]
+_MAPPING_KEYS: Final = [key for p in _MAPPING_PREDICATES for key in p.KEYS]
 assert all(key.startswith(_OPERATOR_PREFIX) for key in _MAPPING_KEYS)
 assert _TARGET_KEY not in _MAPPING_KEYS, "$target accompanies any form."
 # Disjoint keys guarantee that at most one predicate matches, regardless of

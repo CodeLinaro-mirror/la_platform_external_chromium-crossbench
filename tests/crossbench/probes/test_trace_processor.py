@@ -546,10 +546,10 @@ class TraceProcessorProbeFakeFsTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(env["PERFETTO_BINARY_PATH"], str(unstripped_dir))
 
 
-TARGET_P9 = "web_power/power_rails_tensor_g4"
-TARGET_P10 = "web_power/power_rails_tensor_g5"
-TARGET_P1 = "web_power/power_rails_p1"
-TARGET_FALLBACK = "web_power/powerline_cpu_rails"
+TARGET_P9: Final = "web_power/power_rails_tensor_g4"
+TARGET_P10: Final = "web_power/power_rails_tensor_g5"
+TARGET_P1: Final = "web_power/power_rails_p1"
+TARGET_FALLBACK: Final = "web_power/powerline_cpu_rails"
 
 
 class TraceProcessorQueryConfigTestCase(unittest.TestCase):

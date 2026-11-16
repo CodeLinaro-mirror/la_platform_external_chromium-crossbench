@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import override
+from typing import Final, override
 from unittest import mock
 
 from crossbench import path as pth
@@ -12,7 +12,7 @@ from crossbench.plt.ios import IOSDeviceInfo
 from tests.crossbench.base import BaseCrossbenchTestCase
 from tests.crossbench.mock_helper import ShResult
 
-IOS_DEVICES_OUTPUT = {
+IOS_DEVICES_OUTPUT: Final = {
   "00001111-11AA22BB33DD": IOSDeviceInfo(
     "00001111-11AA22BB33DD", "An iPhone", "17.1.2"
   ),
@@ -21,21 +21,21 @@ IOS_DEVICES_OUTPUT = {
   ),
 }
 
-IOS_DEVICES_SINGLE_OUTPUT = {
+IOS_DEVICES_SINGLE_OUTPUT: Final = {
   "00001111-11AA22BB33DD": IOSDeviceInfo(
     "00001111-11AA22BB33DD", "An iPhone", "17.1.2"
   ),
 }
 
-ADB_DEVICES_SINGLE_OUTPUT_RESULT = (
+ADB_DEVICES_SINGLE_OUTPUT_RESULT: Final = (
   "List of devices attached\n"
   "emulator-5556 device product:sdk_google_phone_x86_64 "
   "model:Android_SDK_built_for_x86_64 device:generic_x86_64\n"
 )
 
-ADB_DEVICES_SINGLE_OUTPUT = ShResult(ADB_DEVICES_SINGLE_OUTPUT_RESULT)
+ADB_DEVICES_SINGLE_OUTPUT: Final = ShResult(ADB_DEVICES_SINGLE_OUTPUT_RESULT)
 
-ADB_DEVICES_OUTPUT = ShResult(
+ADB_DEVICES_OUTPUT: Final = ShResult(
   f"{ADB_DEVICES_SINGLE_OUTPUT_RESULT}"
   "emulator-5554 device product:sdk_google_phone_x86 "
   "model:Android_SDK_built_for_x86 device:generic_x86\n"

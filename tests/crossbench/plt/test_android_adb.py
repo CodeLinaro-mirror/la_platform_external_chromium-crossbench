@@ -76,12 +76,12 @@ from tests.crossbench.mock_helper import ShResult, ShResultType, WinMockPlatform
 from tests.crossbench.plt.helper import BasePosixMockPlatformTestCase
 from third_party.protoc import activitymanagerservice_pb2
 
-ADB_DEVICE_SAMPLE_OUTPUT = (
+ADB_DEVICE_SAMPLE_OUTPUT: Final = (
   "List of devices attached\n"
   "emulator-5556 device product:sdk_google_phone_x86_64 "
   "model:Android_SDK_built_for_x86_64 device:generic_x86_64\n"
 )
-ADB_DEVICES_SAMPLE_OUTPUT = (
+ADB_DEVICES_SAMPLE_OUTPUT: Final = (
   f"{ADB_DEVICE_SAMPLE_OUTPUT}"
   "emulator-5554 device product:sdk_google_phone_x86 "
   "model:Android_SDK_built_for_x86 device:generic_x86\n"
@@ -104,16 +104,16 @@ def load_pb(path: str):
   return (pth.LocalPath(__file__).parent / "pb" / path).read_bytes()
 
 
-DUMPSYS_MEMINFO_OUTPUT = load_pb("dumpsys_meminfo.pb")
-AC_POWERED_OUTPUT = load_pb("battery/ac_powered.pb")
-BATTERY_POWERED_OUTPUT = load_pb("battery/battery_powered.pb")
-DUMPSYS_WINDOW_DISPLAYS_OUTPUT = load_pb("display/1080p.pb")
+DUMPSYS_MEMINFO_OUTPUT: Final = load_pb("dumpsys_meminfo.pb")
+AC_POWERED_OUTPUT: Final = load_pb("battery/ac_powered.pb")
+BATTERY_POWERED_OUTPUT: Final = load_pb("battery/battery_powered.pb")
+DUMPSYS_WINDOW_DISPLAYS_OUTPUT: Final = load_pb("display/1080p.pb")
 
-DUMPSYS_MEMINFO_TIMEOUT_OUTPUT = b"""
+DUMPSYS_MEMINFO_TIMEOUT_OUTPUT: Final = b"""
 *** SERVICE 'meminfo' DUMP TIMEOUT (1ms) EXPIRED ***
 """
 
-DUMPSYS_MEMINFO_SYSTEM_OUTPUT = b"""
+DUMPSYS_MEMINFO_SYSTEM_OUTPUT: Final = b"""
           0K: GL mtrack
           0K: Other mtrack
 
@@ -130,7 +130,7 @@ DMA-BUF Heaps pool:         0K
    Tuning: 192 (large 512), oom 322,560K, restore limit 107,520K (high-end-gfx)
 """
 
-DUMPSYS_MEMINFO_SYSTEM_OUTPUT_NO_DMA_BUF = b"""
+DUMPSYS_MEMINFO_SYSTEM_OUTPUT_NO_DMA_BUF: Final = b"""
         800K: Ashmem
         324K: .ttf mmap
           0K: Cursor

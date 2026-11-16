@@ -137,13 +137,13 @@ class CPUFreqInfo:
   current: float
 
 
-_NEXT_PLATFORM_ID = 0
+_next_platform_id: int = 0
 
 
 def _next_id() -> int:
-  global _NEXT_PLATFORM_ID  # noqa: PLW0603
-  new_id = _NEXT_PLATFORM_ID
-  _NEXT_PLATFORM_ID += 1
+  global _next_platform_id  # noqa: PLW0603
+  new_id = _next_platform_id
+  _next_platform_id += 1
   return new_id
 
 

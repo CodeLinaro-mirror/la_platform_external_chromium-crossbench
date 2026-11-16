@@ -32,7 +32,7 @@ _XPATH_EXPRESSION: Final[str] = (
   '@category="PointsOfInterest" and @schema="os-signpost"]|'
   '//trace-toc/run/data/table[@schema="cpu-profile"]'
 )
-KB = 1024
+KB: Final = 1024
 
 _STOP_TIMEOUT_S: Final[int] = 60
 

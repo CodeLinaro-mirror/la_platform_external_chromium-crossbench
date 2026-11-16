@@ -18,18 +18,18 @@ if TYPE_CHECKING:
   from crossbench.cli.config.secrets import UsernamePassword
   from crossbench.runner.actions import Actions
 
-GOOGLE_LOGIN_URL: str = (
+GOOGLE_LOGIN_URL: Final[str] = (
   "https://accounts.google.com/Logout?"
   "continue=https%3A%2F%2Faccounts.google.com%2Fv3%2Fsignin%2Fidentifier%3F"
   "flowName%3DGlifWebSignIn%26flowEntry%3DServiceLogin"
 )
 
-SUCCESSFUL_LOGIN_REDIRECT: str = "https://myaccount.google.com"
+SUCCESSFUL_LOGIN_REDIRECT: Final[str] = "https://myaccount.google.com"
 
-ADD_PASSKEY_REDIRECT: str = (
+ADD_PASSKEY_REDIRECT: Final[str] = (
   "https://accounts.google.com/v3/signin/speedbump/passkeyenrollment"
 )
-SKIP_PASSKEY_ACTION: ClickAction = ClickAction.parse(
+SKIP_PASSKEY_ACTION: Final[ClickAction] = ClickAction.parse(
   {
     "action": "click",
     "pos": {
@@ -41,8 +41,10 @@ SKIP_PASSKEY_ACTION: ClickAction = ClickAction.parse(
   }
 )
 
-ADD_RECOVERY_PHONE_REDIRECT: str = "https://gds.google.com/web/recoveryoptions"
-SKIP_RECOVERY_PHONE: ClickAction = ClickAction.parse(
+ADD_RECOVERY_PHONE_REDIRECT: Final[str] = (
+  "https://gds.google.com/web/recoveryoptions"
+)
+SKIP_RECOVERY_PHONE: Final[ClickAction] = ClickAction.parse(
   {
     "action": "click",
     "pos": {
@@ -54,8 +56,8 @@ SKIP_RECOVERY_PHONE: ClickAction = ClickAction.parse(
   }
 )
 
-ADD_HOME_ADDRESS_REDIRECT: str = "https://gds.google.com/web/homeaddress"
-SKIP_HOME_ADDRESS: ClickAction = ClickAction.parse(
+ADD_HOME_ADDRESS_REDIRECT: Final[str] = "https://gds.google.com/web/homeaddress"
+SKIP_HOME_ADDRESS: Final[ClickAction] = ClickAction.parse(
   {
     "action": "click",
     "pos": {
@@ -67,8 +69,10 @@ SKIP_HOME_ADDRESS: ClickAction = ClickAction.parse(
   }
 )
 
-SUSPICIOUS_ACTIVITY_URL: str = "https://myaccount.google.com/notifications"
-CHECK_SUSPICIOUS_ACTIVITY: ClickAction = ClickAction.parse(
+SUSPICIOUS_ACTIVITY_URL: Final[str] = (
+  "https://myaccount.google.com/notifications"
+)
+CHECK_SUSPICIOUS_ACTIVITY: Final[ClickAction] = ClickAction.parse(
   {
     "action": "click",
     "pos": {
@@ -79,7 +83,7 @@ CHECK_SUSPICIOUS_ACTIVITY: ClickAction = ClickAction.parse(
   }
 )
 
-CLICK_YES_IT_WAS_ME: ClickAction = ClickAction.parse(
+CLICK_YES_IT_WAS_ME: Final[ClickAction] = ClickAction.parse(
   {
     "action": "click",
     "pos": {

@@ -7,7 +7,7 @@ from __future__ import annotations
 import datetime as dt
 import logging
 import urllib.parse as urlparse
-from typing import TYPE_CHECKING, Callable, Mapping
+from typing import TYPE_CHECKING, Callable, Final, Mapping
 
 import requests
 
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
   from crossbench.runner.timing import AnyTime
   from crossbench.types import Json
 
-DEFAULT_REQUEST_TIMEOUT = dt.timedelta(seconds=10)
+DEFAULT_REQUEST_TIMEOUT: Final = dt.timedelta(seconds=10)
 
 RequestException = requests.RequestException
 HTTPError = requests.HTTPError

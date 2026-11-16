@@ -62,7 +62,7 @@ class LivePage(InteractivePage):
     return f"{self.url},{self.duration.total_seconds()}s"
 
 
-LIVE_PAGES = (
+LIVE_PAGES: Final = (
   LivePage("blank", "about:blank", dt.timedelta(seconds=1)),
   LivePage(
     "amazon", "https://www.amazon.de/s?k=heizkissen", dt.timedelta(seconds=5)
@@ -115,8 +115,8 @@ LIVE_PAGES = (
 assert not PAGE_LIST, "PAGE_LIST was already initialized."
 PAGE_LIST.extend(LIVE_PAGES)
 
-PAGES: dict[str, LivePage] = {page.name: page for page in LIVE_PAGES}
-PAGE_LIST_SMALL: tuple[LivePage, ...] = (
+PAGES: Final[dict[str, LivePage]] = {page.name: page for page in LIVE_PAGES}
+PAGE_LIST_SMALL: Final[tuple[LivePage, ...]] = (
   PAGES["facebook"],
   PAGES["maps"],
   PAGES["timesofindia"],

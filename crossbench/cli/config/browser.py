@@ -59,20 +59,22 @@ SUPPORTED_BROWSER: Final = (
 # - "localhost:5555:chrome"
 # - "192.168.0.1:5555:chrome"
 # - "192.168.0.1:5555:chrome:4G"
-NETWORK_PRESETS: str = "|".join(
+NETWORK_PRESETS: Final[str] = "|".join(
   re.escape(preset.value) for preset in NetworkSpeedPreset
 )
-ENV_PRESETS: str = "|".join(re.escape(preset) for preset in ENV_CONFIG_PRESETS)
-HOST_PATTERN = r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|localhost)"
+ENV_PRESETS: Final[str] = "|".join(
+  re.escape(preset) for preset in ENV_CONFIG_PRESETS
+)
+HOST_PATTERN: Final = r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|localhost)"
 
-SHORT_FORM_RE: re.Pattern[str] = re.compile(
+SHORT_FORM_RE: Final[re.Pattern[str]] = re.compile(
   rf"((?P<driver>({HOST_PATTERN}:\d+|[\w.-]+)):)??"
   r"(?P<path>([A-Z]:[/\\])?[^:]+)"
   f"(:(?P<network>{NETWORK_PRESETS}))?"
   f"(:(?P<env>{ENV_PRESETS}))?"
 )
-ANDROID_PACKAGE_RE: re.Pattern[str] = re.compile(r"[a-z]+(\.[a-z]+){2,}")
-VERSION_FOR_RANGE_RE: re.Pattern[str] = re.compile(
+ANDROID_PACKAGE_RE: Final[re.Pattern[str]] = re.compile(r"[a-z]+(\.[a-z]+){2,}")
+VERSION_FOR_RANGE_RE: Final[re.Pattern[str]] = re.compile(
   r"(?P<prefix>[^\d]*)(?P<milestone>\d+)"
 )
 

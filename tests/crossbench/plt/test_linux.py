@@ -9,7 +9,7 @@ import gzip
 import pathlib
 import subprocess
 import textwrap
-from typing import override
+from typing import Final, override
 from unittest import mock
 
 from pyfakefs.fake_filesystem import OSType
@@ -43,7 +43,7 @@ from tests.crossbench.plt.helper import (
   PlatformClipboardTestCase,
 )
 
-NOW_EPOCH = dt.datetime.now()
+NOW_EPOCH: Final = dt.datetime.now()
 
 
 class _LinuxMockPlatformTestCase(BasePosixMockPlatformTestCase):

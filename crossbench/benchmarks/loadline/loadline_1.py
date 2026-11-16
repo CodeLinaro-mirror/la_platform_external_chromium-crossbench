@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 # that might affect the benchmark score.
 VERSION_STRING: Final[str] = "1.6.0"
 
-_DEPRECATION_MESSAGE = (
+_DEPRECATION_MESSAGE: Final = (
   "⚠️  Please run LoadLine2 which supersedes this benchmark."
 )
 

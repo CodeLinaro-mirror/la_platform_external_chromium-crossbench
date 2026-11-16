@@ -67,7 +67,7 @@ class BrowserVersionNoChannelError(ValueError):
   pass
 
 
-_VERSION_DIGITS_ONLY_RE: re.Pattern[str] = re.compile(r"\d+(\.\d+)*")
+_VERSION_DIGITS_ONLY_RE: Final[re.Pattern[str]] = re.compile(r"\d+(\.\d+)*")
 
 
 @functools.total_ordering

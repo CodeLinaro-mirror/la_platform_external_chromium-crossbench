@@ -141,7 +141,7 @@ class _CrossbenchUiAutomatorDevice(android_device.AndroidDevice):
 # TODO(381985595): make this configurable.
 ANDROID_PERMISSIONS: Final = ("POST_NOTIFICATIONS", "CAMERA", "RECORD_AUDIO")
 
-_AAPT_PACKAGE_NAME_RE = re.compile(r"^package: name='([^']+)'")
+_AAPT_PACKAGE_NAME_RE: Final = re.compile(r"^package: name='([^']+)'")
 _FULL_USER_ID_RE: Final[re.Pattern[str]] = re.compile(r"\bid=(\d+)\b")
 _FOUR_CORNER_EXIT_INTENT: Final[str] = (
   "com.android.setupwizard.FOUR_CORNER_EXIT"
@@ -149,7 +149,7 @@ _FOUR_CORNER_EXIT_INTENT: Final[str] = (
 _DEFAULT_FULL_USER_ID: Final[str] = "10"
 
 # Template for Perfetto config to capture Java heaps.
-ANDROID_JAVA_HPROF_PERFETTO_CFG = """buffers {{
+ANDROID_JAVA_HPROF_PERFETTO_CFG: Final = """buffers {{
   size_kb: {size_kb}
   fill_policy: DISCARD
 }}

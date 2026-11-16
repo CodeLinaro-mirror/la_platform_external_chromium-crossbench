@@ -25,7 +25,7 @@ from tools.protoc.sys_path import GEN_DIR, PROTOC_DIR
 
 # List of modules we want to depend on. We will protoc this module and all its
 # dependencies.
-PROTO_MODULES = [
+PROTO_MODULES: Final = [
   "frameworks.base.core.proto.android.server.activitymanagerservice_pb2",
   "frameworks.base.core.proto.android.server.windowmanagerservice_pb2",
   "frameworks.base.core.proto.android.service.battery_pb2",
@@ -73,10 +73,10 @@ class RepoConfig:
     proto_dir.symlink_to(target_dir, target_is_directory=True)
 
 
-ANDROID_FRAMEWORKS_GIT_URL = (
+ANDROID_FRAMEWORKS_GIT_URL: Final = (
   "https://android.googlesource.com/platform/frameworks/"
 )
-REPOS: Sequence[RepoConfig] = (
+REPOS: Final[Sequence[RepoConfig]] = (
   RepoConfig(
     "frameworks/base", f"{ANDROID_FRAMEWORKS_GIT_URL}/base", ("core/proto",)
   ),
@@ -112,8 +112,10 @@ def compile_proto(
 
 
 # Patterns to parse import errors when a module has not been compiled yet.
-MISSING_MODULE_RE = re.compile("^No module named '([^']*)'")
-MISSING_FILE_RE = re.compile("^cannot import name '([^']*)_pb2' from '([^']*)'")
+MISSING_MODULE_RE: Final = re.compile("^No module named '([^']*)'")
+MISSING_FILE_RE: Final = re.compile(
+  "^cannot import name '([^']*)_pb2' from '([^']*)'"
+)
 
 
 def compile_imports(
@@ -210,7 +212,7 @@ def write_root_module(root_dir: pth.LocalPath) -> None:
     root_module.write(")\n")
 
 
-VERSION_RE = re.compile(r".* (\d+)\.(\d+)$")
+VERSION_RE: Final = re.compile(r".* (\d+)\.(\d+)$")
 
 
 def check_protoc_version(protoc_bin: str) -> None:
@@ -238,14 +240,14 @@ def check_protoc_version(protoc_bin: str) -> None:
     )
 
 
-OUT_DIR = GEN_DIR
-TMP_DIR = PROTOC_DIR / ".tmp"
+OUT_DIR: Final = GEN_DIR
+TMP_DIR: Final = PROTOC_DIR / ".tmp"
 # Contains the temporarily checked out repositories.
-REPOS_DIR = TMP_DIR / "repos"
+REPOS_DIR: Final = TMP_DIR / "repos"
 # Contains symlink to proto modules inside the repositories.
-PROTOS_DIR = TMP_DIR / "protos"
+PROTOS_DIR: Final = TMP_DIR / "protos"
 
-HELP = """
+HELP: Final = """
 Script to generate Android proto parsing files.
 
 Does a sparse checkout of the required Android repos, and calls protoc on the

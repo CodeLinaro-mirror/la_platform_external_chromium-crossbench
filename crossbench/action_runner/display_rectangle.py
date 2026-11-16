@@ -5,10 +5,11 @@
 from __future__ import annotations
 
 import dataclasses
+from typing import Final
 
 from crossbench.benchmarks.loading.point import Point
 
-SCROLL_BOUNDS_OFFSET_FACTOR: float = 0.1
+SCROLL_BOUNDS_OFFSET_FACTOR: Final[float] = 0.1
 
 
 @dataclasses.dataclass(frozen=True)

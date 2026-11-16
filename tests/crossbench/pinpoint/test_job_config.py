@@ -23,7 +23,7 @@ from tests.crossbench.pinpoint.http_requests_mixin import MockHttpRequestsMixin
 if TYPE_CHECKING:
   from crossbench.types import JsonDict
 
-_TEST_JOB_ID = "1234567890"
+_TEST_JOB_ID: Final = "1234567890"
 _TEST_JOB_RESPONSE: Final[JsonDict] = {
   "job_id": _TEST_JOB_ID,
   "configuration": "win-11-perf",
