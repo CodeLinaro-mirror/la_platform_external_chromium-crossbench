@@ -58,6 +58,16 @@ if TYPE_CHECKING:
 
 
 _DEFAULT_TAB_TIMEOUT: Final[dt.timedelta] = dt.timedelta(seconds=0)
+_DEFAULT_NTP_URLS: Final[frozenset[str]] = frozenset(
+  {
+    "chrome://newtab",
+    "chrome://newtab/",
+    "chrome://new-tab-page",
+    "chrome://new-tab-page/",
+    "edge://newtab",
+    "edge://newtab/",
+  }
+)
 ScriptIdKwargs: TypeAlias = dict[str, object]
 
 
@@ -202,6 +212,32 @@ class ChromiumBasedWebDriver(
       f"{type(self).__name__} ({self.platform}): {startup_urls}"
     )
 
+  def _supports_startup_url_prefs(self) -> bool:
+    # On macOS and Windows, session.restore_on_startup and
+    # session.startup_urls are ENFORCE_ON_LOAD HMAC-tracked preferences in
+    # chrome_pref_service_factory.cc (GetSettingsEnforcementGroup() ==
+    # GROUP_ENFORCE_DEFAULT), so PrefHashFilter resets unhashed values written
+    # to Default/Preferences by ChromeDriver back to defaults.
+    return not (self.platform.is_macos or self.platform.is_win)
+
+  @override
+  def start(
+    self, session: BrowserSessionRunGroup, startup_urls: Sequence[str] = ()
+  ) -> None:
+    super().start(session, startup_urls=startup_urls)
+    if startup_urls and not self._supports_startup_url_prefs():
+      logging.warning(
+        "%s (%s) does not support startup_urls preferences; "
+        "falling back to post-launch WebDriver navigation: %s",
+        self,
+        self.platform,
+        startup_urls,
+      )
+      try:
+        self._open_startup_urls_fallback(startup_urls)
+      except selenium.common.exceptions.WebDriverException as e:
+        self._handle_startup_error(e)
+
   @override
   def _start_driver(
     self,
@@ -260,6 +296,32 @@ class ChromiumBasedWebDriver(
     )
     return driver
 
+  def _open_startup_urls_fallback(self, startup_urls: Sequence[str]) -> None:
+    # TODO(crbug.com/586271456): Pass startup_urls as positional launch args
+    # once ChromeDriver supports appending positional URLs via
+    # command.AppendArg(url) instead of prepending "--" to all
+    # goog:chromeOptions.args entries.
+    # Chrome already opens the New Tab Page on initial launch when no startup
+    # URLs are configured, so skip navigating tab 0 for NTP URLs to avoid a
+    # redundant navigation. For non-NTP URLs, launching into chrome://newtab/
+    # first before driver.get() means Startup.FirstWebContents.NonEmptyPaint3
+    # either measures the initial NTP paint or aborts with
+    # kAbandonNewNavigation, and initial NTP work/histograms can still appear
+    # in the trace.
+    driver = self._private_driver
+    if startup_urls[0] not in _DEFAULT_NTP_URLS:
+      driver.get(startup_urls[0])
+    if len(startup_urls) == 1:
+      return
+    first_handle = driver.current_window_handle
+    for url in startup_urls[1:]:
+      driver.switch_to.new_window("tab")
+      self._execute_cdp_cmd(
+        driver, "Runtime.setMaxCallStackSizeToCapture", {"size": 0}
+      )
+      driver.get(url)
+    driver.switch_to.window(first_handle)
+
   def _create_options(
     self,
     session: BrowserSessionRunGroup,
@@ -290,7 +352,7 @@ class ChromiumBasedWebDriver(
       options.add_argument(arg)
     options.binary_location = os.fspath(self.path)
     session.setup_selenium_options(options)
-    if startup_urls:
+    if startup_urls and self._supports_startup_url_prefs():
       prefs: dict[str, object] = dict(
         options.experimental_options.get("prefs", {})
       )

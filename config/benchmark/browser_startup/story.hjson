@@ -39,6 +39,10 @@
         ]
       }
       {
+        "action": "wait_for_url_matches"
+        "url_pattern": "^about:blank$"
+      }
+      {
         "action": "wait_for_ready_state"
         "ready_state": "complete"
       }

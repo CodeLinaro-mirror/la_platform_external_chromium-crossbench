@@ -109,7 +109,7 @@ class TestBrowserStartupBenchmark(BaseCrossbenchTestCase):
     )
     expected_stories = (
       ("chrome://newtab/", "^chrome://"),
-      ("about:blank", None),
+      ("about:blank", "^about:blank$"),
       ("https://www.google.com/", "^https://"),
     )
     for page, (expected_url, expected_pattern) in zip(
@@ -120,15 +120,11 @@ class TestBrowserStartupBenchmark(BaseCrossbenchTestCase):
       self.assertIsInstance(start_action, StartBrowserAction)
       assert isinstance(start_action, StartBrowserAction)
       self.assertEqual(start_action.startup_urls, (expected_url,))
-      if expected_pattern is None:
-        self.assertEqual(len(actions), 3)
-        ready_action, paint_wait_action = actions[1:]
-      else:
-        self.assertEqual(len(actions), 4)
-        url_wait_action, ready_action, paint_wait_action = actions[1:]
-        self.assertIsInstance(url_wait_action, WaitForUrlMatchesAction)
-        assert isinstance(url_wait_action, WaitForUrlMatchesAction)
-        self.assertEqual(url_wait_action.url_pattern.pattern, expected_pattern)
+      self.assertEqual(len(actions), 4)
+      url_wait_action, ready_action, paint_wait_action = actions[1:]
+      self.assertIsInstance(url_wait_action, WaitForUrlMatchesAction)
+      assert isinstance(url_wait_action, WaitForUrlMatchesAction)
+      self.assertEqual(url_wait_action.url_pattern.pattern, expected_pattern)
       self.assertIsInstance(ready_action, WaitForReadyStateAction)
       assert isinstance(ready_action, WaitForReadyStateAction)
       self.assertEqual(ready_action.ready_state, ReadyState.COMPLETE)

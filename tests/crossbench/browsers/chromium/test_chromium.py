@@ -39,6 +39,7 @@ from tests.crossbench.mock_helper import (
   LinuxMockPlatform,
   MacOsMockPlatform,
   MockPlatform,
+  WinMockPlatform,
 )
 
 
@@ -562,7 +563,39 @@ class ChromeDriverFinderTestCase(BaseCrossbenchTestCase):
     self.assertEqual(str(found_driver), str(driver_path))
 
 
-class ChromiumPathMacOSTest(BaseCrossbenchTestCase):
+class ChromiumPathTestCase(BaseCrossbenchTestCase):
+  def _start_with_mock_driver(
+    self,
+    browser: ChromiumWebDriver,
+    startup_urls: tuple[str, ...],
+    current_url: str = "chrome://newtab/",
+    window_handles: list[str] | None = None,
+  ) -> mock.MagicMock:
+    mock_session = mock.MagicMock()
+    mock_session.timing.timeout_unit = None
+    mock_driver = mock.MagicMock()
+    mock_driver.service = None
+    mock_driver.capabilities = {"setWindowRect": False}
+    mock_driver.current_url = current_url
+    handles = list(window_handles or ["tab-0"])
+    mock_driver.window_handles = handles
+    mock_driver.current_window_handle = handles[0]
+
+    def switch_window(handle: str) -> None:
+      mock_driver.current_window_handle = handle
+
+    mock_driver.switch_to.window.side_effect = switch_window
+    with (
+      mock.patch.object(browser, "_start_driver", return_value=mock_driver),
+      mock.patch.object(browser, "_execute_cdp_cmd"),
+      mock.patch.object(browser.platform, "exec_apple_script"),
+    ):
+      browser.start(mock_session, startup_urls=startup_urls)
+      browser.force_quit()
+    return mock_driver
+
+
+class ChromiumPathMacOSTest(ChromiumPathTestCase):
   def setup_platform(self) -> MockPlatform:
     return MacOsMockPlatform()
 
@@ -587,8 +620,73 @@ class ChromiumPathMacOSTest(BaseCrossbenchTestCase):
     self.assertEqual(str(browser2.app_path), str(app_path))
     self.assertEqual(str(browser2.path), str(bin_path))
 
+  def test_startup_urls_macos_fallback(self) -> None:
+    app_path = pth.AnyPath("/Applications/Chromium.app")
+    bin_path = app_path / "Contents" / "MacOS" / "Chromium"
+    driver_path = pth.AnyPath("/path/to/chromedriver")
+    self.fs.create_file(bin_path, st_size=1000)
+    browser = ChromiumWebDriver(
+      "test-label",
+      path=app_path,
+      settings=Settings(
+        platform=self.platform,
+        driver_path=driver_path,
+        browser_version="120.0.0.0",
+      ),
+    )
+    options = browser._create_options(
+      mock.MagicMock(),
+      args=(),
+      startup_urls=("https://www.google.com/", "about:blank"),
+    )
+    self.assertNotIn("prefs", options.experimental_options)
 
-class ChromiumPathLinuxTest(BaseCrossbenchTestCase):
+    # NTP URL aliases do not trigger a redundant navigation.
+    mock_driver_ntp = self._start_with_mock_driver(
+      browser, ("chrome://newtab",)
+    )
+    mock_driver_ntp.get.assert_not_called()
+    mock_driver_ntp.switch_to.new_window.assert_not_called()
+
+    # Single non-NTP URL switches off chrome://newtab-footer/ before navigating.
+    mock_driver_single = self._start_with_mock_driver(
+      browser,
+      ("https://www.google.com/",),
+      current_url="chrome://newtab-footer/",
+      window_handles=["footer", "tab-0"],
+    )
+    self.assertEqual(mock_driver_single.current_window_handle, "tab-0")
+    mock_driver_single.get.assert_called_once_with("https://www.google.com/")
+    mock_driver_single.switch_to.new_window.assert_not_called()
+
+    # Multi-tab with NTP first skips tab 0 navigation and opens extra tabs.
+    mock_driver_ntp_multi = self._start_with_mock_driver(
+      browser, ("chrome://newtab/", "about:blank")
+    )
+    self.assertEqual(
+      mock_driver_ntp_multi.get.call_args_list, [mock.call("about:blank")]
+    )
+    mock_driver_ntp_multi.switch_to.new_window.assert_called_once_with("tab")
+    self.assertEqual(
+      mock_driver_ntp_multi.switch_to.window.call_args_list[-1],
+      mock.call("tab-0"),
+    )
+
+    # Non-NTP and multi-tab startup_urls navigate tab 0 and open extra tabs.
+    mock_driver = self._start_with_mock_driver(
+      browser, ("https://www.google.com/", "about:blank")
+    )
+    self.assertEqual(
+      mock_driver.get.call_args_list,
+      [mock.call("https://www.google.com/"), mock.call("about:blank")],
+    )
+    mock_driver.switch_to.new_window.assert_called_once_with("tab")
+    self.assertEqual(
+      mock_driver.switch_to.window.call_args_list[-1], mock.call("tab-0")
+    )
+
+
+class ChromiumPathLinuxTest(ChromiumPathTestCase):
   def setup_platform(self) -> MockPlatform:
     return LinuxMockPlatform()
 
@@ -637,6 +735,63 @@ class ChromiumPathLinuxTest(BaseCrossbenchTestCase):
     browser.validate_binary()
 
     self.assertEqual(str(browser.driver_path), str(driver_path))
+
+  def test_startup_urls_linux_uses_prefs_without_fallback(self) -> None:
+    bin_path = pth.AnyPath("/usr/bin/chromium")
+    driver_path = pth.AnyPath("/usr/bin/chromedriver")
+    self.fs.create_file(bin_path, st_size=1000)
+    browser = ChromiumWebDriver(
+      "local",
+      path=bin_path,
+      settings=Settings(
+        platform=self.platform,
+        driver_path=driver_path,
+        browser_version="120.0.0.0",
+      ),
+    )
+    options = browser._create_options(
+      mock.MagicMock(),
+      args=(),
+      startup_urls=("https://www.google.com/",),
+    )
+    self.assertEqual(
+      options.experimental_options["prefs"],
+      {
+        "session.restore_on_startup": 4,
+        "session.startup_urls": ["https://www.google.com/"],
+      },
+    )
+    mock_driver = self._start_with_mock_driver(
+      browser, ("https://www.google.com/",)
+    )
+    mock_driver.get.assert_not_called()
+
+
+class ChromiumPathWinTest(ChromiumPathTestCase):
+  def test_startup_urls_windows_fallback(self) -> None:
+    win_platform = WinMockPlatform()
+    path = pth.AnyPath("/chrome/out/release/chrome.exe")
+    driver_path = pth.AnyPath("/chrome/out/release/chromedriver.exe")
+    self.fs.create_file(path, st_size=1000)
+    browser = ChromiumWebDriver(
+      "local",
+      path=path,
+      settings=Settings(
+        platform=win_platform,
+        driver_path=driver_path,
+        browser_version="120.0.0.0",
+      ),
+    )
+    options = browser._create_options(
+      mock.MagicMock(),
+      args=(),
+      startup_urls=("https://www.google.com/",),
+    )
+    self.assertNotIn("prefs", options.experimental_options)
+    mock_driver = self._start_with_mock_driver(
+      browser, ("https://www.google.com/",)
+    )
+    mock_driver.get.assert_called_once_with("https://www.google.com/")
 
 
 class MockLocalChromiumWebDriverAndroid(
