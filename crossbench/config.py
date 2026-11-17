@@ -729,7 +729,7 @@ class ConfigObject(abc.ABC):
     """Called on strings which pass is_hjson_like() test."""
     with exception.annotate(f"Parsing inline {cls.__name__}"):
       data = ObjectParser.dict(ObjectParser.inline_hjson(value))
-      return cls.parse_dict(data, **kwargs)
+      return cls.parse(data, **kwargs)
     raise exception.UnreachableError
 
   @classmethod

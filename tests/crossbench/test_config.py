@@ -1699,6 +1699,23 @@ class ConfigObjectTestCase(CrossbenchFakeFsTestCase):
     self.assertIsNotNone(config.nested.array)
     self.assertSequenceEqual(config.nested.array, ["first", "second", "third"])
 
+  def test_parse_inline_hjson_templated_config(self) -> None:
+    template_dir = pathlib.Path("/templates")
+    template_dir.mkdir()
+    template_file = template_dir / "template.hjson"
+    template_file.write_text(
+      json.dumps({"name": "$[NAME]"}, indent=2), encoding="utf-8"
+    )
+    inline_hjson = json.dumps(
+      {
+        "template": "/templates/template.hjson",
+        "args": {"NAME": "inline_templated"},
+      }
+    )
+    config = CustomConfigObject.parse(inline_hjson)
+    self.assertIsInstance(config, CustomConfigObject)
+    self.assertEqual(config.name, "inline_templated")
+
 
 class ConfigEnumTestCase(unittest.TestCase):
   def test_parse_invalid(self):
