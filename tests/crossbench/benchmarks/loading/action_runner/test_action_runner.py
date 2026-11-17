@@ -529,6 +529,39 @@ class ActionRunnerInputTestCase(ActionRunnerTestCase):
       expected_device_name="my_custom_keyboard",
     )
 
+  def test_text_input_driver_zero_duration(self) -> None:
+    text_input_action = TextInputAction.create(
+      InputSource.DRIVER, text="ab", repeat=2
+    )
+    with mock.patch.object(self.browser, "trusted_text_input") as input_mock:
+      self.run_action(text_input_action)
+
+    input_mock.assert_called_once_with("abab")
+    self.assertListEqual(self.runner.mock_waits, [])
+    self.inject_events_mock.assert_not_called()
+
+  def test_text_input_driver_with_duration(self) -> None:
+    text_input_action = TextInputAction.create(
+      InputSource.DRIVER, text="ab", repeat=2, duration=dt.timedelta(seconds=2)
+    )
+    with mock.patch.object(self.browser, "trusted_text_input") as input_mock:
+      self.run_action(text_input_action)
+
+    self.assertSequenceEqual(
+      input_mock.call_args_list, [call(char) for char in "abab"]
+    )
+    # Each of the 4 characters gets an equal 500ms share of the duration.
+    self.assertEqual(len(self.runner.mock_waits), 4)
+    for mock_wait in self.runner.mock_waits:
+      self.assertTrue(mock_wait.absolute_time)
+      self.assertAlmostEqual(mock_wait.time, 0.5, delta=0.1)
+    self.inject_events_mock.assert_not_called()
+
+  def test_text_input_driver_unsupported_browser(self) -> None:
+    text_input_action = TextInputAction.create(InputSource.DRIVER, text="a")
+    with self.assertRaisesRegex(NotImplementedError, "Trusted text input"):
+      self.run_action(text_input_action)
+
   def test_click_touch_coordinates_default_duration(self) -> None:
     click_action = ClickAction.create(
       InputSource.TOUCH, position=PositionConfig.from_coordinates(x=50, y=60)

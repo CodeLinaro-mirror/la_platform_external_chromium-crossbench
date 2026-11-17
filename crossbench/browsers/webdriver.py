@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, Final, Iterator, NoReturn, Sequence, override
 import selenium.common.exceptions
 import urllib3
 from selenium import webdriver
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.remote_connection import RemoteConnection
 
@@ -348,6 +349,20 @@ class WebDriverBrowser(Browser, metaclass=abc.ABCMeta):
     except selenium.common.exceptions.WebDriverException as e:
       raise DriverException(
         f"Failed to click element '{selector}': {e.msg}", self
+      ) from e
+
+  def trusted_text_input(self, text: str) -> None:
+    # Uses WebDriver key actions which target the focused element, generating
+    # trusted key events in the browser. Unlike Element Send Keys this does
+    # not move the focus. WebDriver special keys (e.g. "\ue007" for Enter) are
+    # supported.
+    logging.debug("WebDriverBrowser.trusted_text_input(%r)", text)
+    assert self._is_running
+    try:
+      ActionChains(self._private_driver).send_keys(text).perform()
+    except selenium.common.exceptions.WebDriverException as e:
+      raise DriverException(
+        f"Failed to input text {text!r}: {e.msg}", self
       ) from e
 
   @override

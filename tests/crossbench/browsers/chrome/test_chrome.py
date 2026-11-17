@@ -11,6 +11,7 @@ from unittest import mock
 import selenium.common.exceptions
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.chrome.service import Service as ChromeService
+from selenium.webdriver.remote.command import Command
 
 from crossbench import path as pth
 from crossbench.browsers.chrome.version import ChromeVersion
@@ -478,6 +479,52 @@ class ChromeWebdriverTestCase(BaseCrossbenchTestCase):
       with self.assertRaises(DriverException) as cm:
         headless_browser._create_driver(ChromeOptions(), ChromeService())
       self.assertNotIn("Try running with --headless", str(cm.exception))
+
+  def _create_running_browser(
+    self, driver_mock: mock.MagicMock
+  ) -> ChromeWebDriverForTesting:
+    browser = self._create_browser()
+    browser._private_driver = driver_mock
+    browser._is_running = True
+    return browser
+
+  def test_trusted_text_input(self) -> None:
+    driver_mock = mock.MagicMock(name="Mock WebDriver")
+    browser = self._create_running_browser(driver_mock)
+    browser.trusted_text_input("aB\ue007")
+
+    driver_mock.execute.assert_called_once()
+    command, params = driver_mock.execute.call_args.args
+    self.assertEqual(command, Command.W3C_ACTIONS)
+    key_sources = [
+      source for source in params["actions"] if source["type"] == "key"
+    ]
+    self.assertEqual(len(key_sources), 1)
+    key_actions = [
+      (action["type"], action["value"]) for action in key_sources[0]["actions"]
+    ]
+    self.assertSequenceEqual(
+      key_actions,
+      [
+        ("keyDown", "a"),
+        ("keyUp", "a"),
+        ("keyDown", "B"),
+        ("keyUp", "B"),
+        ("keyDown", "\ue007"),
+        ("keyUp", "\ue007"),
+      ],
+    )
+
+  def test_trusted_text_input_error(self) -> None:
+    driver_mock = mock.MagicMock(name="Mock WebDriver")
+    driver_mock.execute.side_effect = (
+      selenium.common.exceptions.WebDriverException("no such window")
+    )
+    browser = self._create_running_browser(driver_mock)
+    with self.assertRaises(DriverException) as cm:
+      browser.trusted_text_input("a")
+    self.assertIn("Failed to input text 'a'", str(cm.exception))
+    self.assertIn("no such window", str(cm.exception))
 
 
 class LocalChromeWebDriverAndroidTestCase(BaseCrossbenchTestCase):

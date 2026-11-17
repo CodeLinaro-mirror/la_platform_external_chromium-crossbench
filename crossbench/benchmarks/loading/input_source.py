@@ -17,5 +17,5 @@ class InputSource(ConfigEnum):
   KEYBOARD = ("keyboard", "Use the keyboard to perform the action")
   DRIVER = (
     "driver",
-    "Use webdriver to perform the action (e.g. trusted click)",
+    "Use webdriver to perform the action (e.g. trusted click or typing)",
   )

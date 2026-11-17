@@ -341,6 +341,8 @@ class ActionRunner:
       self.text_input_keyboard(action)
     elif input_source is InputSource.JS:
       self.text_input_js(action)
+    elif input_source is InputSource.DRIVER:
+      self.text_input_driver(action)
     else:
       raise RuntimeError(f"Unsupported input source: '{input_source}'")
 
@@ -676,6 +678,22 @@ class ActionRunner:
         "document.activeElement.value = arguments[0]",
         arguments=[action.text * action.repeat],
       )
+
+  def text_input_driver(self, action: i_action.TextInputAction) -> None:
+    # Types into the currently focused element, like a physical keyboard.
+    assert action.text, "Missing text"
+    text = action.text * action.repeat
+    with self.actions("TextInput (Driver)", measure=False) as actions:
+      if not action.duration:
+        self.browser.trusted_text_input(text)
+        return
+
+      # Pace each character to an equal share of action.duration; wait_until
+      # sleeps for the remaining slice after the WebDriver call returns.
+      char_duration = action.duration / len(text)
+      for char in text:
+        with actions.wait_until(char_duration):
+          self.browser.trusted_text_input(char)
 
   def _text_to_weighted_events(self, text: str) -> list[KeyEvent | int]:
     events: list[KeyEvent | int] = []

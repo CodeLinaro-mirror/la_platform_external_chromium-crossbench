@@ -814,6 +814,34 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     action_2 = TextInputAction.parse_dict(dict(action.to_json()))
     self.assertEqual(action, action_2)
 
+  def test_parse_text_input_driver(self):
+    action = TextInputAction.parse_dict(
+      {
+        "action": "text_input",
+        "duration": "1s",
+        "source": "driver",
+        "text": "some text",
+        "repeat": 2,
+      }
+    )
+    self.assertEqual(action.input_source, InputSource.DRIVER)
+    self.assertIsNone(action.source_device)
+    self.assertEqual(action.text, "some text")
+    self.assertEqual(action.repeat, 2)
+    self.assertEqual(action.duration, dt.timedelta(seconds=1))
+    action_2 = TextInputAction.parse_dict(dict(action.to_json()))
+    self.assertEqual(action, action_2)
+
+  def test_parse_text_input_driver_keyevent(self):
+    with self.assertRaisesRegex(ValueError, "DRIVER"):
+      TextInputAction.parse_dict(
+        {
+          "action": "text_input",
+          "source": "driver",
+          "keyevent": "Enter",
+        }
+      )
+
   def test_parse_text_input_negative_duration(self):
     config_dict: dict[str, object] = {
       "action": "text_input",

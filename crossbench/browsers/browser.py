@@ -572,6 +572,9 @@ class Browser(abc.ABC):
   def trusted_click(self, selector: str) -> None:
     raise NotImplementedError(f"Trusted click is not supported by {self}")
 
+  def trusted_text_input(self, text: str) -> None:
+    raise NotImplementedError(f"Trusted text input is not supported by {self}")
+
   def screenshot(self, path: pth.LocalPath) -> None:
     # TODO: implement screenshot on browser and platform.
     raise NotImplementedError(f"Taking screenshots is not supported by {self}")

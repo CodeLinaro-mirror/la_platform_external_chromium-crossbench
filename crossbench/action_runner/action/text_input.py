@@ -65,11 +65,16 @@ class TextInputAction(InputSourceAction):
       raise ValueError(
         f"Exactly one of {self}.text or {self}.keyevent can be specified."
       )
-    if self.input_source is InputSource.JS:
+    if self.input_source in (InputSource.JS, InputSource.DRIVER):
+      source = self.input_source.name
       if self.keyevent:
-        raise ValueError("keyevent cannot be used with JS text_input source.")
+        raise ValueError(
+          f"keyevent cannot be used with {source} text_input source."
+        )
       if not self.text:
-        raise ValueError("text must be provided with JS text_input source.")
+        raise ValueError(
+          f"text must be provided with {source} text_input source."
+        )
 
   @override
   def validate_duration(self) -> None:
@@ -78,7 +83,7 @@ class TextInputAction(InputSourceAction):
 
   @override
   def supported_input_sources(self) -> tuple[InputSource, ...]:
-    return (InputSource.JS, InputSource.KEYBOARD)
+    return (InputSource.JS, InputSource.KEYBOARD, InputSource.DRIVER)
 
   @override
   def to_json(self) -> JsonDict:
