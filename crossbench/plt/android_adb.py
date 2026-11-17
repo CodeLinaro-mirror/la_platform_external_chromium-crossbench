@@ -1823,6 +1823,10 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
   def screenshot(self, result_path: pth.AnyPath) -> None:
     self.sh("screencap", "-p", result_path)
 
+  @override
+  def screenshot_bytes(self) -> bytes:
+    return self.sh_stdout_bytes("screencap", "-p")
+
   _DUMPSYS_WINDOW_DISPLAYS_RE: Final[re.Pattern] = re.compile(
     r" cur=(?P<x>\d+)x(?P<y>\d+) "
   )

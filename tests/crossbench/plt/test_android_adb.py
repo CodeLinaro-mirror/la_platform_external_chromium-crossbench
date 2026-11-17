@@ -219,6 +219,12 @@ class BaseAndroidAdbMockPlatformTestCase(BasePosixMockPlatformTestCase):
     self.expect_sh("tee /sys/kernel/tracing/trace_marker")
     self.platform.trace_mark("android-mark")
 
+  @override
+  def test_screenshot_bytes(self) -> None:
+    expected = b"\x89PNG\r\n\x1a\n"
+    self.expect_sh("screencap -p", result=expected)
+    self.assertEqual(self.platform.screenshot_bytes(), expected)
+
   def test_clear_memory_page_cache(self):
     self.expect_sh("getprop ro.build.version.sdk", result="37")
     self.expect_sh("sync")

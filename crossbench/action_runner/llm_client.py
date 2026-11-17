@@ -14,6 +14,7 @@ from google import genai
 from google.genai import types
 
 from crossbench.action_runner.action.action import Action
+from crossbench.action_runner.action.agent import DEFAULT_AGENT_THINKING_BUDGET
 from crossbench.action_runner.action.all import ACTIONS_TUPLE
 from crossbench.config import ConfigError, ConfigObject, ConfigParser
 from crossbench.exception import MultiException
@@ -121,6 +122,7 @@ class LlmConversationClient:
     api_key: str | None = None,
     genai_client: genai.Client | None = None,
     max_history_screenshots: int = 3,
+    thinking_budget: int = DEFAULT_AGENT_THINKING_BUDGET,
   ) -> None:
     self._model: Final[str] = ObjectParser.non_empty_str(model, "model")
     system_instruction = ObjectParser.non_empty_str(
@@ -131,6 +133,9 @@ class LlmConversationClient:
     )
     self._max_history_screenshots: Final[int] = NumberParser.positive_zero_int(
       max_history_screenshots, "max_history_screenshots"
+    )
+    thinking_budget = NumberParser.int_range(-1, name="thinking_budget")(
+      thinking_budget
     )
     if api_key is not None:
       api_key = ObjectParser.non_empty_str(api_key, "api_key")
@@ -144,6 +149,8 @@ class LlmConversationClient:
         system_instruction=system_instruction,
         temperature=temperature,
         response_mime_type="application/json",
+        media_resolution=types.MediaResolution.MEDIA_RESOLUTION_MEDIUM,
+        thinking_config=types.ThinkingConfig(thinking_budget=thinking_budget),
         http_options=self._http_options,
       )
     )

@@ -105,6 +105,37 @@ class LlmConversationClientTestCase(unittest.TestCase):
         temperature=1.0,
         max_history_screenshots=-1,
       )
+    with self.assertRaises(argparse.ArgumentTypeError):
+      LlmConversationClient(
+        model="gemini-2.5-flash",
+        system_instruction="Test",
+        temperature=1.0,
+        thinking_budget=-2,
+      )
+
+  def test_generation_config_defaults_and_overrides(self) -> None:
+    default_client = LlmConversationClient(
+      model="gemini-3.8-flash",
+      system_instruction="Test instruction",
+      temperature=1.0,
+    )
+    self.assertEqual(
+      default_client._config.media_resolution,
+      types.MediaResolution.MEDIA_RESOLUTION_MEDIUM,
+    )
+    assert default_client._config.thinking_config is not None
+    self.assertEqual(
+      default_client._config.thinking_config.thinking_budget, 256
+    )
+
+    custom_client = LlmConversationClient(
+      model="gemini-3.8-flash",
+      system_instruction="Test instruction",
+      temperature=1.0,
+      thinking_budget=0,
+    )
+    assert custom_client._config.thinking_config is not None
+    self.assertEqual(custom_client._config.thinking_config.thinking_budget, 0)
 
   def test_send_turn_uses_chat_session_and_parses_response(self) -> None:
     mock_genai_client = MagicMock()

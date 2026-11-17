@@ -200,6 +200,7 @@ class AgentDriver:
       temperature=self._action.temperature,
       api_key=self._resolve_api_key(),
       max_history_screenshots=self._action.max_history_screenshots,
+      thinking_budget=self._action.thinking_budget,
     )
 
   def _collect_environment_context(self) -> str:
@@ -352,19 +353,10 @@ class AgentDriver:
     )
 
   def _capture_step_screenshot(self, step_idx: int) -> bytes:
-    file_name = f"step_{step_idx:03d}.png"
-    local_path = self._screenshots_dir / file_name
-    if self.browser_platform.is_remote:
-      remote_tmp = (
-        self._run.browser_tmp_dir
-        / f"cb_agent_{self._episode_index:03d}_{file_name}"
-      )
-      self.browser_platform.screenshot(remote_tmp)
-      self.browser_platform.pull(remote_tmp, local_path)
-      self.browser_platform.rm(remote_tmp, missing_ok=True)
-    else:
-      self.browser_platform.screenshot(local_path)
-    return self.host_platform.cat_bytes(local_path)
+    local_path = self._screenshots_dir / f"step_{step_idx:03d}.png"
+    screenshot_bytes = self.browser_platform.screenshot_bytes()
+    self.host_platform.write_bytes(local_path, screenshot_bytes)
+    return screenshot_bytes
 
   def _format_action_error(self, error: Exception) -> str:
     base_msg = type(error).__name__

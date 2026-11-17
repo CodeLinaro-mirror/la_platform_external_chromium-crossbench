@@ -18,12 +18,14 @@ if TYPE_CHECKING:
   from crossbench.config import ConfigParser
   from crossbench.types import JsonDict
 
+
 DEFAULT_AGENT_MODEL: Final[str] = "gemini-3.8-flash"
 DEFAULT_AGENT_TEMPERATURE: Final[float] = 1.0
 DEFAULT_AGENT_MAX_STEPS: Final[int] = 25
 DEFAULT_AGENT_DURATION: Final[dt.timedelta] = dt.timedelta(minutes=5)
-DEFAULT_SETTLE_DELAY: Final[dt.timedelta] = dt.timedelta(seconds=5)
+DEFAULT_SETTLE_DELAY: Final[dt.timedelta] = dt.timedelta(seconds=1)
 DEFAULT_MAX_HISTORY_SCREENSHOTS: Final[int] = 3
+DEFAULT_AGENT_THINKING_BUDGET: Final[int] = 256
 
 
 @dataclasses.dataclass(frozen=True, eq=False)
@@ -44,6 +46,7 @@ class AgentAction(BaseDurationAction):
   settle_delay: dt.timedelta = DEFAULT_SETTLE_DELAY
   stop_on_done: bool = True
   max_history_screenshots: int = DEFAULT_MAX_HISTORY_SCREENSHOTS
+  thinking_budget: int = DEFAULT_AGENT_THINKING_BUDGET
   # Overrides BaseDurationAction.duration:
   duration: dt.timedelta = dataclasses.field(
     default=DEFAULT_AGENT_DURATION, kw_only=True
@@ -111,6 +114,15 @@ class AgentAction(BaseDurationAction):
       default=DEFAULT_MAX_HISTORY_SCREENSHOTS,
       help="Number of recent turn screenshots retained in chat history.",
     )
+    parser.add_argument(
+      "thinking_budget",
+      type=NumberParser.int_range(-1, name="thinking_budget"),
+      default=DEFAULT_AGENT_THINKING_BUDGET,
+      help=(
+        "Maximum Gemini thinking token budget per turn "
+        "(0 disables thinking; -1 uses automatic model budget)."
+      ),
+    )
     return parser
 
   @override
@@ -132,6 +144,9 @@ class AgentAction(BaseDurationAction):
     NumberParser.positive_zero_int(
       self.max_history_screenshots, f"{self}.max_history_screenshots"
     )
+    NumberParser.int_range(-1, name=f"{self}.thinking_budget")(
+      self.thinking_budget
+    )
 
   @override
   def to_json(self) -> JsonDict:
@@ -143,4 +158,5 @@ class AgentAction(BaseDurationAction):
     details["settle_delay"] = self.settle_delay.total_seconds()
     details["stop_on_done"] = self.stop_on_done
     details["max_history_screenshots"] = self.max_history_screenshots
+    details["thinking_budget"] = self.thinking_budget
     return details

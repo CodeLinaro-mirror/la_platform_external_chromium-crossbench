@@ -1500,6 +1500,12 @@ class Platform(abc.ABC):
     # TODO: support screen coordinates
     raise NotImplementedError("'screenshot' is only available on MacOS for now")
 
+  def screenshot_bytes(self) -> bytes:
+    with self.TemporaryDirectory(prefix="cb_screenshot_") as tmp_dir:
+      screenshot_path = tmp_dir / "screenshot.png"
+      self.screenshot(screenshot_path)
+      return self.cat_bytes(screenshot_path)
+
   def display_resolution(self) -> DisplayResolution:
     raise NotImplementedError(
       "'display_resolution' is only available on Android and ChromeOS for now"

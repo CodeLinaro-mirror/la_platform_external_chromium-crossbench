@@ -8,8 +8,8 @@ $prompt
 
 Respond ONLY with a valid JSON object matching this exact structure:
 {
-  "observation": "Visible screen state and whether the last action succeeded.",
-  "thought": "Your reasoning for the next step based on the task instructions.",
+  "observation": "Brief screen state and last action result (<=15 words).",
+  "thought": "Concise reasoning for the next step (<=15 words).",
   "done": false,
   "anomaly": "",
   "actions": [
@@ -18,10 +18,11 @@ Respond ONLY with a valid JSON object matching this exact structure:
   ]
 }
 
-Whenever a sequence of actions can be predicted from the current screen (for
-example: clicking an input field, typing text, and pressing Enter; or
-launching an app, waiting briefly, and interacting with it), chain multiple
-actions together in the "actions" array in a single turn to make faster
+Keep "observation" and "thought" concise (at most 15 words each) to minimize
+response latency. Whenever a sequence of actions can be predicted from the
+current screen (for example: clicking an input field, typing text, and pressing
+Enter; or launching an app, waiting briefly, and interacting with it), chain
+multiple actions together in the "actions" array in a single turn to make faster
 progress and reduce round-trips.
 Set "anomaly" to a brief description of what went wrong when requested by the
 task instructions (leave "" otherwise).

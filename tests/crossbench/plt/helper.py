@@ -113,6 +113,17 @@ class BaseMockPlatformTestCase(CrossbenchFakeFsTestCase, metaclass=abc.ABCMeta):
   def test_get_active_tasks(self) -> None:
     self.assertEqual(self.platform.get_active_tasks(), [])
 
+  def test_screenshot_bytes(self) -> None:
+    if not self.platform.is_local:
+      return
+    expected = b"\x89PNG\r\n\x1a\n"
+    with mock.patch.object(
+      self.platform,
+      "screenshot",
+      side_effect=lambda path: self.platform.write_bytes(path, expected),
+    ):
+      self.assertEqual(self.platform.screenshot_bytes(), expected)
+
   def test_setup(self) -> None:
     self.platform.setup()
 

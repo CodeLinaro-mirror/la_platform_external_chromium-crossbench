@@ -2000,9 +2000,10 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(action.temperature, 1.0)
     self.assertEqual(action.max_steps, 25)
     self.assertEqual(action.duration, dt.timedelta(minutes=5))
-    self.assertEqual(action.settle_delay, dt.timedelta(seconds=5))
+    self.assertEqual(action.settle_delay, dt.timedelta(seconds=1))
     self.assertTrue(action.stop_on_done)
     self.assertEqual(action.max_history_screenshots, 3)
+    self.assertEqual(action.thinking_budget, 256)
     action.validate()
 
     action_2 = AgentAction.parse_dict(dict(action.to_json()))
@@ -2062,6 +2063,11 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
         }
       )
 
+    with self.assertRaises(ValueError):
+      AgentAction.parse_dict(
+        {"action": "agent", "prompt": "Test", "thinking_budget": -2}
+      )
+
   def test_parse_agent_custom(self) -> None:
     config_dict: dict[str, object] = {
       "action": "agent",
@@ -2070,9 +2076,10 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
       "temperature": 1.6,
       "max_steps": 40,
       "duration": "10m",
-      "settle_delay": "1s",
+      "settle_delay": "2s",
       "stop_on_done": False,
       "max_history_screenshots": 5,
+      "thinking_budget": 0,
     }
     action = AgentAction.parse_dict(config_dict)
     self.assertEqual(action.TYPE, ActionType.AGENT)
@@ -2081,9 +2088,10 @@ class ActionTestCase(CrossbenchFakeFsTestCase):
     self.assertEqual(action.temperature, 1.6)
     self.assertEqual(action.max_steps, 40)
     self.assertEqual(action.duration, dt.timedelta(minutes=10))
-    self.assertEqual(action.settle_delay, dt.timedelta(seconds=1))
+    self.assertEqual(action.settle_delay, dt.timedelta(seconds=2))
     self.assertFalse(action.stop_on_done)
     self.assertEqual(action.max_history_screenshots, 5)
+    self.assertEqual(action.thinking_budget, 0)
     action.validate()
 
     action_2 = AgentAction.parse_dict(dict(action.to_json()))

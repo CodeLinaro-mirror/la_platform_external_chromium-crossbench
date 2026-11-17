@@ -865,12 +865,17 @@ class AgentDriverTestCase(ActionRunnerTestCase):
         "max_steps": 1,
         "duration": "1m",
         "max_history_screenshots": 4,
+        "thinking_budget": 128,
       }
     )
     driver = AgentDriver(self.action_runner, self.mock_run, action)
     self.assertIsInstance(driver._client, LlmConversationClient)
     self.assertEqual(driver._client._model, "gemini-2.5-pro")
     self.assertEqual(driver._client._max_history_screenshots, 4)
+    assert driver._client._config.thinking_config is not None
+    self.assertEqual(
+      driver._client._config.thinking_config.thinking_budget, 128
+    )
     self.assertIsNone(driver._client._api_key)
     rendered_instruction = str(driver._client._config.system_instruction)
     self.assertIn("Default client prompt", rendered_instruction)
@@ -880,6 +885,24 @@ class AgentDriverTestCase(ActionRunnerTestCase):
     self.mock_run.story_secrets = Secrets.parse({"ai": "secret-ai-key"})
     driver_with_key = AgentDriver(self.action_runner, self.mock_run, action)
     self.assertEqual(driver_with_key._client._api_key, "secret-ai-key")
+
+  def test_capture_step_screenshot_uses_screenshot_bytes(self) -> None:
+    mock_client = MagicMock(spec=LlmConversationClient)
+    action = AgentAction.parse_dict(
+      {"action": "agent", "prompt": "Screenshot capture"}
+    )
+    driver = AgentDriver(self.action_runner, self.mock_run, action, mock_client)
+    driver.host_platform.mkdir(driver.episode_dir / "screenshots")
+    expected_bytes = b"\x89PNG\r\n\x1a\nframe"
+    with patch.object(
+      self.platform, "screenshot_bytes", return_value=expected_bytes
+    ) as mock_screenshot_bytes:
+      captured = driver._capture_step_screenshot(1)
+
+    self.assertEqual(captured, expected_bytes)
+    mock_screenshot_bytes.assert_called_once_with()
+    saved_path = driver.episode_dir / "screenshots" / "step_001.png"
+    self.assertEqual(saved_path.read_bytes(), expected_bytes)
 
   def test_record_anomaly_clones_perfetto_snapshot_and_writes_anomalies(
     self,
