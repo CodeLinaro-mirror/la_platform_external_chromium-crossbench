@@ -146,6 +146,9 @@ _FULL_USER_ID_RE: Final[re.Pattern[str]] = re.compile(r"\bid=(\d+)\b")
 _FOUR_CORNER_EXIT_INTENT: Final[str] = (
   "com.android.setupwizard.FOUR_CORNER_EXIT"
 )
+_SETUP_WIZARD_PACKAGES: Final[frozenset[str]] = frozenset(
+  ("com.android.setupwizard", "com.google.android.setupwizard")
+)
 _DEFAULT_FULL_USER_ID: Final[str] = "10"
 
 # Template for Perfetto config to capture Java heaps.
@@ -2105,7 +2108,11 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
 
   @override
   def close_all_apps(self) -> None:
-    for task_id, _ in self._list_standard_tasks():
+    if not self._bypass_oobe and not self._is_device_provisioned():
+      return
+    for task_id, package in self._list_standard_tasks():
+      if package in _SETUP_WIZARD_PACKAGES:
+        continue
       self.sh("am", "stack", "remove", task_id, check=False)
 
   @override

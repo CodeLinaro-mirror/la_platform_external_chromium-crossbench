@@ -1517,6 +1517,7 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
       (101, 1, "com.android.chrome/com.google.android.apps.chrome.Main"),
       (102, 1, "com.android.settings/com.android.settings.Settings"),
       (103, 1, "com.google.android.keep/.Browse"),
+      (104, 1, "com.google.android.setupwizard/.SetupWizardActivity"),
       (1000001, 2, "com.google.android.apps.nexuslauncher/.Launcher"),
     )
     self.expect_sh("dumpsys activity --proto activities", result=proto_out)
@@ -1524,6 +1525,21 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     self.expect_sh("am stack remove 102")
     self.expect_sh("am stack remove 103")
     self.platform.close_all_apps()
+
+  def test_close_all_apps_with_oobe_bypass_disabled(self) -> None:
+    platform = AndroidAdbPlatform(
+      self.host_platform, self.DEVICE_ID, adb=self.adb, bypass_oobe=False
+    )
+    self.expect_sh("settings get global device_provisioned", result="0\n")
+    platform.close_all_apps()
+
+    proto_out = self._create_activities_proto(
+      (101, 1, "com.android.chrome/com.google.android.apps.chrome.Main"),
+    )
+    self.expect_sh("settings get global device_provisioned", result="1\n")
+    self.expect_sh("dumpsys activity --proto activities", result=proto_out)
+    self.expect_sh("am stack remove 101")
+    platform.close_all_apps()
 
   def test_users(self):
     self.expect_sh(
