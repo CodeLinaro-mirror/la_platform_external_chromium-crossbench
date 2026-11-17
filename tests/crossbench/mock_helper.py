@@ -75,7 +75,7 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner
 
-GIB: Final = 1014**3
+GIB: Final = 1024**3
 
 
 @dataclasses.dataclass(frozen=True)
