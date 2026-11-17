@@ -4,10 +4,12 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import pathlib
 from typing import Any
 from unittest import mock
 
+from crossbench import path as pth
 from crossbench.cli.config.network import NetworkConfig, NetworkType
 from crossbench.network.replay.wpr import LocalWprReplayNetwork
 from crossbench.network.traffic_shaping.live import NoTrafficShaper
@@ -165,6 +167,85 @@ class WprReplayNetworkTestCase(BaseCrossbenchTestCase):
             "gs://chrome-partner-loadline/power/"
             f"cnn_20260513.wprgo#{invalid_fragment}"
           )
+
+  def _cached_wpr_path(self, stem: str, md5_bytes: bytes) -> pth.LocalPath:
+    md5_b64 = base64.b64encode(md5_bytes).decode("ascii")
+    return (
+      self.platform.local_cache_dir("wpr")
+      / f"{stem}_{pth.safe_filename(md5_b64)}.wprgo"
+    )
+
+  def test_ensure_archive_uses_cached_file_from_expected_md5_hash(self):
+    md5_bytes = bytes.fromhex("04d258d7a6c207b41c591fbb55c53397")
+    cached_path = self._cached_wpr_path("cnn_20260513", md5_bytes)
+    self.fs.create_file(cached_path, contents=b"cached wpr archive")
+    network = self._create_network()
+    gcs_patcher = mock.patch.object(
+      self.platform, "prepare_gcs_request", side_effect=AssertionError
+    )
+    gcs_mock = gcs_patcher.start()
+    self.addCleanup(gcs_patcher.stop)
+
+    resolved = network.ensure_archive(
+      (
+        "gs://chrome-partner-loadline/power/cnn_20260513.wprgo#1778683962813986"
+      ),
+      expected_md5_hash=md5_bytes,
+    )
+
+    self.assertEqual(resolved, cached_path)
+    gcs_mock.assert_not_called()
+
+  def test_ensure_archive_cache_miss_downloads_from_gcs(self):
+    md5_bytes = bytes.fromhex("04d258d7a6c207b41c591fbb55c53397")
+    md5_b64 = base64.b64encode(md5_bytes).decode("ascii")
+    expected_path = self._cached_wpr_path("cnn_20260513", md5_bytes)
+    network = self._create_network()
+    blob_mock = mock.Mock(md5_hash=md5_b64)
+    url = "gs://chrome-partner-loadline/power/cnn_20260513.wprgo"
+    with (
+      mock.patch.object(
+        self.platform, "prepare_gcs_request", return_value=blob_mock
+      ) as gcs_mock,
+      mock.patch.object(self.platform, "download_gcs_file") as download_mock,
+    ):
+      resolved = network.ensure_archive(url, expected_md5_hash=md5_bytes)
+
+    self.assertEqual(resolved, expected_path)
+    gcs_mock.assert_called_once_with(url)
+    download_mock.assert_called_once_with(url, expected_path)
+
+  def test_ensure_archive_does_not_reuse_initial_md5_for_other_archive(self):
+    init_md5 = bytes.fromhex("04d258d7a6c207b41c591fbb55c53397")
+    other_md5 = bytes.fromhex("11111111111111111111111111111111")
+    self.fs.create_file(
+      self._cached_wpr_path("other", init_md5), contents=b"wrong archive"
+    )
+    other_b64 = base64.b64encode(other_md5).decode("ascii")
+    expected_path = self._cached_wpr_path("other", other_md5)
+    network = self._create_network(expected_md5_hash=init_md5)
+    url = "gs://chrome-partner-loadline/power/other.wprgo"
+    with (
+      mock.patch.object(
+        self.platform,
+        "prepare_gcs_request",
+        return_value=mock.Mock(md5_hash=other_b64),
+      ) as gcs_mock,
+      mock.patch.object(self.platform, "download_gcs_file"),
+    ):
+      resolved = network.ensure_archive(url)
+
+    self.assertEqual(resolved, expected_path)
+    gcs_mock.assert_called_once_with(url)
+
+  def test_ensure_archive_invalid_expected_md5_hash_raises(self):
+    network = self._create_network()
+
+    with self.assertRaisesRegex(argparse.ArgumentTypeError, "MD5"):
+      network.ensure_archive(
+        "gs://chrome-partner-loadline/power/cnn_20260513.wprgo",
+        expected_md5_hash="invalid-hash",
+      )
 
 
 if __name__ == "__main__":

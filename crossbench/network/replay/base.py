@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import abc
+import base64
 import contextlib
 import hashlib
 import logging
@@ -44,7 +45,9 @@ class ReplayNetwork(Network, metaclass=abc.ABCMeta):
       expected_md5_hash
     )
     self._cached_archive_md5_hash: bytes = b""
-    self._archive_path: pth.LocalPath = self.ensure_archive(archive)
+    self._archive_path: pth.LocalPath = self.ensure_archive(
+      archive, self._expected_md5_hash
+    )
 
   @property
   def _archive_md5_hash(self) -> bytes:
@@ -97,15 +100,28 @@ class ReplayNetwork(Network, metaclass=abc.ABCMeta):
     del session
     yield
 
-  def _generate_filename(self, url: str) -> str:
+  def _archive_cache_path(self, url: str, md5_b64: str) -> pth.LocalPath:
+    safe_md5 = pth.safe_filename(md5_b64)
+    url_path = pth.AnyPosixPath(urlparse(url).path)
+    filename = f"{url_path.stem}_{safe_md5}{url_path.suffix}"
+    return self.host_platform.local_cache_dir("wpr") / filename
+
+  def _generate_cache_path(self, url: str) -> pth.LocalPath:
     blob = self.host_platform.prepare_gcs_request(url)
     if md5 := blob.md5_hash:
-      safe_md5 = pth.safe_filename(md5)
-      url_path = pth.AnyPosixPath(urlparse(url).path)
-      return f"{url_path.stem}_{safe_md5}{url_path.suffix}"
+      return self._archive_cache_path(url, md5)
     raise RuntimeError(f"Could not find md5 hash in blob: {url}")
 
-  def _download_gcloud_archive(self, url: str) -> pth.LocalPath:
+  def _download_gcloud_archive(
+    self, url: str, expected_md5_hash: bytes = b""
+  ) -> pth.LocalPath:
+    if expected_md5_hash:
+      md5_b64 = base64.b64encode(expected_md5_hash).decode("ascii")
+      cached_path = self._archive_cache_path(url, md5_b64)
+      if cached_path.is_file():
+        logging.info("Found cached WPR archive: %s", cached_path)
+        return cached_path
+
     title: str = f"Downloading {url}"
     hint: str = (
       f"Failed to download {url} from Google Cloud Storage. Make sure the "
@@ -116,9 +132,7 @@ class ReplayNetwork(Network, metaclass=abc.ABCMeta):
     with exception.annotate(title), ui.spinner(title=title):
       # `title` + "\n" + `hint` yields the wrong formatting, so nest.
       with exception.annotate(hint):
-        local_path = self.host_platform.local_cache_dir(
-          "wpr"
-        ) / self._generate_filename(url)
+        local_path = self._generate_cache_path(url)
         if local_path.is_file():
           logging.info("Found cached WPR archive: %s", local_path)
           return local_path
@@ -126,7 +140,12 @@ class ReplayNetwork(Network, metaclass=abc.ABCMeta):
         self.host_platform.download_gcs_file(url, local_path)
     return local_path
 
-  def ensure_archive(self, archive: pth.LocalPath | str) -> pth.LocalPath:
+  def ensure_archive(
+    self, archive: pth.LocalPath | str, expected_md5_hash: bytes | str = b""
+  ) -> pth.LocalPath:
+    md5_bytes = ObjectParser.md5_hash(expected_md5_hash)
     if isinstance(archive, str) and archive.startswith(GS_PREFIX):
-      return self._download_gcloud_archive(url=archive)
+      return self._download_gcloud_archive(
+        url=archive, expected_md5_hash=md5_bytes
+      )
     return PathParser.existing_file_path(archive).resolve()

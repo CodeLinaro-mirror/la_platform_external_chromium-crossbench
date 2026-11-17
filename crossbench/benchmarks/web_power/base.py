@@ -520,7 +520,9 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
       return
 
     if not self._has_custom_network and story.site_config.archive:
-      local_archive_path = network.ensure_archive(story.site_config.archive)
+      local_archive_path = network.ensure_archive(
+        story.site_config.archive, story.site_config.archive_md5_hash
+      )
       network.set_archive_path(local_archive_path)
 
     if network.archive_path:
