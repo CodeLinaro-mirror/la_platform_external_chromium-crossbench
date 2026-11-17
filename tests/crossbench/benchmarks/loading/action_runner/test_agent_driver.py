@@ -26,6 +26,7 @@ from crossbench.action_runner.agent_driver import (
 from crossbench.action_runner.llm_client import (
   AgentTurnResponse,
   LlmConversationClient,
+  TurnResponseError,
 )
 from crossbench.benchmarks.loading.point import Point
 from crossbench.browsers.settings import Settings
@@ -422,6 +423,129 @@ class AgentDriverTestCase(ActionRunnerTestCase):
     self.assertNotIn("Extra debug detail line", second_turn_prompt)
     self.assertTrue(
       any("Extra debug detail line" in msg for msg in captured_logs.output)
+    )
+
+  def test_agent_driver_self_corrects_on_turn_parse_error(self) -> None:
+    mock_genai_client = MagicMock()
+    mock_chat = MagicMock()
+    mock_genai_client.chats.create.return_value = mock_chat
+
+    bad_resp = MagicMock(
+      text=json.dumps(
+        {
+          "observation": "Browser visible",
+          "thought": "Try invalid javascript URL in get",
+          "actions": [{"action": "get", "url": "javascript:void(0)"}],
+        }
+      )
+    )
+    good_resp = MagicMock(
+      text=json.dumps(
+        {
+          "observation": "Recovered after parse error",
+          "thought": "Use valid wait action",
+          "done": True,
+          "actions": [{"action": "wait", "duration": "10ms"}],
+        }
+      )
+    )
+    mock_chat.send_message.side_effect = [bad_resp, good_resp]
+
+    client = LlmConversationClient(
+      model="gemini-2.5-flash",
+      system_instruction="Test instruction",
+      temperature=1.0,
+      genai_client=mock_genai_client,
+    )
+    action = AgentAction.parse_dict(
+      {
+        "action": "agent",
+        "prompt": "Recover from malformed action",
+        "max_steps": 5,
+        "duration": "1m",
+      }
+    )
+    driver = AgentDriver(self.action_runner, self.mock_run, action, client)
+    driver.execute()
+
+    self.assertTrue(self.mock_run.exceptions.is_success)
+    self.assertEqual(mock_chat.send_message.call_count, 2)
+    second_turn_parts = mock_chat.send_message.call_args_list[1].args[0]
+    second_turn_prompt = second_turn_parts[0].text
+    assert second_turn_prompt is not None
+    self.assertIn("Step 1 failed to parse", second_turn_prompt)
+    self.assertIn("No actions from step 1 were executed", second_turn_prompt)
+    self.assertIn("Invalid url: 'javascript:void(0)'", second_turn_prompt)
+    self.assertNotIn("Parsing AgentTurnResponse", second_turn_prompt)
+
+    screenshots_dir = driver.episode_dir / "screenshots"
+    self.assertTrue((screenshots_dir / "step_001.png").is_file())
+    self.assertTrue((screenshots_dir / "step_002.png").is_file())
+
+    transcript_lines = (
+      (driver.episode_dir / "transcript.jsonl")
+      .read_text(encoding="utf-8")
+      .strip()
+      .splitlines()
+    )
+    self.assertEqual(len(transcript_lines), 2)
+    first_entry = json.loads(transcript_lines[0])
+    self.assertEqual(first_entry["step"], 1)
+    self.assertEqual(first_entry["error"], "Invalid url: 'javascript:void(0)'")
+
+  def test_agent_driver_recovers_empty_turn_and_resets_error_streak(
+    self,
+  ) -> None:
+    mock_client = MagicMock(spec=LlmConversationClient)
+    mock_client.send_turn.side_effect = [
+      TurnResponseError("Model returned empty response text"),
+      AgentTurnResponse(thought="Continue exploring"),
+      TurnResponseError("Malformed JSON 1"),
+      TurnResponseError("Malformed JSON 2"),
+      AgentTurnResponse(thought="Done", done=True),
+    ]
+    action = AgentAction.parse_dict(
+      {
+        "action": "agent",
+        "prompt": "Intermittent turn parse failures",
+        "max_steps": 6,
+        "duration": "1m",
+        "settle_delay": "0s",
+      }
+    )
+    driver = AgentDriver(self.action_runner, self.mock_run, action, mock_client)
+    driver.execute()
+
+    self.assertTrue(self.mock_run.exceptions.is_success)
+    self.assertEqual(mock_client.send_turn.call_count, 5)
+
+  def test_agent_driver_aborts_after_max_consecutive_turn_errors(self) -> None:
+    mock_client = MagicMock(spec=LlmConversationClient)
+    mock_client.send_turn.side_effect = TurnResponseError(
+      "Persistent malformed JSON"
+    )
+    action = AgentAction.parse_dict(
+      {
+        "action": "agent",
+        "prompt": "Fail after consecutive bad turns",
+        "max_steps": 6,
+        "duration": "1m",
+      }
+    )
+    driver = AgentDriver(self.action_runner, self.mock_run, action, mock_client)
+    with self.assertRaisesRegex(TurnResponseError, "Persistent malformed JSON"):
+      driver.execute()
+    self.assertEqual(
+      mock_client.send_turn.call_count, AgentDriver.MAX_CONSECUTIVE_TURN_ERRORS
+    )
+    transcript_lines = (
+      (driver.episode_dir / "transcript.jsonl")
+      .read_text(encoding="utf-8")
+      .strip()
+      .splitlines()
+    )
+    self.assertEqual(
+      len(transcript_lines), AgentDriver.MAX_CONSECUTIVE_TURN_ERRORS
     )
 
   def test_agent_driver_ignores_done_when_stop_on_done_is_false(self) -> None:

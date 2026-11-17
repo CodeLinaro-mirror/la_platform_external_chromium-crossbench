@@ -16,6 +16,7 @@ from crossbench.action_runner.action.wait import WaitAction
 from crossbench.action_runner.llm_client import (
   AgentTurnResponse,
   LlmConversationClient,
+  TurnResponseError,
 )
 from crossbench.config import ConfigError
 from tests import test_helper
@@ -162,8 +163,43 @@ class LlmConversationClientTestCase(unittest.TestCase):
       temperature=1.0,
       genai_client=mock_genai_client,
     )
-    with self.assertRaisesRegex(RuntimeError, "empty response text"):
+    with self.assertRaisesRegex(TurnResponseError, "empty response text"):
       client.send_turn("Step 1")
+
+  def test_send_turn_malformed_response_raises_turn_response_error(
+    self,
+  ) -> None:
+    mock_genai_client = MagicMock()
+    mock_chat = MagicMock()
+    mock_genai_client.chats.create.return_value = mock_chat
+
+    bad_action_resp = MagicMock(
+      text=json.dumps(
+        {"actions": [{"action": "get", "url": "javascript:void(0)"}]}
+      )
+    )
+    long_prose_resp = MagicMock(text="x" * 1000)
+    mock_chat.send_message.side_effect = [bad_action_resp, long_prose_resp]
+
+    client = LlmConversationClient(
+      model="gemini-2.5-flash",
+      system_instruction="Test",
+      temperature=1.0,
+      genai_client=mock_genai_client,
+    )
+
+    with self.assertRaises(TurnResponseError) as ctx:
+      client.send_turn("Step 1")
+    self.assertEqual(str(ctx.exception), "Invalid url: 'javascript:void(0)'")
+
+    with self.assertRaises(TurnResponseError) as long_ctx:
+      client.send_turn("Step 2")
+    long_msg = str(long_ctx.exception)
+    self.assertTrue(
+      long_msg.startswith("Expected JSON object for AgentTurnResponse")
+    )
+    self.assertTrue(long_msg.endswith("..."))
+    self.assertEqual(len(long_msg), TurnResponseError.MAX_MESSAGE_LENGTH + 3)
 
   def test_prune_prompt_history_data_caps_old_screenshots(self) -> None:
     mock_genai_client = MagicMock()

@@ -4,8 +4,10 @@
 
 from __future__ import annotations
 
+import argparse
 import dataclasses
 import functools
+import logging
 from typing import TYPE_CHECKING, Final, Self, override
 
 from google import genai
@@ -14,6 +16,7 @@ from google.genai import types
 from crossbench.action_runner.action.action import Action
 from crossbench.action_runner.action.all import ACTIONS_TUPLE
 from crossbench.config import ConfigError, ConfigObject, ConfigParser
+from crossbench.exception import MultiException
 from crossbench.parse import NumberParser, ObjectParser
 
 if TYPE_CHECKING:
@@ -21,6 +24,25 @@ if TYPE_CHECKING:
 
 # Force registration of all Action subclasses before parsing Action items.
 assert ACTIONS_TUPLE, "import failed"
+
+
+class TurnResponseError(RuntimeError):
+  """Raised when the model returns an empty or unparsable turn response."""
+
+  MAX_MESSAGE_LENGTH: Final[int] = 500
+
+  def __init__(self, message: str) -> None:
+    lines = [line.strip() for line in message.splitlines() if line.strip()]
+    normalized = " | ".join(lines) or type(self).__name__
+    if len(normalized) > self.MAX_MESSAGE_LENGTH:
+      normalized = f"{normalized[: self.MAX_MESSAGE_LENGTH]}..."
+    super().__init__(normalized)
+
+  @classmethod
+  def from_parse_error(cls, error: argparse.ArgumentTypeError) -> Self:
+    if isinstance(error, MultiException):
+      return cls("\n".join(error.exceptions.error_messages()))
+    return cls(str(error))
 
 
 @dataclasses.dataclass(frozen=True)
@@ -176,5 +198,9 @@ class LlmConversationClient:
       )
     response = self.chat.send_message(user_parts)
     if not (model_text := response.text):
-      raise RuntimeError(f"Model returned empty response text: {response}")
-    return AgentTurnResponse.parse(model_text)
+      logging.debug("Empty model turn response: %s", response)
+      raise TurnResponseError("Model returned empty response text")
+    try:
+      return AgentTurnResponse.parse(model_text)
+    except argparse.ArgumentTypeError as e:
+      raise TurnResponseError.from_parse_error(e) from e

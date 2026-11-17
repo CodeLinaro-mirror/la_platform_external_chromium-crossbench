@@ -69,7 +69,8 @@ Supported Crossbench action objects in the "actions" array:
      {"event": "key", "key_code": "KeyA", "is_down": false},
      {"event": "wait", "duration": "50ms"},
      {"event": "key", "key_code": "ControlLeft", "is_down": false}]})
-8. Navigate browser or open tab/window:
+8. Navigate browser or open tab/window (use https://, http://, data:, about:,
+   or chrome:// URLs; never use javascript: URLs):
    {"action": "get", "url": "https://example.com", "target": "_new_tab"}
    (target options: "_self", "_new_tab", "_new_window")
 9. Switch or close browser tabs:

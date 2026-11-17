@@ -21,7 +21,11 @@ from crossbench.action_runner.action.mouse_move import MouseMoveAction
 from crossbench.action_runner.action.position import PositionConfig
 from crossbench.action_runner.action.swipe import SwipeAction
 from crossbench.action_runner.action.text_input import TextInputAction
-from crossbench.action_runner.llm_client import LlmConversationClient
+from crossbench.action_runner.llm_client import (
+  AgentTurnResponse,
+  LlmConversationClient,
+  TurnResponseError,
+)
 from crossbench.benchmarks.loading.point import Point
 from crossbench.cli.ui import ui
 from crossbench.plt.base import SubprocessError
@@ -31,7 +35,6 @@ from crossbench.runner.probe_context_lookup_error import ProbeContextLookupError
 if TYPE_CHECKING:
   from crossbench.action_runner.action.agent import AgentAction
   from crossbench.action_runner.action_runner import ActionRunner
-  from crossbench.action_runner.llm_client import AgentTurnResponse
   from crossbench.plt.base import Platform
   from crossbench.runner.run import Run
   from crossbench.types import JsonDict
@@ -48,6 +51,7 @@ class AgentDriver:
   """Executes an AgentAction loop within a Crossbench Run."""
 
   MIN_TYPING_MS_PER_CHAR: Final[int] = 100
+  MAX_CONSECUTIVE_TURN_ERRORS: Final[int] = 3
   EPISODES_DIR_NAME: Final[str] = "agent_episodes"
 
   def __init__(
@@ -223,7 +227,11 @@ class AgentDriver:
         self._episode_id,
         step_idx,
       )
-      turn = self._client.send_turn(turn_feedback, screenshot_bytes)
+      try:
+        turn = self._client.send_turn(turn_feedback, screenshot_bytes)
+      except TurnResponseError as e:
+        self._append_transcript(step_idx, turn_feedback, error=str(e))
+        raise
     self._append_transcript(step_idx, turn_feedback, turn)
     logging.info(
       "Agent [%s] step %d | thought: %s",
@@ -233,6 +241,41 @@ class AgentDriver:
     )
     return turn
 
+  def _handle_turn_error(
+    self,
+    step_idx: int,
+    error: TurnResponseError,
+    attempt: int,
+    elapsed_total_s: int,
+  ) -> str:
+    err_detail = str(error)
+    logging.warning(
+      "Agent [%s] step %d | invalid turn response (%d/%d): %s",
+      self._episode_id,
+      step_idx,
+      attempt,
+      self.MAX_CONSECUTIVE_TURN_ERRORS,
+      err_detail,
+    )
+    logging.debug(
+      "Agent [%s] step %d turn parse failure: %s",
+      self._episode_id,
+      step_idx,
+      error,
+      exc_info=error,
+    )
+    if attempt >= self.MAX_CONSECUTIVE_TURN_ERRORS:
+      raise error
+    duration_total_s = int(self._action.duration.total_seconds())
+    return (
+      f"[Episode elapsed: {elapsed_total_s}s / {duration_total_s}s | "
+      f"Step {step_idx} failed to parse]\n"
+      f"No actions from step {step_idx} were executed because your "
+      f"response could not be parsed: {err_detail}\n"
+      "Respond with a valid JSON object using only supported "
+      "Crossbench actions and valid parameter values."
+    )
+
   def execute(self) -> None:
     self.host_platform.mkdir(self._screenshots_dir)
     self._write_episode_metadata()
@@ -240,6 +283,7 @@ class AgentDriver:
     duration_s = self._action.duration.total_seconds()
     deadline = start_time + duration_s
     duration_total_s = int(duration_s)
+    consecutive_turn_errors = 0
     feedback = (
       "Agent episode started. Observe the initial screen and emit your "
       "first action(s)."
@@ -255,7 +299,19 @@ class AgentDriver:
           )
           break
 
-        turn = self._request_turn(step_idx, feedback)
+        try:
+          turn = self._request_turn(step_idx, feedback)
+        except TurnResponseError as e:
+          consecutive_turn_errors += 1
+          feedback = self._handle_turn_error(
+            step_idx,
+            e,
+            consecutive_turn_errors,
+            int(time.monotonic() - start_time),
+          )
+          continue
+
+        consecutive_turn_errors = 0
         if anomaly := turn.anomaly.strip():
           self._record_anomaly(step_idx, anomaly)
 
@@ -421,8 +477,11 @@ class AgentDriver:
     self,
     step_idx: int,
     feedback: str,
-    turn: AgentTurnResponse,
+    turn: AgentTurnResponse | None = None,
+    error: str = "",
   ) -> None:
+    if turn is None:
+      turn = AgentTurnResponse(thought=f"[Turn parse error: {error}]")
     entry: JsonDict = {
       "episode_id": self._episode_id,
       "step": step_idx,
@@ -434,6 +493,8 @@ class AgentDriver:
       "anomaly": turn.anomaly,
       "actions": [action.to_json() for action in turn.actions],
     }
+    if error:
+      entry["error"] = error
     with self._transcript_path.open("a", encoding="utf-8") as f:
       f.write(json.dumps(entry) + "\n")
 
