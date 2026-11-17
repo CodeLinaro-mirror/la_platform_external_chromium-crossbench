@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import datetime as dt
 import logging
 import os
@@ -15,7 +16,8 @@ from crossbench import path as pth
 from crossbench import plt
 from crossbench.config import ConfigEnum
 from crossbench.helper import collection_helper, wait
-from crossbench.parse import ObjectParser
+from crossbench.parse import NumberParser, ObjectParser
+from crossbench.plt.bin import Binaries
 from crossbench.plt.ios import IOSPlatform
 from crossbench.probes.probe import Probe, ProbeConfigParser, ProbeContext
 from crossbench.probes.probe_error import (
@@ -32,6 +34,7 @@ from crossbench.probes.results import (
 if TYPE_CHECKING:
   from crossbench.browsers.browser import Browser, Viewport
   from crossbench.env.runner_env import RunnerEnv
+  from crossbench.plt.types import ListCmdArgs, TupleCmdArgs
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.groups.repetitions import RepetitionsRunGroup
   from crossbench.runner.run import Run
@@ -101,6 +104,35 @@ class VideoProbe(Probe):
         "of the previous one."
       ),
     )
+    parser.add_argument(
+      "max_height",
+      type=NumberParser.positive_int,
+      default=None,
+      help=(
+        "Scale video recording down to at most this height in pixels "
+        "while preserving aspect ratio."
+      ),
+    )
+    parser.add_argument(
+      "bit_rate",
+      aliases=("bitrate",),
+      type=NumberParser.positive_int,
+      default=None,
+      help="Target video bit rate in bits per second.",
+    )
+    parser.add_argument(
+      "time_limit",
+      type=NumberParser.positive_zero_int,
+      default=None,
+      help="Maximum recording duration in seconds (or 0 for unlimited).",
+    )
+    parser.add_argument(
+      "codec_name",
+      aliases=("codec", "encoder"),
+      type=ObjectParser.non_empty_str,
+      default=None,
+      help="Video encoder codec name override.",
+    )
     return parser
 
   def __init__(
@@ -108,11 +140,27 @@ class VideoProbe(Probe):
     generate_timestrip: bool = True,
     merge_runs: bool = True,
     orientation: Orientation = Orientation.HORIZONTAL,
+    max_height: int | None = None,
+    bit_rate: int | None = None,
+    time_limit: int | None = None,
+    codec_name: str | None = None,
   ) -> None:
     super().__init__()
+    if max_height is not None:
+      max_height = NumberParser.positive_int(max_height, "max_height")
+    if bit_rate is not None:
+      bit_rate = NumberParser.positive_int(bit_rate, "bit_rate")
+    if time_limit is not None:
+      time_limit = NumberParser.positive_zero_int(time_limit, "time_limit")
+    if codec_name is not None:
+      codec_name = ObjectParser.non_empty_str(codec_name, "codec_name")
     self._generate_timestrip: Final[bool] = generate_timestrip
     self._merge_runs: Final[bool] = merge_runs
     self._orientation: Final[Orientation] = orientation
+    self._max_height: Final[int | None] = max_height
+    self._bit_rate: Final[int | None] = bit_rate
+    self._time_limit: Final[int | None] = time_limit
+    self._codec_name: Final[str | None] = codec_name
     self._ios_usb_recorder: pth.LocalPath | None = None
 
   @property
@@ -153,6 +201,32 @@ class VideoProbe(Probe):
   def merge_runs(self) -> bool:
     return self._merge_runs
 
+  @property
+  def max_height(self) -> int | None:
+    return self._max_height
+
+  @property
+  def bit_rate(self) -> int | None:
+    return self._bit_rate
+
+  @property
+  def time_limit(self) -> int | None:
+    return self._time_limit
+
+  @property
+  def codec_name(self) -> str | None:
+    return self._codec_name
+
+  def _needs_ffmpeg(self, env: RunnerEnv) -> bool:
+    if self.generate_timestrip:
+      return True
+    if any(
+      browser.platform.is_linux and browser.platform.is_local
+      for browser in env.browsers
+    ):
+      return True
+    return self.merge_runs and (env.repetitions > 1 or len(env.browsers) > 1)
+
   @override
   def validate_browser(self, env: RunnerEnv, browser: Browser) -> None:
     super().validate_browser(env, browser)
@@ -160,6 +234,12 @@ class VideoProbe(Probe):
     if isinstance(platform, IOSPlatform) and platform.is_simulator:
       raise ProbeIncompatibleBrowser(
         self, browser, "iOS simulators are not supported"
+      )
+    if platform.is_linux and platform.is_remote:
+      env.check_installed(
+        binaries=(Binaries.FFMPEG,),
+        message="Missing binaries for video probe: {}",
+        platform=platform,
       )
 
   @override
@@ -170,11 +250,14 @@ class VideoProbe(Probe):
         f"Probe={self.NAME} might not be able to merge so many "
         f"repetitions={env.repetitions}."
       )
-    env.check_installed(
-      binaries=("ffmpeg",), message="Missing binaries for video probe: {}"
-    )
-    # Check that ffmpeg can be executed
-    env.check_sh_success("ffmpeg", "-version")
+    if self._needs_ffmpeg(env):
+      env.check_installed(
+        binaries=(Binaries.FFMPEG,),
+        message="Missing binaries for video probe: {}",
+      )
+      if ffmpeg_bin := Binaries.FFMPEG.search(env.platform):
+        # Check that ffmpeg can be executed
+        env.check_sh_success(ffmpeg_bin, "-version")
     if self.generate_timestrip:
       env.check_installed(
         binaries=("montage",),
@@ -201,13 +284,15 @@ class VideoProbe(Probe):
         env.handle_warning(
           f"Cannot record video for headless browser: {browser}"
         )
+      if browser.platform.is_android or browser.platform.is_ios:
+        continue
       # TODO: support fullscreen / maximised
       if not viewport.has_size:
         env.handle_warning(
           "Can only record video for browsers with explicit viewport sizes, "
           f"but got {viewport} for {browser}."
         )
-      if viewport.x < 10 or viewport.y < 50:
+      elif viewport.x < 10 or viewport.y < 50:
         env.handle_warning(
           f"Viewport for '{browser}' might include toolbar: {viewport}"
         )
@@ -364,6 +449,7 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
 
   # How long the iOS device recorder gets to finish its file once told to stop.
   IOS_RECORDER_STOP_TIMEOUT: Final = dt.timedelta(seconds=10)
+  ANDROID_RECORDER_STOP_TIMEOUT: Final = dt.timedelta(seconds=10)
 
   def __init__(self, probe: VideoProbe, run: Run) -> None:
     super().__init__(probe, run)
@@ -441,22 +527,55 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
     log = self._recorder_log_path.read_text(encoding="utf-8")
     return "READY" in log.splitlines()
 
-  def _record_cmd(self, viewport: Viewport) -> tuple[str, ...]:
+  def _scaled_android_size(self, max_height: int) -> tuple[int, int]:
+    width, height = self.browser_platform.display_resolution()
+    scale = min(1.0, max_height / min(width, height))
+    return (
+      max(16, round(width * scale / 16) * 16),
+      max(16, round(height * scale / 16) * 16),
+    )
+
+  def _linux_record_cmd(self, viewport: Viewport) -> TupleCmdArgs:
+    env_display = self.browser_platform.environ.get("DISPLAY", ":0.0")
+    if viewport.has_size:
+      vx, vy, vw, vh = viewport.x, viewport.y, viewport.width, viewport.height
+    else:
+      vw, vh = self.browser_platform.display_resolution()
+      vx, vy = 0, 0
+    cmd: ListCmdArgs = [
+      Binaries.FFMPEG.resolve(self.browser_platform),
+      "-hide_banner",
+      "-video_size",
+      f"{vw}x{vh}",
+      "-f",
+      "x11grab",
+      "-framerate",
+      str(self.probe.FRAMERATE),
+      "-i",
+      f"{env_display}+{vx},{vy}",
+    ]
+    if max_height := self.probe.max_height:
+      cmd.extend(("-vf", f"scale=-2:'min({max_height},ih)'"))
+    cmd.append(self.result_path)
+    return tuple(cmd)
+
+  def _android_record_cmd(self) -> TupleCmdArgs:
+    cmd: ListCmdArgs = ["screenrecord"]
+    if codec_name := self.probe.codec_name:
+      cmd.extend(("--codec-name", codec_name))
+    if max_height := self.probe.max_height:
+      scaled_w, scaled_h = self._scaled_android_size(max_height)
+      cmd.extend(("--size", f"{scaled_w}x{scaled_h}"))
+    if bit_rate := self.probe.bit_rate:
+      cmd.extend(("--bit-rate", str(bit_rate)))
+    if self.probe.time_limit is not None:
+      cmd.extend(("--time-limit", str(self.probe.time_limit)))
+    cmd.append(self.result_path)
+    return tuple(cmd)
+
+  def _record_cmd(self, viewport: Viewport) -> TupleCmdArgs:
     if self.browser_platform.is_linux:
-      env_display = os.environ.get("DISPLAY", ":0.0")
-      return (
-        "ffmpeg",
-        "-hide_banner",
-        "-video_size",
-        f"{viewport.width}x{viewport.height}",
-        "-f",
-        "x11grab",
-        "-framerate",
-        str(self.probe.FRAMERATE),
-        "-i",
-        f"{env_display}+{viewport.x},{viewport.y}",
-        str(self.result_path),
-      )
+      return self._linux_record_cmd(viewport)
     if self.browser_platform.is_macos:
       return (
         "/usr/sbin/screencapture",
@@ -465,7 +584,7 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
         str(self.result_path),
       )
     if self.browser_platform.is_android:
-      return ("screenrecord", str(self.result_path))
+      return self._android_record_cmd()
     if self.browser_platform.is_ios:
       browser_platform = self.browser_platform
       assert isinstance(browser_platform, IOSPlatform)
@@ -494,12 +613,31 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
       assert not self._record_process.poll(), "screencapture stopped early."
       self._stop_ios_recorder()
     elif self.browser_platform.is_android:
-      assert not self._record_process.poll(), "screencapture stopped early. "
-      self.browser_platform.send_signal(
-        self._record_process, signal=self.browser_platform.signals.SIGINT
-      )
+      self._stop_android_recorder()
     else:
       self._recorder_platform.terminate(self._record_process)
+
+  def _stop_android_recorder(self) -> None:
+    """Sends SIGINT and waits for Android screenrecord to write MP4 moov."""
+    process = self._record_process
+    assert process
+    if process.poll() is not None:
+      logging.warning(
+        "Android screenrecord exited early (code %s)", process.returncode
+      )
+      return
+    with contextlib.suppress(ProcessLookupError):
+      self.browser_platform.send_signal(
+        process, signal=self.browser_platform.signals.SIGINT
+      )
+    try:
+      process.wait(timeout=self.ANDROID_RECORDER_STOP_TIMEOUT.total_seconds())
+    except subprocess.TimeoutExpired:
+      logging.warning(
+        "Android screenrecord did not stop in %s",
+        self.ANDROID_RECORDER_STOP_TIMEOUT,
+      )
+      self.stop_process()
 
   def _stop_ios_recorder(self) -> None:
     """Lets the recorder finish its file; raises if it did not."""
@@ -555,9 +693,10 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
 
   def stop_process(self) -> None:
     if self._record_process:
-      self._recorder_platform.terminate_gracefully(
-        self._record_process, timeout=5
-      )
+      if self._record_process.poll() is None:
+        self._recorder_platform.terminate_gracefully(
+          self._record_process, timeout=5
+        )
       self._record_process = None
 
   def _convert_to_constant_framerate(self) -> None:

@@ -12,6 +12,8 @@ import unittest.mock as mock
 from crossbench import path as pth
 from crossbench import plt
 from crossbench.helper import wait
+from crossbench.plt.bin import Binaries
+from crossbench.plt.display_info import DisplayResolution
 from crossbench.plt.ios import IOSPlatform
 from crossbench.probes.probe_error import ProbeIncompatibleBrowser
 from crossbench.probes.video import Orientation, VideoProbe, VideoProbeContext
@@ -44,6 +46,84 @@ class VideoProbeTestCase(unittest.TestCase):
     probe = VideoProbe.parse_dict({"dir": "horizontal"})
     self.assertEqual(probe.primary_orientation, Orientation.HORIZONTAL)
     self.assertEqual(probe.secondary_orientation, Orientation.VERTICAL)
+
+  def test_recording_options_from_config(self):
+    probe = VideoProbe.parse_dict(
+      {
+        "generate_timestrip": False,
+        "merge_runs": False,
+        "max_height": 480,
+        "bitrate": 1_000_000,
+        "time_limit": 0,
+        "codec": "c2.android.avc.encoder",
+      }
+    )
+    self.assertFalse(probe.generate_timestrip)
+    self.assertFalse(probe.merge_runs)
+    self.assertEqual(probe.max_height, 480)
+    self.assertEqual(probe.bit_rate, 1_000_000)
+    self.assertEqual(probe.time_limit, 0)
+    self.assertEqual(probe.codec_name, "c2.android.avc.encoder")
+
+    for invalid_config in (
+      {"max_height": 0},
+      {"bit_rate": 0},
+      {"time_limit": -1},
+      {"codec_name": ""},
+    ):
+      with self.assertRaises(ValueError):
+        VideoProbe.parse_dict(invalid_config)
+
+  def test_validate_env_ffmpeg_requirement_on_android(self):
+    android_browser = mock.MagicMock()
+    android_browser.platform.is_linux = False
+    android_browser.platform.is_ios = False
+    android_browser.platform.is_android = True
+    android_browser.viewport.is_headless = False
+    env = mock.MagicMock(repetitions=1, browsers=[android_browser])
+
+    probe_no_ffmpeg = VideoProbe.parse_dict(
+      {"generate_timestrip": False, "merge_runs": False}
+    )
+    probe_no_ffmpeg.attach(android_browser)
+    probe_no_ffmpeg.validate_env(env)
+    env.check_installed.assert_not_called()
+    env.check_sh_success.assert_not_called()
+
+    probe_timestrip = VideoProbe.parse_dict(
+      {"generate_timestrip": True, "merge_runs": False}
+    )
+    probe_timestrip.attach(android_browser)
+    probe_timestrip.validate_env(env)
+    env.check_installed.assert_any_call(
+      binaries=(Binaries.FFMPEG,),
+      message="Missing binaries for video probe: {}",
+    )
+
+  def test_validate_env_ffmpeg_requirement_on_remote_linux(self):
+    remote_linux_browser = mock.MagicMock()
+    remote_linux_browser.platform.is_linux = True
+    remote_linux_browser.platform.is_local = False
+    remote_linux_browser.platform.is_remote = True
+    remote_linux_browser.platform.is_ios = False
+    remote_linux_browser.platform.is_android = False
+    remote_linux_browser.viewport.is_headless = False
+    remote_linux_browser.viewport.has_size = True
+    remote_linux_browser.viewport.x = 100
+    remote_linux_browser.viewport.y = 100
+    env = mock.MagicMock(repetitions=1, browsers=[remote_linux_browser])
+
+    probe = VideoProbe.parse_dict(
+      {"generate_timestrip": False, "merge_runs": False}
+    )
+    probe.attach(remote_linux_browser)
+    probe.validate_env(env)
+    env.check_installed.assert_called_once_with(
+      binaries=(Binaries.FFMPEG,),
+      message="Missing binaries for video probe: {}",
+      platform=remote_linux_browser.platform,
+    )
+    env.check_sh_success.assert_not_called()
 
   def test_ios_usb_recorder_source_exists(self):
     self.assertTrue(VideoProbe.IOS_USB_RECORDER_SOURCE.is_file())
@@ -248,6 +328,110 @@ class VideoProbeContextIOSTestCase(unittest.TestCase):
     self.context._record_process.poll.side_effect = [None, 0]
     VideoProbeContext.stop(self.context)
     self.context.stop_process.assert_not_called()
+
+
+class VideoProbeContextAndroidTestCase(unittest.TestCase):
+  def setUp(self) -> None:
+    self.context = mock.MagicMock(spec=VideoProbeContext)
+    self.context.ANDROID_RECORDER_STOP_TIMEOUT = dt.timedelta(seconds=2)
+    self.context.result_path = pth.AnyPosixPath("/data/local/tmp/video.mp4")
+    self.context.browser_platform = mock.MagicMock(
+      is_android=True, is_linux=False, is_macos=False, is_ios=False
+    )
+    self.context.browser_platform.display_resolution.return_value = (
+      DisplayResolution(2560, 1600)
+    )
+    self.context._scaled_android_size = lambda h: (
+      VideoProbeContext._scaled_android_size(self.context, h)
+    )
+    self.context._android_record_cmd = lambda: (
+      VideoProbeContext._android_record_cmd(self.context)
+    )
+    self.context._stop_android_recorder = lambda: (
+      VideoProbeContext._stop_android_recorder(self.context)
+    )
+
+  def test_android_record_cmd_scales_and_sets_bitrate_and_unlimited(self):
+    self.context.probe = VideoProbe.parse_dict(
+      {
+        "generate_timestrip": False,
+        "merge_runs": False,
+        "max_height": 480,
+        "bit_rate": 1_000_000,
+        "time_limit": 0,
+        "codec_name": "c2.android.avc.encoder",
+      }
+    )
+    cmd = VideoProbeContext._record_cmd(self.context, mock.MagicMock())
+    self.assertEqual(
+      cmd,
+      (
+        "screenrecord",
+        "--codec-name",
+        "c2.android.avc.encoder",
+        "--size",
+        "768x480",
+        "--bit-rate",
+        "1000000",
+        "--time-limit",
+        "0",
+        pth.AnyPosixPath("/data/local/tmp/video.mp4"),
+      ),
+    )
+    self.assertEqual(self.context._scaled_android_size(2000), (2560, 1600))
+
+  def test_android_record_cmd_defaults(self):
+    self.context.probe = VideoProbe.parse_dict(
+      {
+        "generate_timestrip": False,
+        "merge_runs": False,
+      }
+    )
+    cmd = VideoProbeContext._record_cmd(self.context, mock.MagicMock())
+    self.assertEqual(
+      cmd, ("screenrecord", pth.AnyPosixPath("/data/local/tmp/video.mp4"))
+    )
+
+  def test_stop_android_sends_sigint_and_waits(self):
+    proc = mock.MagicMock()
+    proc.poll.return_value = None
+    self.context._record_process = proc
+    VideoProbeContext.stop(self.context)
+    self.context.browser_platform.send_signal.assert_called_once_with(
+      proc, signal=self.context.browser_platform.signals.SIGINT
+    )
+    proc.wait.assert_called_once_with(timeout=2.0)
+
+  def test_linux_record_cmd_uses_browser_platform_environ(self):
+    context = mock.MagicMock(spec=VideoProbeContext)
+    context.result_path = pth.AnyPosixPath("/tmp/video.mp4")
+    context.browser_platform = mock.MagicMock(
+      is_linux=True,
+      is_posix=True,
+      is_macos=False,
+      is_android=False,
+      is_ios=False,
+      is_chromeos=False,
+      is_win=False,
+    )
+    context.browser_platform.lookup_binary_override.return_value = None
+    context.browser_platform.search_binary.return_value = pth.AnyPosixPath(
+      "/usr/bin/ffmpeg"
+    )
+    context.browser_platform.environ = {"DISPLAY": ":99"}
+    context.probe = VideoProbe.parse_dict(
+      {"generate_timestrip": False, "merge_runs": False, "max_height": 480}
+    )
+    context._linux_record_cmd = lambda v: VideoProbeContext._linux_record_cmd(
+      context, v
+    )
+    viewport = mock.MagicMock(has_size=True, x=10, y=20, width=800, height=600)
+    with mock.patch.dict("os.environ", {"DISPLAY": ":20"}):
+      cmd = VideoProbeContext._record_cmd(context, viewport)
+    self.assertEqual(cmd[0], pth.AnyPosixPath("/usr/bin/ffmpeg"))
+    self.assertEqual(cmd[-1], pth.AnyPosixPath("/tmp/video.mp4"))
+    self.assertIn(":99+10,20", cmd)
+    self.assertNotIn(":20+10,20", cmd)
 
 
 if __name__ == "__main__":
