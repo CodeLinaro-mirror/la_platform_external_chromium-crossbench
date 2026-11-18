@@ -280,7 +280,7 @@ export function renderBenchmarkScoreTable(csvText: string): void {
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i];
     const tr = document.createElement('tr');
-    if (row[0] === 'TOTAL_SCORE') {
+    if (row[0] === 'TOTAL_SCORE' || row[0] === 'Score') {
       tr.className = 'score-total-row';
     }
     for (const cell of row) {

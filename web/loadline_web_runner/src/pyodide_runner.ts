@@ -484,6 +484,9 @@ _cb_zip_results(${escapedRunDir})
     }
     const escapedRunDir = runDir ? JSON.stringify(runDir) : 'None';
     const pyScript = `
+import csv
+import io
+import json
 import os
 
 def _cb_get_score_csv(target_dir):
@@ -498,15 +501,35 @@ def _cb_get_score_csv(target_dir):
             target_dir = "/results"
     if not os.path.exists(target_dir):
         return ""
-    direct_path = os.path.join(target_dir, "benchmark_score.csv")
-    if os.path.isfile(direct_path):
-        with open(direct_path, "r", encoding="utf-8") as f:
-            return f.read()
     for root, _, files in os.walk(target_dir):
         if "benchmark_score.csv" in files:
             full_path = os.path.join(root, "benchmark_score.csv")
             with open(full_path, "r", encoding="utf-8") as f:
                 return f.read()
+    sp_path = os.path.join(target_dir, "speedometer_3.1.json")
+    if os.path.isfile(sp_path):
+        from crossbench.probes.metric import Metric
+        with open(sp_path, "r", encoding="utf-8") as f:
+            sp_data = json.load(f)
+        first_data = next(iter(sp_data.values()))["data"]
+        keys = [
+            k for k in first_data
+            if "/" not in k and not k.startswith("Iteration-")
+               and k != "Geomean"
+        ]
+        buf = io.StringIO()
+        writer = csv.writer(buf)
+        writer.writerow(["Metric", *sp_data.keys()])
+        for k in keys:
+            writer.writerow([
+                k,
+                *[
+                    Metric.format(b["data"][k]["average"],
+                                  b["data"][k].get("stddev"))
+                    for b in sp_data.values()
+                ],
+            ])
+        return buf.getvalue()
     return ""
 
 _cb_get_score_csv(${escapedRunDir})

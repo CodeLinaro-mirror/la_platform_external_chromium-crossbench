@@ -7,14 +7,14 @@
  * Point.
  */
 
-import {setupAuthUIEventListeners, startGcsUpdateInterval, syncSimpleChoicesToDevInputs, updateGcsUI,} from './auth_ui';
-import {refreshDeviceBrowsers, setupBenchmarkEventListeners,} from './benchmark_controller';
+import {setupAuthUIEventListeners, startGcsUpdateInterval, updateGcsUI,} from './auth_ui';
+import {refreshDeviceBrowsers, setupBenchmarkEventListeners, syncSimpleChoicesToDevInputs,} from './benchmark_controller';
 import {isTestEnvironment, log, setInitializing, setupUIEventListeners, updateUI,} from './ui_state';
 import {isWebUsbSupported, WebAdbBridge} from './webadb_bridge';
 
 export * from './ui_state';
 export * from './benchmark_controller';
-export {type Logger, type LogLevel, getArchiveUrlForVariant, getTargetArchiveUrl, setDownloadError, setupAuthUIEventListeners, setAuthLogger, SIMPLE_VARIANT_STORAGE_KEY, startGcsUpdateInterval, stopGcsUpdateInterval, syncSimpleChoicesToDevInputs, updateGcsUI,} from './auth_ui';
+export {type Logger, type LogLevel, getArchiveUrlForVariant, getTargetArchiveUrl, setDownloadError, setupAuthUIEventListeners, setAuthLogger, SIMPLE_VARIANT_STORAGE_KEY, startGcsUpdateInterval, stopGcsUpdateInterval, updateGcsUI,} from './auth_ui';
 
 // Global state instance
 export const webAdbBridge = new WebAdbBridge();

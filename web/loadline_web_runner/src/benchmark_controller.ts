@@ -7,7 +7,7 @@
  * proxy.
  */
 
-import {getTargetArchiveUrl, syncSimpleChoicesToDevInputs, updateGcsUI,} from './auth_ui';
+import {getArchiveUrlForVariant, getTargetArchiveUrl, SPEEDOMETER_31_ARCHIVE_URL, updateGcsUI,} from './auth_ui';
 import {CdpClient} from './cdp_client';
 import {downloadGcsArchive, fetchGcsMetadata, getCachedGcsArchive, getStoredAccessToken, parseGcsUrl,} from './gcs_cache';
 import {PyodideWorkerClient} from './pyodide_worker';
@@ -502,6 +502,124 @@ export function getOrCreateWorkerClient(webAdbBridge: WebAdbBridge):
 export const TARGET_ARCHIVE_STORAGE_KEY = 'crossbench_target_archive_url';
 export const BENCHMARK_CMD_STORAGE_KEY = 'crossbench_benchmark_cmd';
 
+const SPEEDOMETER_31_NETWORK_CONFIG = JSON.stringify({
+  type: 'wpr',
+  url: SPEEDOMETER_31_ARCHIVE_URL,
+  persist_server: true,
+  run_on_device: true,
+});
+
+interface RepetitionOption {
+  value: string;
+  label: string;
+}
+
+const LOADLINE_REPETITION_OPTIONS: ReadonlyArray<RepetitionOption> = [
+  {value: '50', label: '50'},
+  {value: '10', label: '10 (lower confidence)'},
+];
+
+const SPEEDOMETER_REPETITION_OPTIONS: ReadonlyArray<RepetitionOption> = [
+  {value: '5', label: '5'},
+  {value: '1', label: '1 (lower confidence)'},
+];
+
+function getRepetitionOptionsForVariant(variant: string):
+    ReadonlyArray<RepetitionOption> {
+  return variant === 'speedometer_3.1' ? SPEEDOMETER_REPETITION_OPTIONS :
+                                         LOADLINE_REPETITION_OPTIONS;
+}
+
+function updateSimpleRepetitionsOptions(variant: string): void {
+  if (typeof document === 'undefined') {
+    return;
+  }
+  const select = document.getElementById(
+                     'simple-repetitions-select',
+                     ) as HTMLSelectElement |
+      null;
+  if (!select) {
+    return;
+  }
+  const options = getRepetitionOptionsForVariant(variant);
+  const prev = select.value;
+  select.replaceChildren(...options.map(
+      ({value, label}) => Object.assign(document.createElement('option'), {
+        value,
+        textContent: label,
+      })));
+  select.value =
+      options.some((o) => o.value === prev) ? prev : options[0].value;
+}
+
+export function getSimpleBenchmarkCmd(
+    variant: string, browser: string, repetitions: string): string {
+  const base = `${variant} --browser ${browser} --repeat ${repetitions}`;
+  if (variant !== 'speedometer_3.1') {
+    return base;
+  }
+  const cooldown = repetitions === '5' ? ' --cooldown 10s' : '';
+  return `${base}${cooldown} --network '${SPEEDOMETER_31_NETWORK_CONFIG}'`;
+}
+
+export function syncSimpleChoicesToDevInputs(): void {
+  if (typeof document === 'undefined') {
+    return;
+  }
+  const simpleVariantSelect = document.getElementById(
+                                  'simple-benchmark-variant',
+                                  ) as HTMLSelectElement |
+      null;
+  const simpleBrowserSelect = document.getElementById(
+                                  'simple-browser-select',
+                                  ) as HTMLSelectElement |
+      null;
+  const simpleRepetitionsSelect = document.getElementById(
+                                      'simple-repetitions-select',
+                                      ) as HTMLSelectElement |
+      null;
+  if (!simpleVariantSelect && !simpleBrowserSelect &&
+      !simpleRepetitionsSelect) {
+    return;
+  }
+
+  const variant = simpleVariantSelect?.value || 'loadline2-phone';
+  if (simpleVariantSelect) {
+    updateSimpleRepetitionsOptions(variant);
+  }
+  const browser = simpleBrowserSelect?.value || 'cdp:chrome';
+  const defaultRepetitions = getRepetitionOptionsForVariant(variant)[0].value;
+  const repetitions = simpleRepetitionsSelect?.value || defaultRepetitions;
+
+  const targetArchiveInput = document.getElementById(
+                                 'target-archive-input',
+                                 ) as HTMLInputElement |
+      null;
+  if (targetArchiveInput && simpleVariantSelect) {
+    const archiveUrl = getArchiveUrlForVariant(variant);
+    targetArchiveInput.value = archiveUrl;
+    try {
+      localStorage.setItem(TARGET_ARCHIVE_STORAGE_KEY, archiveUrl);
+    } catch {
+      // Ignore storage errors
+    }
+  }
+
+  const benchmarkCmdInput = document.getElementById(
+                                'benchmark-cmd',
+                                ) as HTMLInputElement |
+      null;
+  if (benchmarkCmdInput) {
+    const cmd = getSimpleBenchmarkCmd(variant, browser, repetitions);
+    benchmarkCmdInput.value = cmd;
+    try {
+      localStorage.setItem(BENCHMARK_CMD_STORAGE_KEY, cmd);
+    } catch {
+      // Ignore storage errors
+    }
+  }
+}
+
 /**
  * Initializes event listeners for Benchmark Execution, stopping, and results
  * zip download.
@@ -551,6 +669,7 @@ export function setupBenchmarkEventListeners(webAdbBridge: WebAdbBridge): void {
   }
 
   if (simpleVariantSelect) {
+    updateSimpleRepetitionsOptions(simpleVariantSelect.value);
     simpleVariantSelect.addEventListener('change', () => {
       syncSimpleChoicesToDevInputs();
     });
@@ -588,14 +707,17 @@ export function setupBenchmarkEventListeners(webAdbBridge: WebAdbBridge): void {
       if (getRunnerMode() === 'simple') {
         const variant = simpleVariantSelect?.value || 'loadline2-phone';
         const browser = simpleBrowserSelect?.value || '';
-        const repetitions = simpleRepetitionsSelect?.value || '50';
+        const defaultRepetitions =
+            getRepetitionOptionsForVariant(variant)[0].value;
+        const repetitions =
+            simpleRepetitionsSelect?.value || defaultRepetitions;
         if (!browser) {
           log('Cannot run benchmark: No browser selected on the device.',
               'error');
           return;
         }
-        benchmarkArgs =
-            [variant, '--browser', browser, '--repeat', repetitions];
+        benchmarkArgs = parseCommandLine(
+            getSimpleBenchmarkCmd(variant, browser, repetitions));
       } else {
         const rawCmd = benchmarkCmdInput ? benchmarkCmdInput.value.trim() : '';
         benchmarkArgs = parseCommandLine(rawCmd);

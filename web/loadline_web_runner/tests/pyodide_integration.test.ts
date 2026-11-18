@@ -313,6 +313,35 @@ assert "browser_1" in tab_str
        // Standard zip magic number is PK\x03\x04 (0x50, 0x4b, 0x03, 0x04)
        expect(zipBytes[0]).toBe(0x50);
        expect(zipBytes[1]).toBe(0x4b);
+
+       // Test Speedometer 3.1 score CSV extraction from speedometer_3.1.json
+       await runner.runScript(`
+import json, os
+os.makedirs("/results/sp_run", exist_ok=True)
+with open("/results/sp_run/speedometer_3.1.json", "w") as f:
+    json.dump({
+        "cdp_chrome": {
+            "info": {"label": "cdp_chrome"},
+            "data": {
+                "TodoMVC-JavaScript-ES5": {"average": 45.0, "stddev": 0.0},
+                "TodoMVC-JavaScript-ES5/Adding100Items": {
+                    "average": 20.0,
+                    "stddev": 0.0,
+                },
+                "Iteration-0-Total": {"average": 45.0, "stddev": 0.0},
+                "Geomean": {"average": 45.0, "stddev": 0.0},
+                "Score": {"average": 22.2, "stddev": 0.0},
+            },
+        }
+    }, f)
+`);
+       const spCsv = await runner.getBenchmarkScoreCsv('/results/sp_run');
+       expect(spCsv).toContain('Metric,cdp_chrome');
+       expect(spCsv).toContain('TodoMVC-JavaScript-ES5,');
+       expect(spCsv).not.toContain('Adding100Items');
+       expect(spCsv).not.toContain('Iteration-0-Total');
+       expect(spCsv).not.toContain('Geomean');
+       expect(spCsv).toContain('Score,');
      },
      60000);
 });

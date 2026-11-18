@@ -822,19 +822,33 @@ describe('Simple Mode & Developer Mode Interface', () => {
     expect(getArchiveUrlForVariant('loadline2-phone'))
         .toBe('gs://chrome-partner-loadline/archive_phone_20260331.wprgo');
     expect(getArchiveUrlForVariant('loadline2-tablet'))
-        .toBe('gs://chrome-partner-loadline/archive_tablet_20250918.wprgo');
+        .toBe('gs://chrome-partner-loadline/archive_tablet_20261009.wprgo');
+    expect(getArchiveUrlForVariant('speedometer_3.1'))
+        .toBe(
+            'gs://chrome-partner-loadline/' +
+            'archive_speedometer_3.1_20261113.wprgo');
 
     document.body.innerHTML = `
       <select id="simple-benchmark-variant">
         <option value="loadline2-phone">loadline2-phone</option>
         <option value="loadline2-tablet" selected>loadline2-tablet</option>
+        <option value="speedometer_3.1">speedometer 3.1</option>
       </select>
       <input id="target-archive-input" value="gs://custom/override.wprgo" />
     `;
 
     setRunnerMode('simple');
     expect(getTargetArchiveUrl())
-        .toBe('gs://chrome-partner-loadline/archive_tablet_20250918.wprgo');
+        .toBe('gs://chrome-partner-loadline/archive_tablet_20261009.wprgo');
+
+    const selectEl = document.getElementById(
+                         'simple-benchmark-variant',
+                         ) as HTMLSelectElement;
+    selectEl.value = 'speedometer_3.1';
+    expect(getTargetArchiveUrl())
+        .toBe(
+            'gs://chrome-partner-loadline/' +
+            'archive_speedometer_3.1_20261113.wprgo');
 
     setRunnerMode('developer');
     expect(getTargetArchiveUrl()).toBe('gs://custom/override.wprgo');
@@ -902,6 +916,7 @@ describe('Simple Mode & Developer Mode Interface', () => {
       <select id="simple-benchmark-variant">
         <option value="loadline2-phone" selected>loadline2-phone</option>
         <option value="loadline2-tablet">loadline2-tablet</option>
+        <option value="speedometer_3.1">speedometer 3.1</option>
       </select>
       <div id="simple-archive-ready" style="display: none;">
         <span id="simple-archive-ready-badge" class="status-badge connected">
@@ -1173,6 +1188,7 @@ describe('Simple Mode & Developer Mode Interface', () => {
       <select id="simple-benchmark-variant">
         <option value="loadline2-phone" selected>loadline2-phone</option>
         <option value="loadline2-tablet">loadline2-tablet</option>
+        <option value="speedometer_3.1">speedometer 3.1</option>
       </select>
       <select id="simple-browser-select">
         <option value="cdp:chrome" selected>Chrome (134.0)</option>
@@ -1218,7 +1234,7 @@ describe('Simple Mode & Developer Mode Interface', () => {
        variantSelect.value = 'loadline2-tablet';
        variantSelect.dispatchEvent(new Event('change'));
        expect(archiveInput.value)
-           .toBe('gs://chrome-partner-loadline/archive_tablet_20250918.wprgo');
+           .toBe('gs://chrome-partner-loadline/archive_tablet_20261009.wprgo');
        expect(cmdInput.value)
            .toBe('loadline2-tablet --browser cdp:chrome --repeat 50');
 
@@ -1233,6 +1249,84 @@ describe('Simple Mode & Developer Mode Interface', () => {
        repetitionsSelect.dispatchEvent(new Event('change'));
        expect(cmdInput.value)
            .toBe('loadline2-tablet --browser cdp:chrome-beta --repeat 10');
+
+       // Change variant to speedometer 3.1 (repetitions dropdown updates to
+       // 5 and 1 (lower confidence), defaulting to 5)
+       variantSelect.value = 'speedometer_3.1';
+       variantSelect.dispatchEvent(new Event('change'));
+       expect(Array.from(repetitionsSelect.options).map((o) => ({
+                                                          value: o.value,
+                                                          label: o.textContent,
+                                                        })))
+           .toEqual([
+             {value: '5', label: '5'},
+             {value: '1', label: '1 (lower confidence)'},
+           ]);
+       expect(repetitionsSelect.value).toBe('5');
+       expect(archiveInput.value)
+           .toBe(
+               'gs://chrome-partner-loadline/' +
+               'archive_speedometer_3.1_20261113.wprgo');
+       expect(cmdInput.value)
+           .toBe(
+               'speedometer_3.1 --browser cdp:chrome-beta --repeat 5 ' +
+               '--cooldown 10s --network \'{"type":"wpr","url":' +
+               '"gs://chrome-partner-loadline/' +
+               'archive_speedometer_3.1_20261113.wprgo",' +
+               '"persist_server":true,"run_on_device":true}\'');
+       expect(parseCommandLine(cmdInput.value)).toEqual([
+         'speedometer_3.1',
+         '--browser',
+         'cdp:chrome-beta',
+         '--repeat',
+         '5',
+         '--cooldown',
+         '10s',
+         '--network',
+         '{"type":"wpr","url":' +
+             '"gs://chrome-partner-loadline/' +
+             'archive_speedometer_3.1_20261113.wprgo",' +
+             '"persist_server":true,"run_on_device":true}',
+       ]);
+
+       // Select 1 (lower confidence) for speedometer 3.1 (no --cooldown 10s)
+       repetitionsSelect.value = '1';
+       repetitionsSelect.dispatchEvent(new Event('change'));
+       expect(cmdInput.value)
+           .toBe(
+               'speedometer_3.1 --browser cdp:chrome-beta --repeat 1 ' +
+               '--network \'{"type":"wpr","url":' +
+               '"gs://chrome-partner-loadline/' +
+               'archive_speedometer_3.1_20261113.wprgo",' +
+               '"persist_server":true,"run_on_device":true}\'');
+       expect(parseCommandLine(cmdInput.value)).toEqual([
+         'speedometer_3.1',
+         '--browser',
+         'cdp:chrome-beta',
+         '--repeat',
+         '1',
+         '--network',
+         '{"type":"wpr","url":' +
+             '"gs://chrome-partner-loadline/' +
+             'archive_speedometer_3.1_20261113.wprgo",' +
+             '"persist_server":true,"run_on_device":true}',
+       ]);
+
+       // Switch back to loadline2-phone (repetitions dropdown restores 50 and
+       // 10 (lower confidence), defaulting to 50)
+       variantSelect.value = 'loadline2-phone';
+       variantSelect.dispatchEvent(new Event('change'));
+       expect(Array.from(repetitionsSelect.options).map((o) => ({
+                                                          value: o.value,
+                                                          label: o.textContent,
+                                                        })))
+           .toEqual([
+             {value: '50', label: '50'},
+             {value: '10', label: '10 (lower confidence)'},
+           ]);
+       expect(repetitionsSelect.value).toBe('50');
+       expect(cmdInput.value)
+           .toBe('loadline2-phone --browser cdp:chrome-beta --repeat 50');
      });
 });
 

@@ -23,6 +23,9 @@ export type Logger = (message: string, level?: LogLevel) => void;
 
 export const SIMPLE_VARIANT_STORAGE_KEY = 'crossbench_simple_variant';
 
+export const SPEEDOMETER_31_ARCHIVE_URL =
+    'gs://chrome-partner-loadline/archive_speedometer_3.1_20261113.wprgo';
+
 let authLogger: Logger|null = null;
 
 export function setAuthLogger(fn: Logger): void {
@@ -69,6 +72,9 @@ export function setDownloadError(errorMessage: string|null): void {
 }
 
 export function getArchiveUrlForVariant(variant: string): string {
+  if (variant === 'speedometer_3.1') {
+    return SPEEDOMETER_31_ARCHIVE_URL;
+  }
   const suffix = variant === 'loadline2-tablet' ?
       'network_config_tablet.hjson' :
       'network_config_phone.hjson';
@@ -81,60 +87,6 @@ export function getArchiveUrlForVariant(variant: string): string {
     }
   }
   return TARGET_GCS_ARCHIVE_URL;
-}
-
-export function syncSimpleChoicesToDevInputs(): void {
-  if (typeof document === 'undefined') {
-    return;
-  }
-  const simpleVariantSelect = document.getElementById(
-                                  'simple-benchmark-variant',
-                                  ) as HTMLSelectElement |
-      null;
-  const simpleBrowserSelect = document.getElementById(
-                                  'simple-browser-select',
-                                  ) as HTMLSelectElement |
-      null;
-  const simpleRepetitionsSelect = document.getElementById(
-                                      'simple-repetitions-select',
-                                      ) as HTMLSelectElement |
-      null;
-  if (!simpleVariantSelect && !simpleBrowserSelect &&
-      !simpleRepetitionsSelect) {
-    return;
-  }
-
-  const variant = simpleVariantSelect?.value || 'loadline2-phone';
-  const browser = simpleBrowserSelect?.value || 'cdp:chrome';
-  const repetitions = simpleRepetitionsSelect?.value || '50';
-
-  const targetArchiveInput = document.getElementById(
-                                 'target-archive-input',
-                                 ) as HTMLInputElement |
-      null;
-  if (targetArchiveInput && simpleVariantSelect) {
-    const archiveUrl = getArchiveUrlForVariant(variant);
-    targetArchiveInput.value = archiveUrl;
-    try {
-      localStorage.setItem('crossbench_target_archive_url', archiveUrl);
-    } catch {
-      // Ignore storage errors
-    }
-  }
-
-  const benchmarkCmdInput = document.getElementById(
-                                'benchmark-cmd',
-                                ) as HTMLInputElement |
-      null;
-  if (benchmarkCmdInput) {
-    const cmd = `${variant} --browser ${browser} --repeat ${repetitions}`;
-    benchmarkCmdInput.value = cmd;
-    try {
-      localStorage.setItem('crossbench_benchmark_cmd', cmd);
-    } catch {
-      // Ignore storage errors
-    }
-  }
 }
 
 export function getTargetArchiveUrl(): string {
@@ -333,7 +285,8 @@ export function setupAuthUIEventListeners(): void {
     try {
       const savedVariant = localStorage.getItem(SIMPLE_VARIANT_STORAGE_KEY);
       if (savedVariant === 'loadline2-phone' ||
-          savedVariant === 'loadline2-tablet') {
+          savedVariant === 'loadline2-tablet' ||
+          savedVariant === 'speedometer_3.1') {
         simpleVariantSelect.value = savedVariant;
       }
     } catch {
@@ -347,7 +300,6 @@ export function setupAuthUIEventListeners(): void {
         // Ignore storage errors
       }
       setDownloadError(null);
-      syncSimpleChoicesToDevInputs();
       updateGcsUI();
     });
   }
