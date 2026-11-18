@@ -52,9 +52,8 @@ use Ethernet connection.
     * Settings > Security and privacy > CA certificate > CA certificate >
       Install anyway > Select your file
 
-* Install required packages on the host and add `dnsmasq` to PATH
-  * E.g. on Mac:
-    `brew install dnsmasq && export PATH=$PATH:/opt/homebrew/opt/dnsmasq/sbin`
+* Install required packages on the host
+  * E.g. on Mac: `brew install dnsmasq`
 
 ## Running the benchmark
 
