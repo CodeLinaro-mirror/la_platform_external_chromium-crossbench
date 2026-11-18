@@ -358,6 +358,8 @@ class TraceProcessorProbe(Probe):
 
   @override
   def create_context(self, run: Run) -> TraceProcessorProbeContext:
+    if self._platform.is_pyodide:
+      return TraceProcessorProbeContext(self, run)
     # TODO: enable on linux
     if run.browser_platform.is_macos or run.browser_platform.is_android:
       return TraceProcessorSymbolizingProbeContext(self, run)

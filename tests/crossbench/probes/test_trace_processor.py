@@ -320,6 +320,15 @@ class TraceProcessorProbeFakeFsTestCase(CrossbenchFakeFsTestCase):
       probe.create_context(run_android), TraceProcessorSymbolizingProbeContext
     )
 
+    pyodide_platform = unittest.mock.MagicMock()
+    pyodide_platform.is_pyodide = True
+    with unittest.mock.patch.object(probe, "_platform", pyodide_platform):
+      context_pyodide = probe.create_context(run_android)
+    self.assertIsInstance(context_pyodide, TraceProcessorProbeContext)
+    self.assertNotIsInstance(
+      context_pyodide, TraceProcessorSymbolizingProbeContext
+    )
+
     run_linux = unittest.mock.MagicMock()
     run_linux.browser_platform.is_macos = False
     run_linux.browser_platform.is_android = False

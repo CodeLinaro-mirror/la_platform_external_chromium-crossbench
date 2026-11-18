@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import * as crypto from 'node:crypto';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import {describe, expect, it, vi} from 'vitest';
@@ -12,18 +13,22 @@ function getCrossbenchFilesFromDisk(): Record<string, string> {
   const repoRoot = path.resolve(__dirname, '../../..');
   const files: Record<string, string> = {};
 
-  function scanDir(dirPath: string, prefix: string) {
+  function scanDir(dirPath: string, prefix: string, recursive: boolean = true) {
     if (!fs.existsSync(dirPath))
       return;
     const entries = fs.readdirSync(dirPath, {withFileTypes: true});
     for (const entry of entries) {
       const fullPath = path.join(dirPath, entry.name);
       if (entry.isDirectory()) {
-        if (entry.name !== '__pycache__' && entry.name !== 'node_modules' &&
-            entry.name !== 'dist') {
+        if (recursive && entry.name !== '__pycache__' &&
+            entry.name !== 'node_modules' && entry.name !== 'dist' &&
+            entry.name !== '.git') {
           scanDir(fullPath, prefix);
         }
       } else {
+        if (entry.name.endsWith('.png') || entry.name === 'stdout') {
+          continue;
+        }
         const relPath = path.relative(path.join(repoRoot, prefix), fullPath);
         const fsPath = '/' + prefix + '/' + relPath.split(path.sep).join('/');
         files[fsPath] = fs.readFileSync(fullPath, 'utf8');
@@ -34,8 +39,82 @@ function getCrossbenchFilesFromDisk(): Record<string, string> {
   scanDir(path.join(repoRoot, 'crossbench'), 'crossbench');
   scanDir(path.join(repoRoot, 'config'), 'config');
   scanDir(path.join(repoRoot, 'third_party/protoc'), 'third_party/protoc');
+  scanDir(
+      path.join(repoRoot, 'third_party/webpagereplay'),
+      'third_party/webpagereplay', false);
+  scanDir(
+      path.join(repoRoot, 'third_party/webpagereplay/scripts'),
+      'third_party/webpagereplay/scripts', false);
   scanDir(path.join(repoRoot, 'tools/protoc'), 'tools/protoc');
+  files['/third_party/__init__.py'] = '';
+  files['/tools/__init__.py'] = '';
   return files;
+}
+
+function mockSendCdpCommand(method: string, paramsJson?: string): string {
+  if (method === 'Target.getTargets') {
+    return JSON.stringify({
+      targetInfos: [
+        {
+          targetId: 'tab123',
+          type: 'page',
+          title: 'Mock Page',
+          url: 'about:blank',
+          webSocketDebuggerUrl: 'ws://localhost:9222/devtools/page/tab123',
+        },
+      ],
+    });
+  }
+  if (method === 'Page.navigate') {
+    return JSON.stringify({frameId: 'frame123'});
+  }
+  if (method !== 'Runtime.evaluate') {
+    return JSON.stringify({});
+  }
+  if (paramsJson && paramsJson.includes('window.benchmarkClient.metrics')) {
+    return JSON.stringify({
+      result: {
+        type: 'string',
+        value: JSON.stringify({
+          'TodoMVC-JavaScript-ES5': {mean: 45.0},
+          'TodoMVC-JavaScript-ES5/Adding100Items': {mean: 20.0},
+          'Iteration-0-Total': {mean: 45.0},
+          Geomean: {mean: 45.0},
+          Score: {mean: 22.2},
+        }),
+      },
+    });
+  }
+  if (paramsJson && paramsJson.includes('element_rect')) {
+    return JSON.stringify({
+      result: {
+        type: 'object',
+        value: {
+          count: 1,
+          device_pixel_ratio: 3,
+          window_outer_width: 360,
+          window_outer_height: 800,
+          window_inner_width: 360,
+          window_inner_height: 700,
+          screen_width: 360,
+          screen_height: 800,
+          screen_avail_width: 360,
+          screen_avail_height: 760,
+          window_offset_x: 0,
+          window_offset_y: 0,
+          element_rect: {
+            left: 0,
+            top: 0,
+            width: 360,
+            height: 700,
+          },
+        },
+      },
+    });
+  }
+  return JSON.stringify({
+    result: {type: 'boolean', value: true},
+  });
 }
 
 describe('Pyodide Integration Test (Real WebAssembly)', () => {
@@ -43,6 +122,13 @@ describe('Pyodide Integration Test (Real WebAssembly)', () => {
          'and tests TraceProcessor probe',
      async () => {
        const encoder = new TextEncoder();
+       const dummyWprArchive = encoder.encode('mock-wpr-archive');
+       const dummyWprMd5B64 =
+           crypto.createHash('md5').update(dummyWprArchive).digest('base64');
+       const remoteFiles = new Set<string>(['/system/bin/perfetto']);
+       let runnerRef: PyodideRunner|null = null;
+       let nextPid = 200;
+       const spawnedCmds = new Map<number, string>();
        const mockWebAdb: WebAdbProxy = {
          serial: 'mock-usb-device',
          shell: vi.fn().mockImplementation((cmd: string, input?: string) => {
@@ -58,6 +144,9 @@ describe('Pyodide Integration Test (Real WebAssembly)', () => {
            }
            if (cmd.includes('getprop')) {
              return encoder.encode('[ro.build.version.release]: [14]\n');
+           }
+           if (cmd.includes('settings get global device_provisioned')) {
+             return encoder.encode('1\n');
            }
            if (cmd.includes('get-current-user'))
              return encoder.encode('0\n');
@@ -90,6 +179,27 @@ describe('Pyodide Integration Test (Real WebAssembly)', () => {
            }
            if (cmd.includes('uname -m'))
              return encoder.encode('aarch64\n');
+           if (cmd.includes('which perfetto')) {
+             return encoder.encode('/system/bin/perfetto\n');
+           }
+           if (cmd.includes('mktemp -d')) {
+             return encoder.encode('/data/local/tmp/cb_wpr_tmp\n');
+           }
+           if (cmd.startsWith('perfetto --background')) {
+             const outMatch = cmd.match(/--out\s+(\S+)/);
+             if (outMatch) {
+               remoteFiles.add(outMatch[1]);
+             }
+             return encoder.encode('9999\n');
+           }
+           if (cmd.includes('[ -f ') || cmd.includes('[ -e ')) {
+             for (const rf of remoteFiles) {
+               if (cmd.includes(rf)) {
+                 return encoder.encode('1\n');
+               }
+             }
+             return encoder.encode('');
+           }
            if (cmd.includes('cat') && cmd.includes('chrome-command-line')) {
              return encoder.encode('');
            }
@@ -109,51 +219,64 @@ describe('Pyodide Integration Test (Real WebAssembly)', () => {
            }
            return encoder.encode('');
          }),
-         push: vi.fn(),
-         pull: vi.fn(),
+         push: vi.fn().mockImplementation((_src: string, dest: string) => {
+           remoteFiles.add(dest);
+         }),
+         pull: vi.fn().mockImplementation((_src: string, dest: string) => {
+           if (runnerRef) {
+             const pyFs = runnerRef.getFS();
+             const dir = dest.substring(0, dest.lastIndexOf('/'));
+             if (dir && !pyFs.analyzePath(dir).exists) {
+               pyFs.mkdirTree(dir);
+             }
+             // Minimal valid Perfetto Trace proto (TracePacket { timestamp: 1
+             // })
+             pyFs.writeFile(dest, new Uint8Array([0x0a, 0x02, 0x08, 0x01]));
+           }
+         }),
          startDevTools: vi.fn().mockReturnValue('devtools-socket-1234'),
          stopDevTools: vi.fn().mockReturnValue('ok'),
          switchTab: vi.fn().mockReturnValue(
              'ws://localhost:9222/devtools/page/tab123'),
-         sendCdpCommand: vi.fn().mockImplementation((method: string) => {
-           if (method === 'Target.getTargets') {
-             return JSON.stringify({
-               targetInfos: [
-                 {
-                   targetId: 'tab123',
-                   type: 'page',
-                   title: 'Mock Page',
-                   url: 'about:blank',
-                   webSocketDebuggerUrl:
-                       'ws://localhost:9222/devtools/page/tab123',
-                 },
-               ],
-             });
-           }
-           if (method === 'Page.navigate') {
-             return JSON.stringify({frameId: 'frame123'});
-           }
-           if (method === 'Runtime.evaluate') {
-             return JSON.stringify({result: {type: 'boolean', value: true}});
-           }
-           return JSON.stringify({});
+         sendCdpCommand: vi.fn().mockImplementation(mockSendCdpCommand),
+         spawnProcess: vi.fn().mockImplementation((cmd: string) => {
+           const pid = ++nextPid;
+           spawnedCmds.set(pid, cmd);
+           return pid;
          }),
-         spawnProcess: vi.fn().mockReturnValue(201),
          writeProcessStdin: vi.fn(),
          closeProcessStdin: vi.fn(),
-         readProcessLog: vi.fn().mockReturnValue(JSON.stringify({
-           text: '',
-           nextOffset: 0,
-           isExited: false,
-           exitCode: null,
-         })),
+         readProcessLog: vi.fn().mockImplementation((id: number) => {
+           const cmd = spawnedCmds.get(id) || '';
+           if (cmd.includes('wpr')) {
+             return JSON.stringify({
+               text: 'Starting server on http://127.0.0.1:8080\n' +
+                   'Starting server on https://127.0.0.1:8443\n',
+               nextOffset: 1,
+               isExited: false,
+               exitCode: null,
+             });
+           }
+           return JSON.stringify({
+             text: '',
+             nextOffset: 0,
+             isExited: false,
+             exitCode: null,
+           });
+         }),
          killProcess: vi.fn(),
+         gcsGetMetadata: vi.fn().mockReturnValue(JSON.stringify({
+           name: 'archive_phone_20260331.wprgo',
+           md5Hash: dummyWprMd5B64,
+           size: dummyWprArchive.length,
+         })),
        };
 
        const logs: string[] = [];
        const runner = new PyodideRunner(mockWebAdb, (msg) => {
          logs.push(msg);
        });
+       runnerRef = runner;
        await runner.init();
 
        const pyFiles = getCrossbenchFilesFromDisk();
@@ -183,6 +306,59 @@ describe('Pyodide Integration Test (Real WebAssembly)', () => {
                expect.stringContaining('crossbench-iteration-start'));
        expect(mockWebAdb.startDevTools).toHaveBeenCalled();
        expect(mockWebAdb.sendCdpCommand).toHaveBeenCalled();
+
+       // Test full loadline2-phone benchmark execution (WPR + Perfetto +
+       // TraceProcessor + LoadLine2Probe + ResultsDB)
+       await runner.mountBinaryFile(
+           '/cache/webpagereplay/android/arm64/wpr',
+           encoder.encode('mock-wpr-bin'));
+       const safeMd5 = await runner.runScript(`
+from crossbench import path as pth
+pth.safe_filename(${JSON.stringify(dummyWprMd5B64)})
+`);
+       await runner.mountBinaryFile(
+           `/cache/wpr/archive_phone_20260331_${safeMd5}.wprgo`,
+           dummyWprArchive);
+       await runner.mountBinaryFile(
+           `/cache/wpr/archive_speedometer_3.1_20261113_${safeMd5}.wprgo`,
+           dummyWprArchive);
+       await runner.runScript(
+           'import time; _real_sleep = time.sleep; ' +
+           'time.sleep = lambda s: None');
+       try {
+         await runner.runCrossbench([
+           'loadline2-phone',
+           '--browser',
+           'cdp:chrome',
+           '--repeat',
+           '1',
+           '--stories=amazon_product',
+           '--throw',
+         ]);
+         await runner.runCrossbench([
+           'speedometer_3.1',
+           '--browser',
+           'cdp:chrome',
+           '--repeat',
+           '1',
+           '--stories=TodoMVC-JavaScript-ES5',
+           '--network',
+           JSON.stringify({
+             type: 'wpr',
+             url: 'gs://chrome-partner-loadline/' +
+                 'archive_speedometer_3.1_20261113.wprgo',
+             persist_server: true,
+             run_on_device: true,
+           }),
+           '--throw',
+         ]);
+       } finally {
+         await runner.runScript('time.sleep = _real_sleep');
+       }
+       expect(
+           logs.some((l) => l.includes('Could not find llvm-symbolizer')),
+           )
+           .toBe(false);
 
        // Test Perfetto probe trace config serialization with real protobuf
        const perfettoTestScript = `
@@ -230,11 +406,16 @@ with mock.patch.object(plt.adb, "getprop", return_value="37"), \\
        const uinputRes = await runner.runScript(uinputTestScript);
        expect(uinputRes).toBe('OK');
        expect(mockWebAdb.spawnProcess).toHaveBeenCalledWith('uinput -');
-       expect(mockWebAdb.writeProcessStdin)
-           .toHaveBeenCalledWith(201, expect.stringContaining('N: touch1'));
+       const uinputPid = [...spawnedCmds.entries()]
+                             .find(([, cmd]) => cmd === 'uinput -')
+                             ?.[0];
+       expect(uinputPid).toBeDefined();
        expect(mockWebAdb.writeProcessStdin)
            .toHaveBeenCalledWith(
-               201, expect.stringContaining('0003 0035 0100'));
+               uinputPid, expect.stringContaining('N: touch1'));
+       expect(mockWebAdb.writeProcessStdin)
+           .toHaveBeenCalledWith(
+               uinputPid, expect.stringContaining('0003 0035 0100'));
 
        // Test Perfetto TraceProcessor in Pyodide with real pandas, numpy, scipy
        const tpTestScript = `

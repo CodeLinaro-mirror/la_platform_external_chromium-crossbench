@@ -110,11 +110,28 @@ DUMMY_ROOTS = (
     "yaml",
 )
 
+class DummyException(Exception):
+    pass
+
+_DUMMY_EXCEPTION_SUFFIXES = (
+    "Error",
+    "Exception",
+    "Warning",
+    "NotFound",
+    "Forbidden",
+    "Unauthorized",
+)
+
 class DummyMeta(type):
     def __getattr__(cls, name):
+        is_exc = name[:1].isupper() and (
+            "exceptions" in cls.__name__.split(".")
+            or name.endswith(_DUMMY_EXCEPTION_SUFFIXES)
+        )
+        bases = (DummyException,) if is_exc else (UniversalDummy,)
         subcls = DummyMeta(
             name,
-            (UniversalDummy,),
+            bases,
             {"__module__": cls.__name__, "__name__": name},
         )
         setattr(cls, name, subcls)
@@ -126,6 +143,23 @@ class DummyMeta(type):
         if mod_name.split(".")[0] in DUMMY_ROOTS or is_non_pb_google:
             sys.modules[mod_name] = subcls
         return subcls
+    def __instancecheck__(cls, instance):
+        if not type.__subclasscheck__(BaseException, cls) and (
+            type.__instancecheck__(DummyMeta, instance)
+            or type.__instancecheck__(UniversalDummy, instance)
+        ):
+            return True
+        return super().__instancecheck__(instance)
+    def __subclasscheck__(cls, subclass):
+        if not type.__subclasscheck__(BaseException, cls) and (
+            type.__instancecheck__(DummyMeta, subclass)
+            or (
+                isinstance(subclass, type)
+                and type.__subclasscheck__(UniversalDummy, subclass)
+            )
+        ):
+            return True
+        return super().__subclasscheck__(subclass)
     def __getitem__(cls, item):
         return cls
     def __setitem__(cls, key, value):
