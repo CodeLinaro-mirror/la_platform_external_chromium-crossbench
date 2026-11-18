@@ -224,6 +224,8 @@ class SetupNetwork:
       self._dnsmasq_process = None
 
   def _setup(self) -> None:
+    if not PLATFORM.which("dnsmasq"):
+      self._fail("dnsmasq binary not found in $PATH")
     self._check_device()
     print(WARNING_MESSAGE.format(interface=self._interface))
     result = ui.prompt("When ready, please type 'yes' to continue:")

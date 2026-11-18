@@ -108,5 +108,18 @@ class SetupNetworkIosDeviceTestCase(BaseCliTestCase):
       setup._setup_device()
 
 
+class SetupNetworkBinaryCheckTestCase(BaseCliTestCase):
+  def test_missing_dnsmasq_fails_early(self) -> None:
+    setup = SetupNetwork("en7")
+    macos_plt = MacOsMockPlatform()
+    with (
+      mock.patch.object(setup_wpr_ethernet, "PLATFORM", macos_plt),
+      mock.patch.object(setup, "_check_device") as mock_check_device,
+      self.assertRaises(SystemExit),
+    ):
+      setup._setup()
+    mock_check_device.assert_not_called()
+
+
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)
