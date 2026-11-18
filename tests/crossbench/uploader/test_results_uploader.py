@@ -6,17 +6,34 @@ from __future__ import annotations
 
 import argparse
 import tarfile
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING, ClassVar, override
 from unittest import mock
 
 from crossbench.probes.internal.summary import ResultsSummaryProbe
 from crossbench.uploader import results_uploader
 from crossbench.uploader.base import BaseUploader
+from crossbench.uploader.gcs import GoogleCloudStorageUploader
 from tests import test_helper
 from tests.crossbench.base import BaseCrossbenchTestCase
 
 if TYPE_CHECKING:
   from crossbench import path as pth
+
+
+class _DummyShorthandUploader(BaseUploader):
+  TARGET_FORMATS: ClassVar[tuple[str, ...]] = ("dummy",)
+
+  @classmethod
+  @override
+  def parse_target(cls, target: str) -> str:
+    if target.strip() in ("dummy", "dummy://root"):
+      return "dummy"
+    return ""
+
+  @override
+  def upload(self, file_path: pth.LocalPath) -> str:
+    del file_path
+    return "https://example.com/uploaded"
 
 
 class ResultsUploaderTestCase(BaseCrossbenchTestCase):
@@ -39,6 +56,50 @@ class ResultsUploaderTestCase(BaseCrossbenchTestCase):
     """Supported scheme, invalid URL - disallowed."""
     with self.assertRaises(argparse.ArgumentTypeError):
       results_uploader.target_url("gs://")
+
+  def test_target_url_other_keywords_rejected(self) -> None:
+    for keyword in ("gs", "gcs", "drive"):
+      with self.subTest(keyword=keyword):
+        with self.assertRaises(argparse.ArgumentTypeError):
+          results_uploader.target_url(keyword)
+
+  def test_target_url_shorthand_normalized(self) -> None:
+    uploaders = (GoogleCloudStorageUploader, _DummyShorthandUploader)
+    with mock.patch.object(results_uploader, "_UPLOADERS", uploaders):
+      for alias in ("dummy", " dummy://root "):
+        with self.subTest(alias=alias):
+          self.assertEqual(results_uploader.target_url(alias), "dummy")
+
+  def test_target_url_shorthand_unhandled_rejected(self) -> None:
+    uploaders = (GoogleCloudStorageUploader, _DummyShorthandUploader)
+    with mock.patch.object(results_uploader, "_UPLOADERS", uploaders):
+      with self.assertRaises(argparse.ArgumentTypeError):
+        results_uploader.target_url("dummy://unsupported-subpath")
+
+  def test_supported_targets_str(self) -> None:
+    targets = results_uploader.supported_targets_str()
+    self.assertIn("gs://", targets)
+
+  def test_uploader_for_url_valid(self) -> None:
+    self.assertIsInstance(
+      results_uploader._uploader_for_url("gs://my-bucket/test/"),
+      GoogleCloudStorageUploader,
+    )
+
+  def test_uploader_for_url_shorthand(self) -> None:
+    uploaders = (GoogleCloudStorageUploader, _DummyShorthandUploader)
+    with mock.patch.object(results_uploader, "_UPLOADERS", uploaders):
+      self.assertIsInstance(
+        results_uploader._uploader_for_url("dummy"), _DummyShorthandUploader
+      )
+
+  def test_uploader_for_url_unsupported_target(self) -> None:
+    with self.assertRaises(ValueError):
+      results_uploader._uploader_for_url("https://unsupported-bucket/path")
+
+  def test_uploader_for_url_malformed_target(self) -> None:
+    with self.assertRaises(ValueError):
+      results_uploader._uploader_for_url("gs://")
 
   def test_target_url_empty_with_env_var(self) -> None:
     url = "gs://my-bucket/env-target/"

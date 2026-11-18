@@ -14,16 +14,16 @@ import uuid
 from typing import TYPE_CHECKING, Final
 
 from crossbench import path as pth
-from crossbench.parse import ObjectParser, PathParser
+from crossbench.parse import PathParser
 from crossbench.probes.internal.summary import ResultsSummaryProbe
 from crossbench.uploader.gcs import GoogleCloudStorageUploader
 
 if TYPE_CHECKING:
   from crossbench.uploader.base import BaseUploader
 
-_SCHEME_TO_UPLOADER: Final[dict[str, type[BaseUploader]]] = {
-  "gs": GoogleCloudStorageUploader,
-}
+_UPLOADERS: Final[tuple[type[BaseUploader], ...]] = (
+  GoogleCloudStorageUploader,
+)
 
 
 def result_dir(value: pth.LocalPathLike) -> pth.LocalPath:
@@ -69,12 +69,17 @@ def upload(source: pth.LocalPath, target: str) -> str | None:
     return result_url
 
 
-def supported_schemes_str() -> str:
-  return ", ".join(f"{scheme}://" for scheme in _SCHEME_TO_UPLOADER)
+def supported_targets_str() -> str:
+  """Human-readable list of all supported upload target formats."""
+  return ", ".join(
+    target_format
+    for uploader_cls in _UPLOADERS
+    for target_format in uploader_cls.TARGET_FORMATS
+  )
 
 
 def target_url(url: str) -> str:
-  """Validates that url is a supported results upload destination URL."""
+  """Validates and normalizes a results upload destination."""
   if not url:
     url = os.environ.get("CROSSBENCH_RESULT_UPLOAD_TARGET", "")
     if not url:
@@ -82,8 +87,12 @@ def target_url(url: str) -> str:
         "Target upload URL not specified, and "
         "CROSSBENCH_RESULT_UPLOAD_TARGET environment variable is not set."
       )
-  return ObjectParser.url_str(
-    url, name="results upload URL", schemes=tuple(_SCHEME_TO_UPLOADER.keys())
+  for uploader_cls in _UPLOADERS:
+    if canonical := uploader_cls.parse_target(url):
+      return canonical
+  raise argparse.ArgumentTypeError(
+    f"Unsupported results upload target: {url!r}. "
+    f"Supported formats: {supported_targets_str()}."
   )
 
 
@@ -99,10 +108,13 @@ def _is_result_dir(path: pth.LocalPath) -> bool:
 
 
 def _uploader_for_url(url: str) -> BaseUploader:
-  scheme = ObjectParser.base_url(url).scheme
-  if uploader_cls := _SCHEME_TO_UPLOADER.get(scheme):
-    return uploader_cls(url=url)
-  raise ValueError(f"Unsupported upload URL scheme: {url!r}")
+  for uploader_cls in _UPLOADERS:
+    try:
+      if canonical := uploader_cls.parse_target(url):
+        return uploader_cls(url=canonical)
+    except argparse.ArgumentTypeError as e:
+      raise ValueError(str(e)) from e
+  raise ValueError(f"Unsupported upload target: {url!r}")
 
 
 def _create_archive(

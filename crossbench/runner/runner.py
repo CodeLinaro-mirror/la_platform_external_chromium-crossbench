@@ -295,7 +295,7 @@ class Runner:
       help=(
         "Upload benchmark results to a remote location. "
         "Supported upload mechanisms include: "
-        f"{results_uploader.supported_schemes_str()}."
+        f"{results_uploader.supported_targets_str()}."
       ),
     )
 

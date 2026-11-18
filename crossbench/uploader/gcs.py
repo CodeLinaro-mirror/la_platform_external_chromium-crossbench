@@ -4,9 +4,10 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING, ClassVar, override
 
 from crossbench import plt
+from crossbench.parse import ObjectParser
 from crossbench.uploader.base import BaseUploader
 
 if TYPE_CHECKING:
@@ -16,9 +17,21 @@ if TYPE_CHECKING:
 class GoogleCloudStorageUploader(BaseUploader):
   """Uploads files to Google Cloud Storage (GCS)."""
 
+  TARGET_FORMATS: ClassVar[tuple[str, ...]] = ("gs://<bucket>/<path>",)
+
   def __init__(self, url: str) -> None:
     super().__init__(url)
     assert self._url.startswith("gs://")
+
+  @classmethod
+  @override
+  def parse_target(cls, target: str) -> str:
+    target = target.strip()
+    if not target.startswith("gs:"):
+      return ""
+    return ObjectParser.url_str(
+      target, name="results upload URL", schemes=("gs",)
+    )
 
   @override
   def upload(self, file_path: pth.LocalPath) -> str:

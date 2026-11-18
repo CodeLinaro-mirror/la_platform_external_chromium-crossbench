@@ -54,7 +54,8 @@ class UploadResultsSubcommand(CrossbenchSubcommand):
       help=(
         "Target upload URL. Defaults to the "
         "CROSSBENCH_RESULT_UPLOAD_TARGET environment variable if "
-        "omitted. Currently, only Google Cloud Storage is supported."
+        "omitted. Supported formats: "
+        f"{results_uploader.supported_targets_str()}."
       ),
     )
     self.cli.add_debugging_arguments(parser)

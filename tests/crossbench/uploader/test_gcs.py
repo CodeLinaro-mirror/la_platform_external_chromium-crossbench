@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import argparse
 from typing import override
 from unittest import mock
 
@@ -18,6 +19,21 @@ class GoogleCloudStorageUploaderTestCase(BaseCrossbenchTestCase):
   def setUp(self) -> None:
     super().setUp()
     self.out_dir.mkdir()
+
+  def test_parse_target_valid(self) -> None:
+    self.assertEqual(
+      GoogleCloudStorageUploader.parse_target("gs://my-bucket/test/"),
+      "gs://my-bucket/test/",
+    )
+
+  def test_parse_target_other_target_ignored(self) -> None:
+    for target in ("https://example.com/", "gs"):
+      with self.subTest(target=target):
+        self.assertEqual(GoogleCloudStorageUploader.parse_target(target), "")
+
+  def test_parse_target_malformed_url_raises(self) -> None:
+    with self.assertRaises(argparse.ArgumentTypeError):
+      GoogleCloudStorageUploader.parse_target("gs://")
 
   def test_invalid_url_scheme(self) -> None:
     with self.assertRaises(AssertionError):
