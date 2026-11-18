@@ -200,13 +200,18 @@ in [Perfetto UI](https://ui.perfetto.dev).
 #### Uploading Results
 
 To share results with colleagues, you can upload them to a GCS bucket (Google
-Cloud Storage). You can either:
+Cloud Storage) or to a Google Drive folder. You can either:
 - Elect to upload the results automatically after the benchmark finishes.
   This is done by specifying `--upload-results` when running Crossbench.
   Googlers should use `--upload-results=gs://web-power-crossbench-export/`,
-  and other users can use their own GCS bucket if they so wish.
+  and other users can use `gdrive` or their own GCS bucket.
 - Manually trigger an upload of previously collected results. This is done
-  using `./cb.py upload-results path/to/results/dir path/to/gcs_bucket`.
+  using `./cb.py upload-results path/to/results/dir <target-url>`.
+
+The target URL can be one of:
+- A GCS bucket path: `gs://<bucket>/<path>`.
+- The keyword `gdrive`, which uploads into a `crossbench-results` folder at
+  the top level of your Google Drive ("My Drive"), creating it if needed.
 
 If you upload results often, you may save yourself some typing by setting the
 `CROSSBENCH_RESULT_UPLOAD_TARGET` environment variable to the target URL to

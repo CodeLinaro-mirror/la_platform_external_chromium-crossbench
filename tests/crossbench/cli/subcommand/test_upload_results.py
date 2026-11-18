@@ -72,6 +72,14 @@ class UploadResultsSubcommandTest(BaseCliTestCase):
         "upload-results", str(self.test_dir), "https://unsupported-bucket/path"
       )
 
+  def test_gdrive_target(self) -> None:
+    with mock.patch(
+      _UPLOAD_PATCH_TARGET,
+      return_value="https://drive.google.com/file/d/X/view",
+    ) as mock_upload:
+      self.run_cli("upload-results", str(self.test_dir), "gdrive")
+      mock_upload.assert_called_once_with(source=self.test_dir, target="gdrive")
+
   def test_default_env_var_target(self) -> None:
     env_target = "gs://env-bucket/results"
     with (

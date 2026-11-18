@@ -13,6 +13,7 @@ from crossbench.probes.internal.summary import ResultsSummaryProbe
 from crossbench.uploader import results_uploader
 from crossbench.uploader.base import BaseUploader
 from crossbench.uploader.gcs import GoogleCloudStorageUploader
+from crossbench.uploader.gdrive import GoogleDriveUploader
 from tests import test_helper
 from tests.crossbench.base import BaseCrossbenchTestCase
 
@@ -57,11 +58,25 @@ class ResultsUploaderTestCase(BaseCrossbenchTestCase):
     with self.assertRaises(argparse.ArgumentTypeError):
       results_uploader.target_url("gs://")
 
-  def test_target_url_other_keywords_rejected(self) -> None:
-    for keyword in ("gs", "gcs", "drive"):
-      with self.subTest(keyword=keyword):
+  def test_target_url_gdrive_shorthand(self) -> None:
+    for target in ("gdrive", " gdrive "):
+      with self.subTest(target=target):
+        self.assertEqual(results_uploader.target_url(target), "gdrive")
+
+  def test_target_url_rejected_targets(self) -> None:
+    for target in (
+      "gs",
+      "gcs",
+      "drive",
+      "gdrive_",
+      "gdrive://",
+      "gdrive://root",
+      "gdrive://1AbC-dEf_GhI",
+      "https://drive.google.com/drive/folders/1AbC-dEf_GhI",
+    ):
+      with self.subTest(target=target):
         with self.assertRaises(argparse.ArgumentTypeError):
-          results_uploader.target_url(keyword)
+          results_uploader.target_url(target)
 
   def test_target_url_shorthand_normalized(self) -> None:
     uploaders = (GoogleCloudStorageUploader, _DummyShorthandUploader)
@@ -79,11 +94,17 @@ class ResultsUploaderTestCase(BaseCrossbenchTestCase):
   def test_supported_targets_str(self) -> None:
     targets = results_uploader.supported_targets_str()
     self.assertIn("gs://", targets)
+    self.assertIn("gdrive", targets)
 
   def test_uploader_for_url_valid(self) -> None:
     self.assertIsInstance(
       results_uploader._uploader_for_url("gs://my-bucket/test/"),
       GoogleCloudStorageUploader,
+    )
+
+  def test_uploader_for_url_gdrive(self) -> None:
+    self.assertIsInstance(
+      results_uploader._uploader_for_url("gdrive"), GoogleDriveUploader
     )
 
   def test_uploader_for_url_shorthand(self) -> None:
@@ -94,19 +115,26 @@ class ResultsUploaderTestCase(BaseCrossbenchTestCase):
       )
 
   def test_uploader_for_url_unsupported_target(self) -> None:
-    with self.assertRaises(ValueError):
-      results_uploader._uploader_for_url("https://unsupported-bucket/path")
+    for url in (
+      "gdrive://1AbC",
+      "https://drive.google.com/drive/folders/1AbC",
+      "https://unsupported-bucket/path",
+    ):
+      with self.subTest(url=url):
+        with self.assertRaises(ValueError):
+          results_uploader._uploader_for_url(url)
 
   def test_uploader_for_url_malformed_target(self) -> None:
     with self.assertRaises(ValueError):
       results_uploader._uploader_for_url("gs://")
 
   def test_target_url_empty_with_env_var(self) -> None:
-    url = "gs://my-bucket/env-target/"
-    with mock.patch.dict(
-      "os.environ", {"CROSSBENCH_RESULT_UPLOAD_TARGET": url}
-    ):
-      self.assertEqual(results_uploader.target_url(""), url)
+    for url in ("gs://my-bucket/env-target/", "gdrive"):
+      with self.subTest(url=url):
+        with mock.patch.dict(
+          "os.environ", {"CROSSBENCH_RESULT_UPLOAD_TARGET": url}
+        ):
+          self.assertEqual(results_uploader.target_url(""), url)
 
   def test_target_url_explicit_overrides_env_var(self) -> None:
     env_url = "gs://my-bucket/env-target/"

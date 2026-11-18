@@ -17,12 +17,14 @@ from crossbench import path as pth
 from crossbench.parse import PathParser
 from crossbench.probes.internal.summary import ResultsSummaryProbe
 from crossbench.uploader.gcs import GoogleCloudStorageUploader
+from crossbench.uploader.gdrive import GoogleDriveUploader
 
 if TYPE_CHECKING:
   from crossbench.uploader.base import BaseUploader
 
 _UPLOADERS: Final[tuple[type[BaseUploader], ...]] = (
   GoogleCloudStorageUploader,
+  GoogleDriveUploader,
 )
 
 
