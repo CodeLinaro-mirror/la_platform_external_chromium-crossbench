@@ -2001,16 +2001,6 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
 
   @override
   @contextlib.contextmanager
-  def wakelock(self) -> Iterator[None]:
-    self.adb.shell("svc", "power", "stayon", "true")
-    self.adb.shell("input", "keyevent", "KEYCODE_WAKEUP")
-    try:
-      yield
-    finally:
-      self.adb.shell("svc", "power", "stayon", "false")
-
-  @override
-  @contextlib.contextmanager
   def disable_secure_windows(self) -> Iterator[None]:
     self.adb.shell(
       "settings", "put", "--user", "0", "secure", "disable_secure_windows", "1"
