@@ -189,7 +189,9 @@ WITH
       CASE
         WHEN
           COALESCE(source_file, '') GLOB '*third_party/blink/*'
+          OR COALESCE(source_file, '') GLOB '*third_party/ots/*'
           OR name GLOB 'blink::*'
+          OR name GLOB 'ots::*'
           THEN 'blink'
         WHEN
           COALESCE(source_file, '') GLOB '*v8/*'
@@ -297,6 +299,23 @@ WITH
       ON o.upid = pr.upid
     WHERE o.reachable != 0
     GROUP BY pr.process_role
+  ),
+  -- Emit NULL (skipped by crossbench_result_converter) instead of fake 0s when
+  -- no renderer process was captured in android.heapprofd / android.java_hprof.
+  renderer_presence AS (
+    SELECT
+      EXISTS(
+        SELECT 1
+        FROM heap_profile_allocation a
+        JOIN process_roles pr ON a.upid = pr.upid
+        WHERE pr.process_role = 'renderer'
+      ) AS has_native_renderer,
+      EXISTS(
+        SELECT 1
+        FROM heap_graph_object o
+        JOIN process_roles pr ON o.upid = pr.upid
+        WHERE pr.process_role = 'renderer'
+      ) AS has_java_renderer
   )
 SELECT
   -- Native Heap (android.heapprofd) — Post-Destroy
@@ -307,16 +326,40 @@ SELECT
     - COALESCE((SELECT startup_bytes FROM startup_by_role WHERE process_role = 'browser'), 0)
     AS INTEGER
   ) AS native_post_startup_retained_browser_bytes,
-  CAST(COALESCE((SELECT retained_bytes FROM final_by_role WHERE process_role = 'renderer'), 0) AS INTEGER) AS native_retained_renderer_bytes,
-  CAST(COALESCE((SELECT retained_count FROM final_by_role WHERE process_role = 'renderer'), 0) AS INTEGER) AS native_retained_renderer_count,
-  CAST(
-    COALESCE((SELECT retained_bytes FROM final_by_role WHERE process_role = 'renderer'), 0)
-    - COALESCE((SELECT startup_bytes FROM startup_by_role WHERE process_role = 'renderer'), 0)
-    AS INTEGER
+  IIF(
+    (SELECT has_native_renderer FROM renderer_presence),
+    CAST(COALESCE((SELECT retained_bytes FROM final_by_role WHERE process_role = 'renderer'), 0) AS INTEGER),
+    NULL
+  ) AS native_retained_renderer_bytes,
+  IIF(
+    (SELECT has_native_renderer FROM renderer_presence),
+    CAST(COALESCE((SELECT retained_count FROM final_by_role WHERE process_role = 'renderer'), 0) AS INTEGER),
+    NULL
+  ) AS native_retained_renderer_count,
+  IIF(
+    (SELECT has_native_renderer FROM renderer_presence),
+    CAST(
+      COALESCE((SELECT retained_bytes FROM final_by_role WHERE process_role = 'renderer'), 0)
+      - COALESCE((SELECT startup_bytes FROM startup_by_role WHERE process_role = 'renderer'), 0)
+      AS INTEGER
+    ),
+    NULL
   ) AS native_post_startup_retained_renderer_bytes,
-  CAST(COALESCE((SELECT renderer_blink_bytes FROM native_subsystems), 0) AS INTEGER) AS native_retained_renderer_blink_bytes,
-  CAST(COALESCE((SELECT renderer_v8_bytes FROM native_subsystems), 0) AS INTEGER) AS native_retained_renderer_v8_bytes,
-  CAST(COALESCE((SELECT renderer_skia_bytes FROM native_subsystems), 0) AS INTEGER) AS native_retained_renderer_skia_bytes,
+  IIF(
+    (SELECT has_native_renderer FROM renderer_presence),
+    CAST(COALESCE((SELECT renderer_blink_bytes FROM native_subsystems), 0) AS INTEGER),
+    NULL
+  ) AS native_retained_renderer_blink_bytes,
+  IIF(
+    (SELECT has_native_renderer FROM renderer_presence),
+    CAST(COALESCE((SELECT renderer_v8_bytes FROM native_subsystems), 0) AS INTEGER),
+    NULL
+  ) AS native_retained_renderer_v8_bytes,
+  IIF(
+    (SELECT has_native_renderer FROM renderer_presence),
+    CAST(COALESCE((SELECT renderer_skia_bytes FROM native_subsystems), 0) AS INTEGER),
+    NULL
+  ) AS native_retained_renderer_skia_bytes,
   CAST(COALESCE((SELECT browser_aw_bytes FROM native_subsystems), 0) AS INTEGER) AS native_retained_browser_aw_bytes,
   -- Java Heap (android.java_hprof) — Post-Destroy
   CAST(COALESCE((SELECT java_bytes FROM java_final_by_role WHERE process_role = 'browser'), 0) AS INTEGER) AS java_retained_browser_bytes,
@@ -324,7 +367,23 @@ SELECT
   CAST(COALESCE((SELECT native_alloc_bytes FROM java_final_by_role WHERE process_role = 'browser'), 0) AS INTEGER) AS java_retained_browser_native_alloc_bytes,
   CAST(COALESCE((SELECT chromium_bytes FROM java_final_by_role WHERE process_role = 'browser'), 0) AS INTEGER) AS java_retained_browser_chromium_bytes,
   CAST(COALESCE((SELECT aw_contents_count FROM java_final_by_role WHERE process_role = 'browser'), 0) AS INTEGER) AS java_retained_browser_aw_contents_count,
-  CAST(COALESCE((SELECT java_bytes FROM java_final_by_role WHERE process_role = 'renderer'), 0) AS INTEGER) AS java_retained_renderer_bytes,
-  CAST(COALESCE((SELECT java_count FROM java_final_by_role WHERE process_role = 'renderer'), 0) AS INTEGER) AS java_retained_renderer_count,
-  CAST(COALESCE((SELECT native_alloc_bytes FROM java_final_by_role WHERE process_role = 'renderer'), 0) AS INTEGER) AS java_retained_renderer_native_alloc_bytes,
-  CAST(COALESCE((SELECT chromium_bytes FROM java_final_by_role WHERE process_role = 'renderer'), 0) AS INTEGER) AS java_retained_renderer_chromium_bytes;
+  IIF(
+    (SELECT has_java_renderer FROM renderer_presence),
+    CAST(COALESCE((SELECT java_bytes FROM java_final_by_role WHERE process_role = 'renderer'), 0) AS INTEGER),
+    NULL
+  ) AS java_retained_renderer_bytes,
+  IIF(
+    (SELECT has_java_renderer FROM renderer_presence),
+    CAST(COALESCE((SELECT java_count FROM java_final_by_role WHERE process_role = 'renderer'), 0) AS INTEGER),
+    NULL
+  ) AS java_retained_renderer_count,
+  IIF(
+    (SELECT has_java_renderer FROM renderer_presence),
+    CAST(COALESCE((SELECT native_alloc_bytes FROM java_final_by_role WHERE process_role = 'renderer'), 0) AS INTEGER),
+    NULL
+  ) AS java_retained_renderer_native_alloc_bytes,
+  IIF(
+    (SELECT has_java_renderer FROM renderer_presence),
+    CAST(COALESCE((SELECT chromium_bytes FROM java_final_by_role WHERE process_role = 'renderer'), 0) AS INTEGER),
+    NULL
+  ) AS java_retained_renderer_chromium_bytes;

@@ -17,7 +17,12 @@ data_sources {
     heapprofd_config {
       sampling_interval_bytes: 4096
       process_cmdline: "org.chromium.webview_shell"
+      # heapprofd startup profiling (no_startup=false) rejects '*' wildcards;
+      # list all manifest-declared WebView renderer services (98-byte argv0 cap).
       process_cmdline: "com.google.android.webview.debug:sandboxed_process0:org.chromium.content.app.SandboxedProcessServi"
+      process_cmdline: "com.google.android.webview.debug:sandboxed_process1:org.chromium.content.app.SandboxedProcessServi"
+      process_cmdline: "com.google.android.webview.debug:sandboxed_process0:org.chromium.content.app.NativeOnlySandboxedPr"
+      process_cmdline: "com.google.android.webview.debug:sandboxed_process1:org.chromium.content.app.NativeOnlySandboxedPr"
       continuous_dump_config {
         dump_phase_ms: 0
         dump_interval_ms: 5000
@@ -33,7 +38,10 @@ data_sources {
     name: "android.java_hprof"
     java_hprof_config {
       process_cmdline: "org.chromium.webview_shell"
+      # Omit NativeOnlySandboxedProcessService{0,1}: javaless renderers have
+      # no ART VM to handle java_hprof's SIGRTMIN+6 dump signal.
       process_cmdline: "com.google.android.webview.debug:sandboxed_process0:org.chromium.content.app.SandboxedProcessServi"
+      process_cmdline: "com.google.android.webview.debug:sandboxed_process1:org.chromium.content.app.SandboxedProcessServi"
       continuous_dump_config {
         dump_phase_ms: 0
         dump_interval_ms: 5000
