@@ -2,9 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from __future__ import annotations
-
 import abc
+import annotationlib
 import argparse
 import collections
 import collections.abc
@@ -108,7 +107,11 @@ class ConfigArgParser:
     signature = None
     if hasattr(self.type, "__module__") and self.type.__module__ != "builtins":
       try:
-        signature = inspect.signature(self.type)
+        # Use FORWARDREF so inspect.signature does not evaluate parameter type
+        # annotations imported only under `if TYPE_CHECKING:`.
+        signature = inspect.signature(
+          self.type, annotation_format=annotationlib.Format.FORWARDREF
+        )
       except ValueError as e:
         logging.debug("Could not get signature for %s: %s", self.type, e)
 

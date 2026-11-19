@@ -2,8 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from __future__ import annotations
-
 import base64
 import enum
 import functools
@@ -14,8 +12,10 @@ import sys
 import traceback
 import urllib.parse
 import uuid
+from collections.abc import Generator
 from typing import TYPE_CHECKING, Any, Final, NamedTuple
 
+import pluggy
 import pytest
 import requests
 from immutabledict import immutabledict
@@ -23,9 +23,7 @@ from immutabledict import immutabledict
 from crossbench import path as pth
 
 if TYPE_CHECKING:
-  from collections.abc import Generator, Mapping, Sequence
-
-  import pluggy
+  from collections.abc import Mapping, Sequence
 
 REPO_URL: Final[str] = "https://chromium.googlesource.com/crossbench"
 NODE_ID_SEPARATOR: Final[str] = "::"

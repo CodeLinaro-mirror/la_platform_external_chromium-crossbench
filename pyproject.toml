@@ -111,7 +111,6 @@ extend-select = [
     "COM818", # flake8-commas: trailing-comma-on-bare-tuple
     "COM819", # flake8-commas: prohibited-trailing-comma
     "BLE",  # flake8-blind-except
-    "FA",   # flake8-future-annotations
     "ISC",  # flake8-implicit-str-concat
     "ICN",  # flake8-import-conventions
     "LOG",  # flake8-logging
@@ -218,15 +217,17 @@ runtime-evaluated-base-classes = [
     "sqlalchemy.orm.DeclarativeBase",
     "crossbench.results_db.records.base.BaseRecord"
 ]
+# pluggy calls inspect.signature() with Format.VALUE when registering
+# @pytest.hookimpl functions, evaluating their annotations at runtime.
+runtime-evaluated-decorators = [
+    "pytest.hookimpl",
+]
 
 [tool.ruff.lint.flake8-annotations]
 mypy-init-return = true
 
 [tool.ruff.lint.mccabe]
 max-complexity = 15
-
-[tool.ruff.lint.isort]
-required-imports = [ "from __future__ import annotations" ]
 
 [tool.pyrefly]
 project-includes = [

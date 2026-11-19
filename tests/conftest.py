@@ -2,16 +2,12 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
+import pytest
 
 from tests import result_sink
 
-if TYPE_CHECKING:
-  import pytest
 
-
+@pytest.hookimpl
 def pytest_configure(config: pytest.Config) -> None:
   luci_context = result_sink.LuciContext.from_env()
   if not result_sink.ResultSinkPlugin.is_result_sink_enabled(luci_context):

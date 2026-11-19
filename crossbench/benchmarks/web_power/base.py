@@ -2,8 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from __future__ import annotations
-
+import annotationlib
 import dataclasses
 import datetime as dt
 import functools
@@ -349,7 +348,11 @@ class WebPowerStoryFilter[WebPowerStoryT: WebPowerStory](
   ) -> dict[str, object]:
     """Filters all parsed CLI arguments to only forward parameters accepted by
     the target story constructor (preventing TypeErrors)."""
-    constructor_sig = inspect.signature(story_cls.__init__)
+    # Use FORWARDREF so inspect.signature does not evaluate parameter type
+    # annotations imported only under `if TYPE_CHECKING:`.
+    constructor_sig = inspect.signature(
+      story_cls.__init__, annotation_format=annotationlib.Format.FORWARDREF
+    )
     accepted_params = constructor_sig.parameters
 
     return {

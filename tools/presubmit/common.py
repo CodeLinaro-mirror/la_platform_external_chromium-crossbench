@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+# TODO(crbug.com/586521681): Remove once depot_tools is migrated to 3.14.
 from __future__ import annotations
 
 import abc

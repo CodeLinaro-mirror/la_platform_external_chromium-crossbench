@@ -2,8 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from __future__ import annotations
-
+import annotationlib
 import dataclasses
 import logging
 import pathlib
@@ -25,9 +24,6 @@ if TYPE_CHECKING:
 
 MAIN_SNIPPET: Final[str] = 'if __name__ == "__main__":'
 RUN_SNIPPET: Final[str] = f"{MAIN_SNIPPET}\n  test_helper.run_pytest(__file__)"
-FUTURE_ANNOTATIONS_SNIPPET: Final = "from __future__ import annotations"
-
-COMMENTS_ONLY_RE: Final = re.compile(r"^(?:#.*|\s*)*$", re.MULTILINE)
 
 UNITTEST_DIR: Final = pathlib.Path(__file__).parent
 ROOT_DIR: Final = UNITTEST_DIR.parents[1]
@@ -57,16 +53,6 @@ class MetaTestCase(unittest.TestCase):
           f"{test_file} misses runner snippet: "
           "test_helper.run_pytest(__file__)",
         )
-
-  def test_future_annotation(self):
-    for py_file in CROSSBENCH_DIR.glob("**/*.py"):
-      with self.subTest(py_file=str(py_file)):
-        text = py_file.read_text()
-        if FUTURE_ANNOTATIONS_SNIPPET in text:
-          continue
-        if py_file.name == "__init__.py" and COMMENTS_ONLY_RE.fullmatch(text):
-          continue
-        self.fail(f"{py_file} is missing future annotation")
 
   def protobug_text_file_names(self):
     trace_config_dir = test_helper.config_dir()
@@ -283,7 +269,9 @@ class ConfigObjectMetaTest(unittest.TestCase):
     violations: list[str] = []
     self.assertTrue(dataclasses.is_dataclass(cls))
     registered_fields = {field.name for field in dataclasses.fields(cls)}
-    for attr_name, attr_type in cls.__annotations__.items():
+    for attr_name, attr_type in annotationlib.get_annotations(
+      cls, format=annotationlib.Format.STRING
+    ).items():
       if "ClassVar" in str(attr_type):
         continue
       if attr_name not in registered_fields:

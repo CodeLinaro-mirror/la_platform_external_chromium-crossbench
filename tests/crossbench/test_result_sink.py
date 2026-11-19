@@ -2,8 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from __future__ import annotations
-
 import base64
 import contextlib
 import json
@@ -706,6 +704,15 @@ class ResultSinkPluginTestCase(unittest.TestCase):
       self.assertIn("--last-failed", retry_call_args)
       self.assertIn("--last-failed-no-failures=none", retry_call_args)
       self.assertIn("--cov-append", retry_call_args)
+
+  def test_pluggy_registration(self) -> None:
+    pm = pytest.PytestPluginManager()
+    tb_plugin = result_sink.ResultSinkTracebackPlugin()
+    sink_plugin = result_sink.ResultSinkPlugin()
+    pm.register(tb_plugin, "test_tb_plugin")
+    pm.register(sink_plugin, "test_sink_plugin")
+    self.assertTrue(pm.is_registered(tb_plugin))
+    self.assertTrue(pm.is_registered(sink_plugin))
 
 
 if __name__ == "__main__":
