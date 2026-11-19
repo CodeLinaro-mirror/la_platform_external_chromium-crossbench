@@ -52,6 +52,7 @@ class AgentDriver:
 
   MIN_TYPING_MS_PER_CHAR: Final[int] = 100
   MAX_CONSECUTIVE_TURN_ERRORS: Final[int] = 3
+  IDLE_TURN_NUDGE_THRESHOLD: Final[int] = 2
   EPISODES_DIR_NAME: Final[str] = "agent_episodes"
 
   def __init__(
@@ -277,6 +278,26 @@ class AgentDriver:
       "Crossbench actions and valid parameter values."
     )
 
+  def _is_idle_turn(self, actions: tuple[Action, ...]) -> bool:
+    return all(action.TYPE == ActionType.WAIT for action in actions)
+
+  def _build_idle_nudge(self, consecutive_idle_turns: int) -> str:
+    if not self._action.stop_on_done:
+      return (
+        f"\nYou have emitted {consecutive_idle_turns} consecutive idle/wait "
+        "turns. Do NOT use 'wait' or empty actions to pass remaining episode "
+        "time — actively interact with the device by starting a fresh round "
+        "of tasks, switching between apps/windows/tabs, or exploring "
+        "additional features until the episode timeout."
+      )
+    return (
+      f"\nYou have emitted {consecutive_idle_turns} consecutive idle/wait "
+      "turns without interacting with the device. Unless an operation on "
+      "screen is visibly still in progress, stop waiting and either take the "
+      "next concrete action toward the task or set 'done': true if the task "
+      "instructions are already complete."
+    )
+
   def execute(self) -> None:
     self.host_platform.mkdir(self._screenshots_dir)
     self._write_episode_metadata()
@@ -285,6 +306,7 @@ class AgentDriver:
     deadline = start_time + duration_s
     duration_total_s = int(duration_s)
     consecutive_turn_errors = 0
+    consecutive_idle_turns = 0
     feedback = (
       "Agent episode started. Observe the initial screen and emit your "
       "first action(s)."
@@ -329,10 +351,28 @@ class AgentDriver:
             break
           feedback += (
             "\nEarly completion ('done': true) is disabled for this run. "
-            "Do NOT idle or repeat simple scrolls in place — take your time "
-            "exploring new pages, switching between open windows/tabs/apps, "
-            "or starting a fresh round of tasks until the episode timeout."
+            "Do NOT idle, loop on 'wait' actions, or repeat simple scrolls in "
+            "place — take your time exploring new pages, switching between "
+            "open windows/tabs/apps, or starting a fresh round of tasks until "
+            "the episode timeout."
           )
+
+        if self._is_idle_turn(turn.actions):
+          consecutive_idle_turns += 1
+          if (
+            consecutive_idle_turns >= self.IDLE_TURN_NUDGE_THRESHOLD
+            and not turn.done
+          ):
+            logging.info(
+              "Agent [%s] step %d | nudging agent after %d consecutive idle "
+              "turns",
+              self._episode_id,
+              step_idx,
+              consecutive_idle_turns,
+            )
+            feedback += self._build_idle_nudge(consecutive_idle_turns)
+        else:
+          consecutive_idle_turns = 0
 
         if self._action.settle_delay > dt.timedelta():
           self._run.runner.wait(self._action.settle_delay)

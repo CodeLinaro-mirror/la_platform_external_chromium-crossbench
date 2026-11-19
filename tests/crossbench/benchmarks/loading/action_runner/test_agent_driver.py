@@ -1106,6 +1106,146 @@ class AgentDriverTestCase(ActionRunnerTestCase):
       driver._generate_timelapse()
       mock_sh.assert_not_called()
 
+  def test_agent_driver_nudges_wait_loop_when_stop_on_done_is_false(
+    self,
+  ) -> None:
+    mock_client = MagicMock(spec=LlmConversationClient)
+    mock_client.send_turn.side_effect = [
+      AgentTurnResponse.parse(
+        {
+          "observation": "Task finished",
+          "thought": "Mark done",
+          "done": True,
+          "actions": [],
+        }
+      ),
+      AgentTurnResponse.parse(
+        {
+          "observation": "Early completion disabled",
+          "thought": "Tap once then wait out timer",
+          "done": False,
+          "actions": [
+            {"action": "click", "source": "touch", "pos": {"x": 500, "y": 500}}
+          ],
+        }
+      ),
+      AgentTurnResponse.parse(
+        {
+          "observation": "Waiting",
+          "thought": "Wait 1",
+          "done": False,
+          "actions": [{"action": "wait", "duration": "10ms"}],
+        }
+      ),
+      AgentTurnResponse.parse(
+        {
+          "observation": "Still waiting",
+          "thought": "Wait 2",
+          "done": False,
+          "actions": [{"action": "wait", "duration": "10ms"}],
+        }
+      ),
+      AgentTurnResponse.parse(
+        {
+          "observation": "Nudged out of wait loop",
+          "thought": "Interact again",
+          "done": False,
+          "actions": [
+            {"action": "click", "source": "touch", "pos": {"x": 200, "y": 300}}
+          ],
+        }
+      ),
+      AgentTurnResponse.parse(
+        {
+          "observation": "Back on track",
+          "thought": "Final step",
+          "done": False,
+          "actions": [{"action": "wait", "duration": "10ms"}],
+        }
+      ),
+    ]
+    action = AgentAction.parse_dict(
+      {
+        "action": "agent",
+        "prompt": "Explore continuously",
+        "max_steps": 6,
+        "duration": "1m",
+        "stop_on_done": False,
+        "settle_delay": "0s",
+      }
+    )
+    driver = AgentDriver(
+      self.action_runner,
+      self.mock_run,
+      action,
+      client=mock_client,
+    )
+    with patch.object(self.action_runner, "click_touch"):
+      driver.execute()
+
+    self.assertEqual(mock_client.send_turn.call_count, 6)
+    prompts = [call.args[0] for call in mock_client.send_turn.call_args_list]
+    self.assertIn("Early completion ('done': true) is disabled", prompts[1])
+    self.assertNotIn("consecutive idle/wait turns", prompts[2])
+    self.assertNotIn("consecutive idle/wait turns", prompts[3])
+    self.assertIn("2 consecutive idle/wait turns", prompts[4])
+    self.assertIn("Do NOT use 'wait' or empty actions", prompts[4])
+    # Real click on step 5 resets the idle streak.
+    self.assertNotIn("consecutive idle/wait turns", prompts[5])
+
+  def test_agent_driver_nudges_idle_turns_when_stop_on_done_is_true(
+    self,
+  ) -> None:
+    mock_client = MagicMock(spec=LlmConversationClient)
+    mock_client.send_turn.side_effect = [
+      AgentTurnResponse.parse(
+        {
+          "observation": "Waiting",
+          "thought": "Wait 1",
+          "done": False,
+          "actions": [{"action": "wait", "duration": "10ms"}],
+        }
+      ),
+      AgentTurnResponse.parse(
+        {
+          "observation": "Waiting",
+          "thought": "Wait 2",
+          "done": False,
+          "actions": [{"action": "wait", "duration": "10ms"}],
+        }
+      ),
+      AgentTurnResponse.parse(
+        {
+          "observation": "Task was already done",
+          "thought": "Finish now",
+          "done": True,
+          "actions": [],
+        }
+      ),
+    ]
+    action = AgentAction.parse_dict(
+      {
+        "action": "agent",
+        "prompt": "Complete task and stop",
+        "max_steps": 5,
+        "duration": "1m",
+        "stop_on_done": True,
+        "settle_delay": "0s",
+      }
+    )
+    driver = AgentDriver(
+      self.action_runner,
+      self.mock_run,
+      action,
+      client=mock_client,
+    )
+    driver.execute()
+
+    self.assertEqual(mock_client.send_turn.call_count, 3)
+    third_turn_prompt = mock_client.send_turn.call_args_list[2].args[0]
+    self.assertIn("2 consecutive idle/wait turns", third_turn_prompt)
+    self.assertIn("set 'done': true", third_turn_prompt)
+
 
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)
