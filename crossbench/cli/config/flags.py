@@ -15,7 +15,6 @@ from typing import (
   Mapping,
   Self,
   Sequence,
-  TypeAlias,
   cast,
   override,
 )
@@ -33,7 +32,7 @@ from crossbench.parse import ObjectParser
 if TYPE_CHECKING:
   from crossbench.flags.base import Flags, FlagsData
 
-  RawFlagsData: TypeAlias = str | list | tuple | FlagsData | None
+  type RawFlagsData = str | list | tuple | FlagsData | None
 
 DEFAULT_LABEL: Final[str] = "default"
 

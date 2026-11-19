@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 
   from crossbench import path as pth
   from crossbench.browsers.settings import Settings
-  from crossbench.flags.base import FlagsT
+  from crossbench.flags.base import Flags
   from crossbench.runner.groups.session import BrowserSessionRunGroup
   from crossbench.types import JsonDict
 
@@ -160,7 +160,7 @@ class CdpAndroidBrowser(ChromiumBased):
     self._previous_command_line_contents = None
 
   @override
-  def _filter_flags_for_run(self, flags: FlagsT) -> FlagsT:
+  def _filter_flags_for_run[FlagsT: Flags](self, flags: FlagsT) -> FlagsT:
     assert isinstance(flags, ChromeFlags)
     for flag in self.UNSUPPORTED_FLAGS:
       if flag not in flags:

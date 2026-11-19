@@ -19,7 +19,7 @@ from crossbench.action_runner.action.enums import WindowTarget
 from crossbench.browsers.attributes import BrowserAttributes
 from crossbench.browsers.settings import Settings
 from crossbench.browsers.version import BrowserVersion, UnknownBrowserVersion
-from crossbench.flags.base import Flags, FlagsData, FlagsT
+from crossbench.flags.base import Flags
 
 if TYPE_CHECKING:
   import re
@@ -27,6 +27,7 @@ if TYPE_CHECKING:
   from crossbench.browsers.viewport import Viewport
   from crossbench.cli.config.secrets import Secrets, UsernamePassword
   from crossbench.env.runner_env import RunnerEnv
+  from crossbench.flags.base import FlagsData
   from crossbench.flags.chrome import ChromeFeatures
   from crossbench.flags.js_flags import JSFlags
   from crossbench.network.base import Network
@@ -459,7 +460,7 @@ class Browser(abc.ABC):
     flags_copy = self._filter_flags_for_run(flags_copy)
     return tuple(flags_copy)
 
-  def _filter_flags_for_run(self, flags: FlagsT) -> FlagsT:
+  def _filter_flags_for_run[FlagsT: Flags](self, flags: FlagsT) -> FlagsT:
     return flags
 
   def quit(self) -> None:

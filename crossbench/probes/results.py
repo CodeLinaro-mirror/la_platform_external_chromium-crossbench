@@ -10,7 +10,6 @@ from typing import (
   TYPE_CHECKING,
   Final,
   Iterable,
-  TypeVar,
   cast,
   overload,
   override,
@@ -332,9 +331,6 @@ class BrowserProbeResult(ProbeResult):
     return local_result_paths
 
 
-DefaultT = TypeVar("DefaultT")
-
-
 class ProbeResultDict:
   """
   Maps Probes to their result files Paths.
@@ -368,12 +364,12 @@ class ProbeResultDict:
     pass
 
   @overload
-  def get(
+  def get[DefaultT](
     self, probe: ProbeResultKey, default: DefaultT, /
   ) -> ProbeResult | DefaultT:
     pass
 
-  def get(
+  def get[DefaultT](
     self, probe: ProbeResultKey, default: DefaultT | None = None, /
   ) -> ProbeResult | DefaultT | None:
     return self._dict.get(probe.name, default)

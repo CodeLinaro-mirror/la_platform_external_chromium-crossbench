@@ -15,11 +15,9 @@ from typing import (
   TYPE_CHECKING,
   ClassVar,
   Final,
-  Generic,
   Iterable,
   Mapping,
   Sequence,
-  TypeVar,
   override,
 )
 
@@ -43,8 +41,6 @@ if TYPE_CHECKING:
   from crossbench.runner.groups.stories import StoriesRunGroup
   from crossbench.runner.run import Run
   from crossbench.types import Json, JsonDict
-
-WebXPRTProbeT = TypeVar("WebXPRTProbeT", bound="WebXPRT5Probe")
 
 
 class WebXPRT5Probe(
@@ -129,9 +125,8 @@ class WebXPRT5Probe(
         table[metric_key].append(str(metric))
 
 
-class WebXPRT5ProbeContext(
+class WebXPRT5ProbeContext[WebXPRTProbeT: WebXPRT5Probe](
   JsonResultProbeContext[WebXPRTProbeT],
-  Generic[WebXPRTProbeT],
   metaclass=abc.ABCMeta,
 ):
   def __init__(self, probe: WebXPRTProbeT, run: Run) -> None:

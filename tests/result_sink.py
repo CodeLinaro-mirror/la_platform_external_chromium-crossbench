@@ -25,6 +25,8 @@ from crossbench import path as pth
 if TYPE_CHECKING:
   from collections.abc import Generator, Mapping, Sequence
 
+  import pluggy
+
 REPO_URL: Final[str] = "https://chromium.googlesource.com/crossbench"
 NODE_ID_SEPARATOR: Final[str] = "::"
 
@@ -181,7 +183,7 @@ class ResultSinkTracebackPlugin:
     self,
     item: pytest.Item,
     call: pytest.CallInfo[Any],
-  ) -> Generator[None, Any, None]:
+  ) -> Generator[None, pluggy.Result[pytest.TestReport]]:
     del item
     outcome = yield
     report: pytest.TestReport = outcome.get_result()

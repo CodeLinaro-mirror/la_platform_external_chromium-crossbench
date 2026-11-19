@@ -38,7 +38,7 @@ if TYPE_CHECKING:
   from crossbench.cli.config.secrets import Secrets
   from crossbench.env.runner_env import RunnerEnv
   from crossbench.helper.wait import WaitRange
-  from crossbench.probes.probe import Probe, ProbeT
+  from crossbench.probes.probe import Probe
   from crossbench.results_db.db import ResultsDB
   from crossbench.runner.groups.session import BrowserSessionRunGroup
   from crossbench.runner.runner import Runner
@@ -553,13 +553,13 @@ class Run(ResultOrigin):
     logging.info("- " * 40)
     RunAnnotation.log_all(self.annotations, limit=10)
 
-  def has_probe_context(self, probe_cls: type[ProbeT]) -> bool:
+  def has_probe_context[ProbeT: Probe](self, probe_cls: type[ProbeT]) -> bool:
     return self._probe_context_manager.has_probe_context(probe_cls)
 
   def has_probe_context_by_name(self, probe_name: str) -> bool:
     return self._probe_context_manager.has_probe_context_by_name(probe_name)
 
-  def get_probe_context(
+  def get_probe_context[ProbeT: Probe](
     self, probe_cls: type[ProbeT]
   ) -> ProbeContext[ProbeT] | None:
     return self._probe_context_manager.get_probe_context(probe_cls)

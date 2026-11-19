@@ -5,14 +5,12 @@
 from __future__ import annotations
 
 import contextlib
-from typing import TYPE_CHECKING, Iterator, Self, TypeVar, override
+from typing import TYPE_CHECKING, Iterator, Self, override
 
 from crossbench.network.base import Network
 
 if TYPE_CHECKING:
   from crossbench.runner.groups.session import BrowserSessionRunGroup
-
-  LiveNetworkT = TypeVar("LiveNetworkT", bound="LiveNetwork")
 
 
 class LiveNetwork(Network):

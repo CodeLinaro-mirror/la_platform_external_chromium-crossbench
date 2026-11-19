@@ -14,7 +14,6 @@ from typing import (
   Iterable,
   Self,
   Sequence,
-  TypeAlias,
   override,
 )
 
@@ -65,7 +64,7 @@ def perf_frequency(value: object) -> str | int:
   return NumberParser.positive_int(value, "frequency")
 
 
-_UnsupportedSetting: TypeAlias = tuple[str, object]
+type _UnsupportedSetting = tuple[str, object]
 
 
 class ProfilingProbe(Probe):

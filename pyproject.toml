@@ -90,7 +90,7 @@ exclude = [
     "crossbench/cli/subcommand/mcp.py",
     "third_party/*",
 ]
-target-version = "py311"
+target-version = "py314"
 line-length = 80
 indent-width = 2
 

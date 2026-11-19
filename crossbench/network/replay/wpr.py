@@ -14,7 +14,6 @@ from typing import (
   Iterable,
   Iterator,
   Self,
-  TypeVar,
   override,
 )
 
@@ -30,8 +29,6 @@ if TYPE_CHECKING:
   from crossbench.network.base import TrafficShaper
   from crossbench.plt import Platform
   from crossbench.runner.groups.session import BrowserSessionRunGroup
-
-  WprReplayNetworkT = TypeVar("WprReplayNetworkT", bound="WprReplayNetwork")
 
 # use value for pylint
 assert GS_PREFIX

@@ -12,12 +12,10 @@ from typing import (
   TYPE_CHECKING,
   ClassVar,
   Final,
-  Generic,
   Iterable,
   Mapping,
   Self,
   Sequence,
-  TypeVar,
   cast,
   override,
 )
@@ -68,13 +66,10 @@ if TYPE_CHECKING:
 #   not to affect thermals, etc.
 VERSION_STRING: Final[str] = "1.1.17"
 
-_T = TypeVar("_T")
-StoryT = TypeVar("StoryT", bound=Story)
-
 
 # Equivalent to C++'s std::optional::value_or. The Pythonic alternative of
 # `value or default` would be thrown off by 0s - hence this helper.
-def _value_or(value: _T | None, alternative: _T) -> _T:
+def _value_or[T](value: T | None, alternative: T) -> T:
   return value if value is not None else alternative
 
 
@@ -269,10 +264,9 @@ class WebPowerStory(Story):
     return lookup
 
 
-WebPowerStoryT = TypeVar("WebPowerStoryT", bound=WebPowerStory)
-
-
-class WebPowerStoryFilter(StoryFilter[WebPowerStoryT], Generic[WebPowerStoryT]):
+class WebPowerStoryFilter[WebPowerStoryT: WebPowerStory](
+  StoryFilter[WebPowerStoryT]
+):
   """Base story filter for Web Power benchmarks."""
 
   STORY_CLS: ClassVar[type[WebPowerStory]] = WebPowerStory

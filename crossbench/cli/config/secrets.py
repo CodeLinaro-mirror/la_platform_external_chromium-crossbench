@@ -6,15 +6,13 @@ from __future__ import annotations
 
 import dataclasses
 import secrets
-from typing import TYPE_CHECKING, Final, Self, TypeVar, override
+from typing import TYPE_CHECKING, Final, Self, override
 
 from crossbench.config import ConfigObject, ConfigParser
 from crossbench.parse import NumberParser, ObjectParser
 
 if TYPE_CHECKING:
   from crossbench.types import JsonDict
-
-  SecretT = TypeVar("SecretT", bound="Secret")
 
 
 class SecretsMergeError(ValueError):
@@ -67,7 +65,7 @@ class Secrets(ConfigObject):
       self._merge_secret("AI", self.ai, fallback.ai, strict),
     )
 
-  def _merge_secret(
+  def _merge_secret[SecretT: Secret](
     self,
     name: str,
     primary: SecretT | None,

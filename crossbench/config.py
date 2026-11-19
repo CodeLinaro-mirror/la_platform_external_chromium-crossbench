@@ -21,13 +21,10 @@ from typing import (
   Callable,
   ClassVar,
   Final,
-  Generic,
   Iterable,
   Self,
   Sequence,
-  TypeAlias,
   TypeGuard,
-  TypeVar,
   cast,
   override,
 )
@@ -45,7 +42,7 @@ if TYPE_CHECKING:
   import builtins
   import urllib.parse as urlparse
 
-  ArgParserType: TypeAlias = Callable[..., object] | type
+  type ArgParserType = Callable[..., object] | type
 
 
 class ConfigError(argparse.ArgumentTypeError):
@@ -1202,10 +1199,7 @@ class UnusedPropertiesMode(enum.StrEnum):
   ERROR = "error"
 
 
-ConfigResultObjectT = TypeVar("ConfigResultObjectT", bound="object")
-
-
-class ConfigParser(Generic[ConfigResultObjectT]):
+class ConfigParser[ConfigResultObjectT]:
   def __init__(
     self,
     cls: type[ConfigResultObjectT],

@@ -22,7 +22,6 @@ from crossbench.benchmarks.web_power.base import (
   WebPowerSiteConfig,
   WebPowerStory,
   WebPowerStoryFilter,
-  WebPowerStoryT,
   _value_or,
 )
 from crossbench.benchmarks.web_power.probe import WebPowerProbe
@@ -289,7 +288,7 @@ class BaseWebPowerBenchmarkTestCase(BaseBenchmarkTestCase):
     parsed_args.probe = ()
     return parsed_args
 
-  def extract_single_story(
+  def extract_single_story[WebPowerStoryT: WebPowerStory](
     self,
     kwargs: Mapping[str, object],
     story_cls: type[WebPowerStoryT],

@@ -5,13 +5,11 @@
 from __future__ import annotations
 
 import abc
-from typing import Self, TypeVar
+from typing import Self
 
 from crossbench.decor import base
 from crossbench.runner.groups.session import BrowserSessionRunGroup
 from crossbench.runner.run import Run
-
-SessionDecoratorT = TypeVar("SessionDecoratorT", bound="SessionDecorator")
 
 
 class SessionDecorator(base.Decorator[Run]):
@@ -23,7 +21,7 @@ class SessionDecorator(base.Decorator[Run]):
     pass
 
 
-class SessionDecoratorContext(
+class SessionDecoratorContext[SessionDecoratorT: SessionDecorator](
   base.DecoratorContext[SessionDecoratorT, BrowserSessionRunGroup]
 ):
   @property

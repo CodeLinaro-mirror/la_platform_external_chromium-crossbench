@@ -10,11 +10,9 @@ import datetime as dt
 from typing import (
   TYPE_CHECKING,
   Final,
-  Generic,
   Iterable,
   Iterator,
   Mapping,
-  TypeVar,
   override,
 )
 
@@ -37,11 +35,8 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner
 
-# Redefine here to avoid circular imports
-ProbeT = TypeVar("ProbeT", bound="Probe")
 
-
-class BaseProbeContext(Generic[ProbeT], metaclass=abc.ABCMeta):
+class BaseProbeContext[ProbeT: Probe](metaclass=abc.ABCMeta):
   """
   Base class for an activation of a probe where active data collection
   happens. See specific subclasses for implementations that can be used
@@ -212,7 +207,9 @@ class BaseProbeContext(Generic[ProbeT], metaclass=abc.ABCMeta):
     raise RuntimeError(f"Invoke not implemented for probe: {self}")
 
 
-class ProbeContext(BaseProbeContext[ProbeT], metaclass=abc.ABCMeta):
+class ProbeContext[ProbeT: Probe](
+  BaseProbeContext[ProbeT], metaclass=abc.ABCMeta
+):
   """
   A scope during which a probe is actively collecting data during a Run.
   See BaseProbeContext additional usage.
@@ -303,7 +300,7 @@ class ProbeContext(BaseProbeContext[ProbeT], metaclass=abc.ABCMeta):
     return self.empty_result()
 
 
-class EmptyProbeContext(ProbeContext[ProbeT]):
+class EmptyProbeContext[ProbeT: Probe](ProbeContext[ProbeT]):
   """
   A generic context for probes that don't need to perform any per-run work,
   but rather operate exclusively at the aggregate level.
@@ -322,7 +319,9 @@ class EmptyProbeContext(ProbeContext[ProbeT]):
     return self.empty_result()
 
 
-class ProbeSessionContext(BaseProbeContext[ProbeT], metaclass=abc.ABCMeta):
+class ProbeSessionContext[ProbeT: Probe](
+  BaseProbeContext[ProbeT], metaclass=abc.ABCMeta
+):
   """
   A scope during which a probe is actively collecting data during an active
   browser session, which might span several runs.

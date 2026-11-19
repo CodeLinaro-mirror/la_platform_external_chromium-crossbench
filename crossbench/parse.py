@@ -7,12 +7,12 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import datetime as dt
-import enum
 import json
 import logging
 import math
 import re
 import shlex
+from enum import Enum, unique
 from typing import (
   TYPE_CHECKING,
   Callable,
@@ -20,7 +20,6 @@ from typing import (
   Iterable,
   Sequence,
   TypeGuard,
-  TypeVar,
 )
 from urllib import parse as urlparse
 
@@ -79,7 +78,7 @@ class PathParser(BaseParser):
   @classmethod
   def path(cls, value: object, name: str = "value") -> pth.LocalPath:
     path_value = ObjectParser.not_none(value, "path")
-    if not isinstance(path_value, pth.AnyPathLike):
+    if not isinstance(path_value, (str, pth.AnyPath)):
       raise argparse.ArgumentTypeError(
         f"Invalid Path {name}, expected str or PathLike, "
         f"but got {type_str(path_value)}: {value!r}"
@@ -243,12 +242,6 @@ class PathParser(BaseParser):
     return path
 
 
-EnumT = TypeVar("EnumT", bound=enum.Enum)
-NotNoneT = TypeVar("NotNoneT")
-SequenceT = TypeVar("SequenceT", bound=Sequence)
-ProtoClassT = TypeVar("ProtoClassT", bound=google.protobuf.message.Message)
-
-
 class ObjectParser(BaseParser):
   @classmethod
   def str_tuple(
@@ -284,7 +277,7 @@ class ObjectParser(BaseParser):
     return str_list_value
 
   @classmethod
-  def enum(
+  def enum[EnumT: Enum](
     cls,
     label: str,
     enum_cls: type[EnumT],
@@ -294,7 +287,7 @@ class ObjectParser(BaseParser):
     try:
       # Try direct conversion, relying on the Enum._missing_ hook:
       enum_value = enum_cls(data)
-      assert isinstance(enum_value, enum.Enum)
+      assert isinstance(enum_value, Enum)
       assert isinstance(enum_value, enum_cls)
       return enum_value
     except Exception as e:  # noqa: BLE001
@@ -310,8 +303,9 @@ class ObjectParser(BaseParser):
       f"Unknown {label}: {data!r}.\nChoices are {choices_str}."
     )
 
+  # Use Enum directly because ObjectParser.enum above shadows the enum module.
   @classmethod
-  def enum_list(
+  def enum_list[EnumT: Enum](
     cls,
     label: str,
     enum_cls: type[EnumT],
@@ -505,7 +499,7 @@ class ObjectParser(BaseParser):
     return path.read_bytes()
 
   @classmethod
-  def proto_or_file(
+  def proto_or_file[ProtoClassT: google.protobuf.message.Message](
     cls, proto_cls: type[ProtoClassT]
   ) -> Callable[[object], ProtoClassT]:
 
@@ -520,14 +514,14 @@ class ObjectParser(BaseParser):
     return parser
 
   @classmethod
-  def parse_text_or_binary_proto_file(
-    cls, proto_instance: ProtoClassT, value: object
-  ) -> ProtoClassT:
+  def parse_text_or_binary_proto_file[
+    ProtoClassT: google.protobuf.message.Message
+  ](cls, proto_instance: ProtoClassT, value: object) -> ProtoClassT:
     data: bytes = ObjectParser.bytes_or_file_contents(value)
     return cls.parse_text_or_binary_proto(proto_instance, data)
 
   @classmethod
-  def parse_text_or_binary_proto(
+  def parse_text_or_binary_proto[ProtoClassT: google.protobuf.message.Message](
     cls, proto_instance: ProtoClassT, value: bytes
   ) -> ProtoClassT:
     try:
@@ -544,7 +538,7 @@ class ObjectParser(BaseParser):
         raise text_proto_e from binary_proto_e
 
   @classmethod
-  def parse_text_proto(
+  def parse_text_proto[ProtoClassT: google.protobuf.message.Message](
     cls, proto_instance: ProtoClassT, value: str
   ) -> ProtoClassT:
     try:
@@ -556,7 +550,7 @@ class ObjectParser(BaseParser):
       ) from decode_e
 
   @classmethod
-  def parse_binary_proto(
+  def parse_binary_proto[ProtoClassT: google.protobuf.message.Message](
     cls, proto_instance: ProtoClassT, value: bytes
   ) -> ProtoClassT:
     try:
@@ -721,7 +715,9 @@ class ObjectParser(BaseParser):
       ) from e
 
   @classmethod
-  def not_none(cls, value: NotNoneT | None, name: str = "value") -> NotNoneT:
+  def not_none[NotNoneT](
+    cls, value: NotNoneT | None, name: str = "value"
+  ) -> NotNoneT:
     if value is None:
       raise argparse.ArgumentTypeError(f"Expected {name} to be not None.")
     return value
@@ -747,7 +743,7 @@ class ObjectParser(BaseParser):
       raise argparse.ArgumentTypeError(f"Invalid shell cmd: {value} ") from e
 
   @classmethod
-  def unique_sequence(
+  def unique_sequence[SequenceT: Sequence](
     cls,
     value: SequenceT,
     name: str = "sequence",
@@ -1055,8 +1051,8 @@ class TimeUnitData:
   aliases: tuple[str, ...] = dataclasses.field(default_factory=tuple)
 
 
-@enum.unique
-class TimeUnit(TimeUnitData, enum.Enum):
+@unique
+class TimeUnit(TimeUnitData, Enum):
   MICROSECOND = ("microseconds", ("us", "micros", "microseconds"))
   MILLISECOND = ("milliseconds", ("ms", "millis", "milliseconds"))
   SECOND = ("seconds", ("s", "sec", "secs", "second", "seconds"))

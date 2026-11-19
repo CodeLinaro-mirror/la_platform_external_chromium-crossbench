@@ -15,7 +15,7 @@ import re
 import shlex
 import subprocess
 import sys
-from typing import IO, TYPE_CHECKING, Final, Iterator, Self, TypeVar, override
+from typing import IO, TYPE_CHECKING, Final, Iterator, Self, override
 
 from crossbench import exception
 from crossbench.flags.base import Flags
@@ -35,10 +35,6 @@ if TYPE_CHECKING:
   from crossbench.plt.base import Platform
   from crossbench.plt.types import ListCmdArgs
   from crossbench.runner.groups.session import BrowserSessionRunGroup
-
-  TsProxyTrafficShaperT = TypeVar(
-    "TsProxyTrafficShaperT", bound="TsProxyTrafficShaper"
-  )
 
 fcntl = None
 try:

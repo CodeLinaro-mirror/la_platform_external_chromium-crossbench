@@ -9,10 +9,8 @@ from typing import (
   TYPE_CHECKING,
   ClassVar,
   Final,
-  Generic,
   Iterable,
   Self,
-  TypeVar,
   override,
 )
 
@@ -212,10 +210,7 @@ class ShellProbe(ShellProbeBase):
     return ShellProbeContext
 
 
-ProbeT = TypeVar("ProbeT", bound="ShellProbeBase")
-
-
-class ShellProbeContextBase(ProbeContext[ProbeT], Generic[ProbeT]):
+class ShellProbeContextBase[ProbeT: ShellProbeBase](ProbeContext[ProbeT]):
   """
   Base ProbeContext for executing shell commands at lifecycle hooks.
   """

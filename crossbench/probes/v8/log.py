@@ -32,8 +32,6 @@ from crossbench.probes.probe import ProbeConfigParser, ProbeContext, ProbeKeyT
 from crossbench.probes.result_location import ResultLocation
 
 if TYPE_CHECKING:
-  from typing import TypeAlias
-
   from crossbench import path as pth
   from crossbench.browsers.browser import Browser
   from crossbench.env.runner_env import RunnerEnv
@@ -42,7 +40,7 @@ if TYPE_CHECKING:
   from crossbench.runner.groups.browsers import BrowsersRunGroup
   from crossbench.runner.run import Run
 
-  LogTaskT: TypeAlias = tuple[Callable[..., pth.AnyPath], tuple[object, ...]]
+  type LogTaskT = tuple[Callable[..., pth.AnyPath], tuple[object, ...]]
 
 _LOG_FLAG: Final = "--log"
 _PROF_FLAG: Final = "--prof"

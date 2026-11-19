@@ -9,7 +9,7 @@ import dataclasses
 import enum
 import functools
 import re
-from typing import Final, Generic, NamedTuple, Self, TypeVar, override
+from typing import Final, NamedTuple, Self, override
 
 from crossbench.helper.version import (
   Version,
@@ -310,10 +310,9 @@ class UnknownBrowserVersion(BrowserVersion):
     return True
 
 
-BrowserVersionT = TypeVar("BrowserVersionT", bound=BrowserVersion)
-
-
-class BrowserVersionRange(Generic[BrowserVersionT], metaclass=abc.ABCMeta):
+class BrowserVersionRange[BrowserVersionT: BrowserVersion](
+  metaclass=abc.ABCMeta
+):
   @classmethod
   @abc.abstractmethod
   def version_cls(cls) -> type[BrowserVersionT]:

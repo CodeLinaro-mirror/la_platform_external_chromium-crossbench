@@ -7,14 +7,14 @@ from __future__ import annotations
 import dataclasses
 import datetime as dt
 import math
-from typing import Final, TypeAlias
+from typing import Final
 
 # Arbitrary very large number that doesn't break any browser driver protocol.
 # chromedriver likely uses an uint32 ms internally, 2**30ms == 12days.
 SAFE_MAX_TIMEOUT_TIMEDELTA: Final = dt.timedelta(milliseconds=2**30)
 
-AnyTime: TypeAlias = float | int | dt.timedelta
-AnyTimeUnit: TypeAlias = float | int | dt.timedelta
+type AnyTime = float | int | dt.timedelta
+type AnyTimeUnit = float | int | dt.timedelta
 
 
 @dataclasses.dataclass(frozen=True)

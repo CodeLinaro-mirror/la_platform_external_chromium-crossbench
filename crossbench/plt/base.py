@@ -1133,9 +1133,7 @@ class Platform(abc.ABC):
   def is_dir(self, path: pth.AnyPathLike) -> bool:
     return self.local_path(path).is_dir()
 
-  def iterdir(
-    self, path: pth.AnyPathLike
-  ) -> Generator[pth.AnyPath, None, None]:
+  def iterdir(self, path: pth.AnyPathLike) -> Generator[pth.AnyPath]:
     return self.local_path(path).iterdir()
 
   def glob(self, path: pth.AnyPathLike, pattern: str) -> Iterator[pth.AnyPath]:

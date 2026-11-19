@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterable, TypeVar
+from typing import TYPE_CHECKING, Iterable
 
 from crossbench import plt
 from crossbench.helper.size import Size
@@ -12,10 +12,8 @@ from crossbench.helper.size import Size
 if TYPE_CHECKING:
   from crossbench import path as pth
 
-  PathT = TypeVar("PathT", bound=pth.AnyPath)
 
-
-def sort_by_file_size(
+def sort_by_file_size[PathT: pth.AnyPath](
   files: Iterable[PathT], platform: plt.Platform | None = None
 ) -> list[PathT]:
   real_platform = platform or plt.PLATFORM

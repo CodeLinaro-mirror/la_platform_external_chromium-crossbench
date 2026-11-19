@@ -8,24 +8,13 @@ import argparse
 import dataclasses
 import datetime as dt
 import enum
-from typing import (
-  TYPE_CHECKING,
-  ClassVar,
-  Final,
-  Mapping,
-  Self,
-  TypeVar,
-  override,
-)
+from typing import ClassVar, Final, Mapping, Self, override
 
 from immutabledict import immutabledict
 
 from crossbench.config import ConfigObject, ConfigParser
 from crossbench.parse import DurationParser, NumberParser, ObjectParser
 from crossbench.str_enum_with_help import StrEnumWithHelp
-
-if TYPE_CHECKING:
-  NumberT = TypeVar("NumberT", int, float)
 
 
 @enum.unique
@@ -52,7 +41,7 @@ def merge_bool(name: str, left: bool | None, right: bool | None) -> bool | None:
   return left
 
 
-def merge_number_max(
+def merge_number_max[NumberT: (int, float)](
   name: str, left: NumberT | None, right: NumberT | None
 ) -> NumberT | None:
   del name
@@ -63,7 +52,7 @@ def merge_number_max(
   return max(left, right)
 
 
-def merge_number_min(
+def merge_number_min[NumberT: (int, float)](
   name: str, left: NumberT | None, right: NumberT | None
 ) -> NumberT | None:
   del name

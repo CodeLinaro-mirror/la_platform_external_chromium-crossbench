@@ -13,9 +13,6 @@ from typing import (
   Iterable,
   Iterator,
   Self,
-  TypeAlias,
-  TypeVar,
-  Union,
   override,
 )
 
@@ -49,9 +46,9 @@ class Freezable:
     raise FrozenFlagsError(msg)
 
 
-FlagsData: TypeAlias = Union[
-  None, dict[str, str], "BasicFlags", Iterable[str | tuple[str, str | None]]
-]
+type FlagsData = (
+  None | dict[str, str] | "BasicFlags" | Iterable[str | tuple[str, str | None]]
+)
 
 
 class BasicFlags(Freezable, collections.UserDict):
@@ -296,6 +293,3 @@ class Flags(BasicFlags):
     super()._validate_flag_name(flag_name)
     if not self._FLAG_NAME_RE.fullmatch(flag_name):
       raise ValueError(f"Flag name contains invalid characters: {flag_name!r}")
-
-
-FlagsT = TypeVar("FlagsT", bound=Flags)

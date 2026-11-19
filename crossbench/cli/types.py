@@ -5,10 +5,9 @@
 from __future__ import annotations
 
 import argparse
-from typing import TypeAlias
 
 from crossbench.cli.parser import CBArgumentParser
 
-Subparsers: TypeAlias = (
+type Subparsers = (
   argparse._SubParsersAction[CBArgumentParser]  # noqa: SLF001
 )

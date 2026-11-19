@@ -5,39 +5,29 @@
 from __future__ import annotations
 
 import difflib
-from typing import TYPE_CHECKING, Callable, Iterable, Protocol, Self, TypeVar
+from typing import TYPE_CHECKING, Callable, Iterable, Protocol, Self
 
 if TYPE_CHECKING:
-  from crossbench import path as pth
-
-  InputT = TypeVar("InputT")
-  KeyT = TypeVar("KeyT")
-  ValueT = TypeVar("ValueT")
-  # Concrete groups (e.g. RunGroup.append(Run) or list[T].append(T)) only
-  # accept a specific item type rather than arbitrary `object`, so
-  # GroupTProtocol must be generic over the item type. Because append() only
-  # consumes items and never returns them, subtyping is contravariant.
-  GroupItemT_contra = TypeVar("GroupItemT_contra", contravariant=True)
-  PathT = TypeVar("PathT", bound=pth.AnyPath)
 
   class ComparableProtocol(Protocol):
     def __lt__(self, other: Self, /) -> bool:
       pass
 
-  ComparableT = TypeVar("ComparableT", bound=ComparableProtocol)
-
-  class GroupTProtocol(Protocol[GroupItemT_contra]):
-    def append(self, item: GroupItemT_contra, /) -> None:
+  # Concrete groups (e.g. RunGroup.append(Run) or list[T].append(T)) only
+  # accept a specific item type rather than arbitrary `object`, so
+  # GroupTProtocol must be generic over the item type. Because append() only
+  # consumes items and never returns them, PEP 695 infers GroupItemT as
+  # contravariant.
+  class GroupTProtocol[GroupItemT](Protocol):
+    def append(self, item: GroupItemT, /) -> None:
       pass
 
-  GroupT = TypeVar("GroupT", bound=GroupTProtocol)
 
-
-def default_value(value: InputT) -> InputT:
+def default_value[InputT](value: InputT) -> InputT:
   return value
 
 
-def group_by(
+def group_by[InputT, KeyT, ValueT, ComparableT: ComparableProtocol](
   collection: Iterable[InputT],
   *,
   key: Callable[[InputT], KeyT],
@@ -63,7 +53,13 @@ def group_by(
   )
 
 
-def group_by_custom(
+def group_by_custom[
+  InputT,
+  KeyT,
+  GroupT: GroupTProtocol,
+  ValueT,
+  ComparableT: ComparableProtocol,
+](
   collection: Iterable[InputT],
   *,
   key: Callable[[InputT], KeyT],
@@ -93,7 +89,13 @@ def group_by_custom(
   )
 
 
-def _group_by(
+def _group_by[
+  InputT,
+  KeyT,
+  GroupT: GroupTProtocol,
+  ValueT,
+  ComparableT: ComparableProtocol,
+](
   collection: Iterable[InputT],
   key_fn: Callable[[InputT], KeyT],
   group_fn: Callable[[KeyT], GroupT],

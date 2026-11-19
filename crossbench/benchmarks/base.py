@@ -13,15 +13,12 @@ from typing import (
   TYPE_CHECKING,
   ClassVar,
   Final,
-  Generic,
   Iterable,
   Mapping,
   NotRequired,
   Self,
   Sequence,
-  TypeAlias,
   TypedDict,
-  TypeVar,
   override,
 )
 
@@ -50,7 +47,7 @@ if TYPE_CHECKING:
   from crossbench.runner.runner import Runner
   from crossbench.types import JsonDict, StoryTagLookupT
 
-VersionParts: TypeAlias = tuple[str] | tuple[int, ...]
+type VersionParts = tuple[str] | tuple[int, ...]
 
 
 class BenchmarkDescription(TypedDict):
@@ -238,10 +235,7 @@ class Benchmark(abc.ABC):
     del runner
 
 
-StoryT = TypeVar("StoryT", bound=Story)
-
-
-class StoryFilter(Generic[StoryT], metaclass=abc.ABCMeta):
+class StoryFilter[StoryT: Story](metaclass=abc.ABCMeta):
   """
   Filter stories by name or regexp.
 
@@ -523,11 +517,6 @@ class SubStoryBenchmark(Benchmark, metaclass=abc.ABCMeta):
     return cls.DEFAULT_STORY_CLS.all_tags()
 
 
-PressBenchmarkStoryT = TypeVar(
-  "PressBenchmarkStoryT", bound=PressBenchmarkStory
-)
-
-
 class RangePatternError(argparse.ArgumentTypeError):
   def __init__(self, pattern: str, message: str):
     super().__init__(f"Invalid range pattern {pattern!r}. {message}")
@@ -784,8 +773,8 @@ class TagsFilter:
     return filtered_names
 
 
-class PressBenchmarkStoryFilter(
-  StoryFilter[PressBenchmarkStoryT], Generic[PressBenchmarkStoryT]
+class PressBenchmarkStoryFilter[PressBenchmarkStoryT: PressBenchmarkStory](
+  StoryFilter[PressBenchmarkStoryT]
 ):
   __doc__ = StoryFilter.__doc__
 

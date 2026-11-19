@@ -6,21 +6,21 @@ from __future__ import annotations
 
 from asyncio.subprocess import Process
 from subprocess import Popen
-from typing import IO, NotRequired, Sequence, TypeAlias, TypedDict
+from typing import IO, NotRequired, Sequence, TypedDict
 
 from crossbench import path as pth
 
-CmdArg: TypeAlias = pth.AnyPathLike
-SequenceCmdArgs: TypeAlias = Sequence[CmdArg]
-ListCmdArgs: TypeAlias = list[CmdArg]
-TupleCmdArgs: TypeAlias = tuple[CmdArg, ...]
-CmdArgs: TypeAlias = ListCmdArgs | TupleCmdArgs
+type CmdArg = pth.AnyPathLike
+type SequenceCmdArgs = Sequence[CmdArg]
+type ListCmdArgs = list[CmdArg]
+type TupleCmdArgs = tuple[CmdArg, ...]
+type CmdArgs = ListCmdArgs | TupleCmdArgs
 
-ProcessLike: TypeAlias = Popen | Process | int
+type ProcessLike = Popen | Process | int
 
-ProcessIo: TypeAlias = int | IO[str] | IO[bytes] | None
+type ProcessIo = int | IO[str] | IO[bytes] | None
 
-PlatformKey: TypeAlias = tuple[str, ...]
+type PlatformKey = tuple[str, ...]
 
 
 class ProcessInfo(TypedDict):

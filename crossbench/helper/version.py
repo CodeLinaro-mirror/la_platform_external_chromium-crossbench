@@ -5,9 +5,9 @@
 from __future__ import annotations
 
 import functools
-from typing import Final, Iterable, TypeAlias
+from typing import Final, Iterable
 
-VersionPartsData: TypeAlias = Iterable[int] | int
+type VersionPartsData = Iterable[int] | int
 
 
 class VersionParseError(ValueError):

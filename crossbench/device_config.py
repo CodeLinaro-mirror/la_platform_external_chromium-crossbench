@@ -10,7 +10,7 @@ import enum
 import logging
 import re
 from collections.abc import Iterator, Mapping, Sequence
-from typing import TYPE_CHECKING, ClassVar, Final, Self, TypeAlias, override
+from typing import TYPE_CHECKING, ClassVar, Final, Self, override
 
 from immutabledict import immutabledict
 
@@ -21,19 +21,19 @@ from crossbench.helper.class_helper import get_all_subclasses
 if TYPE_CHECKING:
   from crossbench.plt.base import Platform
 
-DeviceConfigValue: TypeAlias = (
+type DeviceConfigValue = (
   str
   | int
   | float
   | Sequence["DeviceConfigValue"]
   | Mapping[str, "DeviceConfigValue"]
 )
-DeviceConfigMap: TypeAlias = Mapping[str, DeviceConfigValue]
-DeviceConfigFile: TypeAlias = pth.LocalPath
-DeviceConfig: TypeAlias = DeviceConfigMap | DeviceConfigFile
-DeviceConfigKeyPath: TypeAlias = tuple[str, ...]
+type DeviceConfigMap = Mapping[str, DeviceConfigValue]
+type DeviceConfigFile = pth.LocalPath
+type DeviceConfig = DeviceConfigMap | DeviceConfigFile
+type DeviceConfigKeyPath = tuple[str, ...]
 # A parsed requirement and its target value, as DeviceConfigRequirement holds.
-_PredicateAndTarget: TypeAlias = tuple["_Predicate", str | None]
+type _PredicateAndTarget = tuple["_Predicate", str | None]
 
 # Operator keys, such as "$regex", start with this prefix. Device
 # configuration keys never do, so the two cannot collide.
@@ -103,7 +103,7 @@ class DeviceConfigRequirement:
 
 
 # The immutable, parsed requirements of a single platform.
-DeviceConfigRequirements: TypeAlias = tuple[DeviceConfigRequirement, ...]
+type DeviceConfigRequirements = tuple[DeviceConfigRequirement, ...]
 
 
 @enum.unique

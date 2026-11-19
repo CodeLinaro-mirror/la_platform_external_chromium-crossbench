@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import abc
 import contextlib
-from typing import TYPE_CHECKING, Final, Iterator, Self, TypeVar
+from typing import TYPE_CHECKING, Final, Iterator, Self
 
 from crossbench import plt
 from crossbench.network.traffic_shaping.live import NoTrafficShaper
@@ -18,8 +18,6 @@ if TYPE_CHECKING:
   from crossbench.flags.base import Flags
   from crossbench.network.traffic_shaping.base import TrafficShaper
   from crossbench.runner.groups.session import BrowserSessionRunGroup
-
-NetworkT = TypeVar("NetworkT", bound="Network")
 
 
 class Network(abc.ABC):

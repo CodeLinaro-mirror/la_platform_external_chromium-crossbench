@@ -11,17 +11,14 @@ import logging
 from typing import (
   TYPE_CHECKING,
   Final,
-  Generic,
   Iterable,
   Iterator,
   Self,
-  TypeVar,
   cast,
 )
 
 from crossbench.helper.state import State, StateMachine
 from crossbench.probes.all import PROBE_LOOKUP
-from crossbench.probes.probe import ProbeT
 from crossbench.probes.probe_context import BaseProbeContext, ProbeContext
 from crossbench.probes.results import EmptyProbeResult, ProbeResult
 from crossbench.runner.result_origin import ResultOrigin
@@ -32,11 +29,11 @@ if TYPE_CHECKING:
   from crossbench.probes.probe import Probe
   from crossbench.probes.results import ProbeResultDict
 
-ResultOriginT = TypeVar("ResultOriginT", bound=ResultOrigin)
-ProbeContextT = TypeVar("ProbeContextT", bound=BaseProbeContext)
 
-
-class ProbeContextManager(abc.ABC, Generic[ResultOriginT, ProbeContextT]):
+class ProbeContextManager[
+  ResultOriginT: ResultOrigin,
+  ProbeContextT: BaseProbeContext,
+](abc.ABC):
   def __init__(
     self, result_origin: ResultOriginT, probe_results: ProbeResultDict
   ) -> None:
@@ -182,7 +179,7 @@ class ProbeContextManager(abc.ABC, Generic[ResultOriginT, ProbeContextT]):
   def _create_probe_context(self, probe: Probe) -> ProbeContextT | None:
     pass
 
-  def has_probe_context(self, probe_cls: type[ProbeT]) -> bool:
+  def has_probe_context[ProbeT: Probe](self, probe_cls: type[ProbeT]) -> bool:
     return probe_cls in self._probe_contexts
 
   def has_probe_context_by_name(self, probe_name: str) -> bool:
@@ -193,7 +190,7 @@ class ProbeContextManager(abc.ABC, Generic[ResultOriginT, ProbeContextT]):
       for context in self._probe_contexts.values()
     )
 
-  def get_probe_context(
+  def get_probe_context[ProbeT: Probe](
     self, probe_cls: type[ProbeT]
   ) -> ProbeContext[ProbeT] | None:
     if probe_context := self._probe_contexts.get(probe_cls):

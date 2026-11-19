@@ -9,23 +9,26 @@ import hashlib
 import pathlib
 import re
 import unicodedata
-from typing import Final, TypeAlias
+from typing import Final
 
 # A path that can refer to files on a remote platform with potentially
 # a different Path flavour (e.g. Win vs Posix).
-AnyPath: TypeAlias = pathlib.PurePath
-AnyPosixPath: TypeAlias = pathlib.PurePosixPath
-AnyWindowsPath: TypeAlias = pathlib.PureWindowsPath
+# Class assignments (rather than `type` aliases) because these are called as
+# constructors and passed to `isinstance`/`issubclass` at runtime.
+AnyPath = pathlib.PurePath
+AnyPosixPath = pathlib.PurePosixPath
+AnyWindowsPath = pathlib.PureWindowsPath
 
-AnyPathLike: TypeAlias = str | AnyPath
+type AnyPathLike = str | AnyPath
 
 # A path that only ever refers to files on the local host / runner platform.
 # Not that Path inherits from PurePath, and thus we can use a LocalPath in
 # all places a RemotePath is expected.
-LocalPath: TypeAlias = pathlib.Path
-LocalPosixPath: TypeAlias = pathlib.PosixPath
+# Class assignments (rather than `type` aliases) for the same reason as above.
+LocalPath = pathlib.Path
+LocalPosixPath = pathlib.PosixPath
 
-LocalPathLike: TypeAlias = str | LocalPath
+type LocalPathLike = str | LocalPath
 
 ROOT_DIR: Final[LocalPath] = LocalPath(__file__).parents[1]
 RESULTS_DIR: Final[LocalPath] = ROOT_DIR / "results"

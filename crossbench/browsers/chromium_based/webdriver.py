@@ -16,7 +16,6 @@ from typing import (
   Iterable,
   Sequence,
   TextIO,
-  TypeAlias,
   override,
 )
 
@@ -53,7 +52,7 @@ if TYPE_CHECKING:
 
   from crossbench import path as pth
   from crossbench.browsers.version import BrowserVersion
-  from crossbench.flags.base import FlagsT
+  from crossbench.flags.base import Flags
   from crossbench.runner.groups.session import BrowserSessionRunGroup
 
 
@@ -68,7 +67,7 @@ _DEFAULT_NTP_URLS: Final[frozenset[str]] = frozenset(
     "edge://newtab/",
   }
 )
-ScriptIdKwargs: TypeAlias = dict[str, object]
+type ScriptIdKwargs = dict[str, object]
 
 
 class ChromiumBasedWebDriver(
@@ -138,7 +137,7 @@ class ChromiumBasedWebDriver(
     return descriptor
 
   @override
-  def _filter_flags_for_run(self, flags: FlagsT) -> FlagsT:
+  def _filter_flags_for_run[FlagsT: Flags](self, flags: FlagsT) -> FlagsT:
     assert isinstance(flags, ChromeFlags)
     for flag in self.UNSUPPORTED_FLAGS:
       if flag not in flags:

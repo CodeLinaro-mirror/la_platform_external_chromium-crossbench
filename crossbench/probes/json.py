@@ -15,9 +15,7 @@ from typing import (
   Callable,
   ClassVar,
   Final,
-  Generic,
   Mapping,
-  TypeVar,
   cast,
   override,
 )
@@ -310,12 +308,8 @@ class XLSXWriter:
     self._workbook.close()
 
 
-JsonResultProbeT = TypeVar("JsonResultProbeT", bound="JsonResultProbe")
-
-
-class JsonResultProbeContext(
+class JsonResultProbeContext[JsonResultProbeT: JsonResultProbe](
   ProbeContext[JsonResultProbeT],
-  Generic[JsonResultProbeT],
   metaclass=abc.ABCMeta,
 ):
   FLATTEN: ClassVar[bool] = True

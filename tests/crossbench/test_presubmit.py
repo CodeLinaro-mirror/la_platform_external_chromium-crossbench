@@ -18,7 +18,6 @@ from typing import (
   ClassVar,
   Final,
   Iterable,
-  TypeAlias,
   override,
 )
 from unittest import mock
@@ -40,8 +39,8 @@ if TYPE_CHECKING:
 
   from presubmit_support import InputApi, OutputApi, PresubmitResult
 
-ChangedLines: TypeAlias = set[int]
-ChangedLinesMap: TypeAlias = dict[str, set[int]]
+type ChangedLines = set[int]
+type ChangedLinesMap = dict[str, set[int]]
 
 
 class PresubmitStatus(enum.StrEnum):

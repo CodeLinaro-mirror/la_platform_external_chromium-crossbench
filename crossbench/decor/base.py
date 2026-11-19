@@ -7,7 +7,7 @@ from __future__ import annotations
 import abc
 import datetime as dt
 import enum
-from typing import TYPE_CHECKING, ClassVar, Final, Generic, Self, TypeVar
+from typing import TYPE_CHECKING, ClassVar, Final, Self
 
 from crossbench import plt
 from crossbench.config import ConfigParser
@@ -20,17 +20,14 @@ if TYPE_CHECKING:
 
   from crossbench.probes.results import ProbeResult
 
-DecoratorT = TypeVar("DecoratorT", bound="Decorator")
-DecoratorTargetT = TypeVar("DecoratorTargetT", bound=DecoratorTargetProtocol)
 
-
-class DecoratorConfigParser(ConfigParser[DecoratorT]):
+class DecoratorConfigParser[DecoratorT: Decorator](ConfigParser[DecoratorT]):
   def __init__(self, probe_cls: type[DecoratorT]) -> None:
     super().__init__(probe_cls)
     self._probe_cls: Final[type[DecoratorT]] = probe_cls
 
 
-class Decorator(abc.ABC, Generic[DecoratorTargetT]):
+class Decorator[DecoratorTargetT: DecoratorTargetProtocol](abc.ABC):
   """Abstract base class for RunDecorator and SessionDecorator that can
   temporarily modify Runs or BrowserSessions.
   """
@@ -38,7 +35,7 @@ class Decorator(abc.ABC, Generic[DecoratorTargetT]):
   NAME: ClassVar[str] = ""
 
   @classmethod
-  def config_parser(cls) -> DecoratorConfigParser:
+  def config_parser(cls) -> DecoratorConfigParser[Self]:
     return DecoratorConfigParser(cls)
 
   @classmethod
@@ -66,13 +63,16 @@ class Decorator(abc.ABC, Generic[DecoratorTargetT]):
 
   @abc.abstractmethod
   def context(
-    self: DecoratorT,
+    self,
     target: DecoratorTargetT,
-  ) -> DecoratorContext[DecoratorT, DecoratorTargetT]:
+  ) -> DecoratorContext[Self, DecoratorTargetT]:
     pass
 
 
-class DecoratorContext(abc.ABC, Generic[DecoratorT, DecoratorTargetT]):
+class DecoratorContext[
+  DecoratorT: Decorator,
+  DecoratorTargetT: DecoratorTargetProtocol,
+]:
   """
   The active python context-manager for a Decorator with a life-time interface
   to manage measurement, services or resources.

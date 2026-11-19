@@ -446,9 +446,7 @@ class PosixPlatform(Platform, metaclass=abc.ABCMeta):
     return self.sh("[", "-d", self.path(path), "]", check=False).returncode == 0
 
   @override
-  def iterdir(
-    self, path: pth.AnyPathLike
-  ) -> Generator[pth.AnyPath, None, None]:
+  def iterdir(self, path: pth.AnyPathLike) -> Generator[pth.AnyPath]:
     if self.is_local:
       yield from super().iterdir(path)
       return

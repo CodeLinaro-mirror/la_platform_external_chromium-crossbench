@@ -10,9 +10,7 @@ from typing import (
   TYPE_CHECKING,
   ClassVar,
   Final,
-  Generic,
   Self,
-  TypeVar,
   override,
 )
 
@@ -99,14 +97,10 @@ class ChromeMetricsInternalsProbe(JsonResultProbe):
     return ChromeMetricsInternalsProbeContext
 
 
-ChromeMetricsInternalsProbeT = TypeVar(
-  "ChromeMetricsInternalsProbeT", bound="ChromeMetricsInternalsProbe"
-)
-
-
-class ChromeMetricsInternalsProbeContext(
+class ChromeMetricsInternalsProbeContext[
+  ChromeMetricsInternalsProbeT: ChromeMetricsInternalsProbe
+](
   JsonResultProbeContext[ChromeMetricsInternalsProbeT],
-  Generic[ChromeMetricsInternalsProbeT],
 ):
   # JS code that overrides the chrome.send response handler and requests
   # structured metrics.

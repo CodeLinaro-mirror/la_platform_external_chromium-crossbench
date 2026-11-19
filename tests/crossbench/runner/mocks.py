@@ -29,7 +29,6 @@ if TYPE_CHECKING:
 
   from crossbench.benchmarks.base import Benchmark
   from crossbench.browsers.browser import Browser
-  from crossbench.probes.probe import ProbeT
   from crossbench.runner.runner import Runner
   from crossbench.runner.timing import AnyTimeUnit
   from crossbench.stories.story import Story
@@ -288,7 +287,7 @@ class MockRun(Run):
       delay=timing.timedelta(delay),
     )
 
-  def get_probe_context(
+  def get_probe_context[ProbeT: Probe](
     self, probe_cls: type[ProbeT]
   ) -> ProbeContext[ProbeT] | None:
     del probe_cls

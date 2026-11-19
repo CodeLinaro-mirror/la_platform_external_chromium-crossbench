@@ -9,7 +9,7 @@ import base64
 import contextlib
 import hashlib
 import logging
-from typing import TYPE_CHECKING, Final, Iterator, Self, TypeVar, override
+from typing import TYPE_CHECKING, Final, Iterator, Self, override
 from urllib.parse import urlparse
 
 from crossbench import exception
@@ -23,8 +23,6 @@ if TYPE_CHECKING:
   from crossbench.env.runner_env import RunnerEnv
   from crossbench.network.traffic_shaping.base import TrafficShaper
   from crossbench.runner.groups.session import BrowserSessionRunGroup
-
-  ReplayNetworkT = TypeVar("ReplayNetworkT", bound="ReplayNetwork")
 
 GS_PREFIX: Final[str] = "gs://"
 

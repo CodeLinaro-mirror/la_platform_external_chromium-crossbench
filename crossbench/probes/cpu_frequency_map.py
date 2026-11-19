@@ -16,7 +16,6 @@ from typing import (
   Mapping,
   Pattern,
   Self,
-  TypeAlias,
   override,
 )
 
@@ -46,7 +45,7 @@ class _ExtremeFrequency(enum.StrEnum):
 
 
 if TYPE_CHECKING:
-  FrequencyType: TypeAlias = _ExtremeFrequency | int
+  type FrequencyType = _ExtremeFrequency | int
 
 
 class CPUFrequencyMap(ConfigObject, metaclass=abc.ABCMeta):

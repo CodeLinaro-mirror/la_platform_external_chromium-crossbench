@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import enum
-from typing import Final, Generic, Iterable, TypeVar, cast
+from typing import Final, Iterable, cast
 
 
 class UnexpectedStateError(RuntimeError):
@@ -39,10 +39,7 @@ class State(BaseState):
   DONE = enum.auto()
 
 
-StateT = TypeVar("StateT", bound="BaseState")
-
-
-class StateMachine(Generic[StateT]):
+class StateMachine[StateT: BaseState]:
   def __init__(self, default: StateT) -> None:
     self._state: StateT = default
 

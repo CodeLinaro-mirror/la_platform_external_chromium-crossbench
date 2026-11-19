@@ -69,6 +69,9 @@ import subprocess
 
 ## Type Annotations
 
+- Crossbench targets Python 3.14. Standard library generics with default type
+  parameters (PEP 696, e.g. `Generator[YieldT]` instead of
+  `Generator[YieldT, None, None]`) are valid and enforced by ruff (`UP043`).
 - You can skip type checking in test methods to reduce friction
 - Add type annotations for all instance variables inside `__init__`
 - All methods, method arguments, and return values

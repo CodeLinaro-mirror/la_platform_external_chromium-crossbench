@@ -9,7 +9,7 @@ import contextlib
 import dataclasses
 import datetime as dt
 import enum
-from typing import TYPE_CHECKING, Callable, Final, Self, Sequence, TypeVar
+from typing import TYPE_CHECKING, Callable, Final, Self, Sequence
 
 from immutabledict import immutabledict
 
@@ -147,9 +147,6 @@ class UrlSource(enum.StrEnum):
     return VIPERF_JOB_SHORT_URL_TEMPLATE.format(job_id=job_id)
 
 
-_DefaultT = TypeVar("_DefaultT")
-
-
 @dataclasses.dataclass(frozen=True)
 class PinpointJobInfo:
   """Normalized, parsed representation of a Pinpoint job from API response."""
@@ -188,12 +185,12 @@ class PinpointJobInfo:
     return {}
 
   @classmethod
-  def _parse_property(
+  def _parse_property[DefaultT](
     cls,
     data: JsonDict,
     *keys: str,
-    default: _DefaultT | None = None,
-  ) -> str | _DefaultT | None:
+    default: DefaultT | None = None,
+  ) -> str | DefaultT | None:
     arguments = cls._parse_arguments(data)
     for key in keys:
       val = arguments.get(key)

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import abc
 import contextlib
-from typing import TYPE_CHECKING, Final, Iterator, Self, TypeVar
+from typing import TYPE_CHECKING, Final, Iterator, Self
 
 from crossbench.flags.base import Flags
 
@@ -17,8 +17,6 @@ if TYPE_CHECKING:
   from crossbench.network.base import Network
   from crossbench.plt.base import Platform
   from crossbench.runner.groups.session import BrowserSessionRunGroup
-
-  TrafficShaperT = TypeVar("TrafficShaperT", bound="TrafficShaper")
 
 
 class TrafficShaper(abc.ABC):  # noqa: B024

@@ -24,7 +24,6 @@ from typing import (
   Mapping,
   MutableMapping,
   Sequence,
-  TypeAlias,
   override,
 )
 from unittest import mock
@@ -169,7 +168,7 @@ class MockRemotePortManager(
   pass
 
 
-ShResultType: TypeAlias = str | bytes | ShResult
+type ShResultType = str | bytes | ShResult
 
 
 class MockPlatformMixin(Platform):

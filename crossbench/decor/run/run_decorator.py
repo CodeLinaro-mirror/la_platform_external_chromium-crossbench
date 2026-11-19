@@ -5,12 +5,10 @@
 from __future__ import annotations
 
 import abc
-from typing import Self, TypeVar
+from typing import Self
 
 from crossbench.decor import base
 from crossbench.runner.run import Run
-
-RunDecoratorT = TypeVar("RunDecoratorT", bound="RunDecorator")
 
 
 class RunDecorator(base.Decorator[Run]):
@@ -22,7 +20,9 @@ class RunDecorator(base.Decorator[Run]):
     pass
 
 
-class RunDecoratorContext(base.DecoratorContext[RunDecoratorT, Run]):
+class RunDecoratorContext[RunDecoratorT: RunDecorator](
+  base.DecoratorContext[RunDecoratorT, Run]
+):
   @property
   def run(self) -> Run:
     return self._target

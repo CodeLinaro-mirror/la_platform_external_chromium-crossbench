@@ -12,7 +12,6 @@ from typing import (
   ClassVar,
   Final,
   Self,
-  TypeAlias,
   cast,
   override,
 )
@@ -23,7 +22,7 @@ from crossbench.helper.path_finder_base import ChromiumCheckoutFinder
 if TYPE_CHECKING:
   from crossbench.plt.base import Platform
 
-  BinaryLookup: TypeAlias = pth.AnyPathLike | tuple[pth.AnyPathLike, ...]
+  type BinaryLookup = pth.AnyPathLike | tuple[pth.AnyPathLike, ...]
 
 
 def validate_win_binary(binary_name: str) -> None:
@@ -208,8 +207,8 @@ class ChromeBuildPath(BinaryPath):
     return None
 
 
-BinaryPathElement: TypeAlias = pth.AnyPathLike | BinaryPath
-BinaryPathArg: TypeAlias = BinaryPathElement | tuple[BinaryPathElement, ...]
+type BinaryPathElement = pth.AnyPathLike | BinaryPath
+type BinaryPathArg = BinaryPathElement | tuple[BinaryPathElement, ...]
 
 
 class AndroidBuildToolPath(BinaryPath):

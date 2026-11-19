@@ -17,8 +17,6 @@ from typing import (
   Final,
   Iterator,
   Sequence,
-  TypeAlias,
-  TypeVar,
   override,
 )
 
@@ -62,12 +60,9 @@ if TYPE_CHECKING:
   from crossbench.parse import LateArgumentError
   from crossbench.types import TableData
 
-  BenchmarkClass: TypeAlias = type[Benchmark]
-  BenchmarkSubcommands: TypeAlias = immutabledict[
-    BenchmarkClass, BenchmarkSubcommand
-  ]
-  BrowserLookupTable: TypeAlias = dict[str, tuple[type[Browser], pth.LocalPath]]
-  SubcommandT = TypeVar("SubcommandT", bound=CrossbenchSubcommand)
+  type BenchmarkClass = type[Benchmark]
+  type BenchmarkSubcommands = immutabledict[BenchmarkClass, BenchmarkSubcommand]
+  type BrowserLookupTable = dict[str, tuple[type[Browser], pth.LocalPath]]
 
 
 class CrossBenchArgumentError(argparse.ArgumentError):
@@ -394,7 +389,7 @@ class CrossBenchCLI:
     )
     return debug_group
 
-  def _add_subcommand(
+  def _add_subcommand[SubcommandT: CrossbenchSubcommand](
     self,
     subcommand_cls: type[SubcommandT],
   ) -> SubcommandT:

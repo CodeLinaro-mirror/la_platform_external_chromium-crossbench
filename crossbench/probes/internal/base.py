@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, ClassVar, TypeVar, override
+from typing import TYPE_CHECKING, ClassVar, override
 
 from crossbench.probes.json import JsonResultProbe, JsonResultProbeContext
 from crossbench.probes.probe import Probe, ProbePriority
@@ -39,14 +39,9 @@ class InternalJsonResultProbe(JsonResultProbe, InternalProbe):
     return InternalJsonResultProbeContext
 
 
-InternalJsonResultProbeT = TypeVar(
-  "InternalJsonResultProbeT", bound="InternalJsonResultProbe"
-)
-
-
-class InternalJsonResultProbeContext(
-  JsonResultProbeContext[InternalJsonResultProbeT]
-):
+class InternalJsonResultProbeContext[
+  InternalJsonResultProbeT: InternalJsonResultProbe
+](JsonResultProbeContext[InternalJsonResultProbeT]):
   FLATTEN: ClassVar = False
 
   @override

@@ -7,7 +7,7 @@ from __future__ import annotations
 import abc
 import datetime as dt
 import json
-from typing import TYPE_CHECKING, Final, Mapping, Sequence, TypeAlias, override
+from typing import TYPE_CHECKING, Final, Mapping, Sequence, override
 
 import tabulate as tbl
 
@@ -42,7 +42,7 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
   from crossbench.types import TableData
 
-  Categories: TypeAlias = Sequence[CategoryDescription]
+  type Categories = Sequence[CategoryDescription]
 
 
 class PerfettoInfoStory(Story):

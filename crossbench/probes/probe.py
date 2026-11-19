@@ -14,7 +14,6 @@ from typing import (
   Hashable,
   Iterable,
   Self,
-  TypeVar,
   override,
 )
 
@@ -49,10 +48,8 @@ if TYPE_CHECKING:
   from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner
 
-ProbeT = TypeVar("ProbeT", bound="Probe")
 
-
-class ProbeConfigParser(ConfigParser[ProbeT]):
+class ProbeConfigParser[ProbeT: Probe](ConfigParser[ProbeT]):
   def __init__(self, probe_cls: type[ProbeT]) -> None:
     probe_name: str = probe_cls.NAME
     if not probe_name:
