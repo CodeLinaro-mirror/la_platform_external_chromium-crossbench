@@ -170,6 +170,7 @@ ignore = [
 "crossbench.path" = "pth"
 
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
+"__future__.annotations".msg = "Python 3.14 defers annotations by default (PEP 649); do not import `__future__.annotations`."
 "pathlib".msg = "Use `from crossbench import path as pth` and `pth.LocalPath` / `pth.AnyPath` instead."
 "typing.Any".msg = "Do not use `typing.Any`; use concrete types or `object` instead."
 "typing_extensions.Any".msg = "Do not use `typing_extensions.Any`; use concrete types or `object` instead."
