@@ -3,8 +3,6 @@
 # found in the LICENSE file.
 
 # Original Source: telemetry/internal/backends/chrome/minidump_finder.py
-from __future__ import annotations
-
 import datetime
 import time
 from typing import TYPE_CHECKING, Final

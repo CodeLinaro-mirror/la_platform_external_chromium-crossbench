@@ -3,8 +3,6 @@
 # found in the LICENSE file.
 
 # Original Source: telemetry/internal/backends/chrome/minidump_symbolizer.py
-from __future__ import annotations
-
 import abc
 import logging
 import shutil

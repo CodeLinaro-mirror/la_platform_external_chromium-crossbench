@@ -2,8 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from __future__ import annotations
-
 from crossbench.browsers.cdp_android import CdpAndroidBrowser
 from crossbench.browsers.chrome.applescript import ChromeAppleScript
 from crossbench.browsers.chrome.chrome import Chrome

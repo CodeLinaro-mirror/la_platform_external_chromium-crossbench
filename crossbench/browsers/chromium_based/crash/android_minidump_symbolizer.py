@@ -4,8 +4,6 @@
 
 # Original Source:
 # telemetry/internal/backends/chrome/android_minidump_symbolizer.py
-from __future__ import annotations
-
 import datetime
 import logging
 import re
