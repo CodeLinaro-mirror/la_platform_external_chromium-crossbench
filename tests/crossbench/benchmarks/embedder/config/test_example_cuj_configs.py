@@ -2,8 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from __future__ import annotations
-
 from crossbench import hjson as cb_hjson
 from crossbench.benchmarks.embedder.config.cujs import CUJsConfig
 from crossbench.parse import ObjectParser

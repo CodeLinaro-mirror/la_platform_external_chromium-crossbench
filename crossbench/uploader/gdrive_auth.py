@@ -10,8 +10,6 @@ and a loopback redirect); the resulting refresh token is cached locally so
 subsequent uploads are non-interactive.
 """
 
-from __future__ import annotations
-
 import base64
 import contextlib
 import hashlib

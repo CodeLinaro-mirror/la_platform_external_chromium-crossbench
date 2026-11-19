@@ -10,8 +10,6 @@ their settings. Unlike a binary .tracetemplate, it is readable and reviewable.
 records with `--package <instrdst> --instrument <title>`.
 """
 
-from __future__ import annotations
-
 import dataclasses
 import hashlib
 import plistlib
