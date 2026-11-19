@@ -10,6 +10,7 @@ import dataclasses
 import enum
 import fnmatch
 import pathlib
+import sys
 import unittest
 from typing import (
   TYPE_CHECKING,
@@ -26,6 +27,7 @@ from tests import test_helper
 from tools.presubmit import (
   ast_checks,
   banned_builtins,
+  common,
   constant_final,
   pyrefly_check,
   toplevel_files,
@@ -244,6 +246,7 @@ class _PresubmitTestCase(unittest.TestCase, metaclass=abc.ABCMeta):
   ) -> mock.MagicMock:
     input_api = mock.MagicMock()
     input_api.PresubmitLocalPath.return_value = "/root"
+    input_api.python3_executable = sys.executable
     input_api.fnmatch.fnmatch.side_effect = fnmatch.fnmatch
     input_api.ReadFile.side_effect = lambda path, mode="r": files[
       str(path).replace("/root/", "")
@@ -562,6 +565,22 @@ class CheckAstCombinedTestCase(_PresubmitTestCase):
     self._assert_no_errors(
       files={"crossbench/foo.py": self.COMBINED_AST_SNIPPET},
       changed_lines_map={"crossbench/foo.py": set()},
+    )
+
+  def test_subprocess_delegation_on_older_python(self) -> None:
+    pep695_snippet = (
+      "type Alias[T] = list[T]\n"
+      "FOO = 1\n"
+      "def fn[T](x: T) -> T:\n"
+      "  return getattr(x, 'prop')\n"
+    )
+    with mock.patch.object(common.sys, "version_info", (3, 11, 9)):
+      results = self._check(files={"foo.py": pep695_snippet})
+    self.assertEqual(len(results), 2)
+    messages = [str(res[1]) for res in results]
+    self.assertTrue(any("banned built-in" in m for m in messages))
+    self.assertTrue(
+      any("constants not annotated with Final" in m for m in messages)
     )
 
 

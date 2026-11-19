@@ -7,8 +7,11 @@ from __future__ import annotations
 import abc
 import ast
 import dataclasses
+import json
 import pathlib
 import re
+import subprocess
+import sys
 from typing import TYPE_CHECKING, Final
 
 if TYPE_CHECKING:
@@ -25,6 +28,11 @@ SKIPPED_PATHS: Final[tuple[str, ...]] = (
   "*crossbench/third_party/*",
 )
 
+# Cannot import crossbench.path.ROOT_DIR because tools/presubmit/ runs
+# in-process under depot_tools' Python 3.11, whereas crossbench/path.py uses
+# Python 3.12+ (PEP 695) syntax.
+REPO_ROOT: Final[pathlib.Path] = pathlib.Path(__file__).resolve().parents[2]
+
 
 @dataclasses.dataclass(frozen=True)
 class RawAstViolation:
@@ -34,11 +42,10 @@ class RawAstViolation:
 
 
 @dataclasses.dataclass(frozen=True)
-class ParsedPythonFile:
+class PythonFile:
   path: str
-  lines: list[str]
+  content: str
   changed_lines: set[int]
-  tree: ast.Module
 
 
 @dataclasses.dataclass(frozen=True)
@@ -58,18 +65,19 @@ class AstViolation:
   def from_raw(
     cls,
     raw_violations: Iterable[RawAstViolation],
-    parsed_file: ParsedPythonFile,
+    python_file: PythonFile,
   ) -> list[AstViolation]:
+    lines: list[str] = python_file.content.splitlines()
     return [
       cls(
-        parsed_file.path,
+        python_file.path,
         v.line_number,
         v.col_offset,
         v.name,
-        parsed_file.lines[v.line_number - 1].strip(),
+        lines[v.line_number - 1].strip(),
       )
       for v in raw_violations
-      if v.line_number in parsed_file.changed_lines
+      if v.line_number in python_file.changed_lines
     ]
 
 
@@ -120,7 +128,7 @@ class PresubmitCheck:
   def changed_lines(cls, affected_file: AffectedFile) -> set[int]:
     return {lineno for lineno, _ in affected_file.ChangedContents()}
 
-  def iter_parsed_python_files(self) -> Iterator[ParsedPythonFile]:
+  def iter_python_files(self) -> Iterator[PythonFile]:
     for affected_file in self.affected_python_files():
       changed_lines: set[int] = self.changed_lines(affected_file)
       if not changed_lines:
@@ -128,12 +136,10 @@ class PresubmitCheck:
       file_path: str = affected_file.LocalPath()
       full_path: pathlib.Path = self.root_path / file_path
       content: str = self._input_api.ReadFile(str(full_path), "r")
-      tree: ast.Module = ast.parse(content, filename=str(full_path))
-      yield ParsedPythonFile(
+      yield PythonFile(
         file_path,
-        content.splitlines(),
+        content,
         changed_lines,
-        tree,
       )
 
   @classmethod
@@ -175,6 +181,35 @@ class AstCheckVisitor(ast.NodeVisitor, metaclass=abc.ABCMeta):
     raise NotImplementedError
 
   @classmethod
+  def visit_source(cls, source: str) -> Sequence[RawAstViolation]:
+    visitor = cls()
+    visitor.visit(ast.parse(source))
+    return visitor.violations
+
+  @classmethod
+  def visit_file(
+    cls, input_api: InputApi, source: str
+  ) -> Sequence[RawAstViolation]:
+    # TODO(crbug.com/586521681): Remove workaround depot_tools is migrated to
+    # 3.14.
+    if sys.version_info >= (3, 14):  # noqa: UP036
+      return cls.visit_source(source)
+    out: str = subprocess.check_output(
+      [
+        input_api.python3_executable,
+        "-c",
+        f"import dataclasses, json, sys; "
+        f"from {cls.__module__} import {cls.__name__}; "
+        f"print(json.dumps([dataclasses.astuple(v) "
+        f"for v in {cls.__name__}.visit_source(sys.stdin.read())]))",
+      ],
+      input=source,
+      text=True,
+      cwd=str(REPO_ROOT),
+    )
+    return [RawAstViolation(*v) for v in json.loads(out)]
+
+  @classmethod
   def check(cls, input_api: InputApi, output_api: OutputApi) -> list[object]:
     return cls.check_all(input_api, output_api, (cls,))
 
@@ -190,13 +225,10 @@ class AstCheckVisitor(ast.NodeVisitor, metaclass=abc.ABCMeta):
     collected: dict[type[AstCheckVisitor], list[AstViolation]] = {
       v_cls: [] for v_cls in visitor_classes
     }
-    for parsed_file in presubmit.iter_parsed_python_files():
+    for python_file in presubmit.iter_python_files():
       for v_cls in visitor_classes:
-        visitor = v_cls()
-        visitor.visit(parsed_file.tree)
-        collected[v_cls].extend(
-          AstViolation.from_raw(visitor.violations, parsed_file)
-        )
+        violations = v_cls.visit_file(input_api, python_file.content)
+        collected[v_cls].extend(AstViolation.from_raw(violations, python_file))
     for v_cls, violations in collected.items():
       results.extend(v_cls.report(presubmit, violations))
     return results
