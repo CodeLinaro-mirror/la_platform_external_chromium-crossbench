@@ -1949,29 +1949,6 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
       ) from e
     self.sleep(2.0)
 
-  def _ensure_adb_root_for_oobe(self) -> bool:
-    if self.adb.has_root():
-      return True
-    if self.adb.build_type == AndroidBuildType.USER.value:
-      logging.warning(
-        "Cannot bypass Android SetupWizard OOBE on %s: production 'user' "
-        "build does not support 'adb root'.",
-        self.adb,
-      )
-      return False
-    logging.info(
-      "Restarting adbd as root on %s to bypass SetupWizard OOBE", self.adb
-    )
-    self.adb.root()
-    if not self.adb.has_root():
-      logging.warning(
-        "Cannot bypass Android SetupWizard OOBE on %s: 'adb root' did not "
-        "acquire root privileges.",
-        self.adb,
-      )
-      return False
-    return True
-
   def _is_device_provisioned(self) -> bool:
     return (
       self.adb.shell_stdout(
@@ -1983,12 +1960,21 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
   def _dismiss_setup_wizard(self) -> None:
     if self._is_device_provisioned():
       return
-    if not self._ensure_adb_root_for_oobe():
-      return
+    cmd: tuple[str, ...] = ("am", "start", "-a", _FOUR_CORNER_EXIT_INTENT)
+    if not self.adb.has_root():
+      su_id = self.adb.shell_stdout("su", "0", "id", check=False)
+      if not su_id.startswith("uid=0(root)"):
+        logging.warning(
+          "Cannot bypass Android SetupWizard OOBE on %s: "
+          "root privileges ('su') are not available.",
+          self.adb,
+        )
+        return
+      cmd = ("su", "0", *cmd)
     logging.info(
       "Bypassing Android OOBE on %s via %s", self.adb, _FOUR_CORNER_EXIT_INTENT
     )
-    self.adb.shell("am", "start", "-a", _FOUR_CORNER_EXIT_INTENT, check=False)
+    self.adb.shell(*cmd, check=False)
     try:
       for _ in WaitRange(timeout=20).wait_with_backoff():
         if self._is_device_provisioned():

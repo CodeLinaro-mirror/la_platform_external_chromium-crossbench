@@ -686,41 +686,6 @@ class PyodideAndroidAdbPlatformTest(AndroidAdbMockPlatformTest):
       mock_unroot.assert_called_once()
 
   @override
-  def test_setup_unprovisioned_lazily_roots_and_dismisses_oobe(self) -> None:
-    self.expect_sh("am get-current-user", result="10\n")
-    self.expect_sh("settings get global device_provisioned", result="0\n")
-    self.expect_sh("id", result="uid=2000(shell) gid=2000(shell)")
-    self.expect_sh("getprop ro.build.type", result="userdebug")
-    self.expect_sh("id", result="uid=2000(shell) gid=2000(shell)")
-    self.expect_sh("id", result="uid=0(root) gid=0(root)")
-    self.expect_sh("am start -a com.android.setupwizard.FOUR_CORNER_EXIT")
-    self.expect_sh("settings get global device_provisioned", result="1\n")
-    with (
-      mock.patch.object(self.webadb, "root") as mock_root,
-      mock.patch.object(self.platform, "sleep"),
-    ):
-      self.platform.setup()
-      mock_root.assert_called_once()
-
-  @override
-  def test_setup_unprovisioned_root_failure_skips_oobe(self) -> None:
-    self.expect_sh("am get-current-user", result="10\n")
-    self.expect_sh("settings get global device_provisioned", result="0\n")
-    self.expect_sh("id", result="uid=2000(shell) gid=2000(shell)")
-    self.expect_sh("getprop ro.build.type", result="userdebug")
-    self.expect_sh("id", result="uid=2000(shell) gid=2000(shell)")
-    self.expect_sh("id", result="uid=2000(shell) gid=2000(shell)")
-    with (
-      mock.patch.object(self.webadb, "root") as mock_root,
-      self.assertLogs(level="WARNING") as cm,
-    ):
-      self.platform.setup()
-      mock_root.assert_called_once()
-    self.assertTrue(
-      any("did not acquire root privileges" in msg for msg in cm.output)
-    )
-
-  @override
   def test_setup_skips_oobe_bypass_when_disabled(self) -> None:
     platform = PyodideAndroidAdbPlatform(
       host_platform=self.host_platform,
