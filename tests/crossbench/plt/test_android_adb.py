@@ -1476,6 +1476,39 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     self.expect_sh("dumpsys battery reset")
     self.platform.exit_doze()
 
+  def test_wakelock(self) -> None:
+    for disabled_val in ("0\n", "null\n", ""):
+      with self.subTest(stay_on=disabled_val):
+        self.expect_sh(
+          "settings get global stay_on_while_plugged_in", result=disabled_val
+        )
+        self.expect_sh("svc power stayon true")
+        self.expect_sh("input keyevent KEYCODE_WAKEUP")
+        self.expect_sh("svc power stayon false")
+        with self.platform.wakelock():
+          pass
+
+  def test_wakelock_restores_on_exception(self) -> None:
+    self.expect_sh("settings get global stay_on_while_plugged_in", result="0\n")
+    self.expect_sh("svc power stayon true")
+    self.expect_sh("input keyevent KEYCODE_WAKEUP")
+    self.expect_sh("svc power stayon false")
+    with (
+      self.assertRaisesRegex(RuntimeError, "boom"),
+      self.platform.wakelock(),
+    ):
+      raise RuntimeError("boom")
+
+  def test_wakelock_already_enabled(self) -> None:
+    for enabled_val in ("1\n", "2\n", "3\n", "7\n", "15\n"):
+      with self.subTest(stay_on=enabled_val):
+        self.expect_sh(
+          "settings get global stay_on_while_plugged_in", result=enabled_val
+        )
+        self.expect_sh("input keyevent KEYCODE_WAKEUP")
+        with self.platform.wakelock():
+          pass
+
   def test_disable_secure_windows(self) -> None:
     self.expect_sh("settings put --user 0 secure disable_secure_windows 1")
     self.expect_sh("settings delete --user 0 secure disable_secure_windows")

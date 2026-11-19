@@ -1999,6 +1999,29 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
       ) from e
     self.sleep(2.0)
 
+  def _is_stay_on_enabled(self) -> bool:
+    stay_on = self.adb.shell_stdout(
+      "settings", "get", "global", "stay_on_while_plugged_in", check=False
+    ).strip()
+    try:
+      return int(stay_on) > 0
+    except ValueError:
+      return False
+
+  @override
+  @contextlib.contextmanager
+  def wakelock(self) -> Iterator[None]:
+    if self._is_stay_on_enabled():
+      self.adb.shell("input", "keyevent", "KEYCODE_WAKEUP")
+      yield
+      return
+    self.adb.shell("svc", "power", "stayon", "true")
+    try:
+      self.adb.shell("input", "keyevent", "KEYCODE_WAKEUP")
+      yield
+    finally:
+      self.adb.shell("svc", "power", "stayon", "false")
+
   @override
   @contextlib.contextmanager
   def disable_secure_windows(self) -> Iterator[None]:
