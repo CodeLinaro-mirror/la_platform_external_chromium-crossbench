@@ -5,8 +5,6 @@
 # Command to run speedometer on webview_shell:
 # `./cb.py speedometer --browser=adb:webview`
 
-from __future__ import annotations
-
 from typing import TYPE_CHECKING, Final, Sequence, override
 
 from crossbench.browsers.webview.webview import Webview

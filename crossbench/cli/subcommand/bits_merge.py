@@ -4,8 +4,6 @@
 """Merges the BITS trace of each run with the device's Perfetto trace, see
 crossbench.probes.bits.merge."""
 
-from __future__ import annotations
-
 from typing import TYPE_CHECKING, override
 
 from crossbench.cli.subcommand.base import CrossbenchSubcommand

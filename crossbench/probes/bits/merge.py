@@ -13,8 +13,6 @@ results directory after the fact (the bits-merge subcommand) as well as by
 the bits probe once all runs are done.
 """
 
-from __future__ import annotations
-
 import argparse
 import functools
 import json

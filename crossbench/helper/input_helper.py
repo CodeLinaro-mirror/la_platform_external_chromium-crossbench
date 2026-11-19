@@ -8,8 +8,6 @@ Use module-level `prompt()` and `input_with_timeout()` to read user input and
 callbacks instead of reading `sys.stdin` directly.
 """
 
-from __future__ import annotations
-
 import atexit
 import contextlib
 import datetime as dt

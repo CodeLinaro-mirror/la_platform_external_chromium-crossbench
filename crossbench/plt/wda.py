@@ -21,8 +21,6 @@ automation on iOS. To use WDA:
    on port 8100.
 """
 
-from __future__ import annotations
-
 import atexit
 import datetime as dt
 import json

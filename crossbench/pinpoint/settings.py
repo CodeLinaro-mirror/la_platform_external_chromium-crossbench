@@ -2,8 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from __future__ import annotations
-
 import json
 from dataclasses import asdict, dataclass, replace
 from typing import TYPE_CHECKING, Self, override

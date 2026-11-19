@@ -4,8 +4,6 @@
 
 # Modified from chrome's catapult project.
 
-from __future__ import annotations
-
 import atexit
 import contextlib
 import locale
