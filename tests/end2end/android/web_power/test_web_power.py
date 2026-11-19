@@ -11,8 +11,6 @@ To verify that the benchmark actually did work on CQ, we also check for
 non-zero Chrome CPU time.
 """
 
-from __future__ import annotations
-
 import collections
 import csv
 from typing import TYPE_CHECKING, Final, Sequence

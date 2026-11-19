@@ -6,8 +6,6 @@
 # The --adb-device-id flag is required to run tests on your Android device.
 # Otherwise, the Android tests will be ignored.
 
-from __future__ import annotations
-
 import argparse
 import os
 import pathlib
