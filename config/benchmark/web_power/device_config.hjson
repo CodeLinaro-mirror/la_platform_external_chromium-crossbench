@@ -83,12 +83,6 @@
         // this validation can be handled via env-validation.
         "screen_brightness_mode": 0
 
-        // Sets the display brightness level to a fixed standard value to
-        // ensure reproducible display power draw.
-        //
-        // TODO: Uncomment once RequiredDeviceConfigMode.SET is supported.
-        // "screen_brightness": 100
-
         // Ensures default display refresh rate policies.
         "peak_refresh_rate": "null"
         // TODO: Uncomment or remove `min_refresh_rate`.

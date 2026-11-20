@@ -1,0 +1,71 @@
+{
+  // Maps Android device model full-match regexes (ro.product.model; escape
+  // literal regex characters such as '.', '+', or '(') to target luminance in
+  // nits -> raw settings.system.screen_brightness integer. Passing
+  // --screen-brightness overrides both mapped and unmapped models; otherwise
+  // unmapped models log a warning and fall back to screen_brightness=1.
+
+  "Pixel 9 Pro XL": {
+    "200": 33
+  }
+  "Pixel 10 Pro XL": {
+    "200": 28
+  }
+
+  // TODO: Detect the active display on multi-screen devices instead of
+  // assuming the outer screen.
+  // Outer screen (inner screen 200 nits is 32; override via
+  // --screen-brightness=32).
+  "Pixel 10 Pro Fold": {
+    "200": 30
+  }
+
+  // Samsung Galaxy S24 Ultra, S25 Ultra, S26, S26 Ultra, A35, and A56.
+  "SM-S928.*": {
+    "200": 169
+  }
+  "SM-S938.*": {
+    "200": 150
+  }
+  "SM-S94[12].*": {
+    "200": 145
+  }
+  "SM-S948.*": {
+    "200": 150
+  }
+  "SM-A356.*": {
+    "200": 150
+  }
+  "SM-A566.*": {
+    "200": 150
+  }
+
+  // Samsung Galaxy Z Fold 7 outer screen (inner screen 200 nits is 148;
+  // override via --screen-brightness=148).
+  "SM-F966.*": {
+    "200": 150
+  }
+
+  // Samsung Galaxy Z Fold 8 outer screen.
+  "SM-F976.*": {
+    "200": 152
+  }
+
+  // OnePlus 13 (extended brightness scale).
+  "PJZ110|CPH2653|CPH2655": {
+    "200": 2468
+  }
+
+  // OnePlus 13R (extended brightness scale).
+  "CPH2645|CPH2647|CPH2691": {
+    "200": 2477
+  }
+
+  // Xiaomi 17 Pro Max and Xiaomi 18 Pro Max (main front screens).
+  "2509FPN0BC": {
+    "200": 78
+  }
+  "M154FF": {
+    "200": 110
+  }
+}

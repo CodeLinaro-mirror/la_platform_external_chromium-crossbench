@@ -101,6 +101,27 @@ For example, tweaking the interval between runs might affect the thermal
 state of the device, change the frequency of thermal throttling, and therefore
 impact the scores.
 
+### Screen Brightness and Device Configuration
+
+On Android, Web Power disables auto-brightness (`screen_brightness_mode: 0`) and
+sets `screen_brightness` to the 200-nit integer value for the connected device
+model using regex mappings (`model_regex -> {"200": <setting>}`) from
+`config/benchmark/web_power/brightness_mapping.hjson`. Conflicting overlapping
+regexes raise an error, and unmapped models log a warning and fall back to
+`screen_brightness: 1`. On multi-display and foldable models, see the comments
+in `brightness_mapping.hjson` for which screen is mapped by default.
+
+**Watch out:** do not push mappings for unreleased hardware to the open-source
+repo. Keep them gated in a private repo like `crossbench-internal` (see
+[Getting the Code](#getting-the-code)).
+
+To override the brightness value manually for a run (on both mapped and
+unmapped Android models), pass `--screen-brightness=<INT>` (the raw
+`settings.system.screen_brightness` non-negative integer: `0-255` on standard
+Android/Pixel builds, or larger on OEM builds with extended brightness scales),
+or pass `--required-device-config-mode=warn` to keep the device's current
+configuration without modifying settings.
+
 ### Running on iOS (Scroll Scenario)
 
 The scroll scenario (`web-power-scroll`) can also be run on iOS:

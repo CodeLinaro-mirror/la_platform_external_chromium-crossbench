@@ -23,6 +23,9 @@ from crossbench import config
 from crossbench.action_runner.action.enums import WindowTarget
 from crossbench.benchmarks.base import StoryFilter, SubStoryBenchmark
 from crossbench.benchmarks.web_power.probe import WebPowerProbe
+from crossbench.benchmarks.web_power.screen_brightness import (
+  ScreenBrightnessResolver,
+)
 from crossbench.benchmarks.web_power.wpr_helpers import WprBannerDismisser
 from crossbench.cli.config.driver_type import BrowserDriverType
 from crossbench.cli.config.network import NetworkConfig, NetworkType
@@ -395,8 +398,10 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
 
   @override
   def required_device_config(self, platform: Platform) -> RequiredDeviceConfig:
-    del platform
-    return RequiredDeviceConfig.parse(self.device_config_path())
+    device_config = RequiredDeviceConfig.parse(self.device_config_path())
+    if extra := self._screen_brightness_resolver.device_config(platform):
+      return device_config.merge(extra)
+    return device_config
 
   @classmethod
   def scenario_benchmarks(cls) -> tuple[type[WebPowerBenchmarkBase], ...]:
@@ -437,12 +442,16 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
     allowed_build_types: frozenset[AndroidBuildType] | None = (
       DEFAULT_ALLOWED_BUILD_TYPES
     ),
+    screen_brightness: int | None = None,
   ) -> None:
     self._bits_probe: Final[BitsProbe | None] = bits_probe
     self._has_custom_network: Final[bool] = has_custom_network
     # None means any build type is allowed, including unknown ones.
     self._allowed_build_types: Final[frozenset[AndroidBuildType] | None] = (
       allowed_build_types
+    )
+    self._screen_brightness_resolver: Final[ScreenBrightnessResolver] = (
+      ScreenBrightnessResolver(screen_brightness)
     )
     super().__init__(stories, action_runner_config)
 
@@ -633,6 +642,17 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
         "Choices:\n" + AndroidBuildType.help_text(indent=2)
       ),
     )
+    parser.add_argument(
+      "--screen-brightness",
+      type=NumberParser.positive_zero_int,
+      default=None,
+      help=(
+        "Raw Android settings.system.screen_brightness non-negative "
+        "integer to apply for the run (0-255 on standard Android, or "
+        "higher on OEM builds with extended brightness scales). "
+        "Overrides brightness_mapping.hjson and the default fallback."
+      ),
+    )
     if cls.IS_SCENARIO_CLASS:
       return cls.add_scenario_cli_arguments(parser)
     return parser
@@ -647,6 +667,7 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
       args.network_config and not args.network_config.is_default()
     )
     kwargs["allowed_build_types"] = args.allowed_build_types
+    kwargs["screen_brightness"] = args.screen_brightness
     cls._select_network(args)
     if bits_probe := cls._parse_bits_probe(args):
       kwargs["bits_probe"] = bits_probe
