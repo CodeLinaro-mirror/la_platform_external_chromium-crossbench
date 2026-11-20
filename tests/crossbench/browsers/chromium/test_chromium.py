@@ -15,7 +15,11 @@ import urllib3
 from crossbench import path as pth
 from crossbench.browsers.browser import Browser
 from crossbench.browsers.chromium.base import ChromiumBaseMixin
-from crossbench.browsers.chromium.driver_finder import ChromeDriverFinder
+from crossbench.browsers.chromium.driver_finder import (
+  CftVersionData,
+  CftVersionDataResult,
+  ChromeDriverFinder,
+)
 from crossbench.browsers.chromium.webdriver import (
   ChromeApkHelperPackageInfo,
   ChromiumWebDriver,
@@ -559,6 +563,40 @@ class ChromeDriverFinderTestCase(BaseCrossbenchTestCase):
 
     found_driver = finder.find_local_build()
     self.assertEqual(str(found_driver), str(driver_path))
+
+
+class ChromeDriverFinderLinuxArm64TestCase(BaseCrossbenchTestCase):
+  CFT_VERSION_DATA: CftVersionData = {
+    "version": "158.0.8127.36",
+    "downloads": {
+      "chromedriver": [
+        {"platform": "linux64", "url": "https://cft/linux64.zip"},
+        {"platform": "linux-arm64", "url": "https://cft/linux-arm64.zip"},
+      ]
+    },
+  }
+
+  def test_get_cft_url(self):
+    mock_browser = mock.MagicMock()
+    mock_browser.platform.is_local = True
+    mock_browser.platform.host_platform = self.platform
+    mock_browser.version.major = 158
+    finder = ChromeDriverFinder(mock_browser)
+    with (
+      mock.patch.object(
+        type(self.platform),
+        "type_key",
+        new_callable=mock.PropertyMock,
+        return_value=("linux", "arm64"),
+      ),
+      mock.patch.object(
+        finder,
+        "_get_cft_version_data",
+        return_value=CftVersionDataResult("listing", self.CFT_VERSION_DATA),
+      ),
+    ):
+      result = finder._get_cft_url(158)
+    self.assertEqual(result.download_url, "https://cft/linux-arm64.zip")
 
 
 class ChromiumPathTestCase(BaseCrossbenchTestCase):

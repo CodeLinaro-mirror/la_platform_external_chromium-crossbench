@@ -84,6 +84,7 @@ class ChromeDriverFinder:
 
   CFT_PLATFORM: Final[dict[tuple[str, str], str]] = {
     ("linux", "x64"): "linux64",
+    ("linux", "arm64"): "linux-arm64",
     ("macos", "x64"): "mac-x64",
     ("macos", "arm64"): "mac-arm64",
     ("win", "ia32"): "win32",
