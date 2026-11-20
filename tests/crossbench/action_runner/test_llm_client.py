@@ -6,8 +6,9 @@ import argparse
 import datetime as dt
 import json
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, call, patch
 
+import httpx
 from google.genai import types
 
 from crossbench.action_runner.action.wait import WaitAction
@@ -124,6 +125,10 @@ class LlmConversationClientTestCase(unittest.TestCase):
     assert default_client._config.thinking_config is not None
     self.assertEqual(
       default_client._config.thinking_config.thinking_budget, 256
+    )
+    self.assertEqual(
+      default_client._http_options.timeout,
+      int(LlmConversationClient.DEFAULT_REQUEST_TIMEOUT.total_seconds() * 1000),
     )
 
     custom_client = LlmConversationClient(
@@ -298,6 +303,100 @@ class LlmConversationClientTestCase(unittest.TestCase):
     self.assertEqual(parts_0[0].text, "Step 1")
     self.assertEqual(len(parts_2), 2)
     self.assertEqual(len(parts_4), 2)
+
+  def test_send_turn_retries_transient_transport_errors(self) -> None:
+    mock_genai_client = MagicMock()
+    mock_chat = MagicMock()
+    mock_genai_client.chats.create.return_value = mock_chat
+
+    ok_resp = MagicMock(
+      text=json.dumps(
+        {
+          "observation": "Recovered",
+          "thought": "Continue",
+          "done": False,
+          "actions": [],
+        }
+      )
+    )
+    mock_chat.send_message.side_effect = [
+      httpx.RemoteProtocolError(
+        "Server disconnected without sending a response."
+      ),
+      httpx.ReadTimeout("Request timed out"),
+      httpx.ConnectError("Connection reset"),
+      ok_resp,
+    ]
+
+    client = LlmConversationClient(
+      model="gemini-3.8-flash",
+      system_instruction="Test",
+      temperature=1.0,
+      genai_client=mock_genai_client,
+    )
+
+    with patch("crossbench.helper.wait.sleep_f") as mock_sleep:
+      turn = client.send_turn("Step 25", b"png_bytes")
+
+    self.assertEqual(turn.observation, "Recovered")
+    self.assertEqual(mock_chat.send_message.call_count, 4)
+    self.assertEqual(
+      mock_sleep.call_args_list,
+      [call(1.0), call(2.0), call(4.0)],
+    )
+
+  def test_send_turn_raises_timeout_after_exhausting_transport_retries(
+    self,
+  ) -> None:
+    mock_genai_client = MagicMock()
+    mock_chat = MagicMock()
+    mock_genai_client.chats.create.return_value = mock_chat
+    error = httpx.RemoteProtocolError(
+      "Server disconnected without sending a response."
+    )
+    mock_chat.send_message.side_effect = error
+
+    client = LlmConversationClient(
+      model="gemini-3.8-flash",
+      system_instruction="Test",
+      temperature=1.0,
+      genai_client=mock_genai_client,
+    )
+
+    with (
+      patch("crossbench.helper.wait.sleep_f") as mock_sleep,
+      self.assertRaises(TimeoutError) as ctx,
+    ):
+      client.send_turn("Step 25")
+
+    self.assertIs(ctx.exception.__cause__, error)
+    self.assertEqual(mock_chat.send_message.call_count, 5)
+    self.assertEqual(
+      mock_sleep.call_args_list,
+      [call(1.0), call(2.0), call(4.0), call(8.0), call(16.0)],
+    )
+
+  def test_send_turn_does_not_retry_non_transient_httpx_errors(self) -> None:
+    mock_genai_client = MagicMock()
+    mock_chat = MagicMock()
+    mock_genai_client.chats.create.return_value = mock_chat
+    mock_chat.send_message.side_effect = httpx.LocalProtocolError("Bad header")
+
+    client = LlmConversationClient(
+      model="gemini-3.8-flash",
+      system_instruction="Test",
+      temperature=1.0,
+      genai_client=mock_genai_client,
+    )
+
+    with (
+      patch("crossbench.helper.wait.sleep_f") as mock_sleep,
+      self.assertRaises(httpx.LocalProtocolError),
+    ):
+      client.send_turn("Step 25")
+
+    self.assertEqual(mock_chat.send_message.call_count, 1)
+    mock_sleep.assert_not_called()
 
 
 if __name__ == "__main__":

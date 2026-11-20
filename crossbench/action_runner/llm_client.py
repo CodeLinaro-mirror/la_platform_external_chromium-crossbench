@@ -4,10 +4,12 @@
 
 import argparse
 import dataclasses
+import datetime as dt
 import functools
 import logging
 from typing import TYPE_CHECKING, Final, Self, override
 
+import httpx
 from google import genai
 from google.genai import types
 
@@ -16,6 +18,7 @@ from crossbench.action_runner.action.agent import DEFAULT_AGENT_THINKING_BUDGET
 from crossbench.action_runner.action.all import ACTIONS_TUPLE
 from crossbench.config import ConfigError, ConfigObject, ConfigParser
 from crossbench.exception import MultiException
+from crossbench.helper.wait import WaitRange
 from crossbench.parse import NumberParser, ObjectParser
 
 if TYPE_CHECKING:
@@ -23,6 +26,15 @@ if TYPE_CHECKING:
 
 # Force registration of all Action subclasses before parsing Action items.
 assert ACTIONS_TUPLE, "import failed"
+
+# google-genai's built-in HttpRetryOptions only retries APIError HTTP status
+# codes, leaving httpx transport/protocol disconnects unretried.
+_RETRYABLE_TRANSPORT_ERRORS: Final[tuple[type[httpx.TransportError], ...]] = (
+  httpx.NetworkError,
+  httpx.ProxyError,
+  httpx.RemoteProtocolError,
+  httpx.TimeoutException,
+)
 
 
 class TurnResponseError(RuntimeError):
@@ -112,6 +124,15 @@ class AgentTurnResponse(ConfigObject):
 class LlmConversationClient:
   """Stateful multi-turn LLM chat client."""
 
+  DEFAULT_REQUEST_TIMEOUT: Final[dt.timedelta] = dt.timedelta(minutes=2)
+  TRANSPORT_RETRY_WAIT_RANGE: Final[WaitRange] = WaitRange(
+    min=dt.timedelta(seconds=1),
+    max=dt.timedelta(seconds=16),
+    timeout=dt.timedelta(minutes=5),
+    factor=2.0,
+    max_iterations=5,
+  )
+
   def __init__(
     self,
     model: str,
@@ -140,7 +161,8 @@ class LlmConversationClient:
     self._api_key: Final[str | None] = api_key
     self._genai_client: genai.Client | None = genai_client
     self._http_options: Final[types.HttpOptions] = types.HttpOptions(
-      retry_options=types.HttpRetryOptions()
+      timeout=int(self.DEFAULT_REQUEST_TIMEOUT.total_seconds() * 1000),
+      retry_options=types.HttpRetryOptions(),
     )
     self._config: Final[types.GenerateContentConfig] = (
       types.GenerateContentConfig(
@@ -185,6 +207,21 @@ class LlmConversationClient:
       else:
         content.parts = [part for part in parts if part.inline_data is None]
 
+  def _send_message_with_retry(
+    self,
+    user_parts: list[types.PartUnionDict],
+  ) -> types.GenerateContentResponse:
+    last_err: Exception | None = None
+    for _ in self.TRANSPORT_RETRY_WAIT_RANGE.wait_with_backoff():
+      try:
+        return self.chat.send_message(user_parts)
+      except _RETRYABLE_TRANSPORT_ERRORS as e:
+        last_err = e
+        logging.warning("LLM request failed, retrying: %s", e)
+    raise TimeoutError(
+      "LLM request failed after exhausting retries"
+    ) from last_err
+
   def send_turn(
     self,
     feedback_text: str,
@@ -201,7 +238,7 @@ class LlmConversationClient:
           mime_type="image/png",
         )
       )
-    response = self.chat.send_message(user_parts)
+    response = self._send_message_with_retry(user_parts)
     if not (model_text := response.text):
       logging.debug("Empty model turn response: %s", response)
       raise TurnResponseError("Model returned empty response text")
