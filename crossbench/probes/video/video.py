@@ -431,7 +431,7 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
   FFMPEG_TIMELINE_TEXT: Final = (
     "drawtext="
     "fontfile=/Library/Fonts/Arial.ttf:"
-    "text='%{eif\\:t\\:d}.%{eif\\:t*100-floor(t)*100\\:d}s':"
+    "text='%{eif\\:t\\:d}.%{eif\\:t*100-floor(t)*100\\:d\\:2}s':"
     "fontsize=h/16:"
     "y=h-line_h-5:x=5:"
     "box=1:boxborderw=15:boxcolor=white"
