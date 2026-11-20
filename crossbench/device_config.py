@@ -12,7 +12,6 @@ from typing import TYPE_CHECKING, ClassVar, Final, Self, override
 
 from immutabledict import immutabledict
 
-from crossbench import path as pth
 from crossbench.config import ConfigEnum, ConfigError, ConfigObject
 from crossbench.helper.class_helper import get_all_subclasses
 
@@ -27,8 +26,6 @@ type DeviceConfigValue = (
   | Mapping[str, "DeviceConfigValue"]
 )
 type DeviceConfigMap = Mapping[str, DeviceConfigValue]
-type DeviceConfigFile = pth.LocalPath
-type DeviceConfig = DeviceConfigMap | DeviceConfigFile
 type DeviceConfigKeyPath = tuple[str, ...]
 # A parsed requirement and its target value, as DeviceConfigRequirement holds.
 type _PredicateAndTarget = tuple["_Predicate", str | None]
@@ -87,6 +84,11 @@ class DeviceConfigRequirement:
     except ValueError as e:
       raise DeviceConfigError(f"{'.'.join(key_path)}: {e}") from e
     return cls(key_path, predicate, target)
+
+  def overlaps(self, other: DeviceConfigRequirement) -> bool:
+    """Returns True if either key path is a prefix of the other."""
+    prefix_len = min(len(self.key_path), len(other.key_path))
+    return self.key_path[:prefix_len] == other.key_path[:prefix_len]
 
   def check(
     self,
@@ -153,6 +155,31 @@ class RequiredDeviceConfig(ConfigObject):
         raise DeviceConfigError(f"{platform}: Invalid section: {section!r}.")
       platforms[platform.lower()] = _parse_platform_requirements(section)
     return cls(immutabledict(platforms))
+
+  def merge(self, other: RequiredDeviceConfig) -> Self:
+    """Returns a new RequiredDeviceConfig appending other's requirements.
+
+    Raises:
+      DeviceConfigError: If both configs specify overlapping key paths, even
+        if they set the same value.
+    """
+    platforms = dict(self.platforms)
+    for platform, other_reqs in other.platforms.items():
+      platforms[platform] = self._merge_platform(platform, other_reqs)
+    return type(self)(immutabledict(platforms))
+
+  def _merge_platform(
+    self, platform: str, other_reqs: DeviceConfigRequirements
+  ) -> DeviceConfigRequirements:
+    merged = list(self.platforms.get(platform, ()))
+    for req in other_reqs:
+      if existing := next((r for r in merged if req.overlaps(r)), None):
+        raise DeviceConfigError(
+          f"{platform}.{'.'.join(req.key_path)}: Conflicting device config "
+          f"requirements (overlaps {platform}.{'.'.join(existing.key_path)})."
+        )
+      merged.append(req)
+    return tuple(merged)
 
 
 def _parse_platform_requirements(

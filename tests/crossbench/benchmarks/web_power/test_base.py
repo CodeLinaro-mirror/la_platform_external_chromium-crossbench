@@ -203,7 +203,7 @@ class WebPowerRequiredDeviceConfigTestCase(CrossbenchFakeFsTestCase):
 
   def setUp(self) -> None:
     super().setUp()
-    self.config_path = WebPowerBenchmarkBase.required_device_config()
+    self.config_path = WebPowerBenchmarkBase.device_config_path()
     self.fs.add_real_file(self.config_path)
 
   def discrepancies_for(

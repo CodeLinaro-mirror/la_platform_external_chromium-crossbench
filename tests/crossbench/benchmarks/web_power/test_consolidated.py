@@ -403,7 +403,7 @@ class WebPowerConsolidatedCliTestCase(BaseCliTestCase):
     if not self.fs.exists(perfetto_basic):
       self.fs.create_file(perfetto_basic, contents="duration_ms: 1000")
     self.fs.add_real_file(WebPowerProbe.METRIC_DEFINITIONS_FILE)
-    self.fs.add_real_file(WebPowerBenchmark.required_device_config())
+    self.fs.add_real_file(WebPowerBenchmark.device_config_path())
     mock_archive = pth.LocalPath("/mock/archive.wprgo")
     self.fs.create_file(mock_archive)
     archive_patcher = mock.patch(

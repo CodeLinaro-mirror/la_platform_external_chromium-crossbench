@@ -694,21 +694,30 @@ class DeviceConfigTestCase(unittest.TestCase):
 
   def test_benchmark_required_device_config(self):
     """Verify Benchmark.required_device_config() can be overridden."""
-    required = {"android": {"key": "val"}}
+    required = RequiredDeviceConfig.parse({"android": {"key": "val"}})
+    platform = LinuxMockPlatform()
 
     class CustomBenchmark(Benchmark):
       NAME = "mock"
       DEFAULT_STORY_CLS = MockStory
 
-      @classmethod
-      def required_device_config(cls) -> DeviceConfigMap:
+      def required_device_config(
+        self, platform: Platform
+      ) -> RequiredDeviceConfig:
+        del platform
         return required
 
-    self.assertIsNone(Benchmark.required_device_config())
-    self.assertEqual(CustomBenchmark.required_device_config(), required)
+    class DefaultBenchmark(Benchmark):
+      NAME = "default"
+      DEFAULT_STORY_CLS = MockStory
+
     mock_story = MockStory("story_1")
-    b = CustomBenchmark([mock_story])
-    self.assertEqual(b.required_device_config(), required)
+    self.assertIsNone(
+      DefaultBenchmark([mock_story]).required_device_config(platform)
+    )
+    self.assertEqual(
+      CustomBenchmark([mock_story]).required_device_config(platform), required
+    )
 
   def test_required_device_config_mode_parse(self):
     """Verify parsing strings into RequiredDeviceConfigMode enum values."""
@@ -1609,6 +1618,98 @@ class DeviceConfigSetterTestCase(unittest.TestCase):
     self.assertEqual(
       self.config["settings"]["system"]["screen_brightness"], "100"
     )
+
+
+class RequiredDeviceConfigMergeTestCase(unittest.TestCase):
+  def test_merge_preserves_requirement_order_and_combines_platforms(
+    self,
+  ) -> None:
+    base = RequiredDeviceConfig.parse(
+      {
+        "android": {
+          "settings": {
+            "system": {
+              "screen_brightness_mode": 0,
+            },
+          },
+        },
+        "macos": {
+          "key": "macos_val",
+        },
+      }
+    )
+    extra = RequiredDeviceConfig.parse(
+      {
+        "android": {
+          "settings": {
+            "system": {
+              "screen_brightness": 33,
+            },
+          },
+        },
+        "linux": {
+          "key": "val",
+        },
+      }
+    )
+
+    merged = base.merge(extra)
+
+    android_paths = [req.key_path for req in merged.platforms["android"]]
+    self.assertEqual(
+      android_paths,
+      [
+        ("settings", "system", "screen_brightness_mode"),
+        ("settings", "system", "screen_brightness"),
+      ],
+    )
+    self.assertEqual(len(merged.platforms["macos"]), 1)
+    self.assertEqual(len(merged.platforms["linux"]), 1)
+
+  def test_merge_duplicate_key_path_raises(self) -> None:
+    base = RequiredDeviceConfig.parse(
+      {"android": {"settings": {"system": {"screen_brightness": 1}}}}
+    )
+    duplicate = RequiredDeviceConfig.parse(
+      {"android": {"settings": {"system": {"screen_brightness": 33}}}}
+    )
+
+    with self.assertRaisesRegex(
+      DeviceConfigError,
+      r"android\.settings\.system\.screen_brightness: Conflicting device "
+      r"config requirements \(overlaps "
+      r"android\.settings\.system\.screen_brightness\)\.",
+    ):
+      base.merge(duplicate)
+
+  def test_merge_identical_value_duplicate_key_path_raises(self) -> None:
+    base = RequiredDeviceConfig.parse(
+      {"android": {"settings": {"system": {"screen_brightness": 33}}}}
+    )
+    duplicate = RequiredDeviceConfig.parse(
+      {"android": {"settings": {"system": {"screen_brightness": 33}}}}
+    )
+
+    with self.assertRaisesRegex(
+      DeviceConfigError,
+      r"android\.settings\.system\.screen_brightness: Conflicting device "
+      r"config requirements \(overlaps "
+      r"android\.settings\.system\.screen_brightness\)\.",
+    ):
+      base.merge(duplicate)
+
+  def test_merge_prefix_key_path_raises(self) -> None:
+    base = RequiredDeviceConfig.parse({"android": {"settings": "leaf"}})
+    nested = RequiredDeviceConfig.parse(
+      {"android": {"settings": {"system": {"screen_brightness": 33}}}}
+    )
+
+    with self.assertRaisesRegex(
+      DeviceConfigError,
+      r"android\.settings\.system\.screen_brightness: Conflicting device "
+      r"config requirements \(overlaps android\.settings\)\.",
+    ):
+      base.merge(nested)
 
 
 if __name__ == "__main__":

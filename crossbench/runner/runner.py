@@ -17,7 +17,6 @@ from crossbench.cli.ui import ui
 from crossbench.device_config import (
   DeviceConfigSetter,
   DeviceConfigValueError,
-  RequiredDeviceConfig,
   RequiredDeviceConfigMode,
   check_device_config,
 )
@@ -762,10 +761,9 @@ class Runner:
       )
 
   def _setup_device_config(self) -> None:
-    if not (raw_config := self.benchmark.required_device_config()):
-      return
-    req_config = RequiredDeviceConfig.parse(raw_config)
     for platform in self.platforms:
+      if not (req_config := self.benchmark.required_device_config(platform)):
+        continue
       if not (requirements := req_config.platforms.get(platform.name)):
         continue
       if self._required_device_config_mode is RequiredDeviceConfigMode.SET:

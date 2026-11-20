@@ -13,8 +13,9 @@ from unittest import mock
 from crossbench.browsers.settings import Settings
 from crossbench.browsers.webdriver import RemoteWebDriver
 from crossbench.device_config import (
-  DeviceConfig,
+  DeviceConfigMap,
   DeviceConfigValueError,
+  RequiredDeviceConfig,
   RequiredDeviceConfigMode,
 )
 from crossbench.exception import MultiException
@@ -1089,15 +1090,16 @@ class DeviceConfigRunnerTestCase(BaseRunnerTestCase):
 
   def _setup_runner(
     self,
-    required: DeviceConfig,
-    actual: dict[str, Any],
+    required: DeviceConfigMap,
+    actual: DeviceConfigMap,
     mode: RequiredDeviceConfigMode,
   ) -> Runner:
     runner = self.default_runner()
     runner._required_device_config_mode = mode
+    parsed_required = RequiredDeviceConfig.parse(required)
     with (
       mock.patch.object(
-        runner.benchmark, "required_device_config", return_value=required
+        runner.benchmark, "required_device_config", return_value=parsed_required
       ),
       mock.patch.object(runner.platform, "device_config", return_value=actual),
     ):
@@ -1138,15 +1140,6 @@ class DeviceConfigRunnerTestCase(BaseRunnerTestCase):
       )
     self.assertTrue(any("test_key" in log for log in cm.output))
 
-  def test_setup_validates_required_device_config_from_json_file(self):
-    """Verifies setup loads and validates required config from a JSON file."""
-    config = self._valid_device_config()
-    json_path = self.out_dir.parent / "required_device_config.json"
-    json_path.write_text(json.dumps(config), encoding="utf-8")
-    self._setup_runner(
-      required=json_path, actual=config, mode=RequiredDeviceConfigMode.THROW
-    )
-
   def test_setup_validates_required_device_config_case_insensitive_platform(
     self,
   ):
@@ -1156,40 +1149,6 @@ class DeviceConfigRunnerTestCase(BaseRunnerTestCase):
     self._setup_runner(
       required=config, actual=actual, mode=RequiredDeviceConfigMode.THROW
     )
-
-  def test_setup_validates_required_device_config_from_json_file_error(self):
-    """Verifies setup raises DeviceConfigValueError on a file discrepancy."""
-    config = self._valid_device_config()
-    json_path = self.out_dir.parent / "required_device_config.json"
-    json_path.write_text(json.dumps(config), encoding="utf-8")
-    with self.assertRaises(DeviceConfigValueError):
-      self._setup_runner(
-        required=json_path,
-        actual=self._valid_device_config(value="wrong_val"),
-        mode=RequiredDeviceConfigMode.THROW,
-      )
-
-  def test_setup_validates_required_device_config_file_not_found(self):
-    """Verifies setup raises an argument error when config file is missing."""
-    with self.assertRaisesRegex(
-      argparse.ArgumentTypeError, "Path does not exist"
-    ):
-      self._setup_runner(
-        required=self.out_dir.parent / "non_existent.json",
-        actual=self._valid_device_config(),
-        mode=RequiredDeviceConfigMode.THROW,
-      )
-
-  def test_setup_validates_required_device_config_invalid_json(self):
-    """Verifies setup raises ValueError on invalid configuration syntax."""
-    invalid_json_path = self.out_dir.parent / "invalid.json"
-    invalid_json_path.write_text("{not-json", encoding="utf-8")
-    with self.assertRaises(ValueError):
-      self._setup_runner(
-        required=invalid_json_path,
-        actual=self._valid_device_config(),
-        mode=RequiredDeviceConfigMode.THROW,
-      )
 
 
 class SetDeviceConfigRunnerTestCase(BaseRunnerTestCase):
@@ -1223,15 +1182,17 @@ class SetDeviceConfigRunnerTestCase(BaseRunnerTestCase):
     """
     runner = self.default_runner(throw=throw)
     runner._required_device_config_mode = mode
-    required = {
-      self.platform.name: {
-        "settings": {
-          "secure": {
-            "test_key": "test_val",
+    required = RequiredDeviceConfig.parse(
+      {
+        self.platform.name: {
+          "settings": {
+            "secure": {
+              "test_key": "test_val",
+            },
           },
         },
-      },
-    }
+      }
+    )
     patcher = mock.patch.object(
       runner.benchmark, "required_device_config", return_value=required
     )
@@ -1345,6 +1306,45 @@ class SetDeviceConfigRunnerTestCase(BaseRunnerTestCase):
     self.assertEqual(len(errors), 1)
     self.assertIn("Failed to restore device config", str(errors[0]))
     self.assertEqual(self.value, "test_val")
+
+  def test_setup_applies_per_platform_required_device_config(self) -> None:
+    other_platform = FullMockPlatform()
+    other_platform.device_config_data = {
+      "settings": {"secure": {"test_key": "old_other"}}
+    }
+    other_browser = MockChromeDev(
+      "chrome-other", settings=Settings(platform=other_platform)
+    )
+    self.platform.device_config_data = {
+      "settings": {"secure": {"test_key": "old_host"}}
+    }
+    runner = self.default_runner(browsers=[self.mock_chrome_dev, other_browser])
+    configs = {
+      self.platform: RequiredDeviceConfig.parse(
+        {self.platform.name: {"settings": {"secure": {"test_key": "new_host"}}}}
+      ),
+      other_platform: RequiredDeviceConfig.parse(
+        {
+          other_platform.name: {
+            "settings": {"secure": {"test_key": "new_other"}}
+          }
+        }
+      ),
+    }
+
+    with (
+      mock.patch.object(
+        runner.benchmark, "required_device_config", side_effect=configs.get
+      ),
+      runner._restoring_device_config(),
+    ):
+      runner._setup_device_config()
+
+    self.assertEqual(self.writes, ["new_host", "old_host"])
+    self.assertEqual(
+      [value for _, value in other_platform.device_config_writes],
+      ["new_other", "old_other"],
+    )
 
 
 del BaseRunnerTestCase

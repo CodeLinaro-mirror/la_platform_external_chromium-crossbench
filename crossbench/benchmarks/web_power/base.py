@@ -27,6 +27,7 @@ from crossbench.benchmarks.web_power.wpr_helpers import WprBannerDismisser
 from crossbench.cli.config.driver_type import BrowserDriverType
 from crossbench.cli.config.network import NetworkConfig, NetworkType
 from crossbench.cli.parser import CBArgumentParser
+from crossbench.device_config import RequiredDeviceConfig
 from crossbench.helper.path_finder import WprGoFinder
 from crossbench.network.replay.wpr import WprReplayNetwork
 from crossbench.parse import (
@@ -387,9 +388,15 @@ class WebPowerBenchmarkBase(SubStoryBenchmark):
       WebPowerBenchmarkBase._scenario_benchmarks.append(cls)
 
   @classmethod
+  def device_config_path(cls) -> pth.LocalPath:
+    return (
+      config.config_dir() / "benchmark" / "web_power" / "device_config.hjson"
+    )
+
   @override
-  def required_device_config(cls) -> pth.LocalPath:
-    return config.config_dir() / "benchmark/web_power/device_config.hjson"
+  def required_device_config(self, platform: Platform) -> RequiredDeviceConfig:
+    del platform
+    return RequiredDeviceConfig.parse(self.device_config_path())
 
   @classmethod
   def scenario_benchmarks(cls) -> tuple[type[WebPowerBenchmarkBase], ...]:

@@ -39,7 +39,8 @@ if TYPE_CHECKING:
   from crossbench.browsers.attributes import BrowserAttributes
   from crossbench.cli.parser import CBArgumentParser
   from crossbench.cli.types import Subparsers
-  from crossbench.device_config import DeviceConfig
+  from crossbench.device_config import RequiredDeviceConfig
+  from crossbench.plt.base import Platform
   from crossbench.runner.groups.session import BrowserSessionRunGroup
   from crossbench.runner.run import Run
   from crossbench.runner.runner import Runner
@@ -162,11 +163,6 @@ class Benchmark(abc.ABC):
     return None
 
   @classmethod
-  def required_device_config(cls) -> DeviceConfig | None:
-    """Returns the device config this benchmark requires, if any."""
-    return None
-
-  @classmethod
   def default_network_config(cls, args: argparse.Namespace) -> NetworkConfig:
     """Network config used if none was requested explicitly (--network, --wpr,
     --local-file-server or a config file)."""
@@ -222,6 +218,13 @@ class Benchmark(abc.ABC):
     self, run: Run, step_by_step_mode: bool = False
   ) -> ActionRunner:
     return self._action_runner_config.instantiate(run, step_by_step_mode)
+
+  def required_device_config(
+    self, platform: Platform
+  ) -> RequiredDeviceConfig | None:
+    """Returns the device config this benchmark requires on platform, if any."""
+    del platform
+    return None
 
   def setup(self, runner: Runner) -> None:
     del runner
