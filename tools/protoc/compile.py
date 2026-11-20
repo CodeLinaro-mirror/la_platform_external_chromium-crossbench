@@ -28,6 +28,7 @@ PROTO_MODULES: Final = [
   "frameworks.base.core.proto.android.server.windowmanagerservice_pb2",
   "frameworks.base.core.proto.android.service.battery_pb2",
   "frameworks.proto_logging.stats.enums.os.enums_pb2",
+  "protos.perfetto.config.chrome.scenario_config_pb2",
   "protos.perfetto.config.trace_config_pb2",
   "protos.perfetto.trace_summary.file_pb2",
   "protos.perfetto.common.tracing_service_state_pb2",

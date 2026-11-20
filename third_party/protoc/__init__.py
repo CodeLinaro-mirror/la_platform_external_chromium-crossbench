@@ -6,22 +6,28 @@
 from tools.protoc.sys_path import protoc_in_sys_path
 
 with protoc_in_sys_path():
-  from frameworks.base.core.proto.android.server import \
-      activitymanagerservice_pb2, windowmanagerservice_pb2
+  from frameworks.base.core.proto.android.server import (
+    activitymanagerservice_pb2,
+    windowmanagerservice_pb2,
+  )
   from frameworks.base.core.proto.android.service import battery_pb2
   from frameworks.proto_logging.stats.enums.os import enums_pb2
-  from protos.perfetto.common import tracing_service_state_pb2, \
-      track_event_descriptor_pb2
+  from protos.perfetto.common import (
+    tracing_service_state_pb2,
+    track_event_descriptor_pb2,
+  )
   from protos.perfetto.config import trace_config_pb2
+  from protos.perfetto.config.chrome import scenario_config_pb2
   from protos.perfetto.trace_summary import file_pb2
 
 __all__ = (
-    "activitymanagerservice_pb2",
-    "battery_pb2",
-    "enums_pb2",
-    "file_pb2",
-    "trace_config_pb2",
-    "tracing_service_state_pb2",
-    "track_event_descriptor_pb2",
-    "windowmanagerservice_pb2",
+  "activitymanagerservice_pb2",
+  "battery_pb2",
+  "enums_pb2",
+  "file_pb2",
+  "scenario_config_pb2",
+  "trace_config_pb2",
+  "tracing_service_state_pb2",
+  "track_event_descriptor_pb2",
+  "windowmanagerservice_pb2",
 )
