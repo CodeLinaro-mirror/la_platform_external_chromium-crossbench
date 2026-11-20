@@ -235,7 +235,11 @@ class CrossBenchCLI:
     self._subparsers: Final[Subparsers] = self._setup_subparsers()
     self._setup_parser()
     self._last_subcommand: CrossbenchSubcommand | None = None
-    self.args: CBNamespace = CBNamespace()
+    self.args: CBNamespace = CBNamespace(
+      subcommand="",
+      verbosity=0,
+      color=self._default_color_enabled(),
+    )
     self._benchmark_subcommands: Final[BenchmarkSubcommands] = (
       self._setup_subcommands()
     )
@@ -316,10 +320,24 @@ class CrossBenchCLI:
     )
     return subparsers
 
+  def _default_color_enabled(self) -> bool:
+    if os.environ.get("NO_COLOR", ""):
+      return False
+    if force_color := os.environ.get("FORCE_COLOR"):
+      return force_color != "0"
+    return bool(sys.stdout and sys.stdout.isatty())
+
   def add_base_arguments(self, parser: argparse.ArgumentParser) -> None:
-    # Disable colors by default when piped to a file.
-    has_color = hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
-    parser.add_argument(
+    # Disable colors by default when piped unless FORCE_COLOR/--color is set.
+    has_color = self._default_color_enabled()
+    color_group = parser.add_mutually_exclusive_group()
+    color_group.add_argument(
+      "--color",
+      dest="color",
+      action="store_true",
+      help="Force colored output even when stdout is not a TTY",
+    )
+    color_group.add_argument(
       "--no-color",
       dest="color",
       action="store_false",
@@ -490,7 +508,7 @@ class CrossBenchCLI:
     # Try to use the subparser to print nicer usage help on errors.
     # ArgumentParser tends to default to the toplevel parser instead of the
     # current subcommand, which in turn prints the wrong usage text.
-    subcommand_name: str = getattr(self.args, "subcommand", "")
+    subcommand_name: str = str(self.args.subcommand or "")
     subcommand = self.subcommands.get(subcommand_name)
     if subcommand:
       parser = subcommand.parser
@@ -507,7 +525,7 @@ class CrossBenchCLI:
     if not self._enable_logging:
       logging.getLogger().setLevel(logging.CRITICAL)
       return
-    if hasattr(sys.stdout, "reconfigure"):
+    if isinstance(sys.stdout, io.TextIOWrapper):
       sys.stdout.reconfigure(encoding="utf-8")
     self._console_handler = logging.StreamHandler(sys.stderr)
     self._console_handler.addFilter(logging.Filter("root"))
@@ -535,13 +553,15 @@ class CrossBenchCLI:
   def _detect_terminal_color(self, argv: Sequence[str]) -> bool:
     if "--no-color" in argv:
       return False
-    return not os.environ.get("NO_COLOR", "")
+    if "--color" in argv:
+      return True
+    return self._default_color_enabled()
 
   def _setup_logging(self) -> None:
     if not self._enable_logging:
       return
     assert self._console_handler, "Missing console handler"
-    verbosity = getattr(self.args, "verbosity", 0)
+    verbosity: int = int(self.args.verbosity)
     if verbosity == -1:
       self._console_handler.setLevel(logging.ERROR)
     elif verbosity == 0:
@@ -549,8 +569,7 @@ class CrossBenchCLI:
     elif verbosity >= 1:
       self._console_handler.setLevel(logging.DEBUG)
       logging.getLogger().setLevel(logging.DEBUG)
-    if not getattr(self.args, "color", True):
-      ui.COLOR_LOGGING = False
+    ui.COLOR_LOGGING = bool(self.args.color)
     if ui.COLOR_LOGGING:
       self._console_handler.setFormatter(ui.ColoredLogFormatter())
     else:

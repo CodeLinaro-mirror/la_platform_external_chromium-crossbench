@@ -116,19 +116,50 @@ class BenchmarkFlagsParserTestCase(BaseCliTestCase):
         "--enable-field-trial-config", "--disable-field-trial-config"
       )
 
-  def test_no_color(self) -> None:
+  def test_color_and_no_color(self) -> None:
     args = self.parse_args("--no-color")
     self.assertIs(args.color, False)
+    args = self.parse_args("--color")
+    self.assertIs(args.color, True)
 
+  def test_conflicting_color_flags(self) -> None:
+    with self.assertRaisesRegex(argparse.ArgumentError, "--color|--no-color"):
+      self.parse_args("--color", "--no-color")
+
+  @mock.patch.dict("os.environ", {}, clear=True)
   @mock.patch("sys.stdout.isatty", return_value=True)
   def test_default_color_true(self, isatty_mock) -> None:
+    del isatty_mock
     args = self.parse_args()
-    self.assertEqual(args.color, True)
+    self.assertIs(args.color, True)
 
+  @mock.patch.dict("os.environ", {}, clear=True)
   @mock.patch("sys.stdout.isatty", return_value=False)
   def test_default_color_false(self, isatty_mock) -> None:
+    del isatty_mock
     args = self.parse_args()
-    self.assertEqual(args.color, False)
+    self.assertIs(args.color, False)
+
+  def test_force_color_env(self) -> None:
+    with (
+      mock.patch("sys.stdout.isatty", return_value=False),
+      mock.patch.dict("os.environ", {"FORCE_COLOR": "1"}, clear=True),
+    ):
+      self.assertIs(self.parse_args().color, True)
+      self.assertIs(self.parse_args("--no-color").color, False)
+    with (
+      mock.patch("sys.stdout.isatty", return_value=True),
+      mock.patch.dict("os.environ", {"FORCE_COLOR": "0"}, clear=True),
+    ):
+      self.assertIs(self.parse_args().color, False)
+      self.assertIs(self.parse_args("--color").color, True)
+
+  @mock.patch("sys.stdout.isatty", return_value=True)
+  def test_no_color_env(self, isatty_mock) -> None:
+    del isatty_mock
+    with mock.patch.dict("os.environ", {"NO_COLOR": "1"}, clear=True):
+      self.assertIs(self.parse_args().color, False)
+      self.assertIs(self.parse_args("--color").color, True)
 
   def test_default_repetitions(self) -> None:
     args = self.parse_args()
@@ -844,19 +875,58 @@ class BenchmarkFlagsCliTestCase(BaseCliTestCase):
         "--throw",
       )
 
-  def test_no_color(self) -> None:
+  def test_color_and_no_color(self) -> None:
     cli, _ = self._run_loading("--no-color")
     self.assertIs(cli.args.color, False)
+    cli, _ = self._run_loading("--color")
+    self.assertIs(cli.args.color, True)
 
+  def test_conflicting_color_flags_cli(self) -> None:
+    with self.assertRaisesRegex(
+      (argparse.ArgumentError, SysExitTestException), "--color|--no-color"
+    ):
+      self.run_cli(
+        "loading",
+        f"--urls={self.URL}",
+        "--color",
+        "--no-color",
+        "--throw",
+      )
+
+  @mock.patch.dict("os.environ", {}, clear=True)
   @mock.patch("sys.stdout.isatty", return_value=True)
   def test_default_color_true(self, isatty_mock) -> None:
+    del isatty_mock
     cli, _ = self._run_loading()
-    self.assertEqual(cli.args.color, True)
+    self.assertIs(cli.args.color, True)
 
+  @mock.patch.dict("os.environ", {}, clear=True)
   @mock.patch("sys.stdout.isatty", return_value=False)
   def test_default_color_false(self, isatty_mock) -> None:
+    del isatty_mock
     cli, _ = self._run_loading()
-    self.assertEqual(cli.args.color, False)
+    self.assertIs(cli.args.color, False)
+
+  @mock.patch("sys.stdout.isatty", return_value=False)
+  def test_force_color_env(self, isatty_mock) -> None:
+    del isatty_mock
+    with mock.patch.dict("os.environ", {"FORCE_COLOR": "1"}, clear=True):
+      cli, _ = self._run_loading()
+      self.assertIs(cli.args.color, True)
+
+  @mock.patch("sys.stdout.isatty", return_value=False)
+  def test_color_flag_emits_ansi_when_piped(self, isatty_mock) -> None:
+    del isatty_mock
+    with self._patch_get_browser_cls():
+      _, stdout, stderr = self.run_cli_output(
+        "loading",
+        f"--urls={self.URL}",
+        "--env-validation=skip",
+        "--dry-run",
+        "--color",
+        enable_logging=True,
+      )
+    self.assertIn("\x1b[32m", stdout + stderr)
 
   def test_version_subcommand(self) -> None:
     with self.assertRaises(SysExitTestException) as cm:

@@ -18,9 +18,9 @@ from crossbench.helper.spinner import Spinner
 if TYPE_CHECKING:
   from types import TracebackType
 
-colorama.init()
+colorama.just_fix_windows_console()
 
-IS_ATTY: Final[bool] = hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
+IS_ATTY: Final[bool] = bool(sys.stdout and sys.stdout.isatty())
 COLOR_LOGGING: Final[bool] = True
 
 
