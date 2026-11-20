@@ -1168,8 +1168,8 @@ class WebPowerProbeMappingTestCase(CrossbenchFakeFsTestCase):
     self.assertDictEqual(
       dict(device_query.device_override),
       {
-        re.compile("Public Device"): str(public_sql.resolve()),
-        re.compile("Internal Device"): str(internal_sql.resolve()),
+        re.compile("Public Device"): pth.LocalPath(public_sql.resolve()),
+        re.compile("Internal Device"): pth.LocalPath(internal_sql.resolve()),
       },
     )
 
@@ -1261,7 +1261,7 @@ class WebPowerProbeQueryValidationTestCase(unittest.TestCase):
 
   def _create_probe(
     self,
-    overrides: dict[str, str],
+    overrides: typing.Mapping[str, pth.LocalPathLike],
   ) -> tuple[DeviceSpecificTraceProcessorQuery, TraceProcessorProbe]:
     """
     Build a DeviceSpecificTraceProcessorQuery and TraceProcessorProbe via public
@@ -1389,7 +1389,7 @@ class WebPowerProbeQueryValidationTestCase(unittest.TestCase):
 
       for browser in self.tp_probe.browsers:
         sql_path = self._device_to_path[browser.platform.model]
-        with self.subTest(sql=sql_path):
+        with self.subTest(sql=str(sql_path)):
           # Seed a sentinel Perfetto table before each query so any query that
           # fails to use CREATE OR REPLACE PERFETTO TABLE or writes to a
           # different table/view name will fail immediately.

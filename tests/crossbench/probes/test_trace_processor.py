@@ -4,6 +4,7 @@
 import io
 import json
 import pathlib
+import typing
 import unittest
 from argparse import ArgumentTypeError
 from typing import Any, Final
@@ -29,6 +30,7 @@ from crossbench.probes.trace_processor.helper import (
 )
 from crossbench.probes.trace_processor.query_config import (
   DeviceSpecificTraceProcessorQuery,
+  DeviceSqlQueryLookup,
   TraceProcessorQueryConfig,
 )
 from crossbench.probes.trace_processor.trace_processor import (
@@ -681,20 +683,50 @@ class TraceProcessorQueryConfigTestCase(unittest.TestCase):
     self.assertEqual(query.sql, "'new value'")
 
   def test_device_specific_query_parsing(self):
-    query = TraceProcessorQueryConfig.parse(
-      {
-        "name": "web_power_power_rails",
-        "device_override": {
-          r"Pixel 9.*": TARGET_P9,
-          r"Pixel 10.*": TARGET_P10,
-        },
-        "sql": TARGET_FALLBACK,
-      }
-    )
+    config = {
+      "name": "web_power_power_rails",
+      "device_override": {
+        r"Pixel 9.*": TARGET_P9,
+        r"Pixel 10.*": pth.LocalPath(TARGET_P10),
+      },
+      "sql": TARGET_FALLBACK,
+    }
+
+    query = TraceProcessorQueryConfig.parse(config)
+
     self.assertIsInstance(query, DeviceSpecificTraceProcessorQuery)
+    assert isinstance(query, DeviceSpecificTraceProcessorQuery)
+    self.assertEqual(
+      query.device_override.resolve("Pixel 9 Pro"),
+      (QUERIES_DIR / f"{TARGET_P9}.sql").resolve(),
+    )
+    self.assertEqual(
+      query.fallback_sql, (QUERIES_DIR / f"{TARGET_FALLBACK}.sql").resolve()
+    )
+
+  def test_device_specific_query_missing_sql_raises(self) -> None:
+    cases = (
+      (
+        "override",
+        {"name": "q", "device_override": {r"Pixel 9.*": "missing_sql"}},
+      ),
+      (
+        "fallback",
+        {
+          "name": "q",
+          "device_override": {r"Pixel 9.*": TARGET_P9},
+          "sql": "missing_fallback",
+        },
+      ),
+    )
+
+    for label, config in cases:
+      with self.subTest(case=label):
+        with self.assertRaisesRegex(ArgumentTypeError, "does not exist"):
+          TraceProcessorQueryConfig.parse(config)
 
   def test_device_specific_query_invalid_regex_raises(self):
-    with self.assertRaisesRegex(ValueError, "Invalid regular expression"):
+    with self.assertRaisesRegex(ValueError, "Invalid regexp"):
       TraceProcessorQueryConfig.parse(
         {
           "name": "web_power_power_rails",
@@ -704,6 +736,37 @@ class TraceProcessorQueryConfigTestCase(unittest.TestCase):
           "sql": TARGET_FALLBACK,
         }
       )
+
+  def test_device_specific_query_empty_override_path_raises(self) -> None:
+    for empty_path in ("", ".", pth.LocalPath()):
+      with self.subTest(case=repr(empty_path)):
+        with self.assertRaisesRegex(ArgumentTypeError, "non-empty|Non-empty"):
+          TraceProcessorQueryConfig.parse(
+            {
+              "name": "web_power_power_rails",
+              "device_override": {
+                r"Pixel 9.*": empty_path,
+              },
+              "sql": TARGET_FALLBACK,
+            }
+          )
+
+  def test_device_specific_query_create_validates_falsy_override(self) -> None:
+    empty_lookup = DeviceSqlQueryLookup()
+
+    query = DeviceSpecificTraceProcessorQuery.create(
+      name="web_power_power_rails", device_override=empty_lookup
+    )
+
+    self.assertIs(query.device_override, empty_lookup)
+    invalid_overrides: tuple[object, ...] = ("", [])
+    for invalid_falsy in invalid_overrides:
+      with self.subTest(case=repr(invalid_falsy)):
+        with self.assertRaises(ArgumentTypeError):
+          DeviceSpecificTraceProcessorQuery.create(
+            name="web_power_power_rails",
+            device_override=typing.cast("dict[str, str]", invalid_falsy),
+          )
 
   def test_device_specific_query_unresolved_sql_access_raises(self):
     query = TraceProcessorQueryConfig.parse(
@@ -760,7 +823,7 @@ class TraceProcessorQueryConfigTestCase(unittest.TestCase):
 
   def test_device_specific_query_resolution_no_substring_match(self):
     device_override = {
-      r"Pixel 1\b.*": TARGET_P1,
+      r"Pixel 1\b.*": "web_power/cpu_time",
       r"Pixel 10\b.*": TARGET_P10,
     }
     self._verify_resolution(

@@ -2,19 +2,19 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import argparse
 import dataclasses
-import re
-from typing import TYPE_CHECKING, Self, override
+import os
+from typing import TYPE_CHECKING, Mapping, Self, override
 
-from immutabledict import immutabledict
-
+from crossbench import path as pth
+from crossbench.cli.config.device_model_lookup import DeviceModelLookup
 from crossbench.config import ConfigObject, ConfigParser
 from crossbench.parse import ObjectParser, PathParser
 from crossbench.probes.trace_processor.constants import QUERIES_DIR
 from crossbench.replacements import Replacements
 
 if TYPE_CHECKING:
-  from crossbench import path as pth
   from crossbench.plt import Platform
 
 
@@ -89,12 +89,47 @@ class TraceProcessorQueryConfig(ConfigObject):
     return self
 
 
+def _parse_query_path(raw_value: object, name: str = "sql") -> pth.LocalPath:
+  if isinstance(raw_value, os.PathLike):
+    raw_value = os.fspath(raw_value)
+  raw_str = ObjectParser.non_empty_str(raw_value, name)
+  query_path = pth.LocalPath(raw_str).expanduser()
+  if not query_path.name:
+    raise argparse.ArgumentTypeError(
+      f"Expected non-empty {name} filename: {raw_str!r}"
+    )
+  if query_path.suffix != ".sql":
+    query_path = query_path.with_name(f"{query_path.name}.sql")
+  return PathParser.existing_file_path(QUERIES_DIR / query_path, name).resolve()
+
+
+@dataclasses.dataclass(frozen=True)
+class DeviceSqlQueryLookup(DeviceModelLookup[pth.LocalPath]):
+  """Maps device model regexes to TraceProcessor SQL query paths.
+
+  Example:
+    {
+      "Pixel 9.*": "web_power/power_rails_tensor_g4",
+      "Pixel 10.*": "web_power/power_rails_tensor_g5"
+    }
+  """
+
+  @classmethod
+  @override
+  def _parse_entry_value(
+    cls, model_pattern: str, raw_value: object
+  ) -> pth.LocalPath:
+    return _parse_query_path(
+      raw_value, f"device_override query for '{model_pattern}'"
+    )
+
+
 @dataclasses.dataclass(frozen=True)
 class DeviceSpecificTraceProcessorQuery(TraceProcessorQueryConfig):
-  device_override: immutabledict[re.Pattern, str] = dataclasses.field(
-    default_factory=immutabledict
+  device_override: DeviceSqlQueryLookup = dataclasses.field(
+    default_factory=DeviceSqlQueryLookup
   )
-  fallback_sql: str | None = None
+  fallback_sql: pth.LocalPath | None = None
   replacements: Replacements | None = None
 
   @classmethod
@@ -102,23 +137,23 @@ class DeviceSpecificTraceProcessorQuery(TraceProcessorQueryConfig):
   def create(
     cls,
     name: str,
-    sql: str | None = None,
+    sql: pth.LocalPathLike | None = None,
     replacements: Replacements | None = None,
-    device_override: dict[str, str] | None = None,
+    device_override: (
+      DeviceSqlQueryLookup | Mapping[str, pth.LocalPathLike] | None
+    ) = None,
   ) -> Self:
-    compiled_device_override: dict[re.Pattern, str] = {}
-    for model, path in (device_override or {}).items():
-      try:
-        compiled_device_override[re.compile(model)] = path
-      except re.error as e:
-        raise ValueError(
-          f"Invalid regular expression in device_override: {model}"
-        ) from e
+    fallback_sql: pth.LocalPath | None = None
+    if sql is not None:
+      fallback_sql = _parse_query_path(sql, "fallback sql")
+    parsed_override = DeviceSqlQueryLookup()
+    if device_override is not None:
+      parsed_override = DeviceSqlQueryLookup.parse(device_override)
     return cls(
       name=name,
       _sql="",
-      device_override=immutabledict(compiled_device_override),
-      fallback_sql=sql,
+      device_override=parsed_override,
+      fallback_sql=fallback_sql,
       replacements=replacements,
     )
 
@@ -130,7 +165,7 @@ class DeviceSpecificTraceProcessorQuery(TraceProcessorQueryConfig):
     parser.add_argument(
       "device_override",
       aliases=("device_lookup", "sql_device_override"),
-      type=ObjectParser.dict,
+      type=DeviceSqlQueryLookup,
       required=True,
     )
     parser.add_argument("sql", type=str, required=False)
@@ -150,29 +185,16 @@ class DeviceSpecificTraceProcessorQuery(TraceProcessorQueryConfig):
   ) -> TraceProcessorQueryConfig | None:
     return self.resolve_for_device_model(platform.model)
 
+  def _resolve_query_path(self, device_model: str) -> pth.LocalPath | None:
+    return self.device_override.resolve(device_model) or self.fallback_sql
+
   def resolve_for_device_model(
     self, device_model: str
   ) -> TraceProcessorQueryConfig | None:
-    query_path = ""
-
-    for model_re, path in self.device_override.items():
-      if model_re.fullmatch(device_model):
-        if query_path and query_path != path:
-          raise ValueError(
-            "Multiple conflicting mappings match device model "
-            f"'{device_model}': '{query_path}' and '{path}'"
-          )
-        query_path = path
-
-    if not query_path:
-      if self.fallback_sql:
-        query_path = self.fallback_sql
-      else:
-        return None
-
-    value = query_path if query_path.endswith(".sql") else f"{query_path}.sql"
-    sql_path = PathParser.existing_file_path(QUERIES_DIR / value, "sql query")
-    sql = sql_path.read_text(encoding="utf-8")
-    return TraceProcessorQueryConfig.create(
-      name=self.name, sql=sql, replacements=self.replacements
-    )
+    if query_path := self._resolve_query_path(device_model):
+      return TraceProcessorQueryConfig.create(
+        name=self.name,
+        sql=query_path.read_text(encoding="utf-8"),
+        replacements=self.replacements,
+      )
+    return None

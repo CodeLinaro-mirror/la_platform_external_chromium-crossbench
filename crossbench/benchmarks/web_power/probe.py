@@ -84,14 +84,16 @@ class WebPowerProbe(BenchmarkProbeMixin, Probe):
   @classmethod
   def _validate_and_resolve_mapping_entry(
     cls, key: str, value: str, mapping_dir: pth.LocalPath
-  ) -> str:
+  ) -> pth.LocalPath:
     ObjectParser.regexp(key, f"mapping key '{key}'")
     sql_file = mapping_dir.parent / f"{value}.sql"
     PathParser.existing_file_path(sql_file, "Mapped SQL file")
-    return str(sql_file.resolve())
+    return sql_file.resolve()
 
   @classmethod
-  def _load_mapping(cls, mapping_dir: pth.LocalPath) -> dict[str, str]:
+  def _load_mapping(
+    cls, mapping_dir: pth.LocalPath
+  ) -> dict[str, pth.LocalPath]:
     mapping_file = mapping_dir / "mapping.hjson"
     if not mapping_file.is_file():
       raise ValueError(f"Mapping file does not exist: {mapping_file}")
