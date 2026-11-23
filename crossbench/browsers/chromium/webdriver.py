@@ -175,6 +175,7 @@ class ChromiumWebDriverAndroid(ChromiumBasedWebDriver):
       self._installed_android_package = None
 
   @property
+  @override
   def android_package(self) -> str:
     return self._android_package
 

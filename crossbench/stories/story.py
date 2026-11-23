@@ -11,6 +11,7 @@ from crossbench import path as pth
 from crossbench.cli.config.secrets import Secrets
 
 if TYPE_CHECKING:
+  from crossbench.env.runner_env import RunnerEnv
   from crossbench.runner.run import Run
   from crossbench.types import JsonDict, StoryTagLookupT
 
@@ -99,6 +100,9 @@ class Story(abc.ABC):
       timing.timedelta(self.duration),
       timing.timeout_timedelta(self.duration),
     )
+
+  def validate_env(self, env: RunnerEnv, run: Run) -> None:
+    del env, run
 
   def setup(self, run: Run) -> None:
     """Setup work for a story that is not part of the main workload should

@@ -16,8 +16,9 @@ from crossbench.runner.probe_context_lookup_error import ProbeContextLookupError
 
 if TYPE_CHECKING:
   from crossbench.action_runner.action_runner import ActionRunner
-  from crossbench.benchmarks.loading.config.login.custom import LoginBlock
+  from crossbench.benchmarks.loading.config.login.base import BaseLoginBlock
   from crossbench.cli.config.secrets import Secrets
+  from crossbench.env.runner_env import RunnerEnv
   from crossbench.runner.run import Run
   from crossbench.types import JsonDict
 
@@ -27,7 +28,7 @@ class InteractivePage(Page):
     self,
     name: str,
     blocks: tuple[ActionBlock, ...] = (),
-    login: LoginBlock | None = None,
+    login: BaseLoginBlock | None = None,
     setup: ActionBlock | None = None,
     teardown: ActionBlock | None = None,
     secrets: Secrets | None = None,
@@ -44,7 +45,7 @@ class InteractivePage(Page):
     assert not any(block.is_login for block in blocks), (
       "No login blocks allowed as normal action block"
     )
-    self._login_block: Final[LoginBlock | None] = login
+    self._login_block: Final[BaseLoginBlock | None] = login
     self._setup_block: Final[ActionBlock | None] = setup
     assert isinstance(blocks, tuple)
     self._blocks: Final[tuple[ActionBlock, ...]] = blocks
@@ -63,7 +64,7 @@ class InteractivePage(Page):
     )
 
   @property
-  def login_block(self) -> ActionBlock | None:
+  def login_block(self) -> BaseLoginBlock | None:
     return self._login_block
 
   @property
@@ -117,26 +118,31 @@ class InteractivePage(Page):
       logging.error("Failed to dump HTML on failure: %s", e)
 
   @contextlib.contextmanager
-  def _performance_mark_scope(self, run: Run, name: str) -> Iterator[None]:
+  def performance_mark_scope(self, run: Run, name: str) -> Iterator[None]:
     run.performance_mark(f"{name}-start", self._name)
     yield
     run.performance_mark(f"{name}-end", self._name)
 
   @override
+  def validate_env(self, env: RunnerEnv, run: Run) -> None:
+    super().validate_env(env, run)
+    if self._run_login and (login_block := self._login_block):
+      login_block.validate_env(env, run)
+
+  @override
   def setup(self, run: Run) -> None:
     action_runner = run.action_runner
     if self._run_login and (login_block := self.login_block):
-      with self._performance_mark_scope(run, "login"):
-        action_runner.run_login(self, login_block)
+      action_runner.run_login(self, login_block)
     if self._run_setup and (setup_block := self.setup_block):
-      with self._performance_mark_scope(run, "setup"):
+      with self.performance_mark_scope(run, "setup"):
         action_runner.run_setup(self, setup_block)
 
   @override
   def teardown(self, run: Run) -> None:
     action_runner = run.action_runner
     if self._run_teardown and (teardown_block := self.teardown_block):
-      with self._performance_mark_scope(run, "teardown"):
+      with self.performance_mark_scope(run, "teardown"):
         action_runner.run_teardown(self, teardown_block)
     action_runner.teardown()
 

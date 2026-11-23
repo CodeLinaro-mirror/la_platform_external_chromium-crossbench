@@ -207,6 +207,10 @@ class Browser(abc.ABC):
   def js_flags(self) -> JSFlags:
     raise NotImplementedError(f"Unsupported feature flags on {self}.")
 
+  @property
+  def android_package(self) -> str:
+    raise NotImplementedError(f"Unsupported android_package on {self}.")
+
   def user_agent(self) -> str:
     return str(self.js("return window.navigator.userAgent"))
 

@@ -366,6 +366,7 @@ class Run(ResultOrigin):
   def validate_env(self, env: RunnerEnv) -> None:
     """Called before starting a browser / browser session to perform
     a pre-run checklist."""
+    self._story.validate_env(env, self)
 
   def setup(self, is_dry_run: bool) -> None:
     self._state.transition(State.INITIAL, to=State.SETUP)

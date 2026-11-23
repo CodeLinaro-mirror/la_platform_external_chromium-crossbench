@@ -419,6 +419,11 @@ class MockChromeStable(MockChromeBrowser):
 class MockChromeAndroidStable(MockChromeStable):
   @property
   @override
+  def android_package(self) -> str:
+    return "com.android.chrome"
+
+  @property
+  @override
   def platform(self) -> AndroidAdbPlatform:
     assert isinstance(self._platform, AndroidAdbPlatform), (
       f"Invalid platform: {self._platform}"

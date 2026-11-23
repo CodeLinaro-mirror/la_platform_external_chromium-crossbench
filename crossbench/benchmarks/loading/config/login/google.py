@@ -149,7 +149,7 @@ class GoogleLogin(PresetLoginBlock):
     return dt.timedelta(seconds=20)
 
   @override
-  def run_with(self, runner: ActionRunner) -> None:
+  def run_browser_login(self, runner: ActionRunner) -> None:
     run = runner.run
     secret: UsernamePassword | None = run.secrets.google
     if not secret:

@@ -24,7 +24,11 @@ import numpy as np
 
 from crossbench import exception
 from crossbench import path as pth
-from crossbench.action_runner.action.enums import ButtonClick, ScrollMode
+from crossbench.action_runner.action.enums import (
+  ButtonClick,
+  ScrollMode,
+  WindowTarget,
+)
 from crossbench.action_runner.action_runner_listener import ActionRunnerListener
 from crossbench.action_runner.agent_driver import AgentDriver
 from crossbench.action_runner.bond_action_runner import BondActionRunner
@@ -78,6 +82,7 @@ if TYPE_CHECKING:
   from crossbench.action_runner.virtual_device.virtual_device_config import (
     VirtualDeviceConfig,
   )
+  from crossbench.benchmarks.loading.config.login.base import BaseLoginBlock
   from crossbench.benchmarks.loading.config.pages import ActionBlock
   from crossbench.benchmarks.loading.page.base import Page
   from crossbench.benchmarks.loading.page.combined import CombinedPage
@@ -176,6 +181,9 @@ class ActionRunner:
     self._agent_episode_count: int = 0
     self._step_by_step_mode: Final[bool] = step_by_step_mode
     self._failure_screenshot_annotations: list[ScreenshotAnnotation] = []
+    self._pending_browser_logins: list[
+      tuple[InteractivePage, BaseLoginBlock]
+    ] = []
     self.browser_platform.setup_virtual_devices(virtual_devices)
 
   @functools.cached_property
@@ -248,6 +256,7 @@ class ActionRunner:
     return self._bond
 
   def teardown(self) -> None:
+    self._pending_browser_logins.clear()
     if self._bond:
       self._bond.teardown()
 
@@ -1087,10 +1096,22 @@ class ActionRunner:
     else:
       self.run_interactive_page_once(page)
 
-  def run_login(self, page: InteractivePage, login: ActionBlock) -> None:
-    with self._management_block_scope(page, "login"):
-      with self.browser.network.traffic_shaper.pause():
+  def run_login(self, page: InteractivePage, login: BaseLoginBlock) -> None:
+    if self.browser.is_running or login.has_start_browser_action:
+      with (
+        page.performance_mark_scope(self.run, "login"),
+        self._management_block_scope(page, "login"),
+        self.browser.network.traffic_shaper.pause(),
+      ):
         login.run_with(self)
+      return
+
+    with (
+      self._management_block_scope(page, "login"),
+      self.browser.network.traffic_shaper.pause(),
+    ):
+      login.run_os_login(self)
+    self._pending_browser_logins.append((page, login))
 
   def run_setup(self, page: InteractivePage, setup: ActionBlock) -> None:
     with self._management_block_scope(page, "setup"):
@@ -1183,8 +1204,28 @@ class ActionRunner:
       self.browser.close_all_tabs()
 
   def start_browser(self, action: i_action.StartBrowserAction) -> None:
+    if not self._pending_browser_logins:
+      with self.actions("StartBrowserAction", measure=False):
+        self.run.browser_session.start_browser(action.startup_urls)
+      return
+
+    pending_logins = tuple(self._pending_browser_logins)
+    self._pending_browser_logins.clear()
     with self.actions("StartBrowserAction", measure=False):
-      self.run.browser_session.start_browser(action.startup_urls)
+      self.run.browser_session.start_browser()
+    for page, login in pending_logins:
+      with (
+        page.performance_mark_scope(self.run, "login"),
+        exception.annotate("login"),
+        self._info_stack_annotate("login"),
+        self.browser.network.traffic_shaper.pause(),
+      ):
+        login.run_browser_login(self)
+    if startup_urls := action.startup_urls:
+      with self.actions("StartBrowserUrls", measure=False) as actions:
+        actions.show_url(startup_urls[0], target=WindowTarget.SELF)
+        for url in startup_urls[1:]:
+          actions.show_url(url, target=WindowTarget.NEW_TAB)
 
   def stop_browser(self, action: i_action.StopBrowserAction) -> None:
     del action

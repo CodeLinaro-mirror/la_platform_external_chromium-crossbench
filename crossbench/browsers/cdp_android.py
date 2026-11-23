@@ -98,6 +98,7 @@ class CdpAndroidBrowser(ChromiumBased):
     return self._platform
 
   @property
+  @override
   def android_package(self) -> str:
     return self.platform.app_path_to_package(self.path)
 

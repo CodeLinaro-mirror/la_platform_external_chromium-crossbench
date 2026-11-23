@@ -12,6 +12,7 @@ from crossbench.cli.config.secrets import Secrets, SecretsMergeError
 
 if TYPE_CHECKING:
   from crossbench.action_runner.action_runner import ActionRunner
+  from crossbench.env.runner_env import RunnerEnv
   from crossbench.runner.run import Run
   from crossbench.types import JsonDict
 
@@ -69,6 +70,12 @@ class CombinedPage(Page):
     result = super().details_json()
     result["pages"] = [page.details_json() for page in self._pages]
     return result
+
+  @override
+  def validate_env(self, env: RunnerEnv, run: Run) -> None:
+    super().validate_env(env, run)
+    for page in self._pages:
+      page.validate_env(env, run)
 
   @override
   def teardown(self, run: Run) -> None:
