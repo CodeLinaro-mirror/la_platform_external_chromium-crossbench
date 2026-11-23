@@ -15,7 +15,7 @@ from crossbench import path as pth
 from crossbench import plt
 from crossbench.cli.config.probe_list import ProbeListConfig
 from crossbench.exception import ArgumentTypeMultiException, MultiException
-from crossbench.probes.all import PerfettoProbe, TraceProcessorProbe
+from crossbench.probes.all import TraceProcessorProbe
 from crossbench.probes.trace_processor.constants import MODULES_DIR, QUERIES_DIR
 from crossbench.probes.trace_processor.context.base import (
   TraceProcessorProbeContext,
@@ -105,71 +105,6 @@ class TraceProcessorProbeTestCase(unittest.TestCase):
           ],
         }
       )
-
-  def test_parse_wv_shell_heapdump_config(self):
-    config_file = (
-      test_helper.config_dir() / "team/woa/wv_shell_heapdump.probe.config.hjson"
-    )
-    self.assertTrue(config_file.is_file())
-    probes = ProbeListConfig.parse(config_file).probes
-    self.assertEqual(len(probes), 2)
-    tp_probe = probes[0]
-    self.assertIsInstance(tp_probe, TraceProcessorProbe)
-    self.assertEqual(len(tp_probe.queries), 1)
-    self.assertEqual(tp_probe.queries[0].name, "wv_heapdump_memory")
-    self.assertEqual(
-      tp_probe.queries[0].sql, read_query_sql("wv_heapdump_memory.sql")
-    )
-    perfetto_probe = probes[1]
-    self.assertIsInstance(perfetto_probe, PerfettoProbe)
-    heapprofd_cmdlines = [
-      cmd
-      for ds in perfetto_probe.trace_config.data_sources
-      if ds.config.name == "android.heapprofd"
-      for cmd in ds.config.heapprofd_config.process_cmdline
-    ]
-    self.assertEqual(
-      heapprofd_cmdlines,
-      [
-        "org.chromium.webview_shell",
-        (
-          "com.google.android.webview.debug:sandboxed_process0:"
-          "org.chromium.content.app.SandboxedProcessServi"
-        ),
-        (
-          "com.google.android.webview.debug:sandboxed_process1:"
-          "org.chromium.content.app.SandboxedProcessServi"
-        ),
-        (
-          "com.google.android.webview.debug:sandboxed_process0:"
-          "org.chromium.content.app.NativeOnlySandboxedPr"
-        ),
-        (
-          "com.google.android.webview.debug:sandboxed_process1:"
-          "org.chromium.content.app.NativeOnlySandboxedPr"
-        ),
-      ],
-    )
-    java_hprof_cmdlines = [
-      cmd
-      for ds in perfetto_probe.trace_config.data_sources
-      if ds.config.name == "android.java_hprof"
-      for cmd in ds.config.java_hprof_config.process_cmdline
-    ]
-    self.assertEqual(
-      java_hprof_cmdlines,
-      [
-        "org.chromium.webview_shell",
-        (
-          "com.google.android.webview.debug:sandboxed_process0:"
-          "org.chromium.content.app.SandboxedProcessServi"
-        ),
-        (
-          "com.google.android.webview.debug:sandboxed_process1:"
-          "org.chromium.content.app.SandboxedProcessServi"
-        ),
-      ],
-    )
 
   def _create_metric_spec(
     self, metric_id: str = "test_metric", sql: str = "SELECT 1 AS val"

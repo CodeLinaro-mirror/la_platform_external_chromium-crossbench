@@ -3,8 +3,10 @@
   "probes": {
     "trace_processor": {
       "queries": [
-        "wv_renderer_memory",
+        "wv_renderer_memory"
         "wv_startup_memory"
+        "wv_startup_guardrails"
+        "wv_fcp_guardrail"
       ]
     }
     "perfetto": {
