@@ -1,23 +1,37 @@
+-- Copyright 2026 The Chromium Authors
+-- Use of this source code is governed by a BSD-style license that can be
+-- found in the LICENSE file.
+
 INCLUDE PERFETTO MODULE ext.webview_startup;
 
 WITH
-  thread_state_breakdown AS (
+  startup_window AS (
     SELECT
-      tsb.state,
-      SUM(tsb.dur) AS total_dur_ns
-    FROM
-      thread_state tsb
-    CROSS JOIN
-      webview_startup_start_slice AS start_slice
-    CROSS JOIN
-      webview_startup_end_slice AS end_slice
+      start_slice.utid AS utid,
+      start_slice.ts AS start_ts,
+      end_slice.end_ts AS end_ts
+    FROM webview_startup_start_slice AS start_slice
+    CROSS JOIN webview_startup_end_slice AS end_slice
     WHERE
-      tsb.utid = start_slice.utid
-      AND tsb.ts < end_slice.end_ts
-      AND (tsb.ts + tsb.dur) > start_slice.ts
-    GROUP BY
-      tsb.state
+      end_slice.end_ts >= start_slice.ts
+      AND EXISTS (
+        SELECT 1
+        FROM thread_state AS ts_check
+        WHERE ts_check.utid = start_slice.utid
+      )
   )
-SELECT (total_dur_ns / 1000000.0) AS D_thread_state_startCL_dur_ms
-FROM thread_state_breakdown
-WHERE state = 'D';
+SELECT
+  COALESCE(
+    SUM(
+      MIN(tsb.ts + tsb.dur, w.end_ts) - MAX(tsb.ts, w.start_ts)
+    ),
+    0
+  ) / 1000000.0 AS D_thread_state_startCL_dur_ms
+FROM startup_window AS w
+LEFT JOIN thread_state AS tsb
+  ON tsb.utid = w.utid
+  AND tsb.state = 'D'
+  AND tsb.dur > 0
+  AND tsb.ts < w.end_ts
+  AND (tsb.ts + tsb.dur) > w.start_ts
+GROUP BY w.utid;

@@ -7,9 +7,9 @@ import pathlib
 import typing
 import unittest
 from argparse import ArgumentTypeError
-from typing import Any, Final
+from typing import Any, Final, Sequence
 
-from perfetto.trace_processor.api import TraceProcessorConfig
+from perfetto.trace_processor.api import TraceProcessor, TraceProcessorConfig
 
 from crossbench import path as pth
 from crossbench import plt
@@ -1204,6 +1204,222 @@ class TraceProcessorHelperTestCase(unittest.TestCase):
         extra_flags=["--flag"],
         verbose=True,
       )
+
+
+@unittest.skipIf(
+  not plt.PLATFORM.which("trace_processor"), "trace_processor not available"
+)
+class WebViewStartupSqlQueryTestCase(unittest.TestCase):
+  def _sched_switch(
+    self,
+    ts: str,
+    prev_comm: str,
+    prev_pid: int,
+    prev_state: str,
+    next_comm: str,
+    next_pid: int,
+  ) -> str:
+    return (
+      f"{prev_comm}-{prev_pid} ({prev_pid:5d}) [000] d..2 {ts}: sched_switch: "
+      f"prev_comm={prev_comm} prev_pid={prev_pid} prev_prio=120 "
+      f"prev_state={prev_state} ==> "
+      f"next_comm={next_comm} next_pid={next_pid} next_prio=120"
+    )
+
+  def _slice_begin(self, ts: str, comm: str, pid: int, name: str) -> str:
+    return (
+      f"{comm}-{pid} ({pid:5d}) [001] .... {ts}: "
+      f"tracing_mark_write: B|{pid}|{name}"
+    )
+
+  def _slice_end(self, ts: str, comm: str, pid: int) -> str:
+    return (
+      f"{comm}-{pid} ({pid:5d}) [001] .... {ts}: tracing_mark_write: E|{pid}"
+    )
+
+  def _run_sleep_query(self, events: Sequence[str]) -> list[float]:
+    systrace = "\n".join(["# tracer: nop", *events, ""])
+    tp_bin = plt.PLATFORM.which("trace_processor")
+    assert tp_bin is not None
+    config = CBTraceProcessorConfig(bin_path=str(tp_bin))
+    sql = read_query_sql("wv_startup_uninterruptible_sleep.sql")
+    with TraceProcessor(
+      io.BytesIO(systrace.encode("utf-8")), config=config
+    ) as tp:
+      return [float(row.D_thread_state_startCL_dur_ms) for row in tp.query(sql)]
+
+  def test_fully_sync_startup_clamps_boundary_d_states(self) -> None:
+    events = (
+      self._sched_switch("0.750000", "idle", 0, "R", "app", 1000),
+      # Leading D-state [0.875s, 1.125s]: 125ms inside [1.000s, 2.000s].
+      self._sched_switch("0.875000", "app", 1000, "D", "other", 2000),
+      # Unrelated thread D-state [0.900s, 1.900s]: must be ignored.
+      self._sched_switch("0.900000", "other", 2000, "D", "idle", 0),
+      self._slice_begin(
+        "1.000000", "app", 1000, "WebViewChromiumAwInit.startChromiumLockedSync"
+      ),
+      self._sched_switch("1.125000", "idle", 0, "R", "app", 1000),
+      # Interior D-state [1.250s, 1.500s]: 250ms inside [1.000s, 2.000s].
+      self._sched_switch("1.250000", "app", 1000, "D", "idle", 0),
+      self._sched_switch("1.500000", "idle", 0, "R", "app", 1000),
+      # Interruptible S-state [1.625s, 1.750s]: must be ignored.
+      self._sched_switch("1.625000", "app", 1000, "S", "idle", 0),
+      self._sched_switch("1.750000", "idle", 0, "R", "app", 1000),
+      # Trailing D-state [1.875s, 2.125s]: 125ms inside [1.000s, 2.000s].
+      self._sched_switch("1.875000", "app", 1000, "D", "other", 2000),
+      self._slice_end("2.000000", "app", 1000),
+      self._sched_switch("2.125000", "other", 2000, "R", "app", 1000),
+    )
+
+    result = self._run_sleep_query(events)
+
+    self.assertEqual(result, [500.0])
+
+  def test_fully_async_four_task_startup_and_looper_gap(self) -> None:
+    events = (
+      self._sched_switch("0.875000", "idle", 0, "R", "app", 1000),
+      self._slice_begin(
+        "1.000000",
+        "app",
+        1000,
+        "WebViewChromiumAwInit.startChromiumLockedAsync_task1/4",
+      ),
+      self._slice_end("1.125000", "app", 1000),
+      # D-state during Looper gap between async tasks [1.250s, 1.375s]: 125ms.
+      self._sched_switch("1.250000", "app", 1000, "D", "idle", 0),
+      self._sched_switch("1.375000", "idle", 0, "R", "app", 1000),
+      self._slice_begin(
+        "1.500000",
+        "app",
+        1000,
+        "WebViewChromiumAwInit.startChromiumLockedAsync_task4/4",
+      ),
+      # D-state inside terminal task4/4 [1.500s, 1.625s]: 125ms.
+      self._sched_switch("1.500000", "app", 1000, "D", "idle", 0),
+      self._sched_switch("1.625000", "idle", 0, "R", "app", 1000),
+      self._slice_end("1.750000", "app", 1000),
+      # Post-startup D-state [1.875s, 2.000s] and another process startup:
+      # both must be excluded.
+      self._sched_switch("1.875000", "app", 1000, "D", "other", 2000),
+      self._sched_switch("2.000000", "other", 2000, "R", "app", 1000),
+      self._slice_begin(
+        "3.000000",
+        "other",
+        2000,
+        "WebViewChromiumAwInit.startChromiumLockedSync",
+      ),
+      self._slice_end("3.500000", "other", 2000),
+    )
+
+    result = self._run_sleep_query(events)
+
+    self.assertEqual(result, [250.0])
+
+  def test_fully_async_legacy_five_task_startup(self) -> None:
+    events = (
+      self._sched_switch("0.875000", "idle", 0, "R", "app", 1000),
+      self._slice_begin(
+        "1.000000",
+        "app",
+        1000,
+        "WebViewChromiumAwInit.startChromiumLockedAsync_task1/5",
+      ),
+      self._slice_end("1.125000", "app", 1000),
+      self._sched_switch("1.250000", "app", 1000, "D", "idle", 0),
+      self._sched_switch("1.500000", "idle", 0, "R", "app", 1000),
+      self._slice_begin(
+        "1.500000",
+        "app",
+        1000,
+        "WebViewChromiumAwInit.startChromiumLockedAsync_task5/5",
+      ),
+      self._slice_end("1.750000", "app", 1000),
+    )
+
+    result = self._run_sleep_query(events)
+
+    self.assertEqual(result, [250.0])
+
+  def test_partial_async_then_sync_startup(self) -> None:
+    events = (
+      self._sched_switch("0.875000", "idle", 0, "R", "app", 1000),
+      self._slice_begin(
+        "1.000000",
+        "app",
+        1000,
+        "WebViewChromiumAwInit.startChromiumLockedAsync_task1/4",
+      ),
+      self._slice_end("1.125000", "app", 1000),
+      self._slice_begin(
+        "1.250000", "app", 1000, "WebViewChromiumAwInit.startChromiumLockedSync"
+      ),
+      self._sched_switch("1.375000", "app", 1000, "D", "idle", 0),
+      self._sched_switch("1.500000", "idle", 0, "R", "app", 1000),
+      self._slice_end("1.750000", "app", 1000),
+    )
+
+    result = self._run_sleep_query(events)
+
+    self.assertEqual(result, [125.0])
+
+  def test_zero_uninterruptible_sleep_returns_zero_row(self) -> None:
+    events = (
+      self._sched_switch("0.875000", "idle", 0, "R", "app", 1000),
+      self._slice_begin(
+        "1.000000", "app", 1000, "WebViewChromiumAwInit.startChromiumLockedSync"
+      ),
+      self._sched_switch("1.125000", "app", 1000, "S", "idle", 0),
+      self._sched_switch("1.375000", "idle", 0, "R", "app", 1000),
+      self._slice_end("1.500000", "app", 1000),
+    )
+
+    result = self._run_sleep_query(events)
+
+    self.assertEqual(result, [0.0])
+
+  def test_incomplete_async_startup_returns_empty(self) -> None:
+    events = (
+      self._sched_switch("0.875000", "idle", 0, "R", "app", 1000),
+      self._slice_begin(
+        "1.000000",
+        "app",
+        1000,
+        "WebViewChromiumAwInit.startChromiumLockedAsync_task1/4",
+      ),
+      self._slice_end("1.125000", "app", 1000),
+      self._sched_switch("1.125000", "app", 1000, "D", "idle", 0),
+      self._sched_switch("1.250000", "idle", 0, "R", "app", 1000),
+      self._slice_begin(
+        "1.250000",
+        "app",
+        1000,
+        "WebViewChromiumAwInit.startChromiumLockedAsync_task4/40",
+      ),
+      self._slice_end("1.500000", "app", 1000),
+      # Unfinished terminal slice (dur = -1 at trace end) must also be ignored.
+      self._slice_begin(
+        "1.625000",
+        "app",
+        1000,
+        "WebViewChromiumAwInit.startChromiumLockedAsync_task4/4",
+      ),
+    )
+
+    result = self._run_sleep_query(events)
+
+    self.assertEqual(result, [])
+
+  def test_missing_sched_data_returns_empty(self) -> None:
+    events = (
+      self._slice_begin(
+        "1.000000", "app", 1000, "WebViewChromiumAwInit.startChromiumLockedSync"
+      ),
+      self._slice_end("1.500000", "app", 1000),
+    )
+
+    result = self._run_sleep_query(events)
+
+    self.assertEqual(result, [])
 
 
 if __name__ == "__main__":
