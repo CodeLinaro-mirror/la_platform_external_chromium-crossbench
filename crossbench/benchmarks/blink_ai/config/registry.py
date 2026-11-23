@@ -9,6 +9,7 @@ from immutabledict import immutabledict
 from crossbench.helper.collection_helper import close_matches_message
 
 from .language_model import LANGUAGE_MODEL_API
+from .language_model_quality import LANGUAGE_MODEL_QUALITY_API
 
 if TYPE_CHECKING:
   from .base import BlinkAIApiConfig
@@ -16,6 +17,7 @@ if TYPE_CHECKING:
 API_CONFIGS: Final[immutabledict[str, BlinkAIApiConfig]] = immutabledict(
   {
     LANGUAGE_MODEL_API.name: LANGUAGE_MODEL_API,
+    LANGUAGE_MODEL_QUALITY_API.name: LANGUAGE_MODEL_QUALITY_API,
   }
 )
 

@@ -153,12 +153,12 @@ class BlinkAIStory(PressBenchmarkStory):
   @property
   @override
   def substory_duration(self) -> dt.timedelta:
-    return dt.timedelta(seconds=100)
+    return self._api_config.substory_duration
 
   @property
   @override
   def slow_duration(self) -> dt.timedelta:
-    return dt.timedelta(minutes=15)
+    return max(dt.timedelta(minutes=15), super().slow_duration)
 
   @property
   def url_params(self) -> dict[str, str]:

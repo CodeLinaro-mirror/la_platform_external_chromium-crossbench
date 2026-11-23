@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import argparse
+import datetime as dt
 import unittest
 
 from immutabledict import immutabledict
@@ -83,6 +84,35 @@ class BlinkAIConfigTestCase(unittest.TestCase):
       BlinkAISubstoryConfig.parse("")
     with self.assertRaises(argparse.ArgumentTypeError):
       BlinkAISubstoryConfig.parse({})
+
+  def test_api_config_substory_duration(self) -> None:
+    default_cfg = BlinkAIApiConfig.parse("writer:Writer")
+    self.assertEqual(default_cfg.substory_duration, dt.timedelta(seconds=100))
+
+    custom_cfg = BlinkAIApiConfig.parse(
+      {
+        "name": "writer",
+        "js_global": "Writer",
+        "substory_duration": "5m",
+      }
+    )
+    self.assertEqual(custom_cfg.substory_duration, dt.timedelta(minutes=5))
+
+    for invalid in (0, -1):
+      with self.assertRaises(argparse.ArgumentTypeError):
+        BlinkAIApiConfig.parse(
+          {
+            "name": "writer",
+            "js_global": "Writer",
+            "substory_duration": invalid,
+          }
+        )
+      with self.assertRaises(argparse.ArgumentTypeError):
+        BlinkAIApiConfig.create(
+          name="writer",
+          js_global="Writer",
+          substory_duration=dt.timedelta(seconds=invalid),
+        )
 
   def test_api_config_parse(self) -> None:
     short_cfg = BlinkAIApiConfig.parse("language_model:LanguageModel")

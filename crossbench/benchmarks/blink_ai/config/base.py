@@ -3,13 +3,16 @@
 # found in the LICENSE file.
 
 import dataclasses
-from typing import Mapping, Self, Sequence, override
+import datetime as dt
+from typing import Final, Mapping, Self, Sequence, override
 
 from immutabledict import immutabledict
 from ordered_set import OrderedSet
 
 from crossbench.config import ConfigObject, ConfigParser
-from crossbench.parse import ObjectParser
+from crossbench.parse import DurationParser, ObjectParser
+
+DEFAULT_SUBSTORY_DURATION: Final[dt.timedelta] = dt.timedelta(seconds=100)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -130,6 +133,7 @@ class BlinkAIApiConfig(ConfigObject):
   substories: immutabledict[str, BlinkAISubstoryConfig] = dataclasses.field(
     default_factory=immutabledict
   )
+  substory_duration: dt.timedelta = DEFAULT_SUBSTORY_DURATION
 
   @classmethod
   def _normalize_models(
@@ -176,6 +180,7 @@ class BlinkAIApiConfig(ConfigObject):
     | Mapping[str, BlinkAIModelConfig] = (),
     substories: Sequence[BlinkAISubstoryConfig]
     | Mapping[str, BlinkAISubstoryConfig] = (),
+    substory_duration: dt.timedelta = DEFAULT_SUBSTORY_DURATION,
   ) -> Self:
     return cls(
       name=name,
@@ -185,6 +190,7 @@ class BlinkAIApiConfig(ConfigObject):
       default_substories=tuple(default_substories),
       models=cls._normalize_models(models),
       substories=cls._normalize_substories(substories),
+      substory_duration=substory_duration,
     )
 
   @classmethod
@@ -237,6 +243,12 @@ class BlinkAIApiConfig(ConfigObject):
       default=(),
       is_list=True,
       help="Supported BlinkAISubstoryConfig entries for this API.",
+    )
+    parser.add_argument(
+      "substory_duration",
+      type=DurationParser.positive_duration,
+      default=DEFAULT_SUBSTORY_DURATION,
+      help="Expected duration per substory for this API.",
     )
     return parser
 
@@ -291,6 +303,9 @@ class BlinkAIApiConfig(ConfigObject):
     if self.substories:
       for substory in self.default_substories:
         self.get_substory_config(substory)
+    DurationParser.positive_duration(
+      self.substory_duration, "substory_duration"
+    )
 
   @property
   def all_substory_names(self) -> tuple[str, ...]:

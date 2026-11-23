@@ -484,6 +484,42 @@ class BlinkAITestCase(helper.SubStoryTestCase):
       self.story_cls.URL + "?api=language_model&stories=tool_calling",
     )
 
+  def test_quality_api_default_stories(self) -> None:
+    stories = self.story_cls.default(api_name="language_model_quality")
+    self.assertEqual(len(stories), 1)
+    story = stories[0]
+    self.assertEqual(story.api_name, "language_model_quality")
+    self.assertEqual(story.api_config.js_global, "LanguageModel")
+    self.assertEqual(story.substories, ("mmlu", "vizwiz", "librispeech"))
+    self.assertIn("AIPromptAPIParams", story.required_features)
+    self.assertNotIn(
+      "OnDeviceModelIdleTimeout:on_device_model_idle_timeout/10s",
+      story.required_features,
+    )
+    self.assertDictEqual(
+      story.url_params,
+      {
+        "api": "language_model_quality",
+        "stories": "mmlu,vizwiz,librispeech",
+      },
+    )
+
+  def test_quality_stories_extend_slow_duration(self) -> None:
+    quality_names = ["mmlu", "vizwiz", "librispeech"]
+    single_default = self.story_cls.from_names(["language_model"])[0]
+    combined_story = self.story_cls.from_names(
+      quality_names, api_name="language_model_quality"
+    )[0]
+    separate_stories = self.story_cls.from_names(
+      quality_names, separate=True, api_name="language_model_quality"
+    )
+    self.assertEqual(single_default.slow_duration, dt.timedelta(minutes=15))
+    self.assertEqual(len(separate_stories), len(quality_names))
+    for story in separate_stories:
+      self.assertEqual(story.substory_duration, dt.timedelta(minutes=5))
+      self.assertGreater(story.slow_duration, single_default.slow_duration)
+      self.assertLess(story.slow_duration, combined_story.slow_duration)
+
   def test_api_config_and_model_selection(self) -> None:
     story_v4 = self.story_cls.from_names(["language_model"], model="v4")[0]
     self.assertEqual(story_v4.name, "language_model_language_model")
@@ -639,18 +675,17 @@ class BlinkAITestCase(helper.SubStoryTestCase):
 
       all_api_args = self.parse_args("--api=all")
       all_api_benchmark = self.benchmark_cls.from_cli_args(all_api_args)
+      expected_all_default_stories = sum(
+        len(cfg.default_substories) for cfg in patched_configs.values()
+      )
       self.assertEqual(
-        len(all_api_benchmark.stories),
-        len(LANGUAGE_MODEL_API.default_substories)
-        + len(writer_api.default_substories),
+        len(all_api_benchmark.stories), expected_all_default_stories
       )
 
       all_api_sep_args = self.parse_args("--api=all", "--separate")
       all_api_sep_benchmark = self.benchmark_cls.from_cli_args(all_api_sep_args)
       self.assertEqual(
-        len(all_api_sep_benchmark.stories),
-        len(LANGUAGE_MODEL_API.default_substories)
-        + len(writer_api.default_substories),
+        len(all_api_sep_benchmark.stories), expected_all_default_stories
       )
 
       with self.assertRaises(argparse.ArgumentTypeError):
