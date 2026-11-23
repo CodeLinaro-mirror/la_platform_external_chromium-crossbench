@@ -66,6 +66,11 @@ class VideoProbe(Probe):
   IMAGE_FORMAT: Final = "png"
   TIMESTRIP_FILE_SUFFIX: Final = f".timestrip.{IMAGE_FORMAT}"
   FRAMERATE: Final = 60
+  # ImageMagick loads a font even when montage renders no text, and exits
+  # with "unable to read font" on macOS setups without any configured fonts.
+  MACOS_MONTAGE_FONT: Final = pth.AnyPosixPath(
+    "/System/Library/Fonts/Monaco.ttf"
+  )
   # The recorder for physical iOS devices, compiled in setup().
   IOS_USB_RECORDER_SOURCE: Final = (
     pth.LocalPath(__file__).parent / "ios_usb_screen_recorder.swift"
@@ -351,6 +356,12 @@ class VideoProbe(Probe):
 
     return LocalProbeResult(file=group_files)
 
+  def montage_cmd(self, platform: plt.Platform) -> TupleCmdArgs:
+    """The montage binary, with an explicit font where it needs one."""
+    if platform.is_macos and platform.is_file(self.MACOS_MONTAGE_FONT):
+      return ("montage", "-font", self.MACOS_MONTAGE_FONT)
+    return ("montage",)
+
   def _try_merge_timestrips(
     self, runs: tuple[Run, ...], video_file: pth.LocalPath
   ) -> pth.LocalPath | None:
@@ -368,7 +379,7 @@ class VideoProbe(Probe):
     logging.info("TIMESTRIP merge page repetitions")
     try:
       self.host_platform.sh(
-        "montage",
+        *self.montage_cmd(self.host_platform),
         *timeline_strips,
         "-tile",
         "1x",
@@ -805,7 +816,7 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
 
     timeline_strip_file = self._timestrip_path
     self.runner.platform.sh(
-      "montage",
+      *self.probe.montage_cmd(self.runner.platform),
       f"{timeline_dir}/*.{self.IMAGE_FORMAT}",
       "-tile",
       "x1",

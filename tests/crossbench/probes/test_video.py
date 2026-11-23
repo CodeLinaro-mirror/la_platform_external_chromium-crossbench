@@ -467,6 +467,7 @@ class VideoProbePostProcessingTestCase(unittest.TestCase):
     context._recorder_log_file = None
     context._record_process = mock.MagicMock()
     context.runner = mock.MagicMock()
+    context.runner.platform.is_macos = False
     return context
 
   def _subprocess_error(self, *cmd: str) -> plt.SubprocessError:
@@ -488,7 +489,9 @@ class VideoProbePostProcessingTestCase(unittest.TestCase):
     )
     mock_property = patcher.start()
     self.addCleanup(patcher.stop)
-    return mock_property.return_value
+    host_platform = mock_property.return_value
+    host_platform.is_macos = False
+    return host_platform
 
   def _assert_create_time_strip_warns(self, error: Exception) -> None:
     self.strip_path.touch()
@@ -587,6 +590,42 @@ class VideoProbePostProcessingTestCase(unittest.TestCase):
     group.get_local_probe_result_path.return_value = self.merged_video
     result = self.probe.merge_repetitions(group)
     self.assertEqual(result.file_list, [self.merged_video, self.merged_strip])
+
+  def test_montage_cmd(self):
+    font = VideoProbe.MACOS_MONTAGE_FONT
+    platform = mock.MagicMock(is_macos=True)
+    platform.is_file.return_value = True
+    self.assertEqual(
+      self.probe.montage_cmd(platform), ("montage", "-font", font)
+    )
+    platform.is_file.assert_called_once_with(font)
+    platform.is_file.return_value = False
+    self.assertEqual(self.probe.montage_cmd(platform), ("montage",))
+    platform = mock.MagicMock(is_macos=False)
+    self.assertEqual(self.probe.montage_cmd(platform), ("montage",))
+    platform.is_file.assert_not_called()
+
+  def test_merge_timestrips_passes_macos_font(self):
+    font = VideoProbe.MACOS_MONTAGE_FONT
+    host_platform = self._mock_probe_host_platform()
+    host_platform.is_macos = True
+    host_platform.is_file.return_value = True
+    run = self._run_with_files(self.probe, self.result_path, self.strip_path)
+    self.probe._try_merge_timestrips((run, run), self.merged_video)
+    self.assertEqual(
+      host_platform.sh.call_args.args[:4],
+      ("montage", "-font", font, self.strip_path),
+    )
+
+  def test_create_time_strip_passes_macos_font(self):
+    font = VideoProbe.MACOS_MONTAGE_FONT
+    self.context.runner.platform.is_macos = True
+    self.context.runner.platform.is_file.return_value = True
+    VideoProbeContext._create_time_strip(self.context, self.tmp_path)
+    self.assertEqual(
+      self.context.runner.platform.sh.call_args.args[:4],
+      ("montage", "-font", font, f"{self.tmp_path}/timeline/*.png"),
+    )
 
 
 if __name__ == "__main__":
