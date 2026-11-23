@@ -1153,6 +1153,20 @@ class ObjectParserTestCase(BaseFileParserTestCase):
         _ = ObjectParser.httpx_url_str(invalid)
       self.assertIn(invalid, str(cm.exception))
 
+  def test_gcs_url_str(self):
+    for valid in ("gs://bucket", "gs://bucket/path/to/file.apk"):
+      self.assertEqual(ObjectParser.gcs_url_str(valid), valid)
+    invalid: str
+    for invalid in (
+      "",
+      "https://storage.googleapis.com/bucket/file.apk",
+      "gs://",
+      "/local/path/file.apk",
+    ):
+      with self.assertRaises(argparse.ArgumentTypeError) as cm:
+        _ = ObjectParser.gcs_url_str(invalid)
+      self.assertIn(invalid, str(cm.exception))
+
   def test_json_file(self):
     result = self._json_file_test_helper(ObjectParser.json_file)
     self.assertDictEqual(self._json_test_data, result)
@@ -1575,6 +1589,8 @@ class ObjectParserTestCase(BaseFileParserTestCase):
         with self.assertRaises(argparse.ArgumentTypeError):
           _ = ObjectParser.httpx_url_str(invalid)
         with self.assertRaises(argparse.ArgumentTypeError):
+          _ = ObjectParser.gcs_url_str(invalid)
+        with self.assertRaises(argparse.ArgumentTypeError):
           _ = ObjectParser.fuzzy_url_str(invalid)
         with self.assertRaises(argparse.ArgumentTypeError):
           _ = ObjectParser.fuzzy_url(invalid)
@@ -1585,6 +1601,8 @@ class ObjectParserTestCase(BaseFileParserTestCase):
       with self.subTest(invalid=invalid):
         with self.assertRaises(argparse.ArgumentTypeError):
           _ = ObjectParser.httpx_url_str(invalid)
+        with self.assertRaises(argparse.ArgumentTypeError):
+          _ = ObjectParser.gcs_url_str(invalid)
 
   def test_parse_url_scheme(self):
     url = "ftp://foo.com"

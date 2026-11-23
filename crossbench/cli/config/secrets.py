@@ -2,14 +2,16 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import argparse
 import dataclasses
 import secrets
 from typing import TYPE_CHECKING, Final, Self, override
 
 from crossbench.config import ConfigObject, ConfigParser
-from crossbench.parse import NumberParser, ObjectParser
+from crossbench.parse import NumberParser, ObjectParser, PathParser
 
 if TYPE_CHECKING:
+  from crossbench import path as pth
   from crossbench.types import JsonDict
 
 
@@ -219,6 +221,7 @@ class CycledUsernamePassword(UsernamePassword):
     use_range: bool = False,
     start: int = 0,
     end: int = 0,
+    **kwargs,
   ) -> Self:
     if use_range:
       if end <= start:
@@ -231,12 +234,35 @@ class CycledUsernamePassword(UsernamePassword):
       account_selection = secrets.randbelow(end - start) + start
       username = username % account_selection
 
-    return cls(username=username, password=password)
+    return cls(username=username, password=password, **kwargs)
 
 
 @dataclasses.dataclass(frozen=True)
 class GoogleUsernamePassword(CycledUsernamePassword):
-  pass
+  account_util_apk: str | pth.LocalPath | None = None
+
+  @classmethod
+  def parse_account_util_apk(cls, value: object) -> str | pth.LocalPath:
+    try:
+      return ObjectParser.gcs_url_str(value, "account_util_apk")
+    except argparse.ArgumentTypeError:
+      return PathParser.non_empty_file_path(value, "account_util_apk")
+
+  @classmethod
+  @override
+  def config_parser(cls) -> ConfigParser[Self]:
+    parser = super().config_parser()
+    parser.add_argument(
+      "account_util_apk",
+      aliases=("account-util-apk",),
+      type=cls.parse_account_util_apk,
+      default=None,
+      help=(
+        "Optional gs:// URI or local path to GoogleAccountUtil.apk for "
+        "provisioning the account at the Android OS level."
+      ),
+    )
+    return parser
 
 
 @dataclasses.dataclass(frozen=True)

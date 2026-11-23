@@ -572,6 +572,10 @@ class ObjectParser(BaseParser):
     return cls.url_str(value, name, schemes=("http", "https"))
 
   @classmethod
+  def gcs_url_str(cls, value: object, name: str = "url") -> str:
+    return cls.url_str(value, name, schemes=("gs",))
+
+  @classmethod
   def base_url(cls, value: object, name: str = "url") -> urlparse.ParseResult:
     url_str: str = cls.non_empty_str(value, name)
     try:

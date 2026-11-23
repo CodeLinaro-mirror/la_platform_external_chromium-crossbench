@@ -92,6 +92,7 @@ if TYPE_CHECKING:
   from crossbench.action_runner.virtual_device.virtual_device_type import (
     VirtualDeviceType,
   )
+  from crossbench.cli.config.secrets import GoogleUsernamePassword
   from crossbench.device_config import DeviceConfigKeyPath, DeviceConfigMap
   from crossbench.plt.base import Platform
   from crossbench.plt.details import CpuDetails, PythonDetails
@@ -148,6 +149,11 @@ _SETUP_WIZARD_PACKAGES: Final[frozenset[str]] = frozenset(
   ("com.android.setupwizard", "com.google.android.setupwizard")
 )
 _DEFAULT_FULL_USER_ID: Final[str] = "10"
+_ACCOUNT_UTIL_PACKAGE: Final[str] = "com.google.android.tradefed.account"
+_USER_SECTION_RE: Final[re.Pattern[str]] = re.compile(r"^User UserInfo\{(\d+):")
+_GOOGLE_ACCOUNT_RE: Final[re.Pattern[str]] = re.compile(
+  r"Account \{name=([^,]+),\s*type=com\.google\}"
+)
 
 # Template for Perfetto config to capture Java heaps.
 ANDROID_JAVA_HPROF_PERFETTO_CFG: Final = """buffers {{
@@ -814,11 +820,19 @@ class Adb:
       self.install_apk(bundle, allow_downgrade)
 
   def install_apk(
-    self, apk: pth.AnyPath, allow_downgrade: bool = False
+    self,
+    apk: pth.AnyPath,
+    allow_downgrade: bool = False,
+    replace: bool = False,
+    grant_permissions: bool = False,
   ) -> None:
     if not self._host_platform.exists(apk):
       raise ValueError(f"APK {apk} does not exist {self._host_platform}.")
     args = ["install"]
+    if replace:
+      args.append("-r")
+    if grant_permissions:
+      args.append("-g")
     if allow_downgrade:
       args.append("-d")
     args.append(str(apk))
@@ -878,6 +892,20 @@ class Adb:
         cmd.extend(["--user", user])
       cmd.extend([package_name, f"android.permission.{perm}"])
       self.shell(*cmd)
+
+  def google_accounts(self, user: str | None = None) -> list[str]:
+    if user is None:
+      user = self.current_user()
+    if not user:
+      raise RuntimeError(f"Could not determine current user on {self}")
+    in_target_user = False
+    accounts: dict[str, None] = {}
+    for line in self.dumpsys("account").splitlines():
+      if user_match := _USER_SECTION_RE.match(line.strip()):
+        in_target_user = user_match.group(1) == user
+      elif in_target_user and (acct_match := _GOOGLE_ACCOUNT_RE.search(line)):
+        accounts[acct_match.group(1).strip()] = None
+    return list(accounts)
 
   FOCUSED_WINDOW_RE: Final[re.Pattern] = re.compile(
     r"mCurrentFocus=(Window\{.*\})"
@@ -1030,6 +1058,7 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
       None
     )
     self._uiautomator_device_root: bool = False
+    self._provisioned_account_util_apk: str | pth.LocalPath | None = None
     super().__init__(host_platform)
 
   @property
@@ -1904,6 +1933,15 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
     if self._bypass_oobe:
       self._dismiss_setup_wizard()
 
+  @override
+  def teardown(self) -> None:
+    try:
+      if apk_source := self._provisioned_account_util_apk:
+        self._provisioned_account_util_apk = None
+        self.remove_google_accounts(apk_source)
+    finally:
+      super().teardown()
+
   def _is_headless_system_user_mode(self) -> bool:
     if self.adb.sdk_version >= 34:
       out = self.adb.cmd(
@@ -1982,6 +2020,109 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
         f"Timed out waiting for SetupWizard OOBE dismissal on {self.adb}",
       ) from e
     self.sleep(2.0)
+
+  def provision_google_account(
+    self, secret: GoogleUsernamePassword, force: bool = False
+  ) -> None:
+    if not self._bypass_oobe:
+      raise ValueError(
+        "Android OS account provisioning requires bypass_oobe=True."
+      )
+    apk_source = secret.account_util_apk
+    if not apk_source:
+      raise ValueError("GoogleUsernamePassword is missing account_util_apk.")
+    self.setup()
+    user = str(self.user_id())
+    self.adb.shell(
+      "settings", "put", "--user", user, "secure", "user_setup_complete", "1"
+    )
+    self._provisioned_account_util_apk = apk_source
+    existing = self.adb.google_accounts(user)
+    if not force and [acct.lower() for acct in existing] == [
+      secret.username.lower()
+    ]:
+      logging.info(
+        "Google account %s already provisioned on %s", secret.username, self.adb
+      )
+      return
+    with self._installed_account_util(apk_source):
+      if existing:
+        logging.info("Removing existing Google accounts on %s", self.adb)
+        self._run_account_util_instrument(user, ".RemoveAccounts")
+      logging.info(
+        "Provisioning OS Google account %s on %s", secret.username, self.adb
+      )
+      output = self._run_account_util_instrument(
+        user,
+        ".AddAccount",
+        ("-e", "account", secret.username),
+        ("-e", "password", secret.password),
+        ("-e", "sync", "false"),
+        ("-e", "wait-for-checkin", "true"),
+        quiet=True,
+        check=False,
+      )
+      if "result=SUCCESS" not in output:
+        raise RuntimeError(
+          f"Failed to provision Google account {secret.username!r} "
+          f"on {self.adb}: {output.strip()}"
+        )
+
+  def remove_google_accounts(self, apk_source: str | pth.LocalPath) -> None:
+    user = str(self.user_id())
+    if not self.adb.google_accounts(user):
+      return
+    logging.info("Removing OS Google accounts on %s", self.adb)
+    with self._installed_account_util(apk_source):
+      self._run_account_util_instrument(user, ".RemoveAccounts")
+
+  @contextlib.contextmanager
+  def _installed_account_util(
+    self, apk_source: str | pth.LocalPath
+  ) -> Iterator[None]:
+    with self._account_util_apk(apk_source) as local_apk:
+      self.adb.shell(
+        "settings", "put", "global", "verifier_verify_adb_installs", "0"
+      )
+      self.adb.shell(
+        "settings", "put", "global", "package_verifier_enable", "0"
+      )
+      self.adb.install_apk(
+        local_apk, allow_downgrade=True, replace=True, grant_permissions=True
+      )
+    try:
+      yield
+    finally:
+      self.adb.uninstall(_ACCOUNT_UTIL_PACKAGE, missing_ok=True)
+
+  @contextlib.contextmanager
+  def _account_util_apk(
+    self, apk_source: str | pth.LocalPath
+  ) -> Iterator[pth.LocalPath]:
+    if isinstance(apk_source, pth.LocalPath):
+      yield apk_source
+      return
+    with self.host_platform.NamedTemporaryFile(
+      prefix="account_util_", suffix=".apk"
+    ) as tmp_apk:
+      local_apk = self.host_platform.local_path(tmp_apk)
+      logging.info("Downloading AccountUtil APK from %s", apk_source)
+      self.host_platform.download_gcs_file(apk_source, local_apk)
+      yield local_apk
+
+  def _run_account_util_instrument(
+    self,
+    user: str,
+    runner_name: str,
+    *extra_pairs: tuple[str, ...],
+    quiet: bool = False,
+    check: bool = True,
+  ) -> str:
+    cmd: list[str] = ["am", "instrument", "--user", user, "-w", "-r"]
+    for pair in extra_pairs:
+      cmd.extend(pair)
+    cmd.append(f"{_ACCOUNT_UTIL_PACKAGE}/{runner_name}")
+    return self.adb.shell_stdout(*cmd, quiet=quiet, check=check)
 
   def _is_stay_on_enabled(self) -> bool:
     stay_on = self.adb.shell_stdout(

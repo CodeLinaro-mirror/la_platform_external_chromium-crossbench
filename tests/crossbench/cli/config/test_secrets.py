@@ -413,6 +413,59 @@ class SecretsConfigTestCase(BaseConfigTestCase):
     serialized = dataclasses.asdict(google_account)
     self.assertEqual(serialized["password"], "secret_google_password")
     self.assertEqual(serialized["username"], google_account.username)
+    self.assertIsNone(serialized["account_util_apk"])
+
+  def test_google_username_password_account_util_apk(self) -> None:
+    gcs_uri = "gs://test-bucket/GoogleAccountUtil.apk"
+    google_gcs = GoogleUsernamePassword.parse(
+      {
+        "username": "user@test.com",
+        "password": "pw",
+        "account_util_apk": gcs_uri,
+      }
+    )
+    self.assertEqual(google_gcs.account_util_apk, gcs_uri)
+
+    local_apk = self.out_dir / "GoogleAccountUtil.apk"
+    self.fs.create_file(local_apk, st_size=100)
+    google_local = GoogleUsernamePassword.parse(
+      {
+        "username": "user@test.com",
+        "password": "pw",
+        "account_util_apk": str(local_apk),
+      }
+    )
+    self.assertEqual(google_local.account_util_apk, local_apk)
+
+    google_cycled = GoogleUsernamePassword.parse(
+      {
+        "username": "user%d@test.com",
+        "password": "pw",
+        "use_range": True,
+        "start": 4,
+        "end": 5,
+        "account_util_apk": gcs_uri,
+      }
+    )
+    self.assertEqual(google_cycled.username, "user4@test.com")
+    self.assertEqual(google_cycled.account_util_apk, gcs_uri)
+
+    with self.assertRaises(argparse.ArgumentTypeError):
+      GoogleUsernamePassword.parse(
+        {
+          "username": "user@test.com",
+          "password": "pw",
+          "account_util_apk": "https://example.com/GoogleAccountUtil.apk",
+        }
+      )
+    with self.assertRaises(argparse.ArgumentTypeError):
+      GoogleUsernamePassword.parse(
+        {
+          "username": "user@test.com",
+          "password": "pw",
+          "account_util_apk": str(self.out_dir / "missing.apk"),
+        }
+      )
 
   def test_cycled_account_create_classmethod_factory(self):
     """Explicitly validates the create() factory for CycledUsernamePassword.

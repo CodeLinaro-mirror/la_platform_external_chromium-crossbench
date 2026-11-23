@@ -10,12 +10,14 @@ import subprocess
 from typing import TYPE_CHECKING, Final, override
 from unittest import mock
 
+from crossbench import path as pth
 from crossbench.action_runner.input_events import TouchEvent
 from crossbench.action_runner.virtual_device.touchscreen import (
   TouchscreenVirtualDeviceConfig,
 )
 from crossbench.benchmarks.loading.point import Point
 from crossbench.cli.config.driver import BrowserDriverType, DriverConfig
+from crossbench.cli.config.secrets import GoogleUsernamePassword
 from crossbench.plt.android_adb import AndroidAdbPlatform, AndroidDeviceInfo
 from crossbench.plt.arch import MachineArch
 from crossbench.plt.base import Platform
@@ -39,7 +41,6 @@ from tests.crossbench.plt.test_android_adb import AndroidAdbMockPlatformTest
 from tests.crossbench.plt.test_linux import LocalLinuxMockPlatformTestCase
 
 if TYPE_CHECKING:
-  from crossbench import path as pth
   from crossbench.plt.types import CmdArg
 
 MOCK_GCS_FILE_SIZE: Final[int] = 45678
@@ -694,6 +695,84 @@ class PyodideAndroidAdbPlatformTest(AndroidAdbMockPlatformTest):
     self.assertFalse(platform.bypass_oobe)
     self.expect_sh("am get-current-user", result="10\n")
     platform.setup()
+
+  @override
+  def test_provision_google_account_replaces_mismatched_account(self) -> None:
+    secret = GoogleUsernamePassword(
+      "new_ota@gmail.com",
+      "secret_pw",
+      account_util_apk="gs://bucket/GoogleAccountUtil.apk",
+    )
+    self.expect_sh("am get-current-user", result="10\n")
+    self.expect_sh("settings get global device_provisioned", result="1\n")
+    self.expect_sh("am get-current-user", result="10\n")
+    self.expect_sh("settings put --user 10 secure user_setup_complete 1")
+    self.expect_sh(
+      "dumpsys account",
+      result=(
+        "User UserInfo{10:Main:412}:\n"
+        "  Accounts: 1\n"
+        "    Account {name=old_ota@gmail.com, type=com.google}\n"
+      ),
+    )
+    self.expect_sh("settings put global verifier_verify_adb_installs 0")
+    self.expect_sh("settings put global package_verifier_enable 0")
+    with self.assertRaises(NotImplementedError):
+      self.platform.provision_google_account(secret)
+
+  @override
+  def test_provision_google_account_redacts_password_on_adb_failure(
+    self,
+  ) -> None:
+    local_apk = pth.LocalPath("/tmp/GoogleAccountUtil.apk")
+    self.fs.create_file(local_apk, st_size=100)
+    secret = GoogleUsernamePassword(
+      "ota@gmail.com", "top_secret_pw", account_util_apk=local_apk
+    )
+    self.expect_sh("am get-current-user", result="10\n")
+    self.expect_sh("settings get global device_provisioned", result="1\n")
+    self.expect_sh("am get-current-user", result="10\n")
+    self.expect_sh("settings put --user 10 secure user_setup_complete 1")
+    self.expect_sh("dumpsys account", result="User UserInfo{10:Main:412}:\n")
+    self.expect_sh("settings put global verifier_verify_adb_installs 0")
+    self.expect_sh("settings put global package_verifier_enable 0")
+    with self.assertRaises(NotImplementedError):
+      self.platform.provision_google_account(secret)
+
+  @override
+  def test_teardown_removes_provisioned_google_account(self) -> None:
+    local_apk = pth.LocalPath("/tmp/GoogleAccountUtil.apk")
+    self.fs.create_file(local_apk, st_size=100)
+    secret = GoogleUsernamePassword(
+      "ota@gmail.com", "secret_pw", account_util_apk=local_apk
+    )
+    self.expect_sh("am get-current-user", result="10\n")
+    self.expect_sh("settings get global device_provisioned", result="1\n")
+    self.expect_sh("am get-current-user", result="10\n")
+    self.expect_sh("settings put --user 10 secure user_setup_complete 1")
+    self.expect_sh(
+      "dumpsys account",
+      result=(
+        "User UserInfo{10:Main:412}:\n"
+        "  Accounts: 1\n"
+        "    Account {name=ota@gmail.com, type=com.google}\n"
+      ),
+    )
+    self.platform.provision_google_account(secret)
+
+    self.expect_sh("am get-current-user", result="10\n")
+    self.expect_sh(
+      "dumpsys account",
+      result=(
+        "User UserInfo{10:Main:412}:\n"
+        "  Accounts: 1\n"
+        "    Account {name=ota@gmail.com, type=com.google}\n"
+      ),
+    )
+    self.expect_sh("settings put global verifier_verify_adb_installs 0")
+    self.expect_sh("settings put global package_verifier_enable 0")
+    with self.assertRaises(NotImplementedError):
+      self.platform.teardown()
 
 
 class PyodideStreamingPopenTest(CrossbenchFakeFsTestCase):

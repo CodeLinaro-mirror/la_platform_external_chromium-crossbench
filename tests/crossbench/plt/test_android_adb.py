@@ -45,6 +45,7 @@ from crossbench.action_runner.virtual_device.virtual_device_config import (
   VirtualDeviceConfig,
 )
 from crossbench.benchmarks.loading.point import Point
+from crossbench.cli.config.secrets import GoogleUsernamePassword
 from crossbench.helper.version import VersionParseError
 from crossbench.helper.wait import WaitRange
 from crossbench.plt.android_adb import (
@@ -1564,6 +1565,170 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
     self.expect_sh("dumpsys activity --proto activities", result=proto_out)
     self.expect_sh("am stack remove 101")
     platform.close_all_apps()
+
+  def test_google_accounts_filters_by_user(self) -> None:
+    dumpsys_out = (
+      "User UserInfo{0:System user:811}:\n"
+      "  Accounts: 1\n"
+      "    Account {name=sys@gmail.com, type=com.google}\n"
+      "User UserInfo{10:Main:412}:\n"
+      "  Accounts: 1\n"
+      "    Account {name=ota@gmail.com, type=com.google}\n"
+      "    Account {name=ota@gmail.com, type=com.google}\n"
+    )
+    self.expect_sh("dumpsys account", result=dumpsys_out)
+    self.assertEqual(self.platform.adb.google_accounts("10"), ["ota@gmail.com"])
+
+  def test_provision_google_account_reuses_matching_account(self) -> None:
+    secret = GoogleUsernamePassword(
+      "ota@gmail.com",
+      "secret_pw",
+      account_util_apk="gs://bucket/GoogleAccountUtil.apk",
+    )
+    self.expect_sh("am get-current-user", result="10\n")
+    self.expect_sh("settings get global device_provisioned", result="1\n")
+    self.expect_sh("am get-current-user", result="10\n")
+    self.expect_sh("settings put --user 10 secure user_setup_complete 1")
+    self.expect_sh(
+      "dumpsys account",
+      result=(
+        "User UserInfo{10:Main:412}:\n"
+        "  Accounts: 1\n"
+        "    Account {name=ota@gmail.com, type=com.google}\n"
+      ),
+    )
+    self.platform.provision_google_account(secret)
+
+  def test_provision_google_account_replaces_mismatched_account(self) -> None:
+    gcs_uri = "gs://bucket/GoogleAccountUtil.apk"
+    secret = GoogleUsernamePassword(
+      "new_ota@gmail.com", "secret_pw", account_util_apk=gcs_uri
+    )
+    self.expect_sh("am get-current-user", result="10\n")
+    self.expect_sh("settings get global device_provisioned", result="1\n")
+    self.expect_sh("am get-current-user", result="10\n")
+    self.expect_sh("settings put --user 10 secure user_setup_complete 1")
+    self.expect_sh(
+      "dumpsys account",
+      result=(
+        "User UserInfo{10:Main:412}:\n"
+        "  Accounts: 1\n"
+        "    Account {name=old_ota@gmail.com, type=com.google}\n"
+      ),
+    )
+    self.expect_sh("settings put global verifier_verify_adb_installs 0")
+    self.expect_sh("settings put global package_verifier_enable 0")
+
+    tmp_apk = pth.LocalPath("/tmp/account_util_test.apk")
+
+    def fake_download(src: str, dst: pth.LocalPath) -> None:
+      self.assertEqual(src, gcs_uri)
+      self.assertEqual(dst, tmp_apk)
+      self.fs.create_file(dst, st_size=100)
+
+    self.host_platform.download_gcs_file = mock.MagicMock(
+      side_effect=fake_download
+    )
+    self.expect_adb("install", "-r", "-g", "-d", str(tmp_apk))
+    self.expect_sh(
+      "am instrument --user 10 -w -r "
+      "com.google.android.tradefed.account/.RemoveAccounts",
+      result="INSTRUMENTATION_CODE: -1\n",
+    )
+    self.expect_sh(
+      "am instrument --user 10 -w -r -e account new_ota@gmail.com "
+      "-e password secret_pw -e sync false -e wait-for-checkin true "
+      "com.google.android.tradefed.account/.AddAccount",
+      result="INSTRUMENTATION_RESULT: result=SUCCESS\nINSTRUMENTATION_CODE: -1",
+    )
+    self.expect_adb("uninstall", "com.google.android.tradefed.account")
+    with mock.patch.object(self.host_platform, "mktemp", return_value=tmp_apk):
+      self.platform.provision_google_account(secret)
+    self.assertFalse(self.host_platform.exists(tmp_apk))
+
+  def test_provision_google_account_redacts_password_on_adb_failure(
+    self,
+  ) -> None:
+    local_apk = pth.LocalPath("/tmp/GoogleAccountUtil.apk")
+    self.fs.create_file(local_apk, st_size=100)
+    secret = GoogleUsernamePassword(
+      "ota@gmail.com", "top_secret_pw", account_util_apk=local_apk
+    )
+    self.expect_sh("am get-current-user", result="10\n")
+    self.expect_sh("settings get global device_provisioned", result="1\n")
+    self.expect_sh("am get-current-user", result="10\n")
+    self.expect_sh("settings put --user 10 secure user_setup_complete 1")
+    self.expect_sh("dumpsys account", result="User UserInfo{10:Main:412}:\n")
+    self.expect_sh("settings put global verifier_verify_adb_installs 0")
+    self.expect_sh("settings put global package_verifier_enable 0")
+    self.expect_adb("install", "-r", "-g", "-d", str(local_apk))
+    self.expect_sh(
+      "am instrument --user 10 -w -r -e account ota@gmail.com "
+      "-e password top_secret_pw -e sync false -e wait-for-checkin true "
+      "com.google.android.tradefed.account/.AddAccount",
+      result=ShResult("INSTRUMENTATION_FAILED", returncode=1),
+    )
+    self.expect_adb("uninstall", "com.google.android.tradefed.account")
+    with self.assertRaises(RuntimeError) as ctx:
+      self.platform.provision_google_account(secret)
+    self.assertNotIn("top_secret_pw", str(ctx.exception))
+
+  def test_provision_google_account_rejects_oobe_bypass_disabled(self) -> None:
+    platform = AndroidAdbPlatform(
+      self.host_platform, self.DEVICE_ID, adb=self.adb, bypass_oobe=False
+    )
+    secret = GoogleUsernamePassword(
+      "ota@gmail.com",
+      "secret_pw",
+      account_util_apk="gs://bucket/GoogleAccountUtil.apk",
+    )
+    with self.assertRaisesRegex(ValueError, "bypass_oobe=True"):
+      platform.provision_google_account(secret)
+
+  def test_teardown_removes_provisioned_google_account(self) -> None:
+    # No-op when no OS account was provisioned during this run.
+    self.platform.teardown()
+
+    local_apk = pth.LocalPath("/tmp/GoogleAccountUtil.apk")
+    self.fs.create_file(local_apk, st_size=100)
+    secret = GoogleUsernamePassword(
+      "ota@gmail.com", "secret_pw", account_util_apk=local_apk
+    )
+    self.expect_sh("am get-current-user", result="10\n")
+    self.expect_sh("settings get global device_provisioned", result="1\n")
+    self.expect_sh("am get-current-user", result="10\n")
+    self.expect_sh("settings put --user 10 secure user_setup_complete 1")
+    self.expect_sh(
+      "dumpsys account",
+      result=(
+        "User UserInfo{10:Main:412}:\n"
+        "  Accounts: 1\n"
+        "    Account {name=ota@gmail.com, type=com.google}\n"
+      ),
+    )
+    self.platform.provision_google_account(secret)
+
+    self.expect_sh("am get-current-user", result="10\n")
+    self.expect_sh(
+      "dumpsys account",
+      result=(
+        "User UserInfo{10:Main:412}:\n"
+        "  Accounts: 1\n"
+        "    Account {name=ota@gmail.com, type=com.google}\n"
+      ),
+    )
+    self.expect_sh("settings put global verifier_verify_adb_installs 0")
+    self.expect_sh("settings put global package_verifier_enable 0")
+    self.expect_adb("install", "-r", "-g", "-d", str(local_apk))
+    self.expect_sh(
+      "am instrument --user 10 -w -r "
+      "com.google.android.tradefed.account/.RemoveAccounts",
+      result="INSTRUMENTATION_CODE: -1\n",
+    )
+    self.expect_adb("uninstall", "com.google.android.tradefed.account")
+    self.platform.teardown()
+    # Second teardown is a no-op.
+    self.platform.teardown()
 
   def test_users(self):
     self.expect_sh(

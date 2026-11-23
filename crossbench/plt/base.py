@@ -1441,6 +1441,10 @@ class Platform(abc.ABC):
   def setup(self) -> None:
     """Prepare the platform before benchmark setup and wakelocks."""
 
+  def teardown(self) -> None:
+    """Release platform resources acquired during the benchmark run."""
+    self.teardown_virtual_devices()
+
   @contextlib.contextmanager
   def wakelock(self) -> Iterator[None]:
     """
