@@ -534,14 +534,15 @@ class VideoProbePostProcessingTestCase(unittest.TestCase):
   def test_teardown_keeps_recording_without_timestrip(self):
     self.context._try_create_time_strip.return_value = None
     result = VideoProbeContext.teardown(self.context)
-    self.context._convert_to_constant_framerate.assert_called_once_with()
     self.assertEqual(result.file_list, [self.result_path])
 
   def test_teardown_with_timestrip(self):
     self.strip_path.touch()
     self.context._try_create_time_strip.return_value = self.strip_path
     result = VideoProbeContext.teardown(self.context)
-    self.context._convert_to_constant_framerate.assert_called_once_with()
+    # The recording is not re-encoded or moved for the timestrip.
+    self.context.host_platform.sh.assert_not_called()
+    self.assertEqual(self.result_path.read_bytes(), b"recording")
     self.assertEqual(result.file_list, [self.result_path, self.strip_path])
 
   def test_create_time_strip(self):
@@ -549,6 +550,10 @@ class VideoProbePostProcessingTestCase(unittest.TestCase):
     self.assertEqual(strip, self.strip_path)
     self.context.host_platform.sh.assert_called_once()
     ffmpeg_args = self.context.host_platform.sh.call_args.args
+    fflags_index = ffmpeg_args.index("-fflags")
+    i_index = ffmpeg_args.index("-i")
+    self.assertLess(fflags_index, i_index)
+    self.assertEqual(ffmpeg_args[fflags_index + 1], "+igndts")
     filter_graph = ffmpeg_args[ffmpeg_args.index("-filter_complex") + 1]
     self.assertNotIn("scale=3000", filter_graph)
     self.assertNotIn("select=", filter_graph)
@@ -650,8 +655,26 @@ class VideoProbePostProcessingTestCase(unittest.TestCase):
     self.assertEqual(result.file_list, [self.merged_video])
     ffmpeg_args = host_platform.sh.call_args.args
     filter_graph = ffmpeg_args[ffmpeg_args.index("-filter_complex") + 1]
-    self.assertTrue(filter_graph.startswith("hstack=inputs=2,drawtext="))
+    self.assertTrue(filter_graph.startswith("hstack=inputs=2,fps=60,drawtext="))
     self.assertTrue(filter_graph.endswith(",scale='min(3000,iw)':-2"))
+
+  def _story_group(self, story_name: str) -> mock.MagicMock:
+    story = mock.MagicMock()
+    story.name = story_name
+    rep_group = self._run_with_files(self.probe, self.result_path)
+    rep_group.story = story
+    return rep_group
+
+  def test_merge_stories_for_browser_limits_framerate(self):
+    host_platform = self._mock_probe_host_platform()
+    rep_group = self._story_group("story")
+    result = self.probe._merge_stories_for_browser(
+      self.tmp_path, rep_group.story, [rep_group, rep_group]
+    )
+    self.assertEqual(result, self.tmp_path / "story_combined.mp4")
+    ffmpeg_args = host_platform.sh.call_args.args
+    filter_graph = ffmpeg_args[ffmpeg_args.index("-filter_complex") + 1]
+    self.assertEqual(filter_graph, "vstack=inputs=2,fps=60")
 
   def _merged_video_size(self, width: int, height: int) -> tuple[int, int]:
     frame = self.tmp_path / f"{width}x{height}.png"

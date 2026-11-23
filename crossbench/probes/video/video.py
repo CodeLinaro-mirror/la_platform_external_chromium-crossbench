@@ -347,7 +347,9 @@ class VideoProbe(Probe):
       "-hide_banner",
       *video_file_inputs,
       "-filter_complex",
-      f"{stack_direction}=inputs={len(runs)},"
+      # Recordings can have a variable frame rate: stacking them yields a
+      # frame whenever any of them has one, so even the result out again.
+      f"{stack_direction}=inputs={len(runs)},fps={self.FRAMERATE},"
       f"drawtext={draw_text},{self.MERGED_VIDEO_SCALE}",
       *self.VIDEO_QUALITY,
       video_file,
@@ -446,7 +448,8 @@ class VideoProbe(Probe):
         "-hide_banner",
         *input_files,
         "-filter_complex",
-        f"{stack_direction}=inputs={len(repetitions_groups)}",
+        f"{stack_direction}=inputs={len(repetitions_groups)},"
+        f"fps={self.FRAMERATE}",
         *self.VIDEO_QUALITY,
         result_path,
       )
@@ -719,7 +722,6 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
 
     result_files: list[pth.LocalPath] = [self.local_result_path]
     if self.probe.generate_timestrip:
-      self._convert_to_constant_framerate()
       if timestrip_file := self._try_create_time_strip():
         result_files.append(timestrip_file)
     return LocalProbeResult(file=result_files)
@@ -746,41 +748,6 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
         )
       self._record_process = None
 
-  def _convert_to_constant_framerate(self) -> None:
-    # On some platforms (android for certain) we get VFR videos which confuse
-    # the next video extraction / conversion steps.
-    vfr_video_result = (
-      self.local_result_path.parent / f"vfr_{self.result_path.name}"
-    )
-    self.local_result_path.rename(vfr_video_result)
-    self.host_platform.sh(
-      "ffmpeg",
-      "-hide_banner",
-      "-fflags",
-      "+igndts",
-      "-i",
-      vfr_video_result,
-      "-filter:v",
-      "fps=60",
-      "-fps_mode:v",
-      "cfr",
-      # Use the decoder timebase.
-      "-copytb",
-      "0",
-      *self.probe.VIDEO_QUALITY,
-      self.result_path,
-    )
-    if (
-      not self.local_result_path.exists()
-      or self.local_result_path.stat().st_size == 0
-    ):
-      vfr_video_result.rename(self.result_path)
-      logging.error(
-        "Could not generate constant FPS video: %s", self.result_path
-      )
-    else:
-      vfr_video_result.unlink()
-
   def _create_time_strip(self, tmpdir: pth.LocalPath) -> pth.LocalPath:
     logging.info("TIMESTRIP")
     timeline_dir = tmpdir / "timeline"
@@ -790,6 +757,10 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
     self.host_platform.sh(
       "ffmpeg",
       "-hide_banner",
+      # Recordings can have a variable frame rate and unreliable decoding
+      # timestamps (Android for certain); the fps filter below evens them out.
+      "-fflags",
+      "+igndts",
       "-i",
       self.result_path,
       "-filter_complex",
