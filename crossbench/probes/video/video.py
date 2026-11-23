@@ -346,9 +346,27 @@ class VideoProbe(Probe):
     )
 
     if self._generate_timestrip:
-      timeline_strip_file = video_file.with_suffix(self.TIMESTRIP_FILE_SUFFIX)
-      logging.info("TIMESTRIP merge page repetitions")
-      timeline_strips = (run.results[self].file_list[1] for run in runs)
+      if timeline_strip_file := self._try_merge_timestrips(runs, video_file):
+        group_files.append(timeline_strip_file)
+
+    return LocalProbeResult(file=group_files)
+
+  def _try_merge_timestrips(
+    self, runs: tuple[Run, ...], video_file: pth.LocalPath
+  ) -> pth.LocalPath | None:
+    """The timestrip is optional: failing to merge it only warns."""
+    # Collect timestrips from runs where creation succeeded.
+    timeline_strips = [
+      file
+      for run in runs
+      for file in run.results[self].file_list
+      if file.name.endswith(self.TIMESTRIP_FILE_SUFFIX)
+    ]
+    if not timeline_strips:
+      return None
+    timeline_strip_file = video_file.with_suffix(self.TIMESTRIP_FILE_SUFFIX)
+    logging.info("TIMESTRIP merge page repetitions")
+    try:
       self.host_platform.sh(
         "montage",
         *timeline_strips,
@@ -360,9 +378,11 @@ class VideoProbe(Probe):
         "x100",
         timeline_strip_file,
       )
-      group_files.append(timeline_strip_file)
-
-    return LocalProbeResult(file=group_files)
+    except (plt.SubprocessError, FileNotFoundError) as e:
+      timeline_strip_file.unlink(missing_ok=True)
+      logging.warning("VIDEO: Could not merge timestrips: %s", e)
+      return None
+    return timeline_strip_file
 
   @override
   def merge_browsers(self, group: BrowsersRunGroup) -> ProbeResult:
@@ -470,6 +490,10 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
   @property
   def _recorder_log_path(self) -> pth.LocalPath:
     return self.local_result_path.with_suffix(".recorder.log")
+
+  @property
+  def _timestrip_path(self) -> pth.LocalPath:
+    return self.local_result_path.with_suffix(self.probe.TIMESTRIP_FILE_SUFFIX)
 
   def start(self) -> None:
     browser = self.run.browser
@@ -679,15 +703,26 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
       self._default_result_path = browser_result.file
     assert self.host_platform.exists(self.result_path)
 
-    if not self.probe.generate_timestrip:
-      return LocalProbeResult(file=(self.local_result_path,))
-
-    with tempfile.TemporaryDirectory() as tmp_dir:
+    result_files: list[pth.LocalPath] = [self.local_result_path]
+    if self.probe.generate_timestrip:
       self._convert_to_constant_framerate()
-      timestrip_file = self._create_time_strip(
-        self.host_platform.local_path(tmp_dir)
+      if timestrip_file := self._try_create_time_strip():
+        result_files.append(timestrip_file)
+    return LocalProbeResult(file=result_files)
+
+  def _try_create_time_strip(self) -> pth.LocalPath | None:
+    """The timestrip is optional: failing to create it only warns."""
+    try:
+      with tempfile.TemporaryDirectory() as tmp_dir:
+        return self._create_time_strip(self.host_platform.local_path(tmp_dir))
+    except (plt.SubprocessError, FileNotFoundError) as e:
+      self._timestrip_path.unlink(missing_ok=True)
+      logging.warning(
+        "VIDEO: Could not create timestrip, keeping the recording only "
+        "(disable with --probe='video:{generate_timestrip:false}'): %s",
+        e,
       )
-    return LocalProbeResult(file=(self.local_result_path, timestrip_file))
+      return None
 
   def stop_process(self) -> None:
     if self._record_process:
@@ -768,9 +803,7 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
       f"{timeline_dir}/%02d.{self.IMAGE_FORMAT}",
     )
 
-    timeline_strip_file = self.local_result_path.with_suffix(
-      self.probe.TIMESTRIP_FILE_SUFFIX
-    )
+    timeline_strip_file = self._timestrip_path
     self.runner.platform.sh(
       "montage",
       f"{timeline_dir}/*.{self.IMAGE_FORMAT}",

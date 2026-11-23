@@ -432,5 +432,162 @@ class VideoProbeContextAndroidTestCase(unittest.TestCase):
     self.assertNotIn(":20+10,20", cmd)
 
 
+class VideoProbePostProcessingTestCase(unittest.TestCase):
+  """Post-processing of a recording, where timestrips are optional."""
+
+  def setUp(self) -> None:
+    self.tmp_dir = tempfile.TemporaryDirectory()
+    self.addCleanup(self.tmp_dir.cleanup)
+    self.tmp_path = pth.LocalPath(self.tmp_dir.name)
+    self.result_path = self.tmp_path / "video.mp4"
+    self.result_path.write_bytes(b"recording")
+    self.strip_path = self.result_path.with_suffix(
+      VideoProbe.TIMESTRIP_FILE_SUFFIX
+    )
+    self.merged_video = self.tmp_path / "merged.mp4"
+    self.merged_strip = self.merged_video.with_suffix(
+      VideoProbe.TIMESTRIP_FILE_SUFFIX
+    )
+    self.probe = VideoProbe.parse_dict({})
+    self.context = self._create_mock_context()
+
+  def _create_mock_context(self) -> mock.MagicMock:
+    context = mock.MagicMock(spec=VideoProbeContext)
+    context.result_path = self.result_path
+    context.local_result_path = self.result_path
+    context.probe = self.probe
+    assert VideoProbeContext._timestrip_path.fget is not None
+    context._timestrip_path = VideoProbeContext._timestrip_path.fget(context)
+    context.FFMPEG_TIMELINE_TEXT = VideoProbeContext.FFMPEG_TIMELINE_TEXT
+    context.IMAGE_FORMAT = VideoProbeContext.IMAGE_FORMAT
+    context.host_platform = mock.MagicMock()
+    context.host_platform.local_path = pth.LocalPath
+    context.browser_platform = mock.MagicMock(is_ios=False)
+    context._recorder_platform = mock.MagicMock()
+    context._recorder_log_file = None
+    context._record_process = mock.MagicMock()
+    context.runner = mock.MagicMock()
+    return context
+
+  def _subprocess_error(self, *cmd: str) -> plt.SubprocessError:
+    return plt.SubprocessError(
+      plt.PLATFORM,
+      subprocess.CompletedProcess(cmd, 1, b"", b"unable to read font"),
+    )
+
+  def _run_with_files(
+    self, probe: VideoProbe, *files: pth.LocalPath
+  ) -> mock.MagicMock:
+    run = mock.MagicMock()
+    run.results = {probe: mock.MagicMock(file_list=list(files))}
+    return run
+
+  def _mock_probe_host_platform(self) -> mock.MagicMock:
+    patcher = mock.patch.object(
+      VideoProbe, "host_platform", new_callable=mock.PropertyMock
+    )
+    mock_property = patcher.start()
+    self.addCleanup(patcher.stop)
+    return mock_property.return_value
+
+  def _assert_create_time_strip_warns(self, error: Exception) -> None:
+    self.strip_path.touch()
+    self.context._create_time_strip.side_effect = error
+    with self.assertLogs(level="WARNING") as logs:
+      self.assertIsNone(VideoProbeContext._try_create_time_strip(self.context))
+    self.assertFalse(self.strip_path.exists())
+    self.assertEqual(len(logs.output), 1)
+    self.assertIn("Could not create timestrip", logs.output[0])
+    self.assertIn("generate_timestrip:false", logs.output[0])
+
+  def _assert_merge_timestrips_warns(self, error: Exception) -> None:
+    host_platform = self._mock_probe_host_platform()
+    host_platform.sh.side_effect = error
+    run = self._run_with_files(self.probe, self.result_path, self.strip_path)
+    self.merged_strip.touch()
+    with self.assertLogs(level="WARNING") as logs:
+      self.assertIsNone(
+        self.probe._try_merge_timestrips((run, run), self.merged_video)
+      )
+    self.assertFalse(self.merged_strip.exists())
+    self.assertIn("Could not merge timestrips", logs.output[0])
+
+  def test_timestrip_path(self):
+    self.assertEqual(self.context._timestrip_path, self.strip_path)
+
+  def test_try_create_time_strip(self):
+    self.context._create_time_strip.return_value = self.strip_path
+    self.assertEqual(
+      VideoProbeContext._try_create_time_strip(self.context), self.strip_path
+    )
+
+  def test_try_create_time_strip_subprocess_error_warns(self):
+    self._assert_create_time_strip_warns(self._subprocess_error("montage"))
+
+  def test_try_create_time_strip_missing_binary_warns(self):
+    self._assert_create_time_strip_warns(FileNotFoundError("montage"))
+
+  def test_teardown_keeps_recording_without_timestrip(self):
+    self.context._try_create_time_strip.return_value = None
+    result = VideoProbeContext.teardown(self.context)
+    self.context._convert_to_constant_framerate.assert_called_once_with()
+    self.assertEqual(result.file_list, [self.result_path])
+
+  def test_teardown_with_timestrip(self):
+    self.strip_path.touch()
+    self.context._try_create_time_strip.return_value = self.strip_path
+    result = VideoProbeContext.teardown(self.context)
+    self.context._convert_to_constant_framerate.assert_called_once_with()
+    self.assertEqual(result.file_list, [self.result_path, self.strip_path])
+
+  def test_try_merge_timestrips_none_available(self):
+    host_platform = self._mock_probe_host_platform()
+    run = self._run_with_files(self.probe, self.result_path)
+    self.assertIsNone(
+      self.probe._try_merge_timestrips((run, run), self.merged_video)
+    )
+    host_platform.sh.assert_not_called()
+
+  def test_try_merge_timestrips_skips_runs_without_strip(self):
+    host_platform = self._mock_probe_host_platform()
+    run_without_strip = self._run_with_files(self.probe, self.result_path)
+    run_with_strip = self._run_with_files(
+      self.probe, self.result_path, self.strip_path
+    )
+    result = self.probe._try_merge_timestrips(
+      (run_without_strip, run_with_strip), self.merged_video
+    )
+    self.assertEqual(result, self.merged_strip)
+    host_platform.sh.assert_called_once()
+    args = host_platform.sh.call_args.args
+    self.assertEqual(args[:2], ("montage", self.strip_path))
+    self.assertEqual(args[-1], self.merged_strip)
+
+  def test_try_merge_timestrips_subprocess_error_warns(self):
+    self._assert_merge_timestrips_warns(self._subprocess_error("montage"))
+
+  def test_try_merge_timestrips_missing_binary_warns(self):
+    self._assert_merge_timestrips_warns(FileNotFoundError("montage"))
+
+  def test_merge_repetitions_without_timestrips(self):
+    self._mock_probe_host_platform()
+    self.merged_video.touch()
+    run = self._run_with_files(self.probe, self.result_path)
+    group = mock.MagicMock(runs=(run, run))
+    group.get_local_probe_result_path.return_value = self.merged_video
+    result = self.probe.merge_repetitions(group)
+    self.assertEqual(result.file_list, [self.merged_video])
+
+  def test_merge_repetitions_with_timestrip(self):
+    self._mock_probe_host_platform()
+    self.merged_video.touch()
+    self.merged_strip.touch()
+    run = self._run_with_files(self.probe, self.result_path, self.strip_path)
+    group = mock.MagicMock(runs=(run, run))
+    group.get_local_probe_result_path.return_value = self.merged_video
+    result = self.probe.merge_repetitions(group)
+    self.assertEqual(result.file_list, [self.merged_video, self.merged_strip])
+
+
 if __name__ == "__main__":
   test_helper.run_pytest(__file__)
