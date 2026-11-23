@@ -782,8 +782,6 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
     logging.info("TIMESTRIP")
     timeline_dir = tmpdir / "timeline"
     timeline_dir.mkdir(exist_ok=True)
-    # Extract at regular intervals of 100ms, assuming 60fps input
-    every_nth_frame = self.probe.FRAMERATE / 20
     safe_duration = 10
     safe_duration = 2
     self.host_platform.sh(
@@ -795,7 +793,7 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
       # Draw the timestamp at the recording's resolution to keep its
       # proportions, then scale down to the 100 px tile height (never up).
       f"trim=duration={safe_duration},"
-      f"select=not(mod(n\\,{every_nth_frame})),"
+      "fps=20,"
       f"{self.FFMPEG_TIMELINE_TEXT},"
       "scale=-1:'min(100,ih)'",
       f"{timeline_dir}/%02d.{self.IMAGE_FORMAT}",

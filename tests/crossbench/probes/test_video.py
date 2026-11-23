@@ -550,7 +550,8 @@ class VideoProbePostProcessingTestCase(unittest.TestCase):
     ffmpeg_args = self.context.host_platform.sh.call_args.args
     filter_graph = ffmpeg_args[ffmpeg_args.index("-filter_complex") + 1]
     self.assertNotIn("scale=3000", filter_graph)
-    self.assertIn("drawtext=", filter_graph)
+    self.assertNotIn("select=", filter_graph)
+    self.assertTrue(filter_graph.startswith("trim=duration=2,fps=20,drawtext="))
     self.assertTrue(filter_graph.endswith(",scale=-1:'min(100,ih)'"))
 
   def test_try_merge_timestrips_none_available(self):
