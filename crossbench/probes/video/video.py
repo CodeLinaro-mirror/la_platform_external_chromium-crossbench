@@ -465,6 +465,8 @@ class VideoProbe(Probe):
 
 class VideoProbeContext(ProbeContext[VideoProbe]):
   IMAGE_FORMAT: Final = "png"
+  TIMESTRIP_MAX_HEIGHT: Final = 100
+  TIMESTRIP_SCALE: Final = f"scale=-1:'min({TIMESTRIP_MAX_HEIGHT},ih)'"
   FFMPEG_TIMELINE_TEXT: Final = (
     "drawtext="
     "fontfile=/Library/Fonts/Arial.ttf:"
@@ -752,7 +754,6 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
     logging.info("TIMESTRIP")
     timeline_dir = tmpdir / "timeline"
     timeline_dir.mkdir(exist_ok=True)
-    safe_duration = 10
     safe_duration = 2
     self.host_platform.sh(
       "ffmpeg",
@@ -769,7 +770,7 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
       f"trim=duration={safe_duration},"
       "fps=20,"
       f"{self.FFMPEG_TIMELINE_TEXT},"
-      "scale=-1:'min(100,ih)'",
+      f"{self.TIMESTRIP_SCALE}",
       f"{timeline_dir}/%02d.{self.IMAGE_FORMAT}",
     )
 

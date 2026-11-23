@@ -462,6 +462,7 @@ class VideoProbePostProcessingTestCase(unittest.TestCase):
     context._timestrip_path = VideoProbeContext._timestrip_path.fget(context)
     context.FFMPEG_TIMELINE_TEXT = VideoProbeContext.FFMPEG_TIMELINE_TEXT
     context.IMAGE_FORMAT = VideoProbeContext.IMAGE_FORMAT
+    context.TIMESTRIP_SCALE = VideoProbeContext.TIMESTRIP_SCALE
     context.host_platform = mock.MagicMock()
     context.host_platform.local_path = pth.LocalPath
     context.browser_platform = mock.MagicMock(is_ios=False)
@@ -556,10 +557,11 @@ class VideoProbePostProcessingTestCase(unittest.TestCase):
     self.assertLess(fflags_index, i_index)
     self.assertEqual(ffmpeg_args[fflags_index + 1], "+igndts")
     filter_graph = ffmpeg_args[ffmpeg_args.index("-filter_complex") + 1]
-    self.assertNotIn("scale=3000", filter_graph)
-    self.assertNotIn("select=", filter_graph)
-    self.assertTrue(filter_graph.startswith("trim=duration=2,fps=20,drawtext="))
-    self.assertTrue(filter_graph.endswith(",scale=-1:'min(100,ih)'"))
+    self.assertEqual(
+      filter_graph,
+      f"trim=duration=2,fps=20,{VideoProbeContext.FFMPEG_TIMELINE_TEXT},"
+      f"{VideoProbeContext.TIMESTRIP_SCALE}",
+    )
 
   def test_try_merge_timestrips_none_available(self):
     host_platform = self._mock_probe_host_platform()
@@ -677,7 +679,9 @@ class VideoProbePostProcessingTestCase(unittest.TestCase):
     filter_graph = ffmpeg_args[ffmpeg_args.index("-filter_complex") + 1]
     self.assertEqual(filter_graph, "vstack=inputs=2,fps=60")
 
-  def _merged_video_size(self, width: int, height: int) -> tuple[int, int]:
+  def _scaled_frame_size(
+    self, scale_filter: str, width: int, height: int
+  ) -> tuple[int, int]:
     frame = self.tmp_path / f"{width}x{height}.png"
     plt.PLATFORM.sh(
       "ffmpeg",
@@ -687,7 +691,7 @@ class VideoProbePostProcessingTestCase(unittest.TestCase):
       "-i",
       f"color=size={width}x{height}",
       "-filter_complex",
-      VideoProbe.MERGED_VIDEO_SCALE,
+      scale_filter,
       "-frames:v",
       "1",
       frame,
@@ -702,10 +706,21 @@ class VideoProbePostProcessingTestCase(unittest.TestCase):
     not Binaries.FFMPEG.search(plt.PLATFORM), "needs a local ffmpeg"
   )
   def test_merged_video_scale_with_ffmpeg(self):
+    scale = VideoProbe.MERGED_VIDEO_SCALE
     # Two portrait phone recordings side by side: used to be scaled up.
-    self.assertEqual(self._merged_video_size(2160, 2404), (2160, 2404))
+    self.assertEqual(self._scaled_frame_size(scale, 2160, 2404), (2160, 2404))
     # Wider videos are scaled down to an even height, keeping aspect ratio.
-    self.assertEqual(self._merged_video_size(4000, 2404), (3000, 1804))
+    self.assertEqual(self._scaled_frame_size(scale, 4000, 2404), (3000, 1804))
+
+  @unittest.skipIf(
+    not Binaries.FFMPEG.search(plt.PLATFORM), "needs a local ffmpeg"
+  )
+  def test_timestrip_scale_with_ffmpeg(self):
+    scale = VideoProbeContext.TIMESTRIP_SCALE
+    # Shorter frames are left at their original resolution.
+    self.assertEqual(self._scaled_frame_size(scale, 120, 80), (120, 80))
+    # Taller frames are scaled down to 100 px high, keeping aspect ratio.
+    self.assertEqual(self._scaled_frame_size(scale, 1080, 2404), (45, 100))
 
   def _touch_last_arg(self, *args: object) -> None:
     output = args[-1]
