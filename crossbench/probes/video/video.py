@@ -780,24 +780,8 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
 
   def _create_time_strip(self, tmpdir: pth.LocalPath) -> pth.LocalPath:
     logging.info("TIMESTRIP")
-    progress_dir = tmpdir / "progress"
-    progress_dir.mkdir(parents=True, exist_ok=True)
     timeline_dir = tmpdir / "timeline"
     timeline_dir.mkdir(exist_ok=True)
-    # Try detect scene changes / steps
-    self.host_platform.sh(
-      "ffmpeg",
-      "-hide_banner",
-      "-i",
-      self.result_path,
-      "-filter_complex",
-      "scale=3000:-2,select='gt(scene\\,0.011)'," + self.FFMPEG_TIMELINE_TEXT,
-      "-fps_mode",
-      "cfr",
-      "-framerate",
-      str(self.probe.FRAMERATE),
-      f"{progress_dir}/%02d.{self.IMAGE_FORMAT}",
-    )
     # Extract at regular intervals of 100ms, assuming 60fps input
     every_nth_frame = self.probe.FRAMERATE / 20
     safe_duration = 10
