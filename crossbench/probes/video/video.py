@@ -66,6 +66,10 @@ class VideoProbe(Probe):
   IMAGE_FORMAT: Final = "png"
   TIMESTRIP_FILE_SUFFIX: Final = f".timestrip.{IMAGE_FORMAT}"
   FRAMERATE: Final = 60
+  # Merged videos are scaled down to this width, but never up: upscaling only
+  # makes them slower to encode without adding any detail.
+  MERGED_VIDEO_MAX_WIDTH: Final = 3000
+  MERGED_VIDEO_SCALE: Final = f"scale='min({MERGED_VIDEO_MAX_WIDTH},iw)':-2"
   # ImageMagick loads a font even when montage renders no text, and exits
   # with "unable to read font" on macOS setups without any configured fonts.
   MACOS_MONTAGE_FONT: Final = pth.AnyPosixPath(
@@ -344,8 +348,7 @@ class VideoProbe(Probe):
       *video_file_inputs,
       "-filter_complex",
       f"{stack_direction}=inputs={len(runs)},"
-      f"drawtext={draw_text},"
-      "scale=3000:-2",
+      f"drawtext={draw_text},{self.MERGED_VIDEO_SCALE}",
       *self.VIDEO_QUALITY,
       video_file,
     )

@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 import datetime as dt
+import struct
 import subprocess
 import tempfile
 import unittest
@@ -637,6 +638,50 @@ class VideoProbePostProcessingTestCase(unittest.TestCase):
       self.context.runner.platform.sh.call_args.args[:4],
       ("montage", "-font", font, f"{self.tmp_path}/timeline/*.png"),
     )
+
+  def test_merge_repetitions_does_not_upscale(self):
+    host_platform = self._mock_probe_host_platform()
+    probe = VideoProbe.parse_dict({"generate_timestrip": False})
+    self.merged_video.touch()
+    run = self._run_with_files(probe, self.result_path)
+    group = mock.MagicMock(runs=(run, run))
+    group.get_local_probe_result_path.return_value = self.merged_video
+    result = probe.merge_repetitions(group)
+    self.assertEqual(result.file_list, [self.merged_video])
+    ffmpeg_args = host_platform.sh.call_args.args
+    filter_graph = ffmpeg_args[ffmpeg_args.index("-filter_complex") + 1]
+    self.assertTrue(filter_graph.startswith("hstack=inputs=2,drawtext="))
+    self.assertTrue(filter_graph.endswith(",scale='min(3000,iw)':-2"))
+
+  def _merged_video_size(self, width: int, height: int) -> tuple[int, int]:
+    frame = self.tmp_path / f"{width}x{height}.png"
+    plt.PLATFORM.sh(
+      "ffmpeg",
+      "-hide_banner",
+      "-f",
+      "lavfi",
+      "-i",
+      f"color=size={width}x{height}",
+      "-filter_complex",
+      VideoProbe.MERGED_VIDEO_SCALE,
+      "-frames:v",
+      "1",
+      frame,
+      quiet=True,
+    )
+    # The PNG IHDR chunk starts with the big-endian width and height.
+    header = frame.read_bytes()[16:24]
+    scaled_width, scaled_height = struct.unpack(">II", header)
+    return scaled_width, scaled_height
+
+  @unittest.skipIf(
+    not Binaries.FFMPEG.search(plt.PLATFORM), "needs a local ffmpeg"
+  )
+  def test_merged_video_scale_with_ffmpeg(self):
+    # Two portrait phone recordings side by side: used to be scaled up.
+    self.assertEqual(self._merged_video_size(2160, 2404), (2160, 2404))
+    # Wider videos are scaled down to an even height, keeping aspect ratio.
+    self.assertEqual(self._merged_video_size(4000, 2404), (3000, 1804))
 
 
 if __name__ == "__main__":
