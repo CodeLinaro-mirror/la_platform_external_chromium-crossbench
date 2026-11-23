@@ -792,9 +792,12 @@ class VideoProbeContext(ProbeContext[VideoProbe]):
       "-i",
       self.result_path,
       "-filter_complex",
+      # Draw the timestamp at the recording's resolution to keep its
+      # proportions, then scale down to the 100 px tile height (never up).
       f"trim=duration={safe_duration},"
-      "scale=3000:-2,"
-      f"select=not(mod(n\\,{every_nth_frame}))," + self.FFMPEG_TIMELINE_TEXT,
+      f"select=not(mod(n\\,{every_nth_frame})),"
+      f"{self.FFMPEG_TIMELINE_TEXT},"
+      "scale=-1:'min(100,ih)'",
       f"{timeline_dir}/%02d.{self.IMAGE_FORMAT}",
     )
 

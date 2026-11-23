@@ -543,6 +543,16 @@ class VideoProbePostProcessingTestCase(unittest.TestCase):
     self.context._convert_to_constant_framerate.assert_called_once_with()
     self.assertEqual(result.file_list, [self.result_path, self.strip_path])
 
+  def test_create_time_strip(self):
+    strip = VideoProbeContext._create_time_strip(self.context, self.tmp_path)
+    self.assertEqual(strip, self.strip_path)
+    self.context.host_platform.sh.assert_called_once()
+    ffmpeg_args = self.context.host_platform.sh.call_args.args
+    filter_graph = ffmpeg_args[ffmpeg_args.index("-filter_complex") + 1]
+    self.assertNotIn("scale=3000", filter_graph)
+    self.assertIn("drawtext=", filter_graph)
+    self.assertTrue(filter_graph.endswith(",scale=-1:'min(100,ih)'"))
+
   def test_try_merge_timestrips_none_available(self):
     host_platform = self._mock_probe_host_platform()
     run = self._run_with_files(self.probe, self.result_path)
