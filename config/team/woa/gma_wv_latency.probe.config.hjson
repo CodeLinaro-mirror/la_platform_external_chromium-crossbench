@@ -4,6 +4,7 @@
     "trace_processor": {
       "queries": [
         "gma_wv_latency"
+        "wv_startup_guardrails"
       ]
     }
     "perfetto": {

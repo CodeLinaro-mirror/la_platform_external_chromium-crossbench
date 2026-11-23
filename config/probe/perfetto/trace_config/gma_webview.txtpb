@@ -16,6 +16,7 @@ data_sources {
     name: "track_event"
     track_event_config {
       disabled_categories: "*"
+      enabled_categories: "android_webview.timeline"
     }
   }
 }
