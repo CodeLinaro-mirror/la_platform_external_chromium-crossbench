@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 import datetime as dt
+import shutil
 import struct
 import subprocess
 import tempfile
@@ -705,6 +706,78 @@ class VideoProbePostProcessingTestCase(unittest.TestCase):
     self.assertEqual(self._merged_video_size(2160, 2404), (2160, 2404))
     # Wider videos are scaled down to an even height, keeping aspect ratio.
     self.assertEqual(self._merged_video_size(4000, 2404), (3000, 1804))
+
+  def _touch_last_arg(self, *args: object) -> None:
+    output = args[-1]
+    assert isinstance(output, pth.LocalPath)
+    output.write_bytes(b"merged")
+
+  def test_merge_repetitions_disabled(self):
+    host_platform = self._mock_probe_host_platform()
+    probe = VideoProbe.parse_dict({"merge_runs": False})
+    self.assertTrue(probe.merge_repetitions(mock.MagicMock()).is_empty)
+    host_platform.sh.assert_not_called()
+
+  def test_merge_repetitions_single_run_copies_files(self):
+    host_platform = self._mock_probe_host_platform()
+    host_platform.copy.side_effect = shutil.copyfile
+    self.strip_path.write_bytes(b"strip")
+    out_dir = self.tmp_path / "group"
+    out_dir.mkdir()
+    run = self._run_with_files(self.probe, self.result_path, self.strip_path)
+    group = mock.MagicMock(path=out_dir, runs=(run,))
+    result = self.probe.merge_repetitions(group)
+    self.assertEqual(
+      result.file_list,
+      [out_dir / self.result_path.name, out_dir / self.strip_path.name],
+    )
+    host_platform.sh.assert_not_called()
+
+  def test_merge_browsers_single_group_delegates(self):
+    host_platform = self._mock_probe_host_platform()
+    group = mock.MagicMock(runs=(), repetitions_groups=[mock.MagicMock()])
+    self.assertTrue(self.probe.merge_browsers(group).is_empty)
+    host_platform.sh.assert_not_called()
+
+  def test_merge_browsers_groups_by_story(self):
+    host_platform = self._mock_probe_host_platform()
+    host_platform.sh.side_effect = self._touch_last_arg
+    host_platform.copy.side_effect = shutil.copyfile
+    rep_a1 = self._story_group("story_a")
+    rep_a2 = self._story_group("story_a")
+    rep_a2.story = rep_a1.story
+    rep_b = self._story_group("story_b")
+    browsers_path = self.tmp_path / "browsers" / "video.mp4"
+    group = mock.MagicMock(repetitions_groups=[rep_a1, rep_a2, rep_b])
+    group.get_local_probe_result_path.return_value = browsers_path
+
+    result = self.probe.merge_browsers(group)
+    combined_dir = browsers_path / "video"
+    self.assertCountEqual(
+      result.file_list,
+      [
+        combined_dir / "story_a_combined.mp4",
+        combined_dir / "story_b_combined.mp4",
+      ],
+    )
+    host_platform.sh.assert_called_once()
+    host_platform.copy.assert_called_once_with(
+      self.result_path, combined_dir / "story_b_combined.mp4"
+    )
+
+  def test_merge_stories_for_browser_error_reraises(self):
+    host_platform = self._mock_probe_host_platform()
+    host_platform.sh.side_effect = self._subprocess_error("ffmpeg")
+    rep_group = self._story_group("story")
+    with self.assertLogs(level="ERROR") as logs:
+      self.assertRaises(
+        plt.SubprocessError,
+        self.probe._merge_stories_for_browser,
+        self.tmp_path,
+        rep_group.story,
+        [rep_group, rep_group],
+      )
+    self.assertIn("Merging multiple browser video failed", logs.output[0])
 
 
 if __name__ == "__main__":
