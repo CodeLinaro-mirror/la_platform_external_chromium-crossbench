@@ -166,6 +166,7 @@ class ChromiumBased(Browser):
     super().__init__(label, path, settings=settings)
     self._local_extension_tmp_dir: pth.LocalPath | None = None
     self._remote_extension_tmp_dir: pth.AnyPath | None = None
+    self._remote_variations_seed_tmp_dir: pth.AnyPath | None = None
     assert isinstance(self._flags, ChromeFlags)
 
   @override
@@ -350,6 +351,38 @@ class ChromiumBased(Browser):
       "--disable-features": "DisableLoadExtensionCommandLineSwitch",
     }
 
+  def _push_variations_test_seed(self, flags: ChromeFlags) -> None:
+    """Push a local --variations-test-seed-path file to remote devices and
+    rewrite the flag to point to the pushed copy."""
+    if not self.platform.is_remote:
+      return
+    if not (seed_path_str := flags.get("--variations-test-seed-path")):
+      return
+    local_seed_path = pth.LocalPath(seed_path_str).expanduser()
+    if not self.host_platform.is_file(local_seed_path):
+      # Assume the path already refers to a file on the remote device.
+      return
+    if not self._remote_variations_seed_tmp_dir:
+      self._remote_variations_seed_tmp_dir = self.platform.mkdtemp()
+      # The browser runs as a different user and needs to read the seed.
+      self.platform.chmod(self._remote_variations_seed_tmp_dir, 0o755)
+    remote_seed_path = (
+      self._remote_variations_seed_tmp_dir / local_seed_path.name
+    )
+    logging.info(
+      "Pushing variations test seed: %s -> %s",
+      local_seed_path,
+      remote_seed_path,
+    )
+    self.platform.push(local_seed_path, remote_seed_path)
+    # The host file might have restrictive permissions.
+    self.platform.chmod(remote_seed_path, 0o644)
+    flags.set(
+      "--variations-test-seed-path",
+      str(remote_seed_path),
+      should_override=True,
+    )
+
   @override
   def _get_browser_flags_for_session(
     self, session: BrowserSessionRunGroup
@@ -397,6 +430,8 @@ class ChromiumBased(Browser):
 
     if self.settings.extensions:
       flags_copy.update(self._process_extensions())
+
+    self._push_variations_test_seed(flags_copy)
 
     flags_copy = self._filter_flags_for_run(flags_copy)
 
@@ -477,3 +512,6 @@ class ChromiumBased(Browser):
       if self._remote_extension_tmp_dir:
         self.platform.rm(self._remote_extension_tmp_dir, dir=True)
         self._remote_extension_tmp_dir = None
+      if self._remote_variations_seed_tmp_dir:
+        self.platform.rm(self._remote_variations_seed_tmp_dir, dir=True)
+        self._remote_variations_seed_tmp_dir = None

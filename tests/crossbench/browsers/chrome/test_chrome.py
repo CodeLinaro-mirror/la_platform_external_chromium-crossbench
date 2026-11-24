@@ -12,6 +12,7 @@ from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.remote.command import Command
 
 from crossbench import path as pth
+from crossbench.browsers.browser import Browser
 from crossbench.browsers.chrome.version import ChromeVersion
 from crossbench.browsers.chrome.webdriver import (
   ChromeWebDriver,
@@ -23,6 +24,7 @@ from crossbench.browsers.chromium.version import (
 )
 from crossbench.browsers.chromium_based.chromium_based import (
   VERSIONED_DEFAULT_FLAGS,
+  ChromiumBased,
   VersionedFlag,
 )
 from crossbench.browsers.settings import Settings
@@ -282,6 +284,82 @@ class ChromeWebdriverTestCase(BaseCrossbenchTestCase):
       flags: ChromeFlags = browser.flags
       self.assertIn(field_trial_flag, flags)
       self.assertFalse(flags.field_trial_disable_flags)
+
+  def _create_variations_seed_browser(
+    self, seed_path: str
+  ) -> ChromeWebDriverForTesting:
+    return ChromeWebDriverForTesting(
+      label="browser-label",
+      path=mock_browser.MockChromeStable.mock_app_path(),
+      settings=Settings(
+        flags={"--variations-test-seed-path": seed_path},
+        platform=self.platform,
+      ),
+    )
+
+  def test_variations_test_seed_enables_field_trials(self) -> None:
+    browser = self._create_variations_seed_browser("/tmp/seed.json")
+    self.assertNotIn("--disable-field-trial-config", browser.flags)
+    flags = browser.flags.copy()
+    browser._push_variations_test_seed(flags)
+    self.assertEqual(flags["--variations-test-seed-path"], "/tmp/seed.json")
+    self.assertNotIn("--accept-empty-variations-seed-signature", flags)
+    self.assertNotIn("--fake-variations-channel", flags)
+
+  def test_variations_test_seed_remote_push(self) -> None:
+    local_seed = pth.LocalPath("/seeds/seed.json")
+    self.fs.create_file(local_seed)
+    browser = self._create_variations_seed_browser(str(local_seed))
+    remote_tmp_dir = pth.AnyPosixPath("/data/local/tmp/seed_tmp")
+    remote_seed = remote_tmp_dir / "seed.json"
+    platform_cls = type(self.platform)
+    with (
+      mock.patch.object(
+        platform_cls,
+        "is_remote",
+        new_callable=mock.PropertyMock,
+        return_value=True,
+      ),
+      mock.patch.object(
+        self.platform, "mkdtemp", return_value=remote_tmp_dir
+      ) as mkdtemp,
+      mock.patch.object(self.platform, "chmod") as chmod,
+      mock.patch.object(self.platform, "push") as push,
+      mock.patch.object(self.platform, "rm") as rm,
+      mock.patch.object(Browser, "quit"),
+    ):
+      flags = browser.flags.copy()
+      browser._push_variations_test_seed(flags)
+      mkdtemp.assert_called_once()
+      push.assert_called_once_with(local_seed, remote_seed)
+      self.assertEqual(
+        chmod.call_args_list,
+        [mock.call(remote_tmp_dir, 0o755), mock.call(remote_seed, 0o644)],
+      )
+      self.assertEqual(flags["--variations-test-seed-path"], str(remote_seed))
+      # The original browser flags are not modified.
+      self.assertEqual(
+        browser.flags["--variations-test-seed-path"], str(local_seed)
+      )
+      rm.assert_not_called()
+      ChromiumBased.quit(browser)
+      rm.assert_called_once_with(remote_tmp_dir, dir=True)
+
+  def test_variations_test_seed_remote_missing_local_file(self) -> None:
+    browser = self._create_variations_seed_browser("/device/seed.json")
+    with (
+      mock.patch.object(
+        type(self.platform),
+        "is_remote",
+        new_callable=mock.PropertyMock,
+        return_value=True,
+      ),
+      mock.patch.object(self.platform, "push") as push,
+    ):
+      flags = browser.flags.copy()
+      browser._push_variations_test_seed(flags)
+    push.assert_not_called()
+    self.assertEqual(flags["--variations-test-seed-path"], "/device/seed.json")
 
   def test_versioned_default_flags_bounds(self) -> None:
     self.assertTrue(VERSIONED_DEFAULT_FLAGS)
