@@ -2249,6 +2249,18 @@ files = [
 pyasn1 = ">=0.6.1,<0.7.0"
 
 [[package]]
+name = "pyasyncore"
+version = "1.0.5"
+description = "Make asyncore available for Python 3.12 onwards"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "pyasyncore-1.0.5-py3-none-any.whl", hash = "sha256:269bbc5252671827387636822841a1fb721ec6e858b23a3e12cf92eb1f97da2a"},
+    {file = "pyasyncore-1.0.5.tar.gz", hash = "sha256:dd483d5103a6d59b66b86e0ca2334ad43dca732ff23a0ac5d63c88c52510542e"},
+]
+
+[[package]]
 name = "pycparser"
 version = "3.0"
 description = "C parser in Python"
@@ -3882,4 +3894,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.14,<3.15"
-content-hash = "4f90bffda9091682799a0b74a5ac3bfd2489874f2baebbfa4f930762c1a5b072"
+content-hash = "1ba059e324383c8d61c69f02dccac2b1068f342465f8667a8085931876e604ba"
