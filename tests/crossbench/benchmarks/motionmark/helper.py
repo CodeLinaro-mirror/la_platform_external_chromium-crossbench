@@ -86,6 +86,7 @@ class MotionMark1BaseTestCase(
   @override
   def setUp(self):
     super().setUp()
+    self.fs.add_real_file(self.benchmark_cls.device_config_path())
     self.set_display_refresh_rate_patcher = mock.patch.object(
       self.platform,
       "set_display_refresh_rate",

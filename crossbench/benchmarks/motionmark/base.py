@@ -5,9 +5,13 @@
 import logging
 from typing import TYPE_CHECKING, override
 
+from crossbench import config
 from crossbench.benchmarks.base import PressBenchmark
+from crossbench.device_config import RequiredDeviceConfig
 
 if TYPE_CHECKING:
+  from crossbench import path as pth
+  from crossbench.plt.base import Platform
   from crossbench.runner.runner import Runner
 
 
@@ -21,6 +25,17 @@ class MotionMarkBenchmark(PressBenchmark):
   @override
   def base_name(cls) -> str:
     return "motionmark"
+
+  @classmethod
+  def device_config_path(cls) -> pth.LocalPath:
+    return (
+      config.config_dir() / "benchmark" / "motionmark" / "device_config.hjson"
+    )
+
+  @override
+  def required_device_config(self, platform: Platform) -> RequiredDeviceConfig:
+    del platform
+    return RequiredDeviceConfig.parse(self.device_config_path())
 
   @override
   def setup(self, runner: Runner) -> None:
