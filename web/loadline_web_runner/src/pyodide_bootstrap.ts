@@ -93,6 +93,7 @@ DUMMY_ROOTS = (
     "colorama",
     "common",
     "googleapiclient",
+    "httpx",
     "mcp",
     "mobly",
     "platformdirs",
