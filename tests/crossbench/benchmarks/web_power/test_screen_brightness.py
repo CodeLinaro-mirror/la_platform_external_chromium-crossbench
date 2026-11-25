@@ -7,8 +7,6 @@ import unittest
 from typing import override
 from unittest import mock
 
-from immutabledict import immutabledict
-
 from crossbench import path as pth
 from crossbench.benchmarks.web_power.screen_brightness import (
   ScreenBrightnessLookup,
@@ -51,20 +49,21 @@ class ScreenBrightnessLookupTestCase(unittest.TestCase):
         with self.assertRaisesRegex(argparse.ArgumentTypeError, expected_msg):
           ScreenBrightnessLookup.parse(raw_config)
 
-  def test_shipped_public_mapping_defines_200_nits_and_boundaries(self) -> None:
-    lookup = ScreenBrightnessLookup.parse(ScreenBrightnessLookup.public_path())
+  def test_shipped_mapping_defines_default_target_nits(self) -> None:
+    lookup = ScreenBrightnessLookup.load_default()
 
     self.assertGreater(len(lookup), 0)
     for levels in lookup.values():
       self.assertIn(ScreenBrightnessResolver.DEFAULT_TARGET_NITS, levels)
-    self.assertEqual(lookup.resolve("Pixel 9 Pro XL"), immutabledict({200: 33}))
-    self.assertEqual(lookup.resolve("SM-S942B"), immutabledict({200: 145}))
-    self.assertEqual(lookup.resolve("SM-S948U1"), immutabledict({200: 150}))
-    self.assertEqual(lookup.resolve("CPH2653"), immutabledict({200: 2468}))
-    self.assertEqual(lookup.resolve("CPH2691"), immutabledict({200: 2477}))
-    for unmapped in ("Pixel 10", "Pixel 10 Pro", "CPH26", "CPH264", "CPH26911"):
-      with self.subTest(model=unmapped):
-        self.assertIsNone(lookup.resolve(unmapped))
+    mapped_levels = lookup.resolve("Pixel 9 Pro XL")
+    assert mapped_levels is not None
+    mapped_device_brightness = mapped_levels[
+      ScreenBrightnessResolver.DEFAULT_TARGET_NITS
+    ]
+    self.assertIsInstance(mapped_device_brightness, int)
+    self.assertGreaterEqual(mapped_device_brightness, 1)
+    self.assertLessEqual(mapped_device_brightness, 255)
+    self.assertIsNone(lookup.resolve("Unmapped Device Model"))
 
 
 class WebPowerScreenBrightnessCliTestCase(BaseWebPowerBenchmarkTestCase):

@@ -4,20 +4,62 @@
   // nits -> raw settings.system.screen_brightness integer. Passing
   // --screen-brightness overrides both mapped and unmapped models; otherwise
   // unmapped models log a warning and fall back to screen_brightness=1.
-
-  "Pixel 9 Pro XL": {
-    "200": 33
-  }
-  "Pixel 10 Pro XL": {
-    "200": 28
-  }
-
+  //
   // TODO: Detect the active display on multi-screen devices instead of
   // assuming the outer screen.
-  // Outer screen (inner screen 200 nits is 32; override via
-  // --screen-brightness=32).
+
+  // Google Pixel 9 series.
+  "Pixel 9": {
+    "200": 28
+  }
+  "Pixel 9 Pro": {
+    "200": 25
+  }
+  "Pixel 9 Pro XL": {
+    "200": 25
+  }
+  // Outer screen (inner screen 200 nits is 33; override via
+  // --screen-brightness=33).
+  "Pixel 9 Pro Fold": {
+    "200": 31
+  }
+  "Pixel 9a": {
+    "200": 29
+  }
+
+  // Google Pixel 10 series.
+  "Pixel 10": {
+    "200": 26
+  }
+  "Pixel 10 Pro": {
+    "200": 23
+  }
+  "Pixel 10 Pro XL": {
+    "200": 23
+  }
+  // Outer screen (inner screen 200 nits is 28; override via
+  // --screen-brightness=28).
   "Pixel 10 Pro Fold": {
-    "200": 30
+    "200": 26
+  }
+  "Pixel 10a": {
+    "200": 26
+  }
+
+  // Google Pixel 11 series.
+  "Pixel 11": {
+    "200": 24
+  }
+  "Pixel 11 Pro": {
+    "200": 22
+  }
+  "Pixel 11 Pro XL": {
+    "200": 22
+  }
+  // Outer screen (inner screen 200 nits is 26; override via
+  // --screen-brightness=26).
+  "Pixel 11 Pro Fold": {
+    "200": 22
   }
 
   // Samsung Galaxy S24 Ultra, S25 Ultra, S26, S26 Ultra, A35, and A56.
@@ -51,12 +93,12 @@
     "200": 152
   }
 
-  // OnePlus 13 (extended brightness scale).
+  // OnePlus 13 series (extended brightness scale).
+  // OnePlus 13.
   "PJZ110|CPH2653|CPH2655": {
     "200": 2468
   }
-
-  // OnePlus 13R (extended brightness scale).
+  // OnePlus 13R.
   "CPH2645|CPH2647|CPH2691": {
     "200": 2477
   }
