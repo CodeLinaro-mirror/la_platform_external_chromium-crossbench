@@ -6,6 +6,7 @@ import argparse
 import contextlib
 import datetime as dt
 import io
+import os
 import pathlib
 import struct
 import unittest
@@ -1872,6 +1873,206 @@ class AndroidAdbMockPlatformTest(BaseAndroidAdbMockPlatformTestCase):
       with self.assertRaises(ElementNotFoundError) as cm:
         self.platform.get_ui_element_rect(ui_selector)
       self.assertIn("Click me", str(cm.exception))
+
+  def _create_platform_with_adb_path(
+    self, adb_bin: pth.AnyPath
+  ) -> AndroidAdbPlatform:
+    if self.host_platform.is_macos:
+      self.host_platform.expect_sh(
+        "brew", "--prefix", result=ShResult(returncode=1)
+      )
+    self.host_platform.expect_sh(adb_bin, "start-server")
+    devices_output = (
+      "List of devices attached\n"
+      f"{self.DEVICE_ID} device product:mock model:mock device:mock\n"
+    )
+    self.host_platform.expect_sh(
+      adb_bin, "devices", "-l", result=devices_output
+    )
+    with mock.patch(
+      "crossbench.plt.android_adb._find_adb_bin", return_value=adb_bin
+    ):
+      adb = Adb(self.host_platform, self.DEVICE_ID)
+    return AndroidAdbPlatform(self.host_platform, self.DEVICE_ID, adb=adb)
+
+  def test_uiautomator_device_path_and_teardown_cleanup(self) -> None:
+    adb_bin = self.host_platform.path("/sdk/platform-tools/adb")
+    adb_dir = str(adb_bin.parent)
+    expected_path = f"{adb_dir}{self.host_platform.pathsep}/usr/bin"
+    platform = self._create_platform_with_adb_path(adb_bin)
+
+    observed_paths: list[str | None] = []
+    mock_ad = mock.MagicMock()
+    mock_ad.services.unregister_all.side_effect = lambda: observed_paths.append(
+      os.environ.get("PATH")
+    )
+
+    with (
+      mock.patch.dict(os.environ, {"PATH": "/usr/bin"}, clear=True),
+      mock.patch(
+        "crossbench.plt.android_adb._CrossbenchUiAutomatorDevice",
+        return_value=mock_ad,
+      ) as mock_device_cls,
+      mock.patch("atexit.register") as mock_atexit_register,
+      mock.patch("atexit.unregister") as mock_atexit_unregister,
+    ):
+      with platform.uiautomator_device(root_device=False) as ad:
+        self.assertIs(ad, mock_ad)
+        self.assertEqual(os.environ["PATH"], expected_path)
+
+      self.assertEqual(os.environ["PATH"], "/usr/bin")
+      mock_device_cls.assert_called_once_with(self.DEVICE_ID, root_device=False)
+      mock_atexit_register.assert_called_once_with(
+        platform._cleanup_uiautomator_device
+      )
+      mock_ad.services.unregister_all.assert_not_called()
+
+      with platform.uiautomator_device(root_device=False) as ad_reused:
+        self.assertIs(ad_reused, mock_ad)
+        self.assertEqual(os.environ["PATH"], expected_path)
+      mock_device_cls.assert_called_once()
+      self.assertEqual(os.environ["PATH"], "/usr/bin")
+
+      platform.teardown()
+      self.assertEqual(observed_paths, [expected_path])
+      self.assertEqual(os.environ["PATH"], "/usr/bin")
+      mock_atexit_unregister.assert_called_once_with(
+        platform._cleanup_uiautomator_device
+      )
+
+      # Subsequent teardown is a no-op.
+      platform.teardown()
+      self.assertEqual(mock_ad.services.unregister_all.call_count, 1)
+
+  def test_uiautomator_device_atexit_cleanup_sets_adb_path(self) -> None:
+    adb_bin = self.host_platform.path("/sdk/platform-tools/adb")
+    adb_dir = str(adb_bin.parent)
+    platform = self._create_platform_with_adb_path(adb_bin)
+
+    observed_paths: list[str | None] = []
+    mock_ad = mock.MagicMock()
+    mock_ad.services.unregister_all.side_effect = lambda: observed_paths.append(
+      os.environ.get("PATH")
+    )
+
+    with (
+      mock.patch.dict(os.environ, {}, clear=True),
+      mock.patch(
+        "crossbench.plt.android_adb._CrossbenchUiAutomatorDevice",
+        return_value=mock_ad,
+      ),
+      mock.patch("atexit.register") as mock_atexit_register,
+      mock.patch("atexit.unregister") as mock_atexit_unregister,
+    ):
+      with platform.uiautomator_device(root_device=False):
+        self.assertEqual(os.environ["PATH"], adb_dir)
+      self.assertNotIn("PATH", os.environ)
+
+      cleanup_cb = mock_atexit_register.call_args.args[0]
+      cleanup_cb()
+      self.assertEqual(observed_paths, [adb_dir])
+      self.assertNotIn("PATH", os.environ)
+      mock_atexit_unregister.assert_called_once_with(
+        platform._cleanup_uiautomator_device
+      )
+
+  def test_uiautomator_device_reroot_and_register_error_cleanup(self) -> None:
+    adb_bin = self.host_platform.path("/sdk/platform-tools/adb")
+    adb_dir = str(adb_bin.parent)
+    expected_path = f"{adb_dir}{self.host_platform.pathsep}/usr/bin"
+    platform = self._create_platform_with_adb_path(adb_bin)
+
+    observed_paths: list[str | None] = []
+    first_ad = mock.MagicMock()
+    first_ad.services.unregister_all.side_effect = lambda: (
+      observed_paths.append(os.environ.get("PATH"))
+    )
+    second_ad = mock.MagicMock()
+    second_ad.services.register.side_effect = RuntimeError("register failed")
+    second_ad.services.unregister_all.side_effect = lambda: (
+      observed_paths.append(os.environ.get("PATH"))
+    )
+
+    with (
+      mock.patch.dict(os.environ, {"PATH": "/usr/bin"}, clear=True),
+      mock.patch(
+        "crossbench.plt.android_adb._CrossbenchUiAutomatorDevice",
+        side_effect=[first_ad, second_ad],
+      ),
+      mock.patch("atexit.register"),
+      mock.patch("atexit.unregister"),
+    ):
+      with platform.uiautomator_device(root_device=False) as ad:
+        self.assertIs(ad, first_ad)
+      self.assertEqual(os.environ["PATH"], "/usr/bin")
+
+      with self.assertRaisesRegex(RuntimeError, "register failed"):
+        with platform.uiautomator_device(root_device=True):
+          pass
+
+      self.assertEqual(observed_paths, [expected_path, expected_path])
+      self.assertEqual(os.environ["PATH"], "/usr/bin")
+      self.assertIsNone(platform._uiautomator_device_instance)
+
+  def test_uiautomator_device_adb_in_path_edge_cases(self) -> None:
+    # Bare adb binary name (no parent dir) leaves PATH untouched.
+    bare_platform = self._create_platform_with_adb_path(
+      self.host_platform.path("adb")
+    )
+    mock_ad = mock.MagicMock()
+    with (
+      mock.patch.dict(os.environ, {"PATH": "/usr/bin"}, clear=True),
+      mock.patch(
+        "crossbench.plt.android_adb._CrossbenchUiAutomatorDevice",
+        return_value=mock_ad,
+      ),
+      mock.patch("atexit.register"),
+      mock.patch("atexit.unregister"),
+    ):
+      with bare_platform.uiautomator_device(root_device=False):
+        self.assertEqual(os.environ["PATH"], "/usr/bin")
+      self.assertEqual(os.environ["PATH"], "/usr/bin")
+      bare_platform.teardown()
+      self.assertEqual(os.environ["PATH"], "/usr/bin")
+
+    # Existing adb_dir in PATH is not duplicated or reordered.
+    adb_bin = self.host_platform.path("/sdk/platform-tools/adb")
+    adb_dir = str(adb_bin.parent)
+    existing_path = f"/usr/bin{self.host_platform.pathsep}{adb_dir}"
+    platform = self._create_platform_with_adb_path(adb_bin)
+    with (
+      mock.patch.dict(os.environ, {"PATH": existing_path}, clear=True),
+      mock.patch(
+        "crossbench.plt.android_adb._CrossbenchUiAutomatorDevice",
+        return_value=mock_ad,
+      ),
+      mock.patch("atexit.register"),
+      mock.patch("atexit.unregister"),
+    ):
+      with platform.uiautomator_device(root_device=False):
+        self.assertEqual(os.environ["PATH"], existing_path)
+      self.assertEqual(os.environ["PATH"], existing_path)
+      platform.teardown()
+      self.assertEqual(os.environ["PATH"], existing_path)
+
+    # Empty PATH="" is restored to "" rather than deleted.
+    empty_path_platform = self._create_platform_with_adb_path(adb_bin)
+    with (
+      mock.patch.dict(os.environ, {"PATH": ""}, clear=True),
+      mock.patch(
+        "crossbench.plt.android_adb._CrossbenchUiAutomatorDevice",
+        return_value=mock_ad,
+      ),
+      mock.patch("atexit.register"),
+      mock.patch("atexit.unregister"),
+    ):
+      with empty_path_platform.uiautomator_device(root_device=False):
+        self.assertEqual(os.environ["PATH"], adb_dir)
+      self.assertIn("PATH", os.environ)
+      self.assertEqual(os.environ["PATH"], "")
+      empty_path_platform.teardown()
+      self.assertIn("PATH", os.environ)
+      self.assertEqual(os.environ["PATH"], "")
 
   def test_root_usb_and_noop_when_already_root(self) -> None:
     self.expect_sh("id", result="uid=0(root) gid=0(root)")

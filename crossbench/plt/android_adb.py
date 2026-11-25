@@ -11,7 +11,6 @@ import enum
 import functools
 import logging
 import math
-import os
 import re
 import shlex
 import subprocess
@@ -1341,6 +1340,40 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
   def key(self) -> PlatformKey:
     return ("android", self.serial_id)
 
+  @contextlib.contextmanager
+  def _adb_in_path(self) -> Iterator[None]:
+    adb_bin = self.adb.adb_bin
+    if len(adb_bin.parts) <= 1:
+      yield
+      return
+    adb_dir = str(adb_bin.parent)
+    environ = self.host_platform.environ
+    old_path = environ.get("PATH")
+    if old_path and adb_dir in old_path.split(self.host_platform.pathsep):
+      yield
+      return
+    if old_path:
+      environ["PATH"] = f"{adb_dir}{self.host_platform.pathsep}{old_path}"
+    else:
+      environ["PATH"] = adb_dir
+    try:
+      yield
+    finally:
+      if old_path is None:
+        environ.pop("PATH", None)
+      else:
+        environ["PATH"] = old_path
+
+  def _cleanup_uiautomator_device(self) -> None:
+    atexit.unregister(self._cleanup_uiautomator_device)
+    ad = self._uiautomator_device_instance
+    if ad is None:
+      return
+    self._uiautomator_device_instance = None
+    self._uiautomator_device_root = False
+    with self._adb_in_path():
+      ad.services.unregister_all()
+
   def _uiautomator_device(
     self,
     root_device: bool = True,
@@ -1349,20 +1382,21 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
       # We are reusing the device except if it's not rooted and root is
       # required.
       if not self._uiautomator_device_root and root_device:
-        ad = self._uiautomator_device_instance
-        ad.services.unregister_all()
-        atexit.unregister(ad.services.unregister_all)
-        self._uiautomator_device_instance = None
+        self._cleanup_uiautomator_device()
       else:
         return self._uiautomator_device_instance
 
     ad = _CrossbenchUiAutomatorDevice(self.serial_id, root_device=root_device)
-    atexit.register(ad.services.unregister_all)
-    ad.services.register(
-      uiautomator.ANDROID_SERVICE_NAME, uiautomator.UiAutomatorService
-    )
     self._uiautomator_device_instance = ad
     self._uiautomator_device_root = root_device
+    atexit.register(self._cleanup_uiautomator_device)
+    try:
+      ad.services.register(
+        uiautomator.ANDROID_SERVICE_NAME, uiautomator.UiAutomatorService
+      )
+    except BaseException:
+      self._cleanup_uiautomator_device()
+      raise
     return ad
 
   @contextlib.contextmanager
@@ -1370,21 +1404,8 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
     self,
     root_device: bool = True,
   ) -> Iterator[android_device.AndroidDevice]:
-    # uiautomator requires adb in PATH
-    adb_dir = os.path.dirname(self.adb.adb_bin)  # noqa: PTH120
-    environ = self.host_platform.environ
-    old_path = environ.get("PATH", "")
-    if adb_dir:
-      if old_path:
-        environ["PATH"] = f"{old_path}{os.pathsep}{adb_dir}"
-      else:
-        environ["PATH"] = adb_dir
-
-    try:
+    with self._adb_in_path():
       yield self._uiautomator_device(root_device)
-    finally:
-      if adb_dir:
-        environ["PATH"] = old_path
 
   @functools.cached_property
   @override
@@ -1940,7 +1961,10 @@ class AndroidAdbPlatform(EvemuPlatformMixin, RemotePosixPlatform):
         self._provisioned_account_util_apk = None
         self.remove_google_accounts(apk_source)
     finally:
-      super().teardown()
+      try:
+        self._cleanup_uiautomator_device()
+      finally:
+        super().teardown()
 
   def _is_headless_system_user_mode(self) -> bool:
     if self.adb.sdk_version >= 34:
